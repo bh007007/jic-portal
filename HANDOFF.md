@@ -34,8 +34,12 @@ jic-portal/
 ├─ CLAUDE.md             ← Claude가 읽는 작업 규칙
 ├─ README.md             ← 실행·데이터 추출 방법
 ├─ apps/admin/           ← 관리자 앱 (React + Vite + TypeScript)
-│  ├─ server/localData.ts   데이터 소스 (ndjson → /api/*). Supabase 전환 시 이 파일만 교체
-│  └─ src/pages/            Dashboard, Students, StudentDetail, Dorm
+│  ├─ server/core.ts        /api/* 계산 (로컬·배포 공통)
+│  ├─ server/localData.ts   로컬: ndjson 파일 → core
+│  └─ src/pages/            Dashboard, Students, StudentDetail, Dorm, Login
+├─ functions/api/        ← 배포: Cloudflare Pages Function (Supabase → core)
+├─ supabase/migrations/  ← Supabase 테이블·RLS SQL
+├─ .github/workflows/    ← 빌드 확인(ci), DB 반영(supabase-migrate)
 ├─ data-sample/tables/   ← 가짜 샘플 데이터 (scripts/make-sample-data.mjs 로 재생성)
 ├─ data/                 ← 실제 추출 데이터 자리 (Git 제외, 압축에 없음)
 ├─ docs/
@@ -58,7 +62,7 @@ jic-portal/
 | 화면 디자인 9개 | 완료 (`docs/design/`) |
 | 관리자 앱: 대시보드, 재학생·입학 예정·졸업생 목록, 학생 상세, 기숙사 타입별 현황 | 동작 (로컬 데이터) |
 | 학생 앱, 파트너 포털, 인트라넷 | 디자인만 |
-| Supabase(DB)·로그인·배포 | 시작 전 |
+| Supabase 테이블(`legacy_*` 원본 jsonb)·직원 로그인·Cloudflare Pages 배포 | 코드 준비. 계정 연결 순서는 `docs/setup-cloud.md` (Supabase에는 샘플만) |
 
 ## 5. 실제 데이터로 실행하기 (권한 있는 사람만)
 
@@ -73,11 +77,11 @@ jic-portal/
 
 1. **관리자 앱 보완**: 에이전시 목록·담당자 계정 화면, 입학 배치별 명단(픽업 정보 포함), 엑셀 다운로드 버튼 동작.
 2. **추가 추출**: 방·침대 배정(체크인 화면 `checkin_v3_student_rooms`, `room_bed_v2_load`)과 인보이스 상세 금액. 추출 스크립트에 단계 추가 → 기숙사 화면을 디자인(04)의 방·침대 보드로 교체.
-3. **Supabase 스키마**: `docs/plan.md`의 데이터 모델 기준으로 `supabase/migrations` 작성 (학생·연수(enrollments)·배치·기숙사부터). 테스트 DB에는 샘플 데이터만.
-4. **로그인·권한**: Supabase Auth + RLS. 역할 9개(학생, 선생님, 체커, 스케줄러, 매니저, 오피스, 관리자, 가드, 에이전시 지점).
+3. **Supabase 정규화 스키마**: 지금은 `legacy_*`(원본 레코드 jsonb)를 통째로 읽어 계산한다. `docs/plan.md`의 데이터 모델 기준으로 학생·연수(enrollments)·배치·기숙사 테이블을 만들고 `functions/api`를 조건 조회로 바꾼다. 실제 데이터를 올리기 전에 필수. 테스트 DB에는 샘플 데이터만.
+4. **역할별 권한**: 지금은 `staff_users`에 있으면 전부 읽기. 역할 9개(학생, 선생님, 체커, 스케줄러, 매니저, 오피스, 관리자, 가드, 에이전시 지점)로 RLS 세분화.
 5. **파트너 포털 1차** (`apps/partner`): 홈·상담·캠퍼스·자료실·공지. 학생 개인정보 저장 금지, 가격·공실은 링크만.
 6. **학생 앱**: 결석 신청부터. **인트라넷**: 패널티 승인, 가드 외출·귀가.
-7. **배포**: Cloudflare Pages(화면) + Workers(서버 작업), GitHub Actions.
+7. **서버 작업**: 정기 동기화·알림 같은 예약 작업은 Cloudflare Workers(크론). 화면 배포와 빌드 확인은 이미 연결됨.
 
 ## 7. 결정이 필요한 것
 

@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { authHeaders, supabase } from './supabase';
 
 export type Status = 'current' | 'upcoming' | 'graduated' | 'cancelled' | 'other';
 
@@ -109,9 +110,12 @@ export function useApi<T>(url: string | null) {
     if (!url) return;
     let alive = true;
     setState((s) => ({ ...s, loading: true, error: null }));
-    fetch(url)
+    authHeaders()
+      .then((headers) => fetch(url, { headers }))
       .then(async (r) => {
-        const body = await r.json();
+        const body = await r.json().catch(() => null);
+        // 세션 만료: 로그아웃시키면 App 이 로그인 화면으로 바꾼다.
+        if (r.status === 401 && supabase) await supabase.auth.signOut();
         if (!r.ok) throw new Error(body?.error ?? r.statusText);
         return body as T;
       })
