@@ -79,7 +79,7 @@ GitHub `main`에 이 코드가 올라가 있어야 한다.
    | `VITE_SUPABASE_ANON_KEY` | anon / publishable 키 |
    | `NODE_VERSION` | `22` |
 
-5. **Save and Deploy**. 끝나면 `https://jic-portal.pages.dev`에서 로그인 화면이 나온다. 1-4에서 만든 계정으로 로그인하면 대시보드(오른쪽 위 '샘플 데이터')가 보인다.
+5. **Save and Deploy**. 끝나면 `https://jic-portal.pages.dev`에서 로그인 화면이 나온다(이름이 이미 쓰이면 숫자가 붙는다. 2026-11-07 만든 주소: `https://jic-portal-916.pages.dev`). 1-4에서 만든 계정으로 로그인하면 대시보드(오른쪽 위 '샘플 데이터')가 보인다.
 6. Supabase → **Authentication → URL Configuration** → Site URL을 `https://jic-portal.pages.dev`로 바꾼다(비밀번호 재설정 메일 링크용).
 
 이후에는 `main`에 머지될 때마다 자동 배포되고, 다른 브랜치를 올리면 미리보기 주소(`<브랜치>.jic-portal.pages.dev`)가 생긴다.
