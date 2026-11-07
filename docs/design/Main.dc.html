@@ -1,0 +1,256 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<title>JIC 통합관리 · 대시보드</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700;900&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0;background:#F4F5F7}
+a{color:#24427A}a:hover{color:#16294D}
+</style>
+</helmet>
+<div style="min-height: 1000px; background: #F4F5F7; font-family: 'Noto Sans KR', 'Malgun Gothic', 'Apple SD Gothic Neo', sans-serif; color: #222222; font-size: 13px">
+
+<header style="display: flex; flex-wrap: wrap; align-items: center; gap: 12px 20px; min-height: 52px; box-sizing: border-box; padding: 8px 20px; background: #FFFFFF; border-bottom: 1px solid #D9DCE1">
+  <a href="Main.dc.html" style="display: flex; align-items: baseline; gap: 8px; text-decoration: none">
+    <span style="font-size: 22px; font-weight: 900; font-style: italic; letter-spacing: -1px; color: #D52B1E">JIC</span>
+    <span style="font-size: 14px; font-weight: 700; color: #222222">통합관리</span>
+  </a>
+  <label style="display: flex; align-items: center; gap: 6px; font-size: 12px; color: #555555">캠퍼스
+    <select style="height: 30px; padding: 0 6px; border: 1px solid #C5CAD2; border-radius: 3px; background: #FFFFFF; font: inherit; font-size: 12px; color: #222222"><option>전체</option><option>Premium</option><option>Challenger</option><option>MCO</option></select>
+  </label>
+  <div style="margin-left: auto; display: flex; flex-wrap: wrap; align-items: center; gap: 14px; font-size: 12px; color: #555555">
+    <span>2026-11-07 (토)</span>
+    <span><strong style="color: #222222">레오</strong>님</span>
+    <a href="#" style="color: #555555">내 정보</a>
+    <a href="#" style="color: #555555">로그아웃</a>
+  </div>
+</header>
+
+<div style="display: flex; flex-wrap: wrap">
+<nav aria-label="메뉴" style="flex: 1 1 200px; box-sizing: border-box; background: #FFFFFF; border-right: 1px solid #D9DCE1; padding: 8px 0 24px; display: flex; flex-direction: column">
+  <a href="Main.dc.html" aria-current="page" style="display: block; padding: 11px 20px; font-size: 13px; font-weight: 700; color: {{primary}}; background: #EEF2F8; text-decoration: none">대시보드</a>
+  <span style="display: block; padding: 14px 20px 6px; font-size: 13px; font-weight: 700">학생관리</span>
+  <a href="Students.dc.html" style="display: block; padding: 7px 20px 7px 30px; color: #555555; text-decoration: none">재학생 현황</a>
+  <a href="#" style="display: block; padding: 7px 20px 7px 30px; color: #555555; text-decoration: none">입학 예정</a>
+  <a href="#" style="display: block; padding: 7px 20px 7px 30px; color: #555555; text-decoration: none">졸업생</a>
+  <a href="#" style="display: block; padding: 7px 20px 7px 30px; color: #555555; text-decoration: none">변경 요청</a>
+  <span style="display: block; padding: 14px 20px 6px; font-size: 13px; font-weight: 700">기숙사</span>
+  <a href="Dorm.dc.html" style="display: block; padding: 7px 20px 7px 30px; color: #555555; text-decoration: none">배정 현황</a>
+  <a href="#" style="display: block; padding: 7px 20px 7px 30px; color: #555555; text-decoration: none">방·침대 관리</a>
+  <span style="display: block; padding: 14px 20px 6px; font-size: 13px; font-weight: 700">회계</span>
+  <a href="#" style="display: block; padding: 7px 20px 7px 30px; color: #555555; text-decoration: none">인보이스</a>
+  <a href="#" style="display: block; padding: 7px 20px 7px 30px; color: #555555; text-decoration: none">입금 매칭</a>
+  <a href="#" style="display: block; padding: 7px 20px 7px 30px; color: #555555; text-decoration: none">포인트</a>
+  <span style="display: block; padding: 14px 20px 6px; font-size: 13px; font-weight: 700">에이전시</span>
+  <a href="#" style="display: block; padding: 7px 20px 7px 30px; color: #555555; text-decoration: none">에이전시 목록</a>
+  <a href="#" style="display: block; padding: 7px 20px 7px 30px; color: #555555; text-decoration: none">담당자 계정</a>
+  <span style="display: block; padding: 14px 20px 6px; font-size: 13px; font-weight: 700">기초관리</span>
+  <a href="#" style="display: block; padding: 7px 20px 7px 30px; color: #555555; text-decoration: none">코스·기숙사</a>
+  <a href="#" style="display: block; padding: 7px 20px 7px 30px; color: #555555; text-decoration: none">캠퍼스·배치</a>
+  <a href="#" style="display: block; padding: 7px 20px 7px 30px; color: #555555; text-decoration: none">사용자·권한</a>
+</nav>
+
+<main style="flex: 999 1 560px; min-width: 0; box-sizing: border-box; padding: 18px 24px 40px; display: flex; flex-direction: column; gap: 16px">
+  <div style="display: flex; flex-wrap: wrap; align-items: baseline; justify-content: space-between; gap: 8px; padding-bottom: 10px; border-bottom: 1px solid #D9DCE1">
+    <h1 style="margin: 0; font-size: 18px; font-weight: 700">대시보드</h1>
+    <span style="font-size: 12px; color: #666666">홈</span>
+  </div>
+
+  <section aria-label="현황 요약" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1px; background: #D9DCE1; border: 1px solid #D9DCE1; border-radius: 4px; overflow: hidden">
+    <div style="background: #FFFFFF; padding: 16px 20px; display: flex; flex-direction: column; gap: 4px">
+      <span style="font-size: 12px; color: #555555">재학생</span>
+      <span style="font-size: 26px; font-weight: 700">281<span style="font-size: 13px; font-weight: 400; color: #555555"> 명</span></span>
+      <span style="font-size: 12px; color: #666666">Premium 145 / Challenger 136</span>
+    </div>
+    <div style="background: #FFFFFF; padding: 16px 20px; display: flex; flex-direction: column; gap: 4px">
+      <span style="font-size: 12px; color: #555555">입학 예정 (11/15)</span>
+      <span style="font-size: 26px; font-weight: 700">47<span style="font-size: 13px; font-weight: 400; color: #555555"> 명</span></span>
+      <span style="font-size: 12px; color: #666666">11/29 입학 56명</span>
+    </div>
+    <div style="background: #FFFFFF; padding: 16px 20px; display: flex; flex-direction: column; gap: 4px">
+      <span style="font-size: 12px; color: #555555">졸업 예정 (~11/21)</span>
+      <span style="font-size: 26px; font-weight: 700">50<span style="font-size: 13px; font-weight: 400; color: #555555"> 명</span></span>
+      <span style="font-size: 12px; color: #666666">방 정리·정산 미처리 50</span>
+    </div>
+    <div style="background: #FFFFFF; padding: 16px 20px; display: flex; flex-direction: column; gap: 4px">
+      <span style="font-size: 12px; color: #555555">에이전시</span>
+      <span style="font-size: 26px; font-weight: 700">651<span style="font-size: 13px; font-weight: 400; color: #555555"> 개</span></span>
+      <span style="font-size: 12px; color: #666666">담당자 계정 640</span>
+    </div>
+  </section>
+
+  <div style="display: flex; flex-wrap: wrap; gap: 16px; align-items: flex-start">
+    <section aria-labelledby="todo-h" style="flex: 1 1 440px; min-width: 0; background: #FFFFFF; border: 1px solid #D9DCE1; border-radius: 4px">
+      <div style="display: flex; align-items: center; justify-content: space-between; padding: 11px 16px; border-bottom: 1px solid #E5E7EB">
+        <h2 id="todo-h" style="margin: 0; font-size: 14px; font-weight: 700">처리 필요</h2>
+      </div>
+      <div style="padding: 12px 16px 14px; overflow-x: auto">
+        <table style="width: 100%; border-collapse: collapse">
+          <thead>
+            <tr>
+              <th scope="col" style="width: 56px; padding: 8px; background: #F7F8FA; border-top: 1px solid #3A3F47; border-bottom: 1px solid #D9DCE1; font-weight: 500">구분</th>
+              <th scope="col" style="padding: 8px; background: #F7F8FA; border-top: 1px solid #3A3F47; border-bottom: 1px solid #D9DCE1; font-weight: 500">내용</th>
+              <th scope="col" style="width: 56px; padding: 8px; background: #F7F8FA; border-top: 1px solid #3A3F47; border-bottom: 1px solid #D9DCE1; font-weight: 500">건수</th>
+              <th scope="col" style="width: 60px; padding: 8px; background: #F7F8FA; border-top: 1px solid #3A3F47; border-bottom: 1px solid #D9DCE1; font-weight: 500"><span style="position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0)">이동</span></th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td style="padding: 9px 8px; border-bottom: 1px solid #EBEDF0; text-align: center; color: #555555">픽업</td>
+              <td style="padding: 9px 8px; border-bottom: 1px solid #EBEDF0">11/15·11/29 입학생 항공편 미입력</td>
+              <td style="padding: 9px 8px; border-bottom: 1px solid #EBEDF0; text-align: center; font-weight: 700; color: #C62828">32</td>
+              <td style="padding: 9px 8px; border-bottom: 1px solid #EBEDF0; text-align: center"><a href="Students.dc.html" style="display: inline-block; height: 26px; line-height: 24px; box-sizing: border-box; padding: 0 10px; border: 1px solid #C5CAD2; border-radius: 3px; background: #FFFFFF; font-size: 12px; color: #333333; text-decoration: none">보기</a></td>
+            </tr>
+            <tr>
+              <td style="padding: 9px 8px; border-bottom: 1px solid #EBEDF0; text-align: center; color: #555555">픽업</td>
+              <td style="padding: 9px 8px; border-bottom: 1px solid #EBEDF0">BESA 그룹 픽업 대상 확인</td>
+              <td style="padding: 9px 8px; border-bottom: 1px solid #EBEDF0; text-align: center; font-weight: 700">54</td>
+              <td style="padding: 9px 8px; border-bottom: 1px solid #EBEDF0; text-align: center"><a href="Students.dc.html" style="display: inline-block; height: 26px; line-height: 24px; box-sizing: border-box; padding: 0 10px; border: 1px solid #C5CAD2; border-radius: 3px; background: #FFFFFF; font-size: 12px; color: #333333; text-decoration: none">보기</a></td>
+            </tr>
+            <tr>
+              <td style="padding: 9px 8px; border-bottom: 1px solid #EBEDF0; text-align: center; color: #555555">졸업</td>
+              <td style="padding: 9px 8px; border-bottom: 1px solid #EBEDF0">~11/21 졸업 예정자 방 정리·포인트 정산</td>
+              <td style="padding: 9px 8px; border-bottom: 1px solid #EBEDF0; text-align: center; font-weight: 700; color: #C62828">50</td>
+              <td style="padding: 9px 8px; border-bottom: 1px solid #EBEDF0; text-align: center"><a href="Students.dc.html" style="display: inline-block; height: 26px; line-height: 24px; box-sizing: border-box; padding: 0 10px; border: 1px solid #C5CAD2; border-radius: 3px; background: #FFFFFF; font-size: 12px; color: #333333; text-decoration: none">보기</a></td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <section aria-labelledby="intake-h" style="flex: 1 1 440px; min-width: 0; background: #FFFFFF; border: 1px solid #D9DCE1; border-radius: 4px">
+      <div style="display: flex; align-items: center; justify-content: space-between; padding: 11px 16px; border-bottom: 1px solid #E5E7EB">
+        <h2 id="intake-h" style="margin: 0; font-size: 14px; font-weight: 700">입학 일정</h2>
+        <a href="#" style="font-size: 12px; color: #666666; text-decoration: none">더보기 +</a>
+      </div>
+      <div style="padding: 12px 16px 14px; overflow-x: auto">
+        <table style="width: 100%; border-collapse: collapse; text-align: center">
+          <thead>
+            <tr>
+              <th scope="col" style="padding: 8px; background: #F7F8FA; border-top: 1px solid #3A3F47; border-bottom: 1px solid #D9DCE1; font-weight: 500">배치</th>
+              <th scope="col" style="padding: 8px; background: #F7F8FA; border-top: 1px solid #3A3F47; border-bottom: 1px solid #D9DCE1; font-weight: 500">입학일</th>
+              <th scope="col" style="padding: 8px; background: #F7F8FA; border-top: 1px solid #3A3F47; border-bottom: 1px solid #D9DCE1; font-weight: 500">인원(명)</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr><td style="padding: 9px 8px; border-bottom: 1px solid #EBEDF0">288_A</td><td style="padding: 9px 8px; border-bottom: 1px solid #EBEDF0">2026-11-15 (일)</td><td style="padding: 9px 8px; border-bottom: 1px solid #EBEDF0; font-weight: 700">47</td></tr>
+            <tr><td style="padding: 9px 8px; border-bottom: 1px solid #EBEDF0">288_B</td><td style="padding: 9px 8px; border-bottom: 1px solid #EBEDF0">2026-11-29 (일)</td><td style="padding: 9px 8px; border-bottom: 1px solid #EBEDF0; font-weight: 700">56</td></tr>
+            <tr><td style="padding: 9px 8px; border-bottom: 1px solid #EBEDF0">289_A</td><td style="padding: 9px 8px; border-bottom: 1px solid #EBEDF0">2026-12-13 (일)</td><td style="padding: 9px 8px; border-bottom: 1px solid #EBEDF0; font-weight: 700">24</td></tr>
+            <tr><td style="padding: 9px 8px; border-bottom: 1px solid #EBEDF0">289_B</td><td style="padding: 9px 8px; border-bottom: 1px solid #EBEDF0">2026-12-27 (일)</td><td style="padding: 9px 8px; border-bottom: 1px solid #EBEDF0; font-weight: 700">31</td></tr>
+          </tbody>
+          <tfoot>
+            <tr>
+              <th scope="row" colspan="2" style="padding: 9px 8px; background: #F7F8FA; font-weight: 500">합계</th>
+              <td style="padding: 9px 8px; background: #F7F8FA; font-weight: 700">158</td>
+            </tr>
+          </tfoot>
+        </table>
+      </div>
+    </section>
+  </div>
+
+  <div style="display: flex; flex-wrap: wrap; gap: 16px; align-items: flex-start">
+    <section aria-labelledby="nation-h" style="flex: 3 1 440px; min-width: 0; background: #FFFFFF; border: 1px solid #D9DCE1; border-radius: 4px">
+      <div style="display: flex; align-items: center; justify-content: space-between; padding: 11px 16px; border-bottom: 1px solid #E5E7EB">
+        <h2 id="nation-h" style="margin: 0; font-size: 14px; font-weight: 700">재학생 국적별 현황</h2>
+        <span style="font-size: 12px; color: #666666">기준일 2026-11-07</span>
+      </div>
+      <div style="padding: 12px 16px 14px; overflow-x: auto">
+        <table style="width: 100%; border-collapse: collapse">
+          <thead>
+            <tr>
+              <th scope="col" style="width: 140px; padding: 8px; background: #F7F8FA; border-top: 1px solid #3A3F47; border-bottom: 1px solid #D9DCE1; font-weight: 500">국적</th>
+              <th scope="col" style="width: 80px; padding: 8px; background: #F7F8FA; border-top: 1px solid #3A3F47; border-bottom: 1px solid #D9DCE1; font-weight: 500">인원(명)</th>
+              <th scope="col" style="padding: 8px; background: #F7F8FA; border-top: 1px solid #3A3F47; border-bottom: 1px solid #D9DCE1; font-weight: 500">비율</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr><td style="padding: 8px; border-bottom: 1px solid #EBEDF0; text-align: center">일본</td><td style="padding: 8px; border-bottom: 1px solid #EBEDF0; text-align: center">103</td><td style="padding: 8px 12px; border-bottom: 1px solid #EBEDF0"><div style="display: flex; align-items: center; gap: 10px"><div style="flex: 1 1 auto; height: 6px; background: #EEF0F3"><div style="height: 6px; width: 100%; background: {{primary}}"></div></div><span style="flex: 0 0 48px; text-align: right; color: #555555">36.7%</span></div></td></tr>
+            <tr><td style="padding: 8px; border-bottom: 1px solid #EBEDF0; text-align: center">대만</td><td style="padding: 8px; border-bottom: 1px solid #EBEDF0; text-align: center">71</td><td style="padding: 8px 12px; border-bottom: 1px solid #EBEDF0"><div style="display: flex; align-items: center; gap: 10px"><div style="flex: 1 1 auto; height: 6px; background: #EEF0F3"><div style="height: 6px; width: 68.9%; background: {{primary}}"></div></div><span style="flex: 0 0 48px; text-align: right; color: #555555">25.3%</span></div></td></tr>
+            <tr><td style="padding: 8px; border-bottom: 1px solid #EBEDF0; text-align: center">한국</td><td style="padding: 8px; border-bottom: 1px solid #EBEDF0; text-align: center">53</td><td style="padding: 8px 12px; border-bottom: 1px solid #EBEDF0"><div style="display: flex; align-items: center; gap: 10px"><div style="flex: 1 1 auto; height: 6px; background: #EEF0F3"><div style="height: 6px; width: 51.5%; background: {{primary}}"></div></div><span style="flex: 0 0 48px; text-align: right; color: #555555">18.9%</span></div></td></tr>
+            <tr><td style="padding: 8px; border-bottom: 1px solid #EBEDF0; text-align: center">중국</td><td style="padding: 8px; border-bottom: 1px solid #EBEDF0; text-align: center">21</td><td style="padding: 8px 12px; border-bottom: 1px solid #EBEDF0"><div style="display: flex; align-items: center; gap: 10px"><div style="flex: 1 1 auto; height: 6px; background: #EEF0F3"><div style="height: 6px; width: 20.4%; background: {{primary}}"></div></div><span style="flex: 0 0 48px; text-align: right; color: #555555">7.5%</span></div></td></tr>
+            <tr><td style="padding: 8px; border-bottom: 1px solid #EBEDF0; text-align: center">예멘</td><td style="padding: 8px; border-bottom: 1px solid #EBEDF0; text-align: center">10</td><td style="padding: 8px 12px; border-bottom: 1px solid #EBEDF0"><div style="display: flex; align-items: center; gap: 10px"><div style="flex: 1 1 auto; height: 6px; background: #EEF0F3"><div style="height: 6px; width: 9.7%; background: {{primary}}"></div></div><span style="flex: 0 0 48px; text-align: right; color: #555555">3.6%</span></div></td></tr>
+            <tr><td style="padding: 8px; border-bottom: 1px solid #EBEDF0; text-align: center">사우디아라비아</td><td style="padding: 8px; border-bottom: 1px solid #EBEDF0; text-align: center">10</td><td style="padding: 8px 12px; border-bottom: 1px solid #EBEDF0"><div style="display: flex; align-items: center; gap: 10px"><div style="flex: 1 1 auto; height: 6px; background: #EEF0F3"><div style="height: 6px; width: 9.7%; background: {{primary}}"></div></div><span style="flex: 0 0 48px; text-align: right; color: #555555">3.6%</span></div></td></tr>
+            <tr><td style="padding: 8px; border-bottom: 1px solid #EBEDF0; text-align: center">기타</td><td style="padding: 8px; border-bottom: 1px solid #EBEDF0; text-align: center">13</td><td style="padding: 8px 12px; border-bottom: 1px solid #EBEDF0"><div style="display: flex; align-items: center; gap: 10px"><div style="flex: 1 1 auto; height: 6px; background: #EEF0F3"><div style="height: 6px; width: 12.6%; background: #B8BDC6"></div></div><span style="flex: 0 0 48px; text-align: right; color: #555555">4.6%</span></div></td></tr>
+          </tbody>
+          <tfoot>
+            <tr>
+              <th scope="row" style="padding: 8px; background: #F7F8FA; font-weight: 500">합계</th>
+              <td style="padding: 8px; background: #F7F8FA; text-align: center; font-weight: 700">281</td>
+              <td style="padding: 8px 12px; background: #F7F8FA; text-align: right; color: #555555">100%</td>
+            </tr>
+          </tfoot>
+        </table>
+      </div>
+    </section>
+
+    <div style="flex: 2 1 320px; min-width: 0; display: flex; flex-direction: column; gap: 16px">
+      <section aria-labelledby="campus-h" style="background: #FFFFFF; border: 1px solid #D9DCE1; border-radius: 4px">
+        <div style="padding: 11px 16px; border-bottom: 1px solid #E5E7EB">
+          <h2 id="campus-h" style="margin: 0; font-size: 14px; font-weight: 700">캠퍼스별 재학생</h2>
+        </div>
+        <div style="padding: 12px 16px 14px">
+          <table style="width: 100%; border-collapse: collapse; text-align: center">
+            <thead>
+              <tr>
+                <th scope="col" style="padding: 8px; background: #F7F8FA; border-top: 1px solid #3A3F47; border-bottom: 1px solid #D9DCE1; font-weight: 500">캠퍼스</th>
+                <th scope="col" style="padding: 8px; background: #F7F8FA; border-top: 1px solid #3A3F47; border-bottom: 1px solid #D9DCE1; font-weight: 500">재학(명)</th>
+                <th scope="col" style="padding: 8px; background: #F7F8FA; border-top: 1px solid #3A3F47; border-bottom: 1px solid #D9DCE1; font-weight: 500">비율</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr><td style="padding: 8px; border-bottom: 1px solid #EBEDF0">Premium</td><td style="padding: 8px; border-bottom: 1px solid #EBEDF0; font-weight: 700">145</td><td style="padding: 8px; border-bottom: 1px solid #EBEDF0; color: #555555">51.6%</td></tr>
+              <tr><td style="padding: 8px; border-bottom: 1px solid #EBEDF0">Challenger</td><td style="padding: 8px; border-bottom: 1px solid #EBEDF0; font-weight: 700">136</td><td style="padding: 8px; border-bottom: 1px solid #EBEDF0; color: #555555">48.4%</td></tr>
+              <tr><td style="padding: 8px; border-bottom: 1px solid #EBEDF0">MCO</td><td style="padding: 8px; border-bottom: 1px solid #EBEDF0">0</td><td style="padding: 8px; border-bottom: 1px solid #EBEDF0; color: #555555">-</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <section aria-labelledby="sync-h" style="background: #FFFFFF; border: 1px solid #D9DCE1; border-radius: 4px">
+        <div style="display: flex; align-items: center; justify-content: space-between; padding: 11px 16px; border-bottom: 1px solid #E5E7EB">
+          <h2 id="sync-h" style="margin: 0; font-size: 14px; font-weight: 700">데이터 갱신 현황</h2>
+          <a href="#" style="font-size: 12px; color: #666666; text-decoration: none">갱신 이력</a>
+        </div>
+        <div style="padding: 12px 16px 14px">
+          <table style="width: 100%; border-collapse: collapse; text-align: center">
+            <thead>
+              <tr>
+                <th scope="col" style="padding: 8px; background: #F7F8FA; border-top: 1px solid #3A3F47; border-bottom: 1px solid #D9DCE1; font-weight: 500">구분</th>
+                <th scope="col" style="padding: 8px; background: #F7F8FA; border-top: 1px solid #3A3F47; border-bottom: 1px solid #D9DCE1; font-weight: 500">건수</th>
+                <th scope="col" style="padding: 8px; background: #F7F8FA; border-top: 1px solid #3A3F47; border-bottom: 1px solid #D9DCE1; font-weight: 500">최종 갱신</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr><td style="padding: 7px 8px; border-bottom: 1px solid #EBEDF0">학생</td><td style="padding: 7px 8px; border-bottom: 1px solid #EBEDF0">5,537</td><td style="padding: 7px 8px; border-bottom: 1px solid #EBEDF0; color: #555555">11-07 10:19</td></tr>
+              <tr><td style="padding: 7px 8px; border-bottom: 1px solid #EBEDF0">연수</td><td style="padding: 7px 8px; border-bottom: 1px solid #EBEDF0">5,534</td><td style="padding: 7px 8px; border-bottom: 1px solid #EBEDF0; color: #555555">11-07 10:19</td></tr>
+              <tr><td style="padding: 7px 8px; border-bottom: 1px solid #EBEDF0">인보이스</td><td style="padding: 7px 8px; border-bottom: 1px solid #EBEDF0">5,524</td><td style="padding: 7px 8px; border-bottom: 1px solid #EBEDF0; color: #555555">11-07 10:19</td></tr>
+              <tr><td style="padding: 7px 8px; border-bottom: 1px solid #EBEDF0">기숙사 배정</td><td style="padding: 7px 8px; border-bottom: 1px solid #EBEDF0">4,906</td><td style="padding: 7px 8px; border-bottom: 1px solid #EBEDF0; color: #555555">11-07 10:19</td></tr>
+              <tr><td style="padding: 7px 8px; border-bottom: 1px solid #EBEDF0">에이전시</td><td style="padding: 7px 8px; border-bottom: 1px solid #EBEDF0">651</td><td style="padding: 7px 8px; border-bottom: 1px solid #EBEDF0; color: #555555">11-07 10:19</td></tr>
+              <tr><td style="padding: 7px 8px; border-bottom: 1px solid #EBEDF0">담당자 계정</td><td style="padding: 7px 8px; border-bottom: 1px solid #EBEDF0">640</td><td style="padding: 7px 8px; border-bottom: 1px solid #EBEDF0; color: #555555">11-07 10:19</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+    </div>
+  </div>
+</main>
+</div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"primary":{"editor":"color","default":"#24427A","options":["#24427A","#1F5C4A","#5A3E85","#333A45"]},"$preview":{"width":1440,"height":1000}}'>
+class Component extends DCLogic {
+  renderVals() {
+    return { primary: this.props.primary ?? '#24427A' };
+  }
+}
+</script>
+</body>
+</html>

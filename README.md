@@ -21,6 +21,23 @@ portal/
    └─ tables/             테이블별 파일 (엑셀은 .csv, 프로그램은 .ndjson)
 ```
 
+## 관리자 화면 실행 (로컬)
+
+`apps/admin`은 React + Vite 관리자 화면이다. 개발 서버가 `data/tables/*.ndjson`을 읽어 `/api/*`로 제공하며, 서버는 이 PC(127.0.0.1)에서만 열린다.
+
+```powershell
+npm install
+npm run admin
+```
+
+브라우저에서 http://127.0.0.1:5173 을 연다. 화면: 대시보드, 재학생·입학 예정·졸업생 목록, 학생 상세, 기숙사 배정 현황.
+
+`data/tables`가 없으면 가짜 샘플 데이터(`data-sample/tables`)로 실행되고 오른쪽 위에 '샘플 데이터'가 표시된다. 인수인계 문서는 [HANDOFF.md](HANDOFF.md), 압축 파일은 `scripts/make-handoff.ps1`로 만든다.
+
+- 데이터 소스는 `apps/admin/server/localData.ts` 한 곳이다. Supabase로 옮길 때 이 파일만 바꾼다.
+- 기준일은 추출 시각(`data/tables/meta.json`)이다. 다시 추출하고 분리하면 서버를 재시작해 반영한다.
+- 추출본에 없는 항목: 방·침대 번호, 인보이스 총액. 추가 추출 후 화면에 붙인다.
+
 ## 데이터 다시 추출하기
 
 1. Edge/Chrome에서 업체 포털 관리자 화면에 로그인한다.

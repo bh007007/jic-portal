@@ -1,0 +1,13 @@
+{
+  "source": "sample",
+  "note": "개발용 가짜 데이터 (scripts/make-sample-data.mjs)",
+  "extracted_at": "2026-11-07T02:19:28.663Z",
+  "counts": {
+    "students": 224,
+    "enrollments": 239,
+    "invoices": 239,
+    "dorm_assignments": 215,
+    "agencies": 20,
+    "agents": 29
+  }
+}

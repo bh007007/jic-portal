@@ -1,0 +1,49 @@
+import type { ReactNode } from 'react';
+
+export function PageTitle({ title, path }: { title: string; path: string }) {
+  return (
+    <div className="page-title">
+      <h1>{title}</h1>
+      <span>{path}</span>
+    </div>
+  );
+}
+
+export function Panel({ title, extra, children, className }: { title: ReactNode; extra?: ReactNode; children: ReactNode; className?: string }) {
+  return (
+    <section className={'panel ' + (className ?? '')}>
+      <div className="panel-head">
+        <h2>{title}</h2>
+        {extra}
+      </div>
+      <div className="panel-body">{children}</div>
+    </section>
+  );
+}
+
+export function Loading({ error }: { error?: string | null }) {
+  return <div className="state-msg">{error ? `불러오지 못했습니다: ${error}` : '불러오는 중…'}</div>;
+}
+
+export function Pagination({ page, pages, onPage }: { page: number; pages: number; onPage: (p: number) => void }) {
+  const start = Math.max(1, Math.min(page - 2, pages - 4));
+  const nums = Array.from({ length: Math.min(5, pages) }, (_, i) => start + i);
+  return (
+    <nav className="pagination" aria-label="페이지">
+      <button type="button" aria-label="처음" disabled={page === 1} onClick={() => onPage(1)}>«</button>
+      <button type="button" aria-label="이전" disabled={page === 1} onClick={() => onPage(page - 1)}>‹</button>
+      {nums.map((n) => (
+        <button type="button" key={n} aria-current={n === page ? 'page' : undefined} className={n === page ? 'on' : ''} onClick={() => onPage(n)}>
+          {n}
+        </button>
+      ))}
+      <button type="button" aria-label="다음" disabled={page === pages} onClick={() => onPage(page + 1)}>›</button>
+      <button type="button" aria-label="마지막" disabled={page === pages} onClick={() => onPage(pages)}>»</button>
+    </nav>
+  );
+}
+
+const PAY_CLASS: Record<string, string> = { 완납: 'text-blue', 부분납: 'text-amber', 미납: 'muted' };
+export function PayText({ pay }: { pay: string }) {
+  return <span className={PAY_CLASS[pay] ?? ''}>{pay || '-'}</span>;
+}

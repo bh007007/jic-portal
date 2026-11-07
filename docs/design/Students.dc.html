@@ -1,0 +1,176 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<title>JIC 통합관리 · 재학생 현황</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700;900&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0;background:#F4F5F7}
+a{color:#24427A}a:hover{color:#16294D}
+</style>
+</helmet>
+<div style="min-height: 980px; background: #F4F5F7; font-family: 'Noto Sans KR', 'Malgun Gothic', 'Apple SD Gothic Neo', sans-serif; color: #222222; font-size: 13px">
+
+<header style="display: flex; flex-wrap: wrap; align-items: center; gap: 12px 20px; min-height: 52px; box-sizing: border-box; padding: 8px 20px; background: #FFFFFF; border-bottom: 1px solid #D9DCE1">
+  <a href="Main.dc.html" style="display: flex; align-items: baseline; gap: 8px; text-decoration: none">
+    <span style="font-size: 22px; font-weight: 900; font-style: italic; letter-spacing: -1px; color: #D52B1E">JIC</span>
+    <span style="font-size: 14px; font-weight: 700; color: #222222">통합관리</span>
+  </a>
+  <label style="display: flex; align-items: center; gap: 6px; font-size: 12px; color: #555555">캠퍼스
+    <select style="height: 30px; padding: 0 6px; border: 1px solid #C5CAD2; border-radius: 3px; background: #FFFFFF; font: inherit; font-size: 12px; color: #222222"><option>전체</option><option>Premium</option><option>Challenger</option><option>MCO</option></select>
+  </label>
+  <div style="margin-left: auto; display: flex; flex-wrap: wrap; align-items: center; gap: 14px; font-size: 12px; color: #555555">
+    <span>2026-11-07 (토)</span>
+    <span><strong style="color: #222222">레오</strong>님</span>
+    <a href="#" style="color: #555555">내 정보</a>
+    <a href="#" style="color: #555555">로그아웃</a>
+  </div>
+</header>
+
+<div style="display: flex; flex-wrap: wrap">
+<nav aria-label="메뉴" style="flex: 1 1 200px; box-sizing: border-box; background: #FFFFFF; border-right: 1px solid #D9DCE1; padding: 8px 0 24px; display: flex; flex-direction: column">
+  <a href="Main.dc.html" style="display: block; padding: 11px 20px; font-size: 13px; font-weight: 700; color: #222222; text-decoration: none">대시보드</a>
+  <span style="display: block; padding: 14px 20px 6px; font-size: 13px; font-weight: 700">학생관리</span>
+  <a href="Students.dc.html" aria-current="page" style="display: block; padding: 7px 20px 7px 30px; color: {{primary}}; background: #EEF2F8; font-weight: 700; text-decoration: none">재학생 현황</a>
+  <a href="#" style="display: block; padding: 7px 20px 7px 30px; color: #555555; text-decoration: none">입학 예정</a>
+  <a href="#" style="display: block; padding: 7px 20px 7px 30px; color: #555555; text-decoration: none">졸업생</a>
+  <a href="#" style="display: block; padding: 7px 20px 7px 30px; color: #555555; text-decoration: none">변경 요청</a>
+  <span style="display: block; padding: 14px 20px 6px; font-size: 13px; font-weight: 700">기숙사</span>
+  <a href="Dorm.dc.html" style="display: block; padding: 7px 20px 7px 30px; color: #555555; text-decoration: none">배정 현황</a>
+  <a href="#" style="display: block; padding: 7px 20px 7px 30px; color: #555555; text-decoration: none">방·침대 관리</a>
+  <span style="display: block; padding: 14px 20px 6px; font-size: 13px; font-weight: 700">회계</span>
+  <a href="#" style="display: block; padding: 7px 20px 7px 30px; color: #555555; text-decoration: none">인보이스</a>
+  <a href="#" style="display: block; padding: 7px 20px 7px 30px; color: #555555; text-decoration: none">입금 매칭</a>
+  <a href="#" style="display: block; padding: 7px 20px 7px 30px; color: #555555; text-decoration: none">포인트</a>
+  <span style="display: block; padding: 14px 20px 6px; font-size: 13px; font-weight: 700">에이전시</span>
+  <a href="#" style="display: block; padding: 7px 20px 7px 30px; color: #555555; text-decoration: none">에이전시 목록</a>
+  <a href="#" style="display: block; padding: 7px 20px 7px 30px; color: #555555; text-decoration: none">담당자 계정</a>
+  <span style="display: block; padding: 14px 20px 6px; font-size: 13px; font-weight: 700">기초관리</span>
+  <a href="#" style="display: block; padding: 7px 20px 7px 30px; color: #555555; text-decoration: none">코스·기숙사</a>
+  <a href="#" style="display: block; padding: 7px 20px 7px 30px; color: #555555; text-decoration: none">캠퍼스·배치</a>
+  <a href="#" style="display: block; padding: 7px 20px 7px 30px; color: #555555; text-decoration: none">사용자·권한</a>
+</nav>
+
+<main style="flex: 999 1 560px; min-width: 0; box-sizing: border-box; padding: 18px 24px 40px; display: flex; flex-direction: column; gap: 14px">
+  <div style="display: flex; flex-wrap: wrap; align-items: baseline; justify-content: space-between; gap: 8px; padding-bottom: 10px; border-bottom: 1px solid #D9DCE1">
+    <h1 style="margin: 0; font-size: 18px; font-weight: 700">재학생 현황</h1>
+    <span style="font-size: 12px; color: #666666">홈 &gt; 학생관리 &gt; 재학생 현황</span>
+  </div>
+
+  <div role="tablist" aria-label="학생 구분" style="display: flex; flex-wrap: wrap">
+    <button type="button" role="tab" aria-selected="true" style="height: 38px; padding: 0 18px; border: 1px solid #3A3F47; border-bottom-color: #FFFFFF; background: #FFFFFF; font: inherit; font-size: 13px; font-weight: 700; color: #222222">재학생 (281)</button>
+    <button type="button" role="tab" aria-selected="false" style="height: 38px; padding: 0 18px; border: 1px solid #D9DCE1; border-left: 0; border-bottom-color: #3A3F47; background: #F7F8FA; font: inherit; font-size: 13px; color: #555555">입학 예정 (159)</button>
+    <button type="button" role="tab" aria-selected="false" style="height: 38px; padding: 0 18px; border: 1px solid #D9DCE1; border-left: 0; border-bottom-color: #3A3F47; background: #F7F8FA; font: inherit; font-size: 13px; color: #555555">졸업생 (5,001)</button>
+    <button type="button" role="tab" aria-selected="false" style="height: 38px; padding: 0 18px; border: 1px solid #D9DCE1; border-left: 0; border-bottom-color: #3A3F47; background: #F7F8FA; font: inherit; font-size: 13px; color: #555555">전체 연수 (5,534)</button>
+    <div style="flex: 1 1 auto; border-bottom: 1px solid #3A3F47"></div>
+  </div>
+
+  <section aria-label="검색 조건" style="background: #F7F8FA; border: 1px solid #D9DCE1; border-radius: 4px; padding: 14px 16px; display: flex; flex-direction: column; gap: 12px">
+    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 10px 24px">
+      <label style="display: flex; align-items: center; gap: 10px">
+        <span style="flex: 0 0 64px; font-size: 12px; font-weight: 500; color: #333333">캠퍼스</span>
+        <select style="flex: 1 1 auto; height: 32px; padding: 0 8px; border: 1px solid #C5CAD2; border-radius: 3px; background: #FFFFFF; font: inherit; font-size: 13px; color: #222222"><option>전체</option><option>Premium</option><option>Challenger</option><option>MCO</option></select>
+      </label>
+      <label style="display: flex; align-items: center; gap: 10px">
+        <span style="flex: 0 0 64px; font-size: 12px; font-weight: 500; color: #333333">입학 배치</span>
+        <select style="flex: 1 1 auto; height: 32px; padding: 0 8px; border: 1px solid #C5CAD2; border-radius: 3px; background: #FFFFFF; font: inherit; font-size: 13px; color: #222222"><option>전체</option><option>287_B (2026-11-01)</option><option>287_A (2026-10-18)</option></select>
+      </label>
+      <label style="display: flex; align-items: center; gap: 10px">
+        <span style="flex: 0 0 64px; font-size: 12px; font-weight: 500; color: #333333">국적</span>
+        <select style="flex: 1 1 auto; height: 32px; padding: 0 8px; border: 1px solid #C5CAD2; border-radius: 3px; background: #FFFFFF; font: inherit; font-size: 13px; color: #222222"><option>전체</option><option>일본</option><option>대만</option><option>한국</option><option>중국</option></select>
+      </label>
+      <label style="display: flex; align-items: center; gap: 10px">
+        <span style="flex: 0 0 64px; font-size: 12px; font-weight: 500; color: #333333">기숙사</span>
+        <select style="flex: 1 1 auto; height: 32px; padding: 0 8px; border: 1px solid #C5CAD2; border-radius: 3px; background: #FFFFFF; font: inherit; font-size: 13px; color: #222222"><option>전체</option><option>R2 Studio (C)</option><option>R4 Studio (C)</option><option>R4 (Bal) (P)</option></select>
+      </label>
+      <div role="radiogroup" aria-label="납부 상태" style="display: flex; align-items: center; gap: 10px">
+        <span style="flex: 0 0 64px; font-size: 12px; font-weight: 500; color: #333333">납부 상태</span>
+        <label style="display: inline-flex; align-items: center; gap: 4px"><input type="radio" name="pay" defaultChecked="{{ true }}">전체</label>
+        <label style="display: inline-flex; align-items: center; gap: 4px"><input type="radio" name="pay">미납</label>
+        <label style="display: inline-flex; align-items: center; gap: 4px"><input type="radio" name="pay">부분납</label>
+        <label style="display: inline-flex; align-items: center; gap: 4px"><input type="radio" name="pay">완납</label>
+      </div>
+      <div style="display: flex; align-items: center; gap: 10px">
+        <span style="flex: 0 0 64px; font-size: 12px; font-weight: 500; color: #333333">검색어</span>
+        <select aria-label="검색 항목" style="flex: 0 0 96px; height: 32px; padding: 0 6px; border: 1px solid #C5CAD2; border-radius: 3px; background: #FFFFFF; font: inherit; font-size: 13px; color: #222222"><option>이름</option><option>학생번호</option><option>에이전시</option><option>메모</option></select>
+        <input type="text" aria-label="검색어 입력" style="flex: 1 1 auto; min-width: 0; height: 32px; box-sizing: border-box; padding: 0 8px; border: 1px solid #C5CAD2; border-radius: 3px; background: #FFFFFF; font: inherit; font-size: 13px">
+      </div>
+    </div>
+    <div style="display: flex; justify-content: center; gap: 6px">
+      <button type="button" style="height: 34px; padding: 0 18px; border: 1px solid #C5CAD2; border-radius: 3px; background: #FFFFFF; font: inherit; font-size: 13px; color: #333333">초기화</button>
+      <button type="button" style="height: 34px; padding: 0 22px; border: 0; border-radius: 3px; background: {{primary}}; font: inherit; font-size: 13px; font-weight: 500; color: #FFFFFF">조회</button>
+    </div>
+  </section>
+
+  <div style="display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px">
+    <span>총 <strong style="color: {{primary}}">281</strong>건</span>
+    <div style="display: flex; flex-wrap: wrap; align-items: center; gap: 6px">
+      <select aria-label="페이지당 개수" style="height: 30px; padding: 0 6px; border: 1px solid #C5CAD2; border-radius: 3px; background: #FFFFFF; font: inherit; font-size: 12px"><option>20개씩</option><option>50개씩</option><option>100개씩</option></select>
+      <button type="button" style="height: 30px; padding: 0 12px; border: 1px solid #C5CAD2; border-radius: 3px; background: #FFFFFF; font: inherit; font-size: 12px; color: #333333">엑셀 다운로드</button>
+      <button type="button" style="height: 30px; padding: 0 12px; border: 0; border-radius: 3px; background: {{primary}}; font: inherit; font-size: 12px; color: #FFFFFF">학생 등록</button>
+    </div>
+  </div>
+
+  <div style="background: #FFFFFF; border: 1px solid #D9DCE1; overflow-x: auto">
+    <table style="width: 100%; min-width: 1120px; border-collapse: collapse; text-align: center">
+      <thead>
+        <tr>
+          <th scope="col" style="width: 36px; padding: 9px 6px; background: #F7F8FA; border-top: 2px solid #3A3F47; border-bottom: 1px solid #D9DCE1"><input type="checkbox" aria-label="전체 선택"></th>
+          <th scope="col" style="width: 44px; padding: 9px 6px; background: #F7F8FA; border-top: 2px solid #3A3F47; border-bottom: 1px solid #D9DCE1; font-weight: 500">No</th>
+          <th scope="col" style="padding: 9px 6px; background: #F7F8FA; border-top: 2px solid #3A3F47; border-bottom: 1px solid #D9DCE1; font-weight: 500">학생번호</th>
+          <th scope="col" style="padding: 9px 6px; background: #F7F8FA; border-top: 2px solid #3A3F47; border-bottom: 1px solid #D9DCE1; font-weight: 500">이름</th>
+          <th scope="col" style="padding: 9px 6px; background: #F7F8FA; border-top: 2px solid #3A3F47; border-bottom: 1px solid #D9DCE1; font-weight: 500">국적</th>
+          <th scope="col" style="padding: 9px 6px; background: #F7F8FA; border-top: 2px solid #3A3F47; border-bottom: 1px solid #D9DCE1; font-weight: 500">캠퍼스</th>
+          <th scope="col" style="padding: 9px 6px; background: #F7F8FA; border-top: 2px solid #3A3F47; border-bottom: 1px solid #D9DCE1; font-weight: 500">코스</th>
+          <th scope="col" style="padding: 9px 6px; background: #F7F8FA; border-top: 2px solid #3A3F47; border-bottom: 1px solid #D9DCE1; font-weight: 500">기숙사</th>
+          <th scope="col" style="padding: 9px 6px; background: #F7F8FA; border-top: 2px solid #3A3F47; border-bottom: 1px solid #D9DCE1; font-weight: 500">입학일</th>
+          <th scope="col" style="padding: 9px 6px; background: #F7F8FA; border-top: 2px solid #3A3F47; border-bottom: 1px solid #D9DCE1; font-weight: 500">졸업일</th>
+          <th scope="col" style="padding: 9px 6px; background: #F7F8FA; border-top: 2px solid #3A3F47; border-bottom: 1px solid #D9DCE1; font-weight: 500">주</th>
+          <th scope="col" style="padding: 9px 6px; background: #F7F8FA; border-top: 2px solid #3A3F47; border-bottom: 1px solid #D9DCE1; font-weight: 500">에이전시</th>
+          <th scope="col" style="padding: 9px 6px; background: #F7F8FA; border-top: 2px solid #3A3F47; border-bottom: 1px solid #D9DCE1; font-weight: 500">납부</th>
+          <th scope="col" style="padding: 9px 6px; background: #F7F8FA; border-top: 2px solid #3A3F47; border-bottom: 1px solid #D9DCE1; font-weight: 500">비고</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr><td style="padding: 9px 6px; border-bottom: 1px solid #EBEDF0"><input type="checkbox" aria-label="선택"></td><td style="padding: 9px 6px; border-bottom: 1px solid #EBEDF0; color: #666666">281</td><td style="padding: 9px 6px; border-bottom: 1px solid #EBEDF0">24811</td><td style="padding: 9px 6px; border-bottom: 1px solid #EBEDF0; text-align: left"><a href="StudentFile.dc.html" style="color: {{primary}}; text-decoration: none; font-weight: 500">SATO HARUKA</a></td><td style="padding: 9px 6px; border-bottom: 1px solid #EBEDF0">일본</td><td style="padding: 9px 6px; border-bottom: 1px solid #EBEDF0">Premium</td><td style="padding: 9px 6px; border-bottom: 1px solid #EBEDF0; text-align: left">Speaking Starter</td><td style="padding: 9px 6px; border-bottom: 1px solid #EBEDF0; text-align: left">R4 (Bal) (P)</td><td style="padding: 9px 6px; border-bottom: 1px solid #EBEDF0">2026-09-20</td><td style="padding: 9px 6px; border-bottom: 1px solid #EBEDF0">2026-12-11</td><td style="padding: 9px 6px; border-bottom: 1px solid #EBEDF0">12</td><td style="padding: 9px 6px; border-bottom: 1px solid #EBEDF0; text-align: left">Sakura Ryugaku 도쿄</td><td style="padding: 9px 6px; border-bottom: 1px solid #EBEDF0; color: #1D4ED8">완납</td><td style="padding: 9px 6px; border-bottom: 1px solid #EBEDF0; color: #C62828; font-size: 12px"></td></tr>
+        <tr><td style="padding: 9px 6px; border-bottom: 1px solid #EBEDF0"><input type="checkbox" aria-label="선택"></td><td style="padding: 9px 6px; border-bottom: 1px solid #EBEDF0; color: #666666">280</td><td style="padding: 9px 6px; border-bottom: 1px solid #EBEDF0">24790</td><td style="padding: 9px 6px; border-bottom: 1px solid #EBEDF0; text-align: left"><a href="StudentFile.dc.html" style="color: {{primary}}; text-decoration: none; font-weight: 500">LIN YU-TING</a></td><td style="padding: 9px 6px; border-bottom: 1px solid #EBEDF0">대만</td><td style="padding: 9px 6px; border-bottom: 1px solid #EBEDF0">Challenger</td><td style="padding: 9px 6px; border-bottom: 1px solid #EBEDF0; text-align: left">ESL-Lite</td><td style="padding: 9px 6px; border-bottom: 1px solid #EBEDF0; text-align: left">R4 Studio (C)</td><td style="padding: 9px 6px; border-bottom: 1px solid #EBEDF0">2026-09-06</td><td style="padding: 9px 6px; border-bottom: 1px solid #EBEDF0">2026-11-27</td><td style="padding: 9px 6px; border-bottom: 1px solid #EBEDF0">12</td><td style="padding: 9px 6px; border-bottom: 1px solid #EBEDF0; text-align: left">Formosa Edu 타이베이</td><td style="padding: 9px 6px; border-bottom: 1px solid #EBEDF0; color: #B45309">부분납</td><td style="padding: 9px 6px; border-bottom: 1px solid #EBEDF0; color: #C62828; font-size: 12px"></td></tr>
+        <tr><td style="padding: 9px 6px; border-bottom: 1px solid #EBEDF0"><input type="checkbox" aria-label="선택"></td><td style="padding: 9px 6px; border-bottom: 1px solid #EBEDF0; color: #666666">279</td><td style="padding: 9px 6px; border-bottom: 1px solid #EBEDF0">24802</td><td style="padding: 9px 6px; border-bottom: 1px solid #EBEDF0; text-align: left"><a href="StudentFile.dc.html" style="color: {{primary}}; text-decoration: none; font-weight: 500">KIM JIWOO</a></td><td style="padding: 9px 6px; border-bottom: 1px solid #EBEDF0">한국</td><td style="padding: 9px 6px; border-bottom: 1px solid #EBEDF0">Premium</td><td style="padding: 9px 6px; border-bottom: 1px solid #EBEDF0; text-align: left">ESL TEP 9</td><td style="padding: 9px 6px; border-bottom: 1px solid #EBEDF0; text-align: left">R2 (Bal) (P)</td><td style="padding: 9px 6px; border-bottom: 1px solid #EBEDF0">2026-09-20</td><td style="padding: 9px 6px; border-bottom: 1px solid #EBEDF0">2026-11-13</td><td style="padding: 9px 6px; border-bottom: 1px solid #EBEDF0">8</td><td style="padding: 9px 6px; border-bottom: 1px solid #EBEDF0; text-align: left">Hana유학 서울</td><td style="padding: 9px 6px; border-bottom: 1px solid #EBEDF0; color: #666666">미납</td><td style="padding: 9px 6px; border-bottom: 1px solid #EBEDF0; color: #C62828; font-size: 12px">졸업임박</td></tr>
+        <tr><td style="padding: 9px 6px; border-bottom: 1px solid #EBEDF0"><input type="checkbox" aria-label="선택"></td><td style="padding: 9px 6px; border-bottom: 1px solid #EBEDF0; color: #666666">278</td><td style="padding: 9px 6px; border-bottom: 1px solid #EBEDF0">24835</td><td style="padding: 9px 6px; border-bottom: 1px solid #EBEDF0; text-align: left"><a href="StudentFile.dc.html" style="color: {{primary}}; text-decoration: none; font-weight: 500">CHEN HAO</a></td><td style="padding: 9px 6px; border-bottom: 1px solid #EBEDF0">중국</td><td style="padding: 9px 6px; border-bottom: 1px solid #EBEDF0">Challenger</td><td style="padding: 9px 6px; border-bottom: 1px solid #EBEDF0; text-align: left">IELTS-Core</td><td style="padding: 9px 6px; border-bottom: 1px solid #EBEDF0; text-align: left">R2 Studio (C)</td><td style="padding: 9px 6px; border-bottom: 1px solid #EBEDF0">2026-10-04</td><td style="padding: 9px 6px; border-bottom: 1px solid #EBEDF0">2026-12-25</td><td style="padding: 9px 6px; border-bottom: 1px solid #EBEDF0">12</td><td style="padding: 9px 6px; border-bottom: 1px solid #EBEDF0; text-align: left">Bridge Study 상하이</td><td style="padding: 9px 6px; border-bottom: 1px solid #EBEDF0; color: #666666">미납</td><td style="padding: 9px 6px; border-bottom: 1px solid #EBEDF0; color: #C62828; font-size: 12px"></td></tr>
+        <tr><td style="padding: 9px 6px; border-bottom: 1px solid #EBEDF0"><input type="checkbox" aria-label="선택"></td><td style="padding: 9px 6px; border-bottom: 1px solid #EBEDF0; color: #666666">277</td><td style="padding: 9px 6px; border-bottom: 1px solid #EBEDF0">24840</td><td style="padding: 9px 6px; border-bottom: 1px solid #EBEDF0; text-align: left"><a href="StudentFile.dc.html" style="color: {{primary}}; text-decoration: none; font-weight: 500">TANAKA REN</a></td><td style="padding: 9px 6px; border-bottom: 1px solid #EBEDF0">일본</td><td style="padding: 9px 6px; border-bottom: 1px solid #EBEDF0">Challenger</td><td style="padding: 9px 6px; border-bottom: 1px solid #EBEDF0; text-align: left">ESL-Standard</td><td style="padding: 9px 6px; border-bottom: 1px solid #EBEDF0; text-align: left">R4 Loft (C)</td><td style="padding: 9px 6px; border-bottom: 1px solid #EBEDF0">2026-10-18</td><td style="padding: 9px 6px; border-bottom: 1px solid #EBEDF0">2026-12-11</td><td style="padding: 9px 6px; border-bottom: 1px solid #EBEDF0">8</td><td style="padding: 9px 6px; border-bottom: 1px solid #EBEDF0; text-align: left">Sakura Ryugaku 오사카</td><td style="padding: 9px 6px; border-bottom: 1px solid #EBEDF0; color: #666666">미납</td><td style="padding: 9px 6px; border-bottom: 1px solid #EBEDF0; color: #C62828; font-size: 12px"></td></tr>
+        <tr><td style="padding: 9px 6px; border-bottom: 1px solid #EBEDF0"><input type="checkbox" aria-label="선택"></td><td style="padding: 9px 6px; border-bottom: 1px solid #EBEDF0; color: #666666">276</td><td style="padding: 9px 6px; border-bottom: 1px solid #EBEDF0">24758</td><td style="padding: 9px 6px; border-bottom: 1px solid #EBEDF0; text-align: left"><a href="StudentFile.dc.html" style="color: {{primary}}; text-decoration: none; font-weight: 500">AL-HARBI FAISAL</a></td><td style="padding: 9px 6px; border-bottom: 1px solid #EBEDF0">사우디아라비아</td><td style="padding: 9px 6px; border-bottom: 1px solid #EBEDF0">Premium</td><td style="padding: 9px 6px; border-bottom: 1px solid #EBEDF0; text-align: left">ESL-Core</td><td style="padding: 9px 6px; border-bottom: 1px solid #EBEDF0; text-align: left">R2 (P)</td><td style="padding: 9px 6px; border-bottom: 1px solid #EBEDF0">2026-08-23</td><td style="padding: 9px 6px; border-bottom: 1px solid #EBEDF0">2026-11-13</td><td style="padding: 9px 6px; border-bottom: 1px solid #EBEDF0">12</td><td style="padding: 9px 6px; border-bottom: 1px solid #EBEDF0; text-align: left">Gulf Learning 리야드</td><td style="padding: 9px 6px; border-bottom: 1px solid #EBEDF0; color: #1D4ED8">완납</td><td style="padding: 9px 6px; border-bottom: 1px solid #EBEDF0; color: #C62828; font-size: 12px">졸업임박</td></tr>
+        <tr><td style="padding: 9px 6px; border-bottom: 1px solid #EBEDF0"><input type="checkbox" aria-label="선택"></td><td style="padding: 9px 6px; border-bottom: 1px solid #EBEDF0; color: #666666">275</td><td style="padding: 9px 6px; border-bottom: 1px solid #EBEDF0">24846</td><td style="padding: 9px 6px; border-bottom: 1px solid #EBEDF0; text-align: left"><a href="StudentFile.dc.html" style="color: {{primary}}; text-decoration: none; font-weight: 500">HUANG PEI-SHAN</a></td><td style="padding: 9px 6px; border-bottom: 1px solid #EBEDF0">대만</td><td style="padding: 9px 6px; border-bottom: 1px solid #EBEDF0">Premium</td><td style="padding: 9px 6px; border-bottom: 1px solid #EBEDF0; text-align: left">Speaking Pro</td><td style="padding: 9px 6px; border-bottom: 1px solid #EBEDF0; text-align: left">R4 (P)</td><td style="padding: 9px 6px; border-bottom: 1px solid #EBEDF0">2026-10-18</td><td style="padding: 9px 6px; border-bottom: 1px solid #EBEDF0">2026-12-11</td><td style="padding: 9px 6px; border-bottom: 1px solid #EBEDF0">8</td><td style="padding: 9px 6px; border-bottom: 1px solid #EBEDF0; text-align: left">Formosa Edu 타이중</td><td style="padding: 9px 6px; border-bottom: 1px solid #EBEDF0; color: #666666">미납</td><td style="padding: 9px 6px; border-bottom: 1px solid #EBEDF0; color: #C62828; font-size: 12px"></td></tr>
+        <tr><td style="padding: 9px 6px; border-bottom: 1px solid #EBEDF0"><input type="checkbox" aria-label="선택"></td><td style="padding: 9px 6px; border-bottom: 1px solid #EBEDF0; color: #666666">274</td><td style="padding: 9px 6px; border-bottom: 1px solid #EBEDF0">24851</td><td style="padding: 9px 6px; border-bottom: 1px solid #EBEDF0; text-align: left"><a href="StudentFile.dc.html" style="color: {{primary}}; text-decoration: none; font-weight: 500">PARK SEOYEON</a></td><td style="padding: 9px 6px; border-bottom: 1px solid #EBEDF0">한국</td><td style="padding: 9px 6px; border-bottom: 1px solid #EBEDF0">Challenger</td><td style="padding: 9px 6px; border-bottom: 1px solid #EBEDF0; text-align: left">ESL-Lite</td><td style="padding: 9px 6px; border-bottom: 1px solid #EBEDF0; text-align: left">Stay Out (C)</td><td style="padding: 9px 6px; border-bottom: 1px solid #EBEDF0">2026-11-01</td><td style="padding: 9px 6px; border-bottom: 1px solid #EBEDF0">2026-11-27</td><td style="padding: 9px 6px; border-bottom: 1px solid #EBEDF0">4</td><td style="padding: 9px 6px; border-bottom: 1px solid #EBEDF0; text-align: left">Hana유학 부산</td><td style="padding: 9px 6px; border-bottom: 1px solid #EBEDF0; color: #666666">미납</td><td style="padding: 9px 6px; border-bottom: 1px solid #EBEDF0; color: #C62828; font-size: 12px"></td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <nav aria-label="페이지" style="display: flex; justify-content: center; gap: 2px">
+    <a href="#" aria-label="처음" style="width: 30px; height: 30px; line-height: 28px; box-sizing: border-box; text-align: center; border: 1px solid #D9DCE1; background: #FFFFFF; color: #666666; text-decoration: none">«</a>
+    <a href="#" aria-label="이전" style="width: 30px; height: 30px; line-height: 28px; box-sizing: border-box; text-align: center; border: 1px solid #D9DCE1; background: #FFFFFF; color: #666666; text-decoration: none">‹</a>
+    <a href="#" aria-current="page" style="width: 30px; height: 30px; line-height: 30px; text-align: center; background: {{primary}}; color: #FFFFFF; font-weight: 700; text-decoration: none">1</a>
+    <a href="#" style="width: 30px; height: 30px; line-height: 28px; box-sizing: border-box; text-align: center; border: 1px solid #D9DCE1; background: #FFFFFF; color: #333333; text-decoration: none">2</a>
+    <a href="#" style="width: 30px; height: 30px; line-height: 28px; box-sizing: border-box; text-align: center; border: 1px solid #D9DCE1; background: #FFFFFF; color: #333333; text-decoration: none">3</a>
+    <a href="#" style="width: 30px; height: 30px; line-height: 28px; box-sizing: border-box; text-align: center; border: 1px solid #D9DCE1; background: #FFFFFF; color: #333333; text-decoration: none">4</a>
+    <a href="#" style="width: 30px; height: 30px; line-height: 28px; box-sizing: border-box; text-align: center; border: 1px solid #D9DCE1; background: #FFFFFF; color: #333333; text-decoration: none">5</a>
+    <a href="#" aria-label="다음" style="width: 30px; height: 30px; line-height: 28px; box-sizing: border-box; text-align: center; border: 1px solid #D9DCE1; background: #FFFFFF; color: #666666; text-decoration: none">›</a>
+    <a href="#" aria-label="마지막" style="width: 30px; height: 30px; line-height: 28px; box-sizing: border-box; text-align: center; border: 1px solid #D9DCE1; background: #FFFFFF; color: #666666; text-decoration: none">»</a>
+  </nav>
+</main>
+</div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"primary":{"editor":"color","default":"#24427A","options":["#24427A","#1F5C4A","#5A3E85","#333A45"]},"$preview":{"width":1440,"height":980}}'>
+class Component extends DCLogic {
+  renderVals() {
+    return { primary: this.props.primary ?? '#24427A' };
+  }
+}
+</script>
+</body>
+</html>
