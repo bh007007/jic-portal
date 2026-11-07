@@ -1,0 +1,12 @@
+{
+  "name": "jic-portal",
+  "private": true,
+  "workspaces": [
+    "apps/*"
+  ],
+  "scripts": {
+    "admin": "npm --workspace apps/admin run dev",
+    "admin:build": "npm --workspace apps/admin run build",
+    "typecheck": "npm --workspace apps/admin run typecheck"
+  }
+}
