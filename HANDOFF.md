@@ -62,7 +62,7 @@ jic-portal/
 | 화면 디자인 9개 | 완료 (`docs/design/`) |
 | 관리자 앱: 대시보드, 재학생·입학 예정·졸업생 목록, 학생 상세, 기숙사 타입별 현황 | 동작 (로컬 데이터) |
 | 학생 앱, 파트너 포털, 인트라넷 | 디자인만 |
-| Supabase 테이블(`legacy_*` 원본 jsonb)·직원 로그인·Cloudflare Pages 배포 | 코드 준비. 계정 연결 순서는 `docs/setup-cloud.md` (Supabase에는 샘플만) |
+| Supabase 테이블(`legacy_*` 원본 jsonb)·직원 로그인·Cloudflare Pages 배포 | 동작 중 (11/7): https://jic-portal-916.pages.dev , Supabase `jic-portal`(Singapore). 샘플 데이터만. 계정은 레오에게 요청. 설정 순서 `docs/setup-cloud.md` |
 
 ## 5. 실제 데이터로 실행하기 (권한 있는 사람만)
 
