@@ -1,0 +1,41 @@
+# JIC 포털
+
+업체 포털(jicportal.com)을 대체할 JIC 자체 통합 시스템이다. 학생 포털, 파트너 포털, 인트라넷, LMS가 하나의 공용 DB를 쓴다.
+
+- 기획안: [docs/plan.md](docs/plan.md) (원본은 [Claude 문서](https://claude.ai/artifact/9JTCwocjZJFqPjdDjvZEg2))
+- 기존 업체 포털 구조와 조회 API: [docs/legacy-portal.md](docs/legacy-portal.md)
+- 추출 데이터의 열 목록: [docs/data-dictionary.md](docs/data-dictionary.md)
+
+## 지금 단계
+
+데이터는 하드디스크에만 두고 쓴다. 클라우드(Supabase)에는 보안 점검을 마친 뒤 올린다. 이 저장소(GitHub)에는 코드와 문서만 올라간다.
+
+```
+portal/
+├─ docs/                  기획안, 업체 포털 분석, 데이터 사전
+├─ scripts/
+│  ├─ extract/portal-extract.js   업체 포털에서 데이터 추출 (브라우저 콘솔)
+│  └─ split-export.ps1            추출 파일 → 테이블별 NDJSON·CSV
+└─ data/                  ← Git 제외. 실제 개인정보
+   ├─ raw/                추출 원본 (.json.gz)
+   └─ tables/             테이블별 파일 (엑셀은 .csv, 프로그램은 .ndjson)
+```
+
+## 데이터 다시 추출하기
+
+1. Edge/Chrome에서 업체 포털 관리자 화면에 로그인한다.
+2. F12 → Console에 [scripts/extract/portal-extract.js](scripts/extract/portal-extract.js)를 붙여 넣고 실행한다(약 15~20분).
+3. 다운로드된 `jic_portal_export_YYYY-MM-DD.json.gz`를 `data/raw/`로 옮긴다.
+4. 테이블로 나눈다.
+
+```powershell
+powershell -ExecutionPolicy Bypass -File scripts/split-export.ps1
+```
+
+`data/tables/*.csv`는 엑셀에서 바로 열린다(UTF-8 BOM). `docs/data-dictionary.md`는 열 이름과 건수만 다시 만든다.
+
+## 데이터 원칙
+
+- `data/` 폴더와 `*.json.gz`는 `.gitignore`로 막혀 있다. 개인정보를 GitHub, OneDrive, 메신저로 옮기지 않는다.
+- 비밀번호와 세션 토큰은 추출하지 않는다. 에이전트 비밀번호는 새 포털에서 재등록한다.
+- 업체 포털에서는 읽기 전용 조회 API만 쓴다.

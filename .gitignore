@@ -1,0 +1,14 @@
+# 실제 학생·에이전트 개인정보가 들어 있는 추출 데이터. GitHub에 절대 올리지 않는다.
+/data/
+*.json.gz
+
+# 비밀 키
+.env
+.env.*
+!.env.example
+
+# 빌드·의존성
+node_modules/
+dist/
+.wrangler/
+.supabase/
