@@ -10,6 +10,7 @@ const MENU: { group?: string; items: { to: string; label: string }[] }[] = [
     items: [
       { to: '/students?tab=current', label: '재학생 현황' },
       { to: '/students?tab=upcoming', label: '입학 예정' },
+      { to: '/arrivals', label: '입학 배치별 명단' },
       { to: '/students?tab=graduated', label: '졸업생' },
       { to: '/requests', label: '변경 요청' },
     ],

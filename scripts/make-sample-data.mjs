@@ -160,6 +160,72 @@ for (const s of students.slice(0, 15)) {
   if (next) addEnrollment({ st: s, nat }, next);
 }
 
+// ── 보조 필드: 에이전시·담당자 계정 정보, 연수의 에이전시·담당자 연결, 입학 예정자 항공편.
+// 위의 무작위 순서를 건드리지 않도록 별도 시드를 쓴다(학생·연수 구성은 이전과 같다).
+let seed2 = 7;
+const rand2 = () => ((seed2 = (seed2 * 1103515245 + 12345) % 2147483648) / 2147483648);
+const pick2 = (arr) => arr[Math.floor(rand2() * arr.length)];
+const two = (n) => String(n).padStart(2, '0');
+const COUNTRY_EN = { 일본: 'Japan', 대만: 'Taiwan', 한국: 'Korea', 중국: 'China', 베트남: 'Vietnam', 사우디아라비아: 'Saudi Arabia', 예멘: 'Other' };
+const LANG = { 일본: '일어', 대만: '대만어', 한국: '한국어', 중국: '중국어', 베트남: '베트남어', 사우디아라비아: '영어', 예멘: '영어' };
+
+// 학생을 보낸 적 없는 에이전시 2곳(실적 없음 필터용)
+for (const [nation, city] of [['일본', '나고야'], ['한국', '대구']]) {
+  agId++;
+  agencies.push({ ag_id: String(agId), ag_name: `샘플유학 ${city}`, ag_name_en: `Sample Agency ${agId}`, ag_state: 'APPROVE', ag_country: nation });
+  agents.push({ am_id: String(++amId), am_ag_id: String(agId), am_name: `담당자${amId}`, am_branch: city, am_use_yn: rand2() < 0.5 ? 'Y' : 'N' });
+}
+for (const a of agencies) {
+  const city = a.ag_name.split(' ').pop();
+  Object.assign(a, {
+    ag_country_cd_name: COUNTRY_EN[a.ag_country],
+    ag_demo_yn: 'N',
+    ag_ceo_name: `대표${a.ag_id.slice(-2)}`,
+    ag_tel: `000-0000-${a.ag_id}`,
+    ag_email: `agency${a.ag_id}@example.com`,
+    ag_homepage: `https://example.com/agency/${a.ag_id}`,
+    ag_addr: `${city} 샘플로 ${1 + Math.floor(rand2() * 200)}`,
+    ag_insert_dt: `20${18 + Math.floor(rand2() * 8)}-${two(1 + Math.floor(rand2() * 12))}-${two(1 + Math.floor(rand2() * 28))} 10:00:00`,
+  });
+}
+const agencyOf = new Map(agencies.map((a) => [a.ag_id, a]));
+for (const m of agents) {
+  const a = agencyOf.get(m.am_ag_id);
+  Object.assign(m, {
+    am_loginid: `sample_${m.am_id}`,
+    am_main_yn: agents.find((x) => x.am_ag_id === m.am_ag_id) === m ? 'Y' : 'N',
+    am_invoice_yn: 'Y',
+    am_lang_name: LANG[a.ag_country],
+    am_email: `agent${m.am_id}@example.com`,
+    am_cell: `000-0000-${m.am_id}`,
+  });
+}
+
+const AIRLINES = [['아시아나', 'OZ'], ['진에어', 'LJ'], ['Cebu Pacific', '5J'], ['Philippine Airlines', 'PR'], ['EVA AIR', 'BR'], ['Japan Airlines', 'JL']];
+const TERMINAL = { CLARK: 'Bay 3', MANILA: 'Terminal 3 - Bay 7' };
+const agencyByName = new Map(agencies.map((a) => [a.ag_name, a]));
+for (const e of enrollments) {
+  const a = agencyByName.get(e.ag_name);
+  const m = agents.find((x) => x.am_ag_id === a.ag_id);
+  Object.assign(e, { ag_id: a.ag_id, am_ag_id: a.ag_id, tr_am_id: m.am_id, am_name: m.am_name });
+  const place = pick2(['CLARK', 'MANILA']);
+  if (e.tr_start_date <= '2026-11-07') {
+    e.tr_pick_place = place;
+    continue;
+  }
+  e.tr_pick_place = e.tr_pick_type === 'BESA' || e.tr_pick_type === 'INDIVIDUAL' ? place : '';
+  if (e.tr_pick_type !== 'BESA' || rand2() < 0.2) continue; // BESA 중 일부는 항공편 미입력
+  const [airline, code] = pick2(AIRLINES);
+  const arriveDay = rand2() < 0.7 ? e.tr_start_date : day(e.tr_start_date, -1);
+  Object.assign(e, {
+    tr_pick_flight: airline,
+    tr_pick_flight_num: `${code}${100 + Math.floor(rand2() * 800)}`,
+    tr_pick_flight_arrival: `${arriveDay} ${two(Math.floor(rand2() * 24))}:${two(Math.floor(rand2() * 12) * 5)}:00`,
+    tr_pick_terminal: TERMINAL[place],
+    tr_pick_remark: rand2() < 0.25 ? '샘플: 도착 후 연락 요망' : '',
+  });
+}
+
 const write = (name, rows) => fs.writeFileSync(path.join(outDir, name + '.ndjson'), rows.map((r) => JSON.stringify(r)).join('\n') + '\n');
 write('students', students);
 write('enrollments', enrollments);

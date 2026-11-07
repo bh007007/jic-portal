@@ -34,6 +34,7 @@ const campusName = (code?: unknown) => {
 };
 
 const yes = (v: unknown) => String(v ?? '').toUpperCase() === 'Y';
+const str = (v: unknown) => (v == null ? '' : String(v).trim());
 const num = (v: unknown) => {
   const n = Number(String(v ?? '').replace(/,/g, ''));
   return Number.isFinite(n) ? n : 0;
@@ -47,6 +48,19 @@ function countBy<T>(items: T[], key: (t: T) => string) {
   }
   return [...m.entries()].map(([name, count]) => ({ name, count })).sort((a, b) => b.count - a.count);
 }
+
+/** 목록 페이지 나누기. all=1 이면 전체(엑셀 다운로드용). */
+function paginate<T>(list: T[], q: URLSearchParams) {
+  if (q.get('all') === '1') return { total: list.length, page: 1, pages: 1, size: list.length, rows: list };
+  const size = Math.min(100, Math.max(10, Number(q.get('size')) || 20));
+  const pages = Math.max(1, Math.ceil(list.length / size));
+  const page = Math.min(pages, Math.max(1, Number(q.get('page')) || 1));
+  return { total: list.length, page, pages, size, rows: list.slice((page - 1) * size, page * size) };
+}
+
+// 학생 상세 화면(StudentDetail.tsx)과 같은 이름을 쓴다.
+const PICK_TYPES: Record<string, string> = { BESA: 'BESA 그룹', INDIVIDUAL: '개별 픽업', NO_PICKUP: '개인 이동' };
+const pickLabel = (v: unknown) => PICK_TYPES[str(v).toUpperCase()] ?? (str(v) || '미입력');
 
 function maskEmail(v: unknown) {
   const s = String(v ?? '').trim();
@@ -209,11 +223,7 @@ export function createDb(input: DataInput) {
       all: (a, b) => b.start.localeCompare(a.start),
     };
     list = [...list].sort(sorters[tab] ?? sorters.all);
-
-    const size = Math.min(100, Math.max(10, Number(q.get('size')) || 20));
-    const pages = Math.max(1, Math.ceil(list.length / size));
-    const page = Math.min(pages, Math.max(1, Number(q.get('page')) || 1));
-    return { refDate, tab, tabCounts, total: list.length, page, pages, size, facets, rows: list.slice((page - 1) * size, page * size) };
+    return { refDate, tab, tabCounts, facets, ...paginate(list, q) };
   }
 
   function studentDetail(stId: string) {
@@ -296,6 +306,166 @@ export function createDb(input: DataInput) {
     return { refDate, until: soonUntil, campus, campuses, totals: { staying: staying.length, arriving: arriving.length, leaving: leaving.length }, types, arriving, leaving };
   }
 
+  // ── 에이전시·담당자: 연수의 ag_id(에이전시)와 tr_am_id(담당자)로 묶는다. 계좌 정보는 내보내지 않는다.
+  const agencyById = new Map(agencies.map((a) => [str(a.ag_id), a]));
+  const agentsByAgency = new Map<string, Raw[]>();
+  for (const m of agents) {
+    const k = str(m.am_ag_id);
+    if (!agentsByAgency.has(k)) agentsByAgency.set(k, []);
+    agentsByAgency.get(k)!.push(m);
+  }
+  type Stats = { current: number; upcoming: number; total: number; lastStart: string };
+  const agencyStats = new Map<string, Stats>();
+  const agentStats = new Map<string, Stats>();
+  const agencyIdOf = (e: Raw) => str(e.ag_id ?? e.am_ag_id);
+  const bump = (m: Map<string, Stats>, key: string, row: Row) => {
+    if (!key || row.status === 'cancelled') return;
+    const s = m.get(key) ?? { current: 0, upcoming: 0, total: 0, lastStart: '' };
+    s.total++;
+    if (row.status === 'current') s.current++;
+    if (row.status === 'upcoming') s.upcoming++;
+    if (row.start <= refDate && row.start > s.lastStart) s.lastStart = row.start;
+    m.set(key, s);
+  };
+  for (const x of all) {
+    bump(agencyStats, agencyIdOf(x.raw), x.row);
+    bump(agentStats, str(x.raw.tr_am_id), x.row);
+  }
+  const noStats: Stats = { current: 0, upcoming: 0, total: 0, lastStart: '' };
+  const countryOf = (a: Raw) => str(a.ag_country_cd_name) || str(a.ag_country) || '-';
+
+  const agencyRow = (a: Raw) => {
+    const agId = str(a.ag_id);
+    return {
+      agId,
+      name: str(a.ag_name),
+      nameEn: str(a.ag_name_en),
+      country: countryOf(a),
+      demo: yes(a.ag_demo_yn),
+      agents: (agentsByAgency.get(agId) ?? []).filter((m) => yes(m.am_use_yn)).length,
+      registered: str(a.ag_insert_dt).slice(0, 10),
+      ...(agencyStats.get(agId) ?? noStats),
+    };
+  };
+  type AgencyRow = ReturnType<typeof agencyRow>;
+
+  const agentRow = (m: Raw) => {
+    const ag = agencyById.get(str(m.am_ag_id));
+    return {
+      amId: str(m.am_id),
+      agId: str(m.am_ag_id),
+      agency: str(ag?.ag_name),
+      country: ag ? countryOf(ag) : '-',
+      name: str(m.am_name),
+      branch: str(m.am_branch),
+      loginId: str(m.am_loginid),
+      lang: str(m.am_lang_name),
+      main: yes(m.am_main_yn),
+      active: yes(m.am_use_yn),
+      invoice: yes(m.am_invoice_yn),
+      email: maskEmail(m.am_email),
+      ...(agentStats.get(str(m.am_id)) ?? noStats),
+    };
+  };
+  type AgentRow = ReturnType<typeof agentRow>;
+
+  function listAgencies(q: URLSearchParams) {
+    let list = agencies.map(agencyRow);
+    const facets = { countries: countBy(list, (r) => r.country).map((c) => c.name) };
+    const country = q.get('country');
+    const active = q.get('active');
+    const kw = (q.get('q') ?? '').trim().toLowerCase();
+    if (country) list = list.filter((r) => r.country === country);
+    if (active === 'current') list = list.filter((r) => r.current > 0);
+    if (active === 'upcoming') list = list.filter((r) => r.upcoming > 0);
+    if (active === 'none') list = list.filter((r) => r.total === 0);
+    if (kw) list = list.filter((r) => `${r.name} ${r.nameEn}`.toLowerCase().includes(kw));
+    list.sort((a, b) => b.current - a.current || b.upcoming - a.upcoming || b.total - a.total || a.name.localeCompare(b.name));
+    const totals = { agencies: agencies.length, withCurrent: [...agencyStats.values()].filter((s) => s.current > 0).length };
+    return { refDate, facets, totals, ...paginate<AgencyRow>(list, q) };
+  }
+
+  function agencyDetail(agId: string) {
+    const a = agencyById.get(agId);
+    if (!a) return null;
+    const ens = all.filter((x) => agencyIdOf(x.raw) === agId);
+    const live = ens.filter((x) => x.row.status !== 'cancelled');
+    const byYear = countBy(live, (x) => x.row.start.slice(0, 4) || '-').sort((p, q2) => q2.name.localeCompare(p.name));
+    return {
+      refDate,
+      agency: {
+        ...agencyRow(a),
+        ceo: str(a.ag_ceo_name),
+        tel: str(a.ag_tel),
+        email: str(a.ag_email),
+        homepage: str(a.ag_homepage),
+        address: str(a.ag_addr),
+        memo: str(a.ag_memo),
+      },
+      agents: (agentsByAgency.get(agId) ?? []).map(agentRow).sort((p, q2) => Number(q2.main) - Number(p.main) || Number(q2.active) - Number(p.active) || p.name.localeCompare(q2.name)),
+      current: live.filter((x) => x.row.status === 'current').map((x) => x.row).sort((p, q2) => p.end.localeCompare(q2.end)),
+      upcoming: live.filter((x) => x.row.status === 'upcoming').map((x) => x.row).sort((p, q2) => p.start.localeCompare(q2.start)),
+      byYear,
+    };
+  }
+
+  function listAgents(q: URLSearchParams) {
+    let list = agents.map(agentRow);
+    const facets = { countries: countBy(list, (r) => r.country).map((c) => c.name) };
+    const country = q.get('country');
+    const active = q.get('active');
+    const kw = (q.get('q') ?? '').trim().toLowerCase();
+    const field = q.get('field') ?? 'name';
+    if (country) list = list.filter((r) => r.country === country);
+    if (active === 'Y') list = list.filter((r) => r.active);
+    if (active === 'N') list = list.filter((r) => !r.active);
+    if (kw) {
+      list = list.filter((r) => (field === 'login' ? r.loginId : field === 'agency' ? r.agency : `${r.name} ${r.branch}`).toLowerCase().includes(kw));
+    }
+    list.sort((a, b) => a.agency.localeCompare(b.agency) || Number(b.main) - Number(a.main) || a.name.localeCompare(b.name));
+    return { refDate, facets, ...paginate<AgentRow>(list, q) };
+  }
+
+  // ── 입학 배치별 명단: 배치(sd_name) 하나의 학생과 픽업 정보.
+  function arrivals(q: URLSearchParams) {
+    const live = all.filter((x) => x.row.status !== 'cancelled' && x.row.batch);
+    const batchMap = new Map<string, { batch: string; date: string; count: number }>();
+    for (const x of live) {
+      const date = str(x.raw.sd_departure_date || x.raw.sd_start_date || x.row.start);
+      const b = batchMap.get(x.row.batch) ?? { batch: x.row.batch, date, count: 0 };
+      b.count++;
+      batchMap.set(x.row.batch, b);
+    }
+    const from = addDays(refDate, -56);
+    const batches = [...batchMap.values()].filter((b) => b.date >= from).sort((a, b) => a.date.localeCompare(b.date));
+    const next = batches.find((b) => b.date > refDate) ?? batches[batches.length - 1];
+    const batch = q.get('batch') || next?.batch || '';
+    const info = batchMap.get(batch);
+    const rows = live
+      .filter((x) => x.row.batch === batch)
+      .map(({ raw, row }) => ({
+        ...row,
+        pickType: pickLabel(raw.tr_pick_type),
+        place: str(raw.tr_pick_place),
+        terminal: str(raw.tr_pick_terminal),
+        airline: str(raw.tr_pick_flight),
+        flight: str(raw.tr_pick_flight_num),
+        arrival: str(raw.tr_pick_flight_arrival).slice(0, 16),
+        remark: str(raw.tr_pick_remark),
+      }))
+      .sort((a, b) => (a.arrival || '9').localeCompare(b.arrival || '9') || a.name.localeCompare(b.name));
+    return {
+      refDate,
+      batch,
+      date: info?.date ?? '',
+      batches,
+      total: rows.length,
+      byType: countBy(rows, (r) => r.pickType),
+      byPlace: countBy(rows.filter((r) => r.place), (r) => r.place),
+      rows,
+    };
+  }
+
   const source: 'sample' | 'extract' = meta.source === 'sample' ? 'sample' : 'extract';
 
   return {
@@ -306,6 +476,10 @@ export function createDb(input: DataInput) {
     listEnrollments,
     studentDetail,
     dormOverview,
+    listAgencies,
+    agencyDetail,
+    listAgents,
+    arrivals,
   };
 }
 
@@ -319,10 +493,18 @@ export function handleApi(db: Db, pathname: string, params: URLSearchParams): { 
     if (p === '/dashboard') return { status: 200, body: db.dashboard() };
     if (p === '/enrollments') return { status: 200, body: db.listEnrollments(params) };
     if (p === '/dorm') return { status: 200, body: db.dormOverview(params) };
+    if (p === '/agencies') return { status: 200, body: db.listAgencies(params) };
+    if (p === '/agents') return { status: 200, body: db.listAgents(params) };
+    if (p === '/arrivals') return { status: 200, body: db.arrivals(params) };
     const m = p.match(/^\/students\/(\w+)$/);
     if (m) {
       const d = db.studentDetail(m[1]);
       return d ? { status: 200, body: d } : { status: 404, body: { error: '학생을 찾을 수 없습니다.' } };
+    }
+    const ag = p.match(/^\/agencies\/(\w+)$/);
+    if (ag) {
+      const d = db.agencyDetail(ag[1]);
+      return d ? { status: 200, body: d } : { status: 404, body: { error: '에이전시를 찾을 수 없습니다.' } };
     }
     return { status: 404, body: { error: 'not found' } };
   } catch (e) {

@@ -103,6 +103,87 @@ export interface DormOverview {
   leaving: DormStay[];
 }
 
+export interface Paged<T> {
+  refDate: string;
+  total: number;
+  page: number;
+  pages: number;
+  size: number;
+  rows: T[];
+}
+
+export interface AgencyRow {
+  agId: string;
+  name: string;
+  nameEn: string;
+  country: string;
+  demo: boolean;
+  agents: number;
+  registered: string;
+  current: number;
+  upcoming: number;
+  total: number;
+  lastStart: string;
+}
+
+export interface AgentRow {
+  amId: string;
+  agId: string;
+  agency: string;
+  country: string;
+  name: string;
+  branch: string;
+  loginId: string;
+  lang: string;
+  main: boolean;
+  active: boolean;
+  invoice: boolean;
+  email: string;
+  current: number;
+  upcoming: number;
+  total: number;
+  lastStart: string;
+}
+
+export interface AgencyList extends Paged<AgencyRow> {
+  facets: { countries: string[] };
+  totals: { agencies: number; withCurrent: number };
+}
+
+export interface AgentList extends Paged<AgentRow> {
+  facets: { countries: string[] };
+}
+
+export interface AgencyDetail {
+  refDate: string;
+  agency: AgencyRow & { ceo: string; tel: string; email: string; homepage: string; address: string; memo: string };
+  agents: AgentRow[];
+  current: EnrollmentRow[];
+  upcoming: EnrollmentRow[];
+  byYear: NameCount[];
+}
+
+export interface ArrivalRow extends EnrollmentRow {
+  pickType: string;
+  place: string;
+  terminal: string;
+  airline: string;
+  flight: string;
+  arrival: string;
+  remark: string;
+}
+
+export interface Arrivals {
+  refDate: string;
+  batch: string;
+  date: string;
+  batches: { batch: string; date: string; count: number }[];
+  total: number;
+  byType: NameCount[];
+  byPlace: NameCount[];
+  rows: ArrivalRow[];
+}
+
 export function useApi<T>(url: string | null) {
   const [state, setState] = useState<{ data: T | null; error: string | null; loading: boolean }>({ data: null, error: null, loading: !!url });
 
