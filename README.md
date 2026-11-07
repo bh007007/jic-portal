@@ -8,11 +8,15 @@
 
 ## 지금 단계
 
-데이터는 하드디스크에만 두고 쓴다. 클라우드(Supabase)에는 보안 점검을 마친 뒤 올린다. 이 저장소(GitHub)에는 코드와 문서만 올라간다.
+실제 데이터는 하드디스크에만 두고 쓴다. 클라우드(Supabase)에는 샘플 데이터만 올리고, 실제 데이터는 보안 점검을 마친 뒤 정한다. 이 저장소(GitHub)에는 코드와 문서만 올라간다. 배포 설정은 [docs/setup-cloud.md](docs/setup-cloud.md).
 
 ```
 portal/
-├─ docs/                  기획안, 업체 포털 분석, 데이터 사전
+├─ apps/admin/            관리자 화면 (React + Vite)
+├─ functions/api/         배포용 /api 서버 (Cloudflare Pages Function → Supabase)
+├─ supabase/migrations/   Supabase 테이블·권한 SQL
+├─ .github/workflows/     빌드 확인, DB 반영
+├─ docs/                  기획안, 업체 포털 분석, 데이터 사전, 클라우드 설정
 ├─ scripts/
 │  ├─ extract/portal-extract.js   업체 포털에서 데이터 추출 (브라우저 콘솔)
 │  └─ split-export.ps1            추출 파일 → 테이블별 NDJSON·CSV
@@ -34,7 +38,8 @@ npm run admin
 
 `data/tables`가 없으면 가짜 샘플 데이터(`data-sample/tables`)로 실행되고 오른쪽 위에 '샘플 데이터'가 표시된다. 인수인계 문서는 [HANDOFF.md](HANDOFF.md), 압축 파일은 `scripts/make-handoff.ps1`로 만든다.
 
-- 데이터 소스는 `apps/admin/server/localData.ts` 한 곳이다. Supabase로 옮길 때 이 파일만 바꾼다.
+- `/api/*` 계산은 `apps/admin/server/core.ts` 한 곳이다. 로컬은 `server/localData.ts`가 파일을, 배포는 `functions/api/[[path]].ts`가 Supabase를 읽어 같은 core에 넘긴다.
+- 로컬에서는 로그인이 없다. 배포 주소(Cloudflare Pages)에서는 Supabase 직원 계정으로 로그인한다.
 - 기준일은 추출 시각(`data/tables/meta.json`)이다. 다시 추출하고 분리하면 서버를 재시작해 반영한다.
 - 추출본에 없는 항목: 방·침대 번호, 인보이스 총액. 추가 추출 후 화면에 붙인다.
 

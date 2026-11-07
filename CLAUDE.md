@@ -10,8 +10,9 @@
 
 ## 코드
 - 관리자 앱: `apps/admin` (React 18 + Vite 5 + TypeScript, npm workspaces). 실행 `npm run admin` → http://127.0.0.1:5173, 검증 `npm run admin:build`.
-- 데이터 소스는 `apps/admin/server/localData.ts` 한 곳(Vite 개발 서버 플러그인, `/api/*`). 데이터 폴더 우선순위: `JIC_DATA_DIR` → `data/tables` → `data-sample/tables`. Supabase로 옮길 때 이 파일만 바꾸고 화면은 같은 응답 형태를 쓴다.
-- 연수(enrollment, 업체 `tr_`)와 학생(`st_`)은 다르다. 한 학생에 연수가 여러 건일 수 있다. 상태 분류(재학/입학 예정/졸업/취소)는 `localData.ts`의 `statusOf`.
+- `/api/*` 계산은 `apps/admin/server/core.ts` 한 곳(파일·네트워크 의존 없음). 로컬은 `server/localData.ts`(Vite 플러그인, 데이터 폴더 우선순위 `JIC_DATA_DIR` → `data/tables` → `data-sample/tables`), 배포는 저장소 루트 `functions/api/[[path]].ts`(Cloudflare Pages Function, Supabase `legacy_*` 조회)가 같은 core를 쓴다. 화면은 두 환경에서 같은 응답을 받는다.
+- 클라우드: Cloudflare Pages(루트에서 `npm run admin:build`, 출력 `apps/admin/dist`) + Supabase(Auth, `staff_users` + RLS). 설정 순서는 `docs/setup-cloud.md`. `VITE_SUPABASE_URL`이 없으면(로컬) 로그인 없이 동작한다. DB 변경은 `supabase/migrations`에 여러 번 실행해도 되는 SQL로 추가한다.
+- 연수(enrollment, 업체 `tr_`)와 학생(`st_`)은 다르다. 한 학생에 연수가 여러 건일 수 있다. 상태 분류(재학/입학 예정/졸업/취소)는 `core.ts`의 `statusOf`.
 - 추출본에 없는 것: 방·침대 번호, 인보이스 총액(`sum_td_amount`는 총액이 아님). 화면에 추정값을 넣지 않는다.
 - 디자인 원본: `docs/design/*.dc.html` (캔버스 형식, 텍스트로 읽어 참고). 스타일: Noto Sans KR 13px, 주색 #24427A, 로고 #D52B1E, 회색 검색 박스 + 표 위 진한 선. AI 느낌의 카드·배지·설명 문구는 쓰지 않는다.
 

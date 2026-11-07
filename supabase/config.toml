@@ -1,0 +1,2 @@
+# Supabase CLI 설정 (supabase db push 가 이 폴더의 migrations 를 적용한다)
+project_id = "jic-portal"

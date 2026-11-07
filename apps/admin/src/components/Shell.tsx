@@ -1,6 +1,7 @@
 import type { ReactNode } from 'react';
 import { Link, NavLink } from 'react-router-dom';
 import { useApi } from '../api';
+import { supabase } from '../supabase';
 
 const MENU: { group?: string; items: { to: string; label: string }[] }[] = [
   { items: [{ to: '/', label: '대시보드' }] },
@@ -22,8 +23,9 @@ const MENU: { group?: string; items: { to: string; label: string }[] }[] = [
 const today = new Date();
 const todayLabel = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')} (${'일월화수목금토'[today.getDay()]})`;
 
-export default function Shell({ children }: { children: ReactNode }) {
+export default function Shell({ children, user }: { children: ReactNode; user?: string }) {
   const { data: meta } = useApi<{ source: 'sample' | 'extract' }>('/api/meta');
+  const dataLabel = meta?.source === 'sample' ? '샘플 데이터' : supabase ? '운영 데이터' : '로컬 데이터';
   return (
     <div className="app">
       <header className="topbar">
@@ -34,9 +36,14 @@ export default function Shell({ children }: { children: ReactNode }) {
         <div className="topbar-right">
           <span>{todayLabel}</span>
           <span>
-            <strong>레오</strong>님
+            <strong>{user ?? '레오'}</strong>님
           </span>
-          <span className={'data-badge' + (meta?.source === 'sample' ? ' sample' : '')}>{meta?.source === 'sample' ? '샘플 데이터' : '로컬 데이터'}</span>
+          <span className={'data-badge' + (meta?.source === 'sample' ? ' sample' : '')}>{dataLabel}</span>
+          {supabase && (
+            <button type="button" className="btn btn-xs" onClick={() => supabase?.auth.signOut()}>
+              로그아웃
+            </button>
+          )}
         </div>
       </header>
       <div className="layout">
