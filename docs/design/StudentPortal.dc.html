@@ -1,0 +1,107 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<title>JIC 학생 앱 · 홈</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700;900&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0}
+a{color:#24427A}a:hover{color:#16294D}
+</style>
+</helmet>
+<div style="width: 390px; height: 844px; box-sizing: border-box; background: #F4F5F7; font-family: 'Noto Sans KR', 'Malgun Gothic', 'Apple SD Gothic Neo', sans-serif; color: #222222; display: flex; flex-direction: column">
+
+  <header style="flex: 0 0 auto; height: 56px; box-sizing: border-box; padding: 0 16px; background: {{primary}}; display: flex; align-items: center; justify-content: space-between">
+    <span style="display: flex; align-items: baseline; gap: 6px">
+      <span style="font-size: 21px; font-weight: 900; font-style: italic; letter-spacing: -1px; color: #FFFFFF">JIC</span>
+      <span style="font-size: 13px; font-weight: 500; color: #FFFFFF">Student</span>
+    </span>
+    <button type="button" aria-label="언어 변경" style="min-width: 44px; height: 44px; border: 0; background: transparent; font: inherit; font-size: 13px; font-weight: 500; color: #FFFFFF">KOR</button>
+  </header>
+
+  <div style="flex: 1 1 auto; overflow: hidden; display: flex; flex-direction: column; gap: 10px; padding: 12px 0 12px">
+    <section aria-label="학생증" style="margin: 0 12px; background: #FFFFFF; border: 1px solid #D9DCE1; border-radius: 6px; padding: 14px; display: flex; gap: 14px">
+      <div style="flex: 0 0 64px; height: 80px; background: #EEF0F3; border: 1px solid #D9DCE1; display: flex; align-items: center; justify-content: center; font-size: 11px; color: #666666">사진</div>
+      <div style="flex: 1 1 auto; min-width: 0; display: flex; flex-direction: column; gap: 3px; font-size: 13px">
+        <span style="font-size: 16px; font-weight: 700">KIM JIWOO</span>
+        <span style="color: #555555">김지우 · 24802</span>
+        <span>ESL TEP 9 · Premium</span>
+        <span style="color: #555555">2026.09.20 ~ 2026.11.13</span>
+      </div>
+    </section>
+
+    <nav aria-label="바로가기" style="margin: 0 12px; background: #FFFFFF; border: 1px solid #D9DCE1; border-radius: 6px; display: grid; grid-template-columns: repeat(4, minmax(0, 1fr))">
+      <a href="#" style="min-height: 76px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 6px; text-decoration: none; color: #222222; font-size: 12px">
+        <svg aria-hidden="true" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="{{primary}}" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="16" rx="1.5"></rect><path d="M3 10h18M8 3v4M16 3v4"></path></svg>
+        시간표
+      </a>
+      <a href="#" style="min-height: 76px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 6px; text-decoration: none; color: #222222; font-size: 12px">
+        <svg aria-hidden="true" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="{{primary}}" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M14 3H6v18h12V7z"></path><path d="M14 3v4h4M9 13h6M9 17h4"></path></svg>
+        결석 신청
+      </a>
+      <a href="#" style="min-height: 76px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 6px; text-decoration: none; color: #222222; font-size: 12px">
+        <svg aria-hidden="true" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="{{primary}}" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M8 6h12M8 12h12M8 18h12M4 6h.01M4 12h.01M4 18h.01"></path></svg>
+        신청 내역
+      </a>
+      <a href="#" style="min-height: 76px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 6px; text-decoration: none; color: #222222; font-size: 12px">
+        <svg aria-hidden="true" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="{{primary}}" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"></circle><path d="M4 21c1-4 4-6 8-6s7 2 8 6"></path></svg>
+        내 정보
+      </a>
+    </nav>
+
+    <section aria-labelledby="req-h" style="background: #FFFFFF; border-top: 1px solid #D9DCE1; border-bottom: 1px solid #D9DCE1">
+      <div style="display: flex; align-items: center; justify-content: space-between; padding: 12px 16px 8px">
+        <h2 id="req-h" style="margin: 0; font-size: 14px; font-weight: 700">결석 신청 내역</h2>
+        <a href="#" style="display: inline-flex; align-items: center; min-height: 32px; font-size: 12px; color: #666666; text-decoration: none">전체보기 &gt;</a>
+      </div>
+      <a href="#" style="display: flex; align-items: center; justify-content: space-between; gap: 10px; min-height: 52px; padding: 0 16px; border-top: 1px solid #EBEDF0; text-decoration: none; color: #222222">
+        <span style="display: flex; flex-direction: column"><span style="font-size: 14px">11.10 (화) 병결</span><span style="font-size: 12px; color: #666666">11.09 21:40 제출</span></span>
+        <span style="font-size: 13px; font-weight: 700; color: #B45309">대기</span>
+      </a>
+      <a href="#" style="display: flex; align-items: center; justify-content: space-between; gap: 10px; min-height: 52px; padding: 0 16px; border-top: 1px solid #EBEDF0; text-decoration: none; color: #222222">
+        <span style="display: flex; flex-direction: column"><span style="font-size: 14px">10.22 (목) 공결</span><span style="font-size: 12px; color: #666666">10.21 08:15 제출</span></span>
+        <span style="font-size: 13px; font-weight: 700; color: #1D4ED8">승인</span>
+      </a>
+    </section>
+
+    <section aria-labelledby="grad-h" style="background: #FFFFFF; border-top: 1px solid #D9DCE1; border-bottom: 1px solid #D9DCE1">
+      <div style="display: flex; align-items: center; justify-content: space-between; padding: 12px 16px 8px">
+        <h2 id="grad-h" style="margin: 0; font-size: 14px; font-weight: 700">졸업 전 확인 <span style="color: #C62828">D-6</span></h2>
+      </div>
+      <a href="#" style="display: flex; align-items: center; justify-content: space-between; min-height: 46px; padding: 0 16px; border-top: 1px solid #EBEDF0; text-decoration: none; color: #222222; font-size: 14px"><span>방 정리 확인</span><span style="font-size: 12px; color: #666666">미완료 &gt;</span></a>
+      <a href="#" style="display: flex; align-items: center; justify-content: space-between; min-height: 46px; padding: 0 16px; border-top: 1px solid #EBEDF0; text-decoration: none; color: #222222; font-size: 14px"><span>포인트 잔액 환불</span><span style="font-size: 12px; color: #666666">미완료 &gt;</span></a>
+      <a href="#" style="display: flex; align-items: center; justify-content: space-between; min-height: 46px; padding: 0 16px; border-top: 1px solid #EBEDF0; text-decoration: none; color: #222222; font-size: 14px"><span>귀국 항공편 등록</span><span style="font-size: 12px; color: #666666">미등록 &gt;</span></a>
+    </section>
+  </div>
+
+  <nav aria-label="하단 메뉴" style="flex: 0 0 auto; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); background: #FFFFFF; border-top: 1px solid #D9DCE1; padding-bottom: 10px">
+    <a href="#" aria-current="page" style="min-height: 54px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px; text-decoration: none; color: {{primary}}; font-size: 11px; font-weight: 700">
+      <svg aria-hidden="true" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 10.5 12 3l9 7.5V21h-6v-6H9v6H3z"></path></svg>
+      홈
+    </a>
+    <a href="#" style="min-height: 54px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px; text-decoration: none; color: #666666; font-size: 11px">
+      <svg aria-hidden="true" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M14 3H6v18h12V7z"></path><path d="M14 3v4h4M9 13h6M9 17h4"></path></svg>
+      신청
+    </a>
+    <a href="#" style="min-height: 54px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px; text-decoration: none; color: #666666; font-size: 11px">
+      <svg aria-hidden="true" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"></circle><path d="M4 21c1-4 4-6 8-6s7 2 8 6"></path></svg>
+      내 정보
+    </a>
+  </nav>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"primary":{"editor":"color","default":"#24427A","options":["#24427A","#1F5C4A","#5A3E85","#333A45"]},"$preview":{"width":390,"height":844}}'>
+class Component extends DCLogic {
+  renderVals() {
+    return { primary: this.props.primary ?? '#24427A' };
+  }
+}
+</script>
+</body>
+</html>

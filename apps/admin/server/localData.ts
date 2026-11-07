@@ -305,9 +305,12 @@ export function createDb(dataDir: string) {
     return { refDate, until: soonUntil, campus, campuses, totals: { staying: staying.length, arriving: arriving.length, leaving: leaving.length }, types, arriving, leaving };
   }
 
+  const source: 'sample' | 'extract' = meta.source === 'sample' ? 'sample' : 'extract';
+
   return {
     refDate,
-    summary: () => `학생 ${students.length} · 연수 ${enrollments.length} · 인보이스 ${invoices.length} · 기숙사 ${dorms.length} · 에이전시 ${agencies.length} · 담당자 ${agents.length}`,
+    meta: () => ({ source, extractedAt: meta.extracted_at ?? null, refDate }),
+    summary: () => `${source === 'sample' ? '[샘플 데이터] ' : ''}학생 ${students.length} · 연수 ${enrollments.length} · 인보이스 ${invoices.length} · 기숙사 ${dorms.length} · 에이전시 ${agencies.length} · 담당자 ${agents.length}`,
     dashboard,
     listEnrollments,
     studentDetail,
@@ -334,6 +337,7 @@ export function localDataPlugin(dataDir: string): Plugin {
         try {
           const url = new URL(req.url ?? '/', 'http://local');
           const p = url.pathname.replace(/\/+$/, '');
+          if (p === '/meta') return send(res, 200, db.meta());
           if (p === '/dashboard') return send(res, 200, db.dashboard());
           if (p === '/enrollments') return send(res, 200, db.listEnrollments(url.searchParams));
           if (p === '/dorm') return send(res, 200, db.dormOverview(url.searchParams));

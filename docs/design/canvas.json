@@ -1,0 +1,150 @@
+{
+  "v": 3,
+  "attachments": {},
+  "boards": {
+    "Dorm.dc.html": {
+      "expand": "fill",
+      "h": 1060,
+      "is_interactive": true,
+      "title": "04 기숙사 배정 현황",
+      "w": 1440,
+      "x": 1520,
+      "y": 1120
+    },
+    "GuardTablet.dc.html": {
+      "h": 820,
+      "title": "I2 외출·귀가 (가드 태블릿)",
+      "w": 1180,
+      "x": 1520,
+      "y": 4280
+    },
+    "IntranetPenalty.dc.html": {
+      "expand": "fill",
+      "h": 1000,
+      "title": "I1 패널티 승인",
+      "w": 1440,
+      "x": 0,
+      "y": 4280
+    },
+    "Main.dc.html": {
+      "expand": "fill",
+      "h": 1000,
+      "is_interactive": true,
+      "title": "01 대시보드",
+      "w": 1440,
+      "x": 0,
+      "y": 0
+    },
+    "PartnerConsult.dc.html": {
+      "expand": "fill",
+      "h": 960,
+      "is_interactive": true,
+      "title": "P2 상담 · 추천 결과",
+      "w": 1440,
+      "x": 1520,
+      "y": 2840
+    },
+    "PartnerHome.dc.html": {
+      "expand": "fill",
+      "h": 1040,
+      "is_interactive": true,
+      "title": "P1 파트너 포털 홈",
+      "w": 1440,
+      "x": 0,
+      "y": 2840
+    },
+    "StudentFile.dc.html": {
+      "expand": "fill",
+      "h": 1320,
+      "is_interactive": true,
+      "title": "03 학생 상세",
+      "w": 1440,
+      "x": 0,
+      "y": 1120
+    },
+    "StudentPortal.dc.html": {
+      "h": 844,
+      "title": "05 학생 앱 홈",
+      "w": 390,
+      "x": 3040,
+      "y": 0
+    },
+    "Students.dc.html": {
+      "expand": "fill",
+      "h": 980,
+      "is_interactive": true,
+      "title": "02 재학생 현황",
+      "w": 1440,
+      "x": 1520,
+      "y": 0
+    }
+  },
+  "createdOnFiles": {
+    "at": "2026-11-07T11:40:00+08:00",
+    "v": 1
+  },
+  "designSystems": [],
+  "launch": {
+    "view": "canvas"
+  },
+  "noteOrder": [
+    "admin_title",
+    "partner_title",
+    "intranet_title",
+    "penalty_note",
+    "sample_note"
+  ],
+  "notes": {
+    "admin_title": {
+      "kind": "title1",
+      "maxW": 2960,
+      "text": "JIC 통합관리 시안 v2",
+      "w": 240,
+      "x": 0,
+      "y": -300
+    },
+    "intranet_title": {
+      "kind": "title1",
+      "maxW": 2700,
+      "text": "인트라넷",
+      "w": 240,
+      "x": 0,
+      "y": 3980
+    },
+    "partner_title": {
+      "kind": "title1",
+      "maxW": 2960,
+      "text": "파트너 포털",
+      "w": 240,
+      "x": 0,
+      "y": 2540
+    },
+    "penalty_note": {
+      "fill": "gray",
+      "text": "패널티 점수·경고 단계 값은 예시 (점수표 미결정)\n가드 화면의 이름·시각은 예시",
+      "w": 360,
+      "x": 2780,
+      "y": 4280
+    },
+    "sample_note": {
+      "fill": "gray",
+      "text": "숫자: 2026-11-07 추출 데이터 집계\n이름·번호·금액: 예시",
+      "w": 390,
+      "x": 3040,
+      "y": 944
+    }
+  },
+  "order": [
+    "Main.dc.html",
+    "Students.dc.html",
+    "StudentFile.dc.html",
+    "Dorm.dc.html",
+    "StudentPortal.dc.html",
+    "PartnerHome.dc.html",
+    "PartnerConsult.dc.html",
+    "IntranetPenalty.dc.html",
+    "GuardTablet.dc.html"
+  ],
+  "pages": [],
+  "title": "JIC 포털 디자인"
+}

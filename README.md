@@ -32,6 +32,8 @@ npm run admin
 
 브라우저에서 http://127.0.0.1:5173 을 연다. 화면: 대시보드, 재학생·입학 예정·졸업생 목록, 학생 상세, 기숙사 배정 현황.
 
+`data/tables`가 없으면 가짜 샘플 데이터(`data-sample/tables`)로 실행되고 오른쪽 위에 '샘플 데이터'가 표시된다. 인수인계 문서는 [HANDOFF.md](HANDOFF.md), 압축 파일은 `scripts/make-handoff.ps1`로 만든다.
+
 - 데이터 소스는 `apps/admin/server/localData.ts` 한 곳이다. Supabase로 옮길 때 이 파일만 바꾼다.
 - 기준일은 추출 시각(`data/tables/meta.json`)이다. 다시 추출하고 분리하면 서버를 재시작해 반영한다.
 - 추출본에 없는 항목: 방·침대 번호, 인보이스 총액. 추가 추출 후 화면에 붙인다.

@@ -118,7 +118,7 @@ export default function Students() {
           </div>
 
           <div className="grid-box">
-            <table className="tbl center big" style={{ minWidth: 1120 }}>
+            <table className="tbl center big" style={{ minWidth: 1280 }}>
               <thead>
                 <tr>
                   <th style={{ width: 52 }}>No</th>
@@ -149,12 +149,12 @@ export default function Students() {
                     <td>{r.campus}</td>
                     <td className="left">{r.course}</td>
                     <td className="left">{r.dorm}</td>
-                    <td>{r.start}</td>
-                    <td>{r.end}</td>
+                    <td className="nowrap">{r.start}</td>
+                    <td className="nowrap">{r.end}</td>
                     <td>{r.weeks}</td>
                     <td className="left">{r.agency}{r.branch ? ` (${r.branch})` : ''}</td>
-                    <td><PayText pay={r.pay} /></td>
-                    <td className="text-red" style={{ fontSize: 12 }}>{r.note}</td>
+                    <td className="nowrap"><PayText pay={r.pay} /></td>
+                    <td className="text-red nowrap" style={{ fontSize: 12 }}>{r.note}</td>
                   </tr>
                 ))}
               </tbody>

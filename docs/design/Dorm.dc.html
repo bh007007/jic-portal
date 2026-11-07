@@ -1,0 +1,170 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<title>JIC 통합관리 · 기숙사 배정 현황</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700;900&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0;background:#F4F5F7}
+a{color:#24427A}a:hover{color:#16294D}
+</style>
+</helmet>
+<div style="min-height: 1060px; background: #F4F5F7; font-family: 'Noto Sans KR', 'Malgun Gothic', 'Apple SD Gothic Neo', sans-serif; color: #222222; font-size: 13px">
+
+<header style="display: flex; flex-wrap: wrap; align-items: center; gap: 12px 20px; min-height: 52px; box-sizing: border-box; padding: 8px 20px; background: #FFFFFF; border-bottom: 1px solid #D9DCE1">
+  <a href="Main.dc.html" style="display: flex; align-items: baseline; gap: 8px; text-decoration: none">
+    <span style="font-size: 22px; font-weight: 900; font-style: italic; letter-spacing: -1px; color: #D52B1E">JIC</span>
+    <span style="font-size: 14px; font-weight: 700; color: #222222">통합관리</span>
+  </a>
+  <label style="display: flex; align-items: center; gap: 6px; font-size: 12px; color: #555555">캠퍼스
+    <select style="height: 30px; padding: 0 6px; border: 1px solid #C5CAD2; border-radius: 3px; background: #FFFFFF; font: inherit; font-size: 12px; color: #222222"><option>전체</option><option>Premium</option><option>Challenger</option><option>MCO</option></select>
+  </label>
+  <div style="margin-left: auto; display: flex; flex-wrap: wrap; align-items: center; gap: 14px; font-size: 12px; color: #555555">
+    <span>2026-11-07 (토)</span>
+    <span><strong style="color: #222222">레오</strong>님</span>
+    <a href="#" style="color: #555555">내 정보</a>
+    <a href="#" style="color: #555555">로그아웃</a>
+  </div>
+</header>
+
+<div style="display: flex; flex-wrap: wrap">
+<nav aria-label="메뉴" style="flex: 1 1 200px; box-sizing: border-box; background: #FFFFFF; border-right: 1px solid #D9DCE1; padding: 8px 0 24px; display: flex; flex-direction: column">
+  <a href="Main.dc.html" style="display: block; padding: 11px 20px; font-size: 13px; font-weight: 700; color: #222222; text-decoration: none">대시보드</a>
+  <span style="display: block; padding: 14px 20px 6px; font-size: 13px; font-weight: 700">학생관리</span>
+  <a href="Students.dc.html" style="display: block; padding: 7px 20px 7px 30px; color: #555555; text-decoration: none">재학생 현황</a>
+  <a href="#" style="display: block; padding: 7px 20px 7px 30px; color: #555555; text-decoration: none">입학 예정</a>
+  <a href="#" style="display: block; padding: 7px 20px 7px 30px; color: #555555; text-decoration: none">졸업생</a>
+  <a href="#" style="display: block; padding: 7px 20px 7px 30px; color: #555555; text-decoration: none">변경 요청</a>
+  <span style="display: block; padding: 14px 20px 6px; font-size: 13px; font-weight: 700">기숙사</span>
+  <a href="Dorm.dc.html" aria-current="page" style="display: block; padding: 7px 20px 7px 30px; color: {{primary}}; background: #EEF2F8; font-weight: 700; text-decoration: none">배정 현황</a>
+  <a href="#" style="display: block; padding: 7px 20px 7px 30px; color: #555555; text-decoration: none">방·침대 관리</a>
+  <span style="display: block; padding: 14px 20px 6px; font-size: 13px; font-weight: 700">회계</span>
+  <a href="#" style="display: block; padding: 7px 20px 7px 30px; color: #555555; text-decoration: none">인보이스</a>
+  <a href="#" style="display: block; padding: 7px 20px 7px 30px; color: #555555; text-decoration: none">입금 매칭</a>
+  <a href="#" style="display: block; padding: 7px 20px 7px 30px; color: #555555; text-decoration: none">포인트</a>
+  <span style="display: block; padding: 14px 20px 6px; font-size: 13px; font-weight: 700">에이전시</span>
+  <a href="#" style="display: block; padding: 7px 20px 7px 30px; color: #555555; text-decoration: none">에이전시 목록</a>
+  <a href="#" style="display: block; padding: 7px 20px 7px 30px; color: #555555; text-decoration: none">담당자 계정</a>
+  <span style="display: block; padding: 14px 20px 6px; font-size: 13px; font-weight: 700">기초관리</span>
+  <a href="#" style="display: block; padding: 7px 20px 7px 30px; color: #555555; text-decoration: none">코스·기숙사</a>
+  <a href="#" style="display: block; padding: 7px 20px 7px 30px; color: #555555; text-decoration: none">캠퍼스·배치</a>
+  <a href="#" style="display: block; padding: 7px 20px 7px 30px; color: #555555; text-decoration: none">사용자·권한</a>
+</nav>
+
+<main style="flex: 999 1 560px; min-width: 0; box-sizing: border-box; padding: 18px 24px 40px; display: flex; flex-direction: column; gap: 14px">
+  <div style="display: flex; flex-wrap: wrap; align-items: baseline; justify-content: space-between; gap: 8px; padding-bottom: 10px; border-bottom: 1px solid #D9DCE1">
+    <h1 style="margin: 0; font-size: 18px; font-weight: 700">기숙사 배정 현황</h1>
+    <span style="font-size: 12px; color: #666666">홈 &gt; 기숙사 &gt; 배정 현황</span>
+  </div>
+
+  <section aria-label="검색 조건" style="background: #F7F8FA; border: 1px solid #D9DCE1; border-radius: 4px; padding: 12px 16px; display: flex; flex-wrap: wrap; align-items: center; gap: 10px 24px">
+    <label style="display: flex; align-items: center; gap: 8px"><span style="font-size: 12px; font-weight: 500; color: #333333">캠퍼스</span>
+      <select style="height: 32px; padding: 0 8px; border: 1px solid #C5CAD2; border-radius: 3px; background: #FFFFFF; font: inherit; font-size: 13px; min-width: 120px"><option>Challenger</option><option>Premium</option></select>
+    </label>
+    <label style="display: flex; align-items: center; gap: 8px"><span style="font-size: 12px; font-weight: 500; color: #333333">건물</span>
+      <select style="height: 32px; padding: 0 8px; border: 1px solid #C5CAD2; border-radius: 3px; background: #FFFFFF; font: inherit; font-size: 13px; min-width: 90px"><option>B동</option><option>A동</option></select>
+    </label>
+    <label style="display: flex; align-items: center; gap: 8px"><span style="font-size: 12px; font-weight: 500; color: #333333">층</span>
+      <select style="height: 32px; padding: 0 8px; border: 1px solid #C5CAD2; border-radius: 3px; background: #FFFFFF; font: inherit; font-size: 13px; min-width: 80px"><option>2층</option><option>3층</option></select>
+    </label>
+    <label style="display: flex; align-items: center; gap: 8px"><span style="font-size: 12px; font-weight: 500; color: #333333">기준일</span>
+      <input type="date" defaultValue="2026-11-15" style="height: 32px; box-sizing: border-box; padding: 0 8px; border: 1px solid #C5CAD2; border-radius: 3px; background: #FFFFFF; font: inherit; font-size: 13px">
+    </label>
+    <button type="button" style="height: 32px; padding: 0 20px; border: 0; border-radius: 3px; background: {{primary}}; font: inherit; font-size: 13px; color: #FFFFFF">조회</button>
+  </section>
+
+  <div style="display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px 16px">
+    <span>방 <strong>8</strong> · 침대 <strong>23</strong> · 사용 <strong>12</strong> · 퇴실예정 <strong style="color: #C62828">2</strong> · 입실예정 <strong style="color: {{primary}}">2</strong> · 공실 <strong style="color: #2E7D32">5</strong> · 수리 <strong>2</strong></span>
+    <div style="display: flex; flex-wrap: wrap; gap: 6px">
+      <button type="button" style="height: 30px; padding: 0 12px; border: 1px solid #C5CAD2; border-radius: 3px; background: #FFFFFF; font: inherit; font-size: 12px; color: #333333">엑셀 다운로드</button>
+      <button type="button" style="height: 30px; padding: 0 12px; border: 1px solid #C5CAD2; border-radius: 3px; background: #FFFFFF; font: inherit; font-size: 12px; color: #333333">명단 인쇄</button>
+    </div>
+  </div>
+
+  <div style="display: flex; flex-wrap: wrap; gap: 16px; align-items: flex-start">
+    <section aria-label="방별 배정" style="flex: 3 1 560px; min-width: 0; display: grid; grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); gap: 10px">
+      <sc-for list="{{rooms}}" as="room" hint-placeholder-count="8">
+        <div style="background: #FFFFFF; border: 1px solid #D9DCE1; border-radius: 4px; overflow: hidden">
+          <div style="display: flex; align-items: center; justify-content: space-between; gap: 8px; padding: 8px 12px; background: #F7F8FA; border-bottom: 1px solid #D9DCE1">
+            <span style="font-size: 14px; font-weight: 700">{{room.no}}호</span>
+            <span style="font-size: 12px; color: #555555">{{room.type}} · {{room.gender}}</span>
+          </div>
+          <div style="display: flex; flex-direction: column; font-size: 12px">
+            <sc-for list="{{room.beds}}" as="bed" hint-placeholder-count="2">
+              <div style="display: flex; align-items: center; gap: 8px; padding: 7px 12px; border-bottom: 1px solid #EBEDF0; background: {{bed.rowBg}}">
+                <span style="flex: 0 0 14px; font-weight: 500; color: #555555">{{bed.id}}</span>
+                <span style="flex: 1 1 auto">{{bed.who}}</span>
+                <span style="color: {{bed.ink}}; font-weight: {{bed.weight}}">{{bed.state}}</span>
+              </div>
+            </sc-for>
+          </div>
+        </div>
+      </sc-for>
+    </section>
+
+    <aside aria-labelledby="queue-h" style="flex: 1 1 300px; min-width: 0; background: #FFFFFF; border: 1px solid #D9DCE1; border-radius: 4px">
+      <div style="display: flex; align-items: center; justify-content: space-between; padding: 10px 16px; border-bottom: 1px solid #E5E7EB">
+        <h2 id="queue-h" style="margin: 0; font-size: 14px; font-weight: 700">미배정 입실자 <span style="font-weight: 400; color: #666666">(11/15)</span></h2>
+      </div>
+      <div style="padding: 12px 16px 14px; display: flex; flex-direction: column; gap: 10px; overflow-x: auto">
+        <table style="width: 100%; border-collapse: collapse; text-align: center; font-size: 12px">
+          <thead>
+            <tr>
+              <th scope="col" style="padding: 7px 4px; background: #F7F8FA; border-top: 1px solid #3A3F47; border-bottom: 1px solid #D9DCE1; font-weight: 500">이름</th>
+              <th scope="col" style="padding: 7px 4px; background: #F7F8FA; border-top: 1px solid #3A3F47; border-bottom: 1px solid #D9DCE1; font-weight: 500">성별</th>
+              <th scope="col" style="padding: 7px 4px; background: #F7F8FA; border-top: 1px solid #3A3F47; border-bottom: 1px solid #D9DCE1; font-weight: 500">신청 타입</th>
+              <th scope="col" style="padding: 7px 4px; background: #F7F8FA; border-top: 1px solid #3A3F47; border-bottom: 1px solid #D9DCE1; font-weight: 500"><span style="position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0)">배정</span></th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr><td style="padding: 8px 4px; border-bottom: 1px solid #EBEDF0; text-align: left">YAMAMOTO KENTA</td><td style="padding: 8px 4px; border-bottom: 1px solid #EBEDF0">남</td><td style="padding: 8px 4px; border-bottom: 1px solid #EBEDF0">R4 Loft</td><td style="padding: 6px 4px; border-bottom: 1px solid #EBEDF0"><button type="button" style="height: 26px; padding: 0 8px; border: 1px solid #C5CAD2; border-radius: 3px; background: #FFFFFF; font: inherit; font-size: 12px">배정</button></td></tr>
+            <tr><td style="padding: 8px 4px; border-bottom: 1px solid #EBEDF0; text-align: left">CHANG WEI-LUN</td><td style="padding: 8px 4px; border-bottom: 1px solid #EBEDF0">남</td><td style="padding: 8px 4px; border-bottom: 1px solid #EBEDF0">R2 Studio</td><td style="padding: 6px 4px; border-bottom: 1px solid #EBEDF0"><button type="button" style="height: 26px; padding: 0 8px; border: 1px solid #C5CAD2; border-radius: 3px; background: #FFFFFF; font: inherit; font-size: 12px">배정</button></td></tr>
+            <tr><td style="padding: 8px 4px; border-bottom: 1px solid #EBEDF0; text-align: left">CHOI YUNA</td><td style="padding: 8px 4px; border-bottom: 1px solid #EBEDF0">여</td><td style="padding: 8px 4px; border-bottom: 1px solid #EBEDF0">R4 Studio</td><td style="padding: 6px 4px; border-bottom: 1px solid #EBEDF0"><button type="button" style="height: 26px; padding: 0 8px; border: 1px solid #C5CAD2; border-radius: 3px; background: #FFFFFF; font: inherit; font-size: 12px">배정</button></td></tr>
+            <tr><td style="padding: 8px 4px; border-bottom: 1px solid #EBEDF0; text-align: left">SUZUKI MIO</td><td style="padding: 8px 4px; border-bottom: 1px solid #EBEDF0">여</td><td style="padding: 8px 4px; border-bottom: 1px solid #EBEDF0">R4 Studio</td><td style="padding: 6px 4px; border-bottom: 1px solid #EBEDF0"><button type="button" style="height: 26px; padding: 0 8px; border: 1px solid #C5CAD2; border-radius: 3px; background: #FFFFFF; font: inherit; font-size: 12px">배정</button></td></tr>
+            <tr><td style="padding: 8px 4px; border-bottom: 1px solid #EBEDF0; text-align: left">TRAN HOANG</td><td style="padding: 8px 4px; border-bottom: 1px solid #EBEDF0">남</td><td style="padding: 8px 4px; border-bottom: 1px solid #EBEDF0">R2 Studio</td><td style="padding: 6px 4px; border-bottom: 1px solid #EBEDF0"><button type="button" style="height: 26px; padding: 0 8px; border: 1px solid #C5CAD2; border-radius: 3px; background: #FFFFFF; font: inherit; font-size: 12px">배정</button></td></tr>
+          </tbody>
+        </table>
+        <button type="button" style="height: 32px; border: 1px solid {{primary}}; border-radius: 3px; background: #FFFFFF; font: inherit; font-size: 13px; color: {{primary}}">빈 침대 추천</button>
+      </div>
+    </aside>
+  </div>
+</main>
+</div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"primary":{"editor":"color","default":"#24427A","options":["#24427A","#1F5C4A","#5A3E85","#333A45"]},"$preview":{"width":1440,"height":1060}}'>
+class Component extends DCLogic {
+  renderVals() {
+    const primary = this.props.primary ?? '#24427A';
+    const K = {
+      in: { rowBg: '#FFFFFF', ink: '#666666', weight: 400 },
+      out: { rowBg: '#FFFFFF', ink: '#C62828', weight: 700 },
+      arr: { rowBg: '#EEF2F8', ink: primary, weight: 700 },
+      free: { rowBg: '#FFFFFF', ink: '#2E7D32', weight: 700 },
+      fix: { rowBg: '#F1F2F4', ink: '#666666', weight: 400 }
+    };
+    const b = (id, kind, who, state) => ({ id, who, state, ...K[kind] });
+    return {
+      primary,
+      rooms: [
+        { no: '201', type: 'R4 Studio', gender: '여', beds: [b('A', 'in', 'LIN Y.', '~11/27'), b('B', 'in', 'WANG S.', '~12/25'), b('C', 'out', 'ITO K.', '11/13 퇴실'), b('D', 'free', '-', '공실')] },
+        { no: '202', type: 'R4 Studio', gender: '여', beds: [b('A', 'in', 'ITO M.', '~12/11'), b('B', 'in', 'HSU C.', '~01/22'), b('C', 'in', 'LEE H.', '~12/25'), b('D', 'arr', 'MORI A.', '11/15 입실')] },
+        { no: '203', type: 'R2 Studio', gender: '남', beds: [b('A', 'in', 'CHEN H.', '~12/25'), b('B', 'free', '-', '공실')] },
+        { no: '204', type: 'R2 Studio', gender: '남', beds: [b('A', 'out', 'SALEH M.', '11/13 퇴실'), b('B', 'arr', 'NGUYEN T.', '11/15 입실')] },
+        { no: '205', type: 'R4 Loft', gender: '남', beds: [b('A', 'in', 'TANAKA R.', '~12/11'), b('B', 'in', 'OMAR K.', '~11/27'), b('C', 'in', 'LIU Z.', '~02/05'), b('D', 'free', '-', '공실')] },
+        { no: '206', type: 'R1 Studio', gender: '여', beds: [b('A', 'in', 'PARK S.', '~11/27')] },
+        { no: '207', type: 'R2 Studio', gender: '여', beds: [b('A', 'fix', '-', '수리중 ~11/20'), b('B', 'fix', '-', '수리중 ~11/20')] },
+        { no: '208', type: 'R4 Studio', gender: '여', beds: [b('A', 'in', 'KATO Y.', '~12/25'), b('B', 'in', 'TSAI L.', '~12/11'), b('C', 'free', '-', '공실'), b('D', 'free', '-', '공실')] }
+      ]
+    };
+  }
+}
+</script>
+</body>
+</html>

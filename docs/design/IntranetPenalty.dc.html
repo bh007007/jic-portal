@@ -1,0 +1,163 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<title>JIC 인트라넷 · 패널티 승인</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700;900&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0;background:#F4F5F7}
+a{color:#24427A}a:hover{color:#16294D}
+</style>
+</helmet>
+<div style="min-height: 1000px; background: #F4F5F7; font-family: 'Noto Sans KR', 'Malgun Gothic', 'Apple SD Gothic Neo', sans-serif; color: #222222; font-size: 13px">
+
+<header style="display: flex; flex-wrap: wrap; align-items: center; gap: 12px 20px; min-height: 52px; box-sizing: border-box; padding: 8px 20px; background: #FFFFFF; border-bottom: 1px solid #D9DCE1">
+  <a href="#" style="display: flex; align-items: baseline; gap: 8px; text-decoration: none">
+    <span style="font-size: 22px; font-weight: 900; font-style: italic; letter-spacing: -1px; color: #D52B1E">JIC</span>
+    <span style="font-size: 14px; font-weight: 700; color: #222222">인트라넷</span>
+  </a>
+  <div style="margin-left: auto; display: flex; flex-wrap: wrap; align-items: center; gap: 14px; font-size: 12px; color: #555555">
+    <span>2026-11-07 (토)</span>
+    <span><strong style="color: #222222">레오</strong>님 · 학생관리 매니저</span>
+    <a href="Main.dc.html" style="color: #555555">통합관리</a>
+    <a href="#" style="color: #555555">로그아웃</a>
+  </div>
+</header>
+
+<div style="display: flex; flex-wrap: wrap">
+<nav aria-label="메뉴" style="flex: 1 1 200px; box-sizing: border-box; background: #FFFFFF; border-right: 1px solid #D9DCE1; padding: 8px 0 24px; display: flex; flex-direction: column">
+  <a href="#" style="display: block; padding: 11px 20px; font-size: 13px; font-weight: 700; color: #222222; text-decoration: none">홈</a>
+  <span style="display: block; padding: 14px 20px 6px; font-size: 13px; font-weight: 700">공지·결재</span>
+  <a href="#" style="display: block; padding: 7px 20px 7px 30px; color: #555555; text-decoration: none">내부 공지</a>
+  <a href="#" style="display: block; padding: 7px 20px 7px 30px; color: #555555; text-decoration: none">전자결재</a>
+  <a href="#" style="display: block; padding: 7px 20px 7px 30px; color: #555555; text-decoration: none">양식·자료실</a>
+  <span style="display: block; padding: 14px 20px 6px; font-size: 13px; font-weight: 700">학생 생활</span>
+  <a href="#" style="display: block; padding: 7px 20px 7px 30px; color: #555555; text-decoration: none">Student File</a>
+  <a href="#" style="display: block; padding: 7px 20px 7px 30px; color: #555555; text-decoration: none">상담 기록</a>
+  <a href="IntranetPenalty.dc.html" aria-current="page" style="display: block; padding: 7px 20px 7px 30px; color: {{primary}}; background: #EEF2F8; font-weight: 700; text-decoration: none">패널티 승인 <span style="font-weight: 400; color: #C62828">7</span></a>
+  <a href="#" style="display: block; padding: 7px 20px 7px 30px; color: #555555; text-decoration: none">패널티 점수표</a>
+  <a href="#" style="display: block; padding: 7px 20px 7px 30px; color: #555555; text-decoration: none">외출·귀가</a>
+  <a href="#" style="display: block; padding: 7px 20px 7px 30px; color: #555555; text-decoration: none">통금 확인</a>
+  <a href="#" style="display: block; padding: 7px 20px 7px 30px; color: #555555; text-decoration: none">사진 관리</a>
+  <span style="display: block; padding: 14px 20px 6px; font-size: 13px; font-weight: 700">신청 처리</span>
+  <a href="#" style="display: block; padding: 7px 20px 7px 30px; color: #555555; text-decoration: none">논아카데믹 신청</a>
+  <span style="display: block; padding: 14px 20px 6px; font-size: 13px; font-weight: 700">직원</span>
+  <a href="#" style="display: block; padding: 7px 20px 7px 30px; color: #555555; text-decoration: none">직원·부서</a>
+  <a href="#" style="display: block; padding: 7px 20px 7px 30px; color: #555555; text-decoration: none">Staff 평가</a>
+</nav>
+
+<main style="flex: 999 1 560px; min-width: 0; box-sizing: border-box; padding: 18px 24px 40px; display: flex; flex-direction: column; gap: 14px">
+  <div style="display: flex; flex-wrap: wrap; align-items: baseline; justify-content: space-between; gap: 8px; padding-bottom: 10px; border-bottom: 1px solid #D9DCE1">
+    <h1 style="margin: 0; font-size: 18px; font-weight: 700">패널티 승인</h1>
+    <span style="font-size: 12px; color: #666666">홈 &gt; 학생 생활 &gt; 패널티 승인</span>
+  </div>
+
+  <div role="tablist" aria-label="처리 상태" style="display: flex; flex-wrap: wrap">
+    <button type="button" role="tab" aria-selected="true" style="height: 38px; padding: 0 18px; border: 1px solid #3A3F47; border-bottom-color: #FFFFFF; background: #FFFFFF; font: inherit; font-size: 13px; font-weight: 700; color: #222222">승인 대기 (7)</button>
+    <button type="button" role="tab" aria-selected="false" style="height: 38px; padding: 0 18px; border: 1px solid #D9DCE1; border-left: 0; border-bottom-color: #3A3F47; background: #F7F8FA; font: inherit; font-size: 13px; color: #555555">승인 완료</button>
+    <button type="button" role="tab" aria-selected="false" style="height: 38px; padding: 0 18px; border: 1px solid #D9DCE1; border-left: 0; border-bottom-color: #3A3F47; background: #F7F8FA; font: inherit; font-size: 13px; color: #555555">반려</button>
+    <div style="flex: 1 1 auto; border-bottom: 1px solid #3A3F47"></div>
+  </div>
+
+  <section aria-label="검색 조건" style="background: #F7F8FA; border: 1px solid #D9DCE1; border-radius: 4px; padding: 12px 16px; display: flex; flex-wrap: wrap; align-items: center; gap: 10px 24px">
+    <div style="display: flex; align-items: center; gap: 8px"><span style="font-size: 12px; font-weight: 500; color: #333333">발생일</span>
+      <input type="date" aria-label="시작일" defaultValue="2026-11-01" style="height: 32px; box-sizing: border-box; padding: 0 8px; border: 1px solid #C5CAD2; border-radius: 3px; background: #FFFFFF; font: inherit; font-size: 13px">
+      <span>~</span>
+      <input type="date" aria-label="종료일" defaultValue="2026-11-07" style="height: 32px; box-sizing: border-box; padding: 0 8px; border: 1px solid #C5CAD2; border-radius: 3px; background: #FFFFFF; font: inherit; font-size: 13px">
+    </div>
+    <label style="display: flex; align-items: center; gap: 8px"><span style="font-size: 12px; font-weight: 500; color: #333333">캠퍼스</span>
+      <select style="height: 32px; padding: 0 8px; border: 1px solid #C5CAD2; border-radius: 3px; background: #FFFFFF; font: inherit; font-size: 13px; min-width: 110px"><option>전체</option><option>Premium</option><option>Challenger</option></select>
+    </label>
+    <label style="display: flex; align-items: center; gap: 8px"><span style="font-size: 12px; font-weight: 500; color: #333333">위반 종류</span>
+      <select style="height: 32px; padding: 0 8px; border: 1px solid #C5CAD2; border-radius: 3px; background: #FFFFFF; font: inherit; font-size: 13px; min-width: 110px"><option>전체</option><option>무단결석</option><option>통금 위반</option><option>음주</option><option>기타</option></select>
+    </label>
+    <label style="display: flex; align-items: center; gap: 8px"><span style="font-size: 12px; font-weight: 500; color: #333333">학생</span>
+      <input type="text" placeholder="이름 또는 학생번호" style="height: 32px; box-sizing: border-box; padding: 0 8px; border: 1px solid #C5CAD2; border-radius: 3px; background: #FFFFFF; font: inherit; font-size: 13px; width: 170px">
+    </label>
+    <div style="display: flex; gap: 6px">
+      <button type="button" style="height: 32px; padding: 0 14px; border: 1px solid #C5CAD2; border-radius: 3px; background: #FFFFFF; font: inherit; font-size: 13px; color: #333333">초기화</button>
+      <button type="button" style="height: 32px; padding: 0 20px; border: 0; border-radius: 3px; background: {{primary}}; font: inherit; font-size: 13px; color: #FFFFFF">조회</button>
+    </div>
+  </section>
+
+  <div style="display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px">
+    <span>총 <strong style="color: {{primary}}">7</strong>건</span>
+    <div style="display: flex; gap: 6px">
+      <button type="button" style="height: 30px; padding: 0 12px; border: 1px solid #C5CAD2; border-radius: 3px; background: #FFFFFF; font: inherit; font-size: 12px; color: #333333">선택 반려</button>
+      <button type="button" style="height: 30px; padding: 0 12px; border: 0; border-radius: 3px; background: {{primary}}; font: inherit; font-size: 12px; color: #FFFFFF">선택 승인</button>
+    </div>
+  </div>
+
+  <div style="background: #FFFFFF; border: 1px solid #D9DCE1; overflow-x: auto">
+    <table style="width: 100%; min-width: 1180px; border-collapse: collapse; text-align: center">
+      <thead>
+        <tr>
+          <th scope="col" style="width: 36px; padding: 9px 6px; background: #F7F8FA; border-top: 2px solid #3A3F47; border-bottom: 1px solid #D9DCE1"><input type="checkbox" aria-label="전체 선택"></th>
+          <th scope="col" style="padding: 9px 6px; background: #F7F8FA; border-top: 2px solid #3A3F47; border-bottom: 1px solid #D9DCE1; font-weight: 500">발생일</th>
+          <th scope="col" style="padding: 9px 6px; background: #F7F8FA; border-top: 2px solid #3A3F47; border-bottom: 1px solid #D9DCE1; font-weight: 500">학생</th>
+          <th scope="col" style="padding: 9px 6px; background: #F7F8FA; border-top: 2px solid #3A3F47; border-bottom: 1px solid #D9DCE1; font-weight: 500">캠퍼스</th>
+          <th scope="col" style="padding: 9px 6px; background: #F7F8FA; border-top: 2px solid #3A3F47; border-bottom: 1px solid #D9DCE1; font-weight: 500">위반 종류</th>
+          <th scope="col" style="padding: 9px 6px; background: #F7F8FA; border-top: 2px solid #3A3F47; border-bottom: 1px solid #D9DCE1; font-weight: 500">근거</th>
+          <th scope="col" style="padding: 9px 6px; background: #F7F8FA; border-top: 2px solid #3A3F47; border-bottom: 1px solid #D9DCE1; font-weight: 500">출처</th>
+          <th scope="col" style="padding: 9px 6px; background: #F7F8FA; border-top: 2px solid #3A3F47; border-bottom: 1px solid #D9DCE1; font-weight: 500">점수</th>
+          <th scope="col" style="padding: 9px 6px; background: #F7F8FA; border-top: 2px solid #3A3F47; border-bottom: 1px solid #D9DCE1; font-weight: 500">승인 후 누적</th>
+          <th scope="col" style="padding: 9px 6px; background: #F7F8FA; border-top: 2px solid #3A3F47; border-bottom: 1px solid #D9DCE1; font-weight: 500">경고 단계</th>
+          <th scope="col" style="padding: 9px 6px; background: #F7F8FA; border-top: 2px solid #3A3F47; border-bottom: 1px solid #D9DCE1; font-weight: 500">승인 권한</th>
+          <th scope="col" style="padding: 9px 6px; background: #F7F8FA; border-top: 2px solid #3A3F47; border-bottom: 1px solid #D9DCE1; font-weight: 500">처리</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr><td style="padding: 9px 6px; border-bottom: 1px solid #EBEDF0"><input type="checkbox" aria-label="선택"></td><td style="padding: 9px 6px; border-bottom: 1px solid #EBEDF0">11-06</td><td style="padding: 9px 6px; border-bottom: 1px solid #EBEDF0; text-align: left"><a href="#" style="color: {{primary}}; text-decoration: none; font-weight: 500">LIN YU-TING</a><br><span style="font-size: 12px; color: #666666">24790</span></td><td style="padding: 9px 6px; border-bottom: 1px solid #EBEDF0">Challenger</td><td style="padding: 9px 6px; border-bottom: 1px solid #EBEDF0">무단결석</td><td style="padding: 9px 6px; border-bottom: 1px solid #EBEDF0; text-align: left">11/06 3교시 결석, 결석 신청 없음</td><td style="padding: 9px 6px; border-bottom: 1px solid #EBEDF0; color: #555555">LMS 출석</td><td style="padding: 9px 6px; border-bottom: 1px solid #EBEDF0; font-weight: 700">1</td><td style="padding: 9px 6px; border-bottom: 1px solid #EBEDF0">4</td><td style="padding: 9px 6px; border-bottom: 1px solid #EBEDF0; color: #C62828; font-weight: 700">1단계 → 2단계</td><td style="padding: 9px 6px; border-bottom: 1px solid #EBEDF0; color: #555555">매니저</td><td style="padding: 6px; border-bottom: 1px solid #EBEDF0; white-space: nowrap"><button type="button" style="height: 26px; padding: 0 8px; border: 0; border-radius: 3px; background: {{primary}}; font: inherit; font-size: 12px; color: #FFFFFF">승인</button> <button type="button" style="height: 26px; padding: 0 8px; border: 1px solid #C5CAD2; border-radius: 3px; background: #FFFFFF; font: inherit; font-size: 12px; color: #333333">반려</button></td></tr>
+        <tr><td style="padding: 9px 6px; border-bottom: 1px solid #EBEDF0"><input type="checkbox" aria-label="선택"></td><td style="padding: 9px 6px; border-bottom: 1px solid #EBEDF0">11-06</td><td style="padding: 9px 6px; border-bottom: 1px solid #EBEDF0; text-align: left"><a href="#" style="color: {{primary}}; text-decoration: none; font-weight: 500">CHEN HAO</a><br><span style="font-size: 12px; color: #666666">24835</span></td><td style="padding: 9px 6px; border-bottom: 1px solid #EBEDF0">Challenger</td><td style="padding: 9px 6px; border-bottom: 1px solid #EBEDF0">무단결석</td><td style="padding: 9px 6px; border-bottom: 1px solid #EBEDF0; text-align: left">11/06 1·2교시 결석, 결석 신청 반려</td><td style="padding: 9px 6px; border-bottom: 1px solid #EBEDF0; color: #555555">LMS 출석</td><td style="padding: 9px 6px; border-bottom: 1px solid #EBEDF0; font-weight: 700">2</td><td style="padding: 9px 6px; border-bottom: 1px solid #EBEDF0">2</td><td style="padding: 9px 6px; border-bottom: 1px solid #EBEDF0; color: #555555">-</td><td style="padding: 9px 6px; border-bottom: 1px solid #EBEDF0; color: #555555">매니저</td><td style="padding: 6px; border-bottom: 1px solid #EBEDF0; white-space: nowrap"><button type="button" style="height: 26px; padding: 0 8px; border: 0; border-radius: 3px; background: {{primary}}; font: inherit; font-size: 12px; color: #FFFFFF">승인</button> <button type="button" style="height: 26px; padding: 0 8px; border: 1px solid #C5CAD2; border-radius: 3px; background: #FFFFFF; font: inherit; font-size: 12px; color: #333333">반려</button></td></tr>
+        <tr><td style="padding: 9px 6px; border-bottom: 1px solid #EBEDF0"><input type="checkbox" aria-label="선택"></td><td style="padding: 9px 6px; border-bottom: 1px solid #EBEDF0">11-05</td><td style="padding: 9px 6px; border-bottom: 1px solid #EBEDF0; text-align: left"><a href="#" style="color: {{primary}}; text-decoration: none; font-weight: 500">TANAKA REN</a><br><span style="font-size: 12px; color: #666666">24840</span></td><td style="padding: 9px 6px; border-bottom: 1px solid #EBEDF0">Challenger</td><td style="padding: 9px 6px; border-bottom: 1px solid #EBEDF0">통금 위반</td><td style="padding: 9px 6px; border-bottom: 1px solid #EBEDF0; text-align: left">통금 23:00, 귀가 23:41 (외박 허용 없음)</td><td style="padding: 9px 6px; border-bottom: 1px solid #EBEDF0; color: #555555">외출 기록</td><td style="padding: 9px 6px; border-bottom: 1px solid #EBEDF0; font-weight: 700">2</td><td style="padding: 9px 6px; border-bottom: 1px solid #EBEDF0">3</td><td style="padding: 9px 6px; border-bottom: 1px solid #EBEDF0; color: #C62828; font-weight: 700">- → 1단계</td><td style="padding: 9px 6px; border-bottom: 1px solid #EBEDF0; color: #555555">오피스</td><td style="padding: 6px; border-bottom: 1px solid #EBEDF0; white-space: nowrap"><button type="button" style="height: 26px; padding: 0 8px; border: 0; border-radius: 3px; background: {{primary}}; font: inherit; font-size: 12px; color: #FFFFFF">승인</button> <button type="button" style="height: 26px; padding: 0 8px; border: 1px solid #C5CAD2; border-radius: 3px; background: #FFFFFF; font: inherit; font-size: 12px; color: #333333">반려</button></td></tr>
+        <tr><td style="padding: 9px 6px; border-bottom: 1px solid #EBEDF0"><input type="checkbox" aria-label="선택"></td><td style="padding: 9px 6px; border-bottom: 1px solid #EBEDF0">11-05</td><td style="padding: 9px 6px; border-bottom: 1px solid #EBEDF0; text-align: left"><a href="#" style="color: {{primary}}; text-decoration: none; font-weight: 500">HUANG PEI-SHAN</a><br><span style="font-size: 12px; color: #666666">24846</span></td><td style="padding: 9px 6px; border-bottom: 1px solid #EBEDF0">Premium</td><td style="padding: 9px 6px; border-bottom: 1px solid #EBEDF0">무단결석</td><td style="padding: 9px 6px; border-bottom: 1px solid #EBEDF0; text-align: left">11/05 4교시 결석, 기한 후 신청 반려</td><td style="padding: 9px 6px; border-bottom: 1px solid #EBEDF0; color: #555555">LMS 출석</td><td style="padding: 9px 6px; border-bottom: 1px solid #EBEDF0; font-weight: 700">1</td><td style="padding: 9px 6px; border-bottom: 1px solid #EBEDF0">1</td><td style="padding: 9px 6px; border-bottom: 1px solid #EBEDF0; color: #555555">-</td><td style="padding: 9px 6px; border-bottom: 1px solid #EBEDF0; color: #555555">매니저</td><td style="padding: 6px; border-bottom: 1px solid #EBEDF0; white-space: nowrap"><button type="button" style="height: 26px; padding: 0 8px; border: 0; border-radius: 3px; background: {{primary}}; font: inherit; font-size: 12px; color: #FFFFFF">승인</button> <button type="button" style="height: 26px; padding: 0 8px; border: 1px solid #C5CAD2; border-radius: 3px; background: #FFFFFF; font: inherit; font-size: 12px; color: #333333">반려</button></td></tr>
+        <tr><td style="padding: 9px 6px; border-bottom: 1px solid #EBEDF0"><input type="checkbox" aria-label="선택"></td><td style="padding: 9px 6px; border-bottom: 1px solid #EBEDF0">11-04</td><td style="padding: 9px 6px; border-bottom: 1px solid #EBEDF0; text-align: left"><a href="#" style="color: {{primary}}; text-decoration: none; font-weight: 500">AL-HARBI FAISAL</a><br><span style="font-size: 12px; color: #666666">24758</span></td><td style="padding: 9px 6px; border-bottom: 1px solid #EBEDF0">Premium</td><td style="padding: 9px 6px; border-bottom: 1px solid #EBEDF0">통금 위반</td><td style="padding: 9px 6px; border-bottom: 1px solid #EBEDF0; text-align: left">통금 23:00, 귀가 00:12 (외박 허용 없음)</td><td style="padding: 9px 6px; border-bottom: 1px solid #EBEDF0; color: #555555">외출 기록</td><td style="padding: 9px 6px; border-bottom: 1px solid #EBEDF0; font-weight: 700">2</td><td style="padding: 9px 6px; border-bottom: 1px solid #EBEDF0">5</td><td style="padding: 9px 6px; border-bottom: 1px solid #EBEDF0; color: #C62828; font-weight: 700">1단계 → 2단계</td><td style="padding: 9px 6px; border-bottom: 1px solid #EBEDF0; color: #555555">오피스</td><td style="padding: 6px; border-bottom: 1px solid #EBEDF0; white-space: nowrap"><button type="button" style="height: 26px; padding: 0 8px; border: 0; border-radius: 3px; background: {{primary}}; font: inherit; font-size: 12px; color: #FFFFFF">승인</button> <button type="button" style="height: 26px; padding: 0 8px; border: 1px solid #C5CAD2; border-radius: 3px; background: #FFFFFF; font: inherit; font-size: 12px; color: #333333">반려</button></td></tr>
+        <tr><td style="padding: 9px 6px; border-bottom: 1px solid #EBEDF0"><input type="checkbox" aria-label="선택"></td><td style="padding: 9px 6px; border-bottom: 1px solid #EBEDF0">11-03</td><td style="padding: 9px 6px; border-bottom: 1px solid #EBEDF0; text-align: left"><a href="#" style="color: {{primary}}; text-decoration: none; font-weight: 500">PARK SEOYEON</a><br><span style="font-size: 12px; color: #666666">24851</span></td><td style="padding: 9px 6px; border-bottom: 1px solid #EBEDF0">Challenger</td><td style="padding: 9px 6px; border-bottom: 1px solid #EBEDF0">무단결석</td><td style="padding: 9px 6px; border-bottom: 1px solid #EBEDF0; text-align: left">11/03 2교시 결석, 결석 신청 없음</td><td style="padding: 9px 6px; border-bottom: 1px solid #EBEDF0; color: #555555">LMS 출석</td><td style="padding: 9px 6px; border-bottom: 1px solid #EBEDF0; font-weight: 700">1</td><td style="padding: 9px 6px; border-bottom: 1px solid #EBEDF0">1</td><td style="padding: 9px 6px; border-bottom: 1px solid #EBEDF0; color: #555555">-</td><td style="padding: 9px 6px; border-bottom: 1px solid #EBEDF0; color: #555555">매니저</td><td style="padding: 6px; border-bottom: 1px solid #EBEDF0; white-space: nowrap"><button type="button" style="height: 26px; padding: 0 8px; border: 0; border-radius: 3px; background: {{primary}}; font: inherit; font-size: 12px; color: #FFFFFF">승인</button> <button type="button" style="height: 26px; padding: 0 8px; border: 1px solid #C5CAD2; border-radius: 3px; background: #FFFFFF; font: inherit; font-size: 12px; color: #333333">반려</button></td></tr>
+        <tr><td style="padding: 9px 6px; border-bottom: 1px solid #EBEDF0"><input type="checkbox" aria-label="선택"></td><td style="padding: 9px 6px; border-bottom: 1px solid #EBEDF0">11-02</td><td style="padding: 9px 6px; border-bottom: 1px solid #EBEDF0; text-align: left"><a href="#" style="color: {{primary}}; text-decoration: none; font-weight: 500">SATO HARUKA</a><br><span style="font-size: 12px; color: #666666">24811</span></td><td style="padding: 9px 6px; border-bottom: 1px solid #EBEDF0">Premium</td><td style="padding: 9px 6px; border-bottom: 1px solid #EBEDF0">기타</td><td style="padding: 9px 6px; border-bottom: 1px solid #EBEDF0; text-align: left">가드 리포트: 카드키 미반납 외출</td><td style="padding: 9px 6px; border-bottom: 1px solid #EBEDF0; color: #555555">가드</td><td style="padding: 9px 6px; border-bottom: 1px solid #EBEDF0; font-weight: 700">-</td><td style="padding: 9px 6px; border-bottom: 1px solid #EBEDF0">-</td><td style="padding: 9px 6px; border-bottom: 1px solid #EBEDF0; color: #555555">점수 미정</td><td style="padding: 9px 6px; border-bottom: 1px solid #EBEDF0; color: #555555">매니저</td><td style="padding: 6px; border-bottom: 1px solid #EBEDF0; white-space: nowrap"><button type="button" style="height: 26px; padding: 0 8px; border: 0; border-radius: 3px; background: {{primary}}; font: inherit; font-size: 12px; color: #FFFFFF">승인</button> <button type="button" style="height: 26px; padding: 0 8px; border: 1px solid #C5CAD2; border-radius: 3px; background: #FFFFFF; font: inherit; font-size: 12px; color: #333333">반려</button></td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <section aria-labelledby="rule-h" style="align-self: flex-start; background: #FFFFFF; border: 1px solid #D9DCE1; border-radius: 4px">
+    <div style="display: flex; align-items: center; justify-content: space-between; gap: 24px; padding: 10px 16px; border-bottom: 1px solid #E5E7EB">
+      <h2 id="rule-h" style="margin: 0; font-size: 14px; font-weight: 700">경고 단계 기준</h2>
+      <a href="#" style="font-size: 12px; color: #666666; text-decoration: none">점수표 관리 &gt;</a>
+    </div>
+    <div style="padding: 12px 16px 14px">
+      <table style="border-collapse: collapse; text-align: center">
+        <thead>
+          <tr>
+            <th scope="col" style="padding: 7px 18px; background: #F7F8FA; border-top: 1px solid #3A3F47; border-bottom: 1px solid #D9DCE1; font-weight: 500">1단계</th>
+            <th scope="col" style="padding: 7px 18px; background: #F7F8FA; border-top: 1px solid #3A3F47; border-bottom: 1px solid #D9DCE1; font-weight: 500">2단계</th>
+            <th scope="col" style="padding: 7px 18px; background: #F7F8FA; border-top: 1px solid #3A3F47; border-bottom: 1px solid #D9DCE1; font-weight: 500">3단계</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td style="padding: 8px 18px; border-bottom: 1px solid #EBEDF0">3점 이상</td>
+            <td style="padding: 8px 18px; border-bottom: 1px solid #EBEDF0">5점 이상</td>
+            <td style="padding: 8px 18px; border-bottom: 1px solid #EBEDF0">8점 이상</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+</main>
+</div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"primary":{"editor":"color","default":"#24427A","options":["#24427A","#1F5C4A","#5A3E85","#333A45"]},"$preview":{"width":1440,"height":1000}}'>
+class Component extends DCLogic {
+  renderVals() {
+    return { primary: this.props.primary ?? '#24427A' };
+  }
+}
+</script>
+</body>
+</html>

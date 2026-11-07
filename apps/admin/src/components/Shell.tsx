@@ -1,5 +1,6 @@
 import type { ReactNode } from 'react';
 import { Link, NavLink } from 'react-router-dom';
+import { useApi } from '../api';
 
 const MENU: { group?: string; items: { to: string; label: string }[] }[] = [
   { items: [{ to: '/', label: '대시보드' }] },
@@ -22,6 +23,7 @@ const today = new Date();
 const todayLabel = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')} (${'일월화수목금토'[today.getDay()]})`;
 
 export default function Shell({ children }: { children: ReactNode }) {
+  const { data: meta } = useApi<{ source: 'sample' | 'extract' }>('/api/meta');
   return (
     <div className="app">
       <header className="topbar">
@@ -34,7 +36,7 @@ export default function Shell({ children }: { children: ReactNode }) {
           <span>
             <strong>레오</strong>님
           </span>
-          <span className="data-badge">로컬 데이터</span>
+          <span className={'data-badge' + (meta?.source === 'sample' ? ' sample' : '')}>{meta?.source === 'sample' ? '샘플 데이터' : '로컬 데이터'}</span>
         </div>
       </header>
       <div className="layout">
