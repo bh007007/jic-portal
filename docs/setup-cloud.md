@@ -27,7 +27,9 @@ service_role 키와 DB 비밀번호는 코드, GitHub, 메신저, Claude 대화�
 ## 1. Supabase
 
 1. https://supabase.com/dashboard → **New project**
-   - Name `jic-portal`, Region **Southeast Asia (Singapore)**, Database Password는 생성 버튼으로 만들고 비밀번호 관리자에 저장.
+   - Name `jic-portal`, Region **Southeast Asia (Singapore)**(*Need a specific region?*을 눌러야 보임), Database Password는 생성 버튼으로 만들고 비밀번호 관리자에 저장.
+   - Security: *Enable Data API* 켬, *Automatically expose new tables* **끔**, *Enable automatic RLS* 켬. 테이블 권한은 마이그레이션 SQL이 직접 준다.
+   - 2026-11-07 만든 프로젝트: `https://isayrrexurledojngqbx.supabase.co` (baguiojic 조직, Free 플랜. 일주일 미사용 시 자동 일시정지)
 2. **SQL Editor** → New query → `supabase/migrations/20261107000000_legacy_tables.sql` 내용을 붙여 넣고 **Run**.
    - Table Editor에 `staff_users`와 `legacy_*` 7개가 보이면 된다.
 3. **Authentication → Sign In / Providers** → *Allow new users to sign up* 끄기. 계정은 관리자가 만든다.
@@ -40,14 +42,14 @@ service_role 키와 DB 비밀번호는 코드, GitHub, 메신저, Claude 대화�
    ```
 
    `staff_users`에 없는 계정은 로그인은 돼도 데이터가 하나도 안 보인다(403).
-6. 샘플 데이터 올리기. 내 PC의 PowerShell에서 (키는 이 창에서만 쓰고 닫는다):
+6. 샘플 데이터 올리기. **Project Settings → API Keys → Secret keys**의 복사 버튼으로 키를 복사하고, 내 PC의 PowerShell에서:
 
    ```powershell
    cd C:\Users\bh007\portal
-   $env:SUPABASE_URL = "https://<프로젝트>.supabase.co"
-   $env:SUPABASE_SERVICE_ROLE_KEY = "<service_role 또는 secret 키>"
-   node scripts/upload-to-supabase.mjs --replace
+   powershell -ExecutionPolicy Bypass -File scripts\upload-sample.ps1 -Url https://<프로젝트>.supabase.co
    ```
+
+   키를 묻는 줄에 붙여 넣고 Enter(화면에 안 보임). 키는 그 실행에서만 쓰고 지워진다.
 
    `legacy_students: 224건` 같은 줄이 나오면 된다. 스크립트는 `data-sample/tables`만 올리고, 실제 추출본(`data/`)은 거부한다.
 
