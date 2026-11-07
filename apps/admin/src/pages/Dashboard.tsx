@@ -82,13 +82,13 @@ export default function Dashboard() {
                 <td className="muted">픽업</td>
                 <td className="left">{pickupDates} 입학생 항공편 미입력</td>
                 <td className={'strong' + (data.pickup.missing ? ' text-red' : '')}>{data.pickup.missing}</td>
-                <td><Link className="btn btn-xs" to="/students?tab=upcoming">보기</Link></td>
+                <td><Link className="btn btn-xs" to="/arrivals">보기</Link></td>
               </tr>
               <tr>
                 <td className="muted">픽업</td>
                 <td className="left">BESA 그룹 픽업 대상 확인</td>
                 <td className="strong">{data.pickup.besa}</td>
-                <td><Link className="btn btn-xs" to="/students?tab=upcoming">보기</Link></td>
+                <td><Link className="btn btn-xs" to="/arrivals">보기</Link></td>
               </tr>
               <tr>
                 <td className="muted">졸업</td>
@@ -100,7 +100,7 @@ export default function Dashboard() {
           </table>
         </Panel>
 
-        <Panel title="입학 일정" extra={<Link className="more" to="/students?tab=upcoming">더보기 +</Link>}>
+        <Panel title="입학 일정" extra={<Link className="more" to="/arrivals">더보기 +</Link>}>
           <table className="tbl center">
             <thead>
               <tr><th>배치</th><th>입학일</th><th>인원(명)</th></tr>
@@ -108,7 +108,7 @@ export default function Dashboard() {
             <tbody>
               {data.batches.map((b) => (
                 <tr key={b.batch + b.date}>
-                  <td>{b.batch || '-'}</td>
+                  <td>{b.batch ? <Link to={`/arrivals?batch=${encodeURIComponent(b.batch)}`} style={{ textDecoration: 'none' }}>{b.batch}</Link> : '-'}</td>
                   <td>{b.date} ({weekday(b.date)})</td>
                   <td className="strong">{b.count}</td>
                 </tr>

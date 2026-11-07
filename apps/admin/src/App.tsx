@@ -8,6 +8,10 @@ import Dashboard from './pages/Dashboard';
 import Students from './pages/Students';
 import StudentDetail from './pages/StudentDetail';
 import Dorm from './pages/Dorm';
+import Arrivals from './pages/Arrivals';
+import Agencies from './pages/Agencies';
+import AgencyDetail from './pages/AgencyDetail';
+import Agents from './pages/Agents';
 import NotReady from './pages/NotReady';
 
 // undefined = 세션 확인 중, null = 로그인 안 됨
@@ -33,7 +37,11 @@ export default function App() {
         <Route path="/" element={<Dashboard />} />
         <Route path="/students" element={<Students />} />
         <Route path="/students/:stId" element={<StudentDetail />} />
+        <Route path="/arrivals" element={<Arrivals />} />
         <Route path="/dorm" element={<Dorm />} />
+        <Route path="/agencies" element={<Agencies />} />
+        <Route path="/agencies/:agId" element={<AgencyDetail />} />
+        <Route path="/agents" element={<Agents />} />
         <Route path="*" element={<NotReady />} />
       </Routes>
     </Shell>

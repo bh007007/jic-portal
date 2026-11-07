@@ -1,4 +1,29 @@
-import type { ReactNode } from 'react';
+import { useState, type ReactNode } from 'react';
+
+/** 엑셀(CSV) 다운로드 버튼. run 이 끝날 때까지 다시 누를 수 없다. */
+export function DownloadButton({ run }: { run: () => Promise<void> | void }) {
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState('');
+  const onClick = async () => {
+    setBusy(true);
+    setError('');
+    try {
+      await run();
+    } catch (e) {
+      setError('내려받지 못했습니다: ' + (e as Error).message);
+    } finally {
+      setBusy(false);
+    }
+  };
+  return (
+    <span className="download">
+      {error && <span className="text-red" role="alert">{error}</span>}
+      <button type="button" className="btn" onClick={onClick} disabled={busy}>
+        {busy ? '내려받는 중…' : '엑셀 다운로드'}
+      </button>
+    </span>
+  );
+}
 
 export function PageTitle({ title, path }: { title: string; path: string }) {
   return (

@@ -1,7 +1,27 @@
 import { useEffect, useState, type FormEvent } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
-import { fmt, useApi, type EnrollmentList } from '../api';
-import { Loading, PageTitle, Pagination, PayText } from '../components/ui';
+import { fmt, useApi, type EnrollmentList, type EnrollmentRow } from '../api';
+import { downloadList, type Column } from '../csv';
+import { DownloadButton, Loading, PageTitle, Pagination, PayText } from '../components/ui';
+
+const COLUMNS: Column<EnrollmentRow>[] = [
+  ['학생번호', (r) => r.stId],
+  ['이름', (r) => r.name],
+  ['국적', (r) => r.nation],
+  ['성별', (r) => r.gender],
+  ['캠퍼스', (r) => r.campus],
+  ['코스', (r) => r.course],
+  ['기숙사', (r) => r.dorm],
+  ['입학일', (r) => r.start],
+  ['졸업일', (r) => r.end],
+  ['주', (r) => r.weeks],
+  ['배치', (r) => r.batch],
+  ['에이전시', (r) => r.agency],
+  ['지점', (r) => r.branch],
+  ['납부', (r) => r.pay],
+  ['상태', (r) => r.state],
+  ['비고', (r) => r.note],
+];
 
 const TABS = [
   ['current', '재학생', '재학생 현황'],
@@ -110,11 +130,14 @@ export default function Students() {
         <>
           <div className="toolbar">
             <span>총 <strong style={{ color: 'var(--primary)' }}>{fmt(data.total)}</strong>건</span>
-            <select aria-label="페이지당 개수" value={String(data.size)} onChange={(e) => apply({ size: e.target.value, page: '' })}>
-              <option value="20">20개씩</option>
-              <option value="50">50개씩</option>
-              <option value="100">100개씩</option>
-            </select>
+            <span className="toolbar-right">
+              <DownloadButton run={() => downloadList('/api/enrollments?' + (query || 'tab=current'), `${title}_${data.refDate}.csv`, COLUMNS)} />
+              <select aria-label="페이지당 개수" value={String(data.size)} onChange={(e) => apply({ size: e.target.value, page: '' })}>
+                <option value="20">20개씩</option>
+                <option value="50">50개씩</option>
+                <option value="100">100개씩</option>
+              </select>
+            </span>
           </div>
 
           <div className="grid-box">
