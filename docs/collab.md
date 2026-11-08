@@ -29,7 +29,7 @@
 - 여러 번 실행해도 되게 쓴다(`if not exists`, `drop policy if exists`, `on conflict do nothing`).
 - 프로젝트는 'Automatically expose new tables'가 꺼져 있다. 새 테이블마다 `grant`를 직접 쓰고 RLS를 켠다.
 - 이미 있는 권한 함수는 `is_staff()`(직원)와 `is_partner()`(승인된 에이전시 지점)다. 새 역할은 새 함수로 만든다(예: `is_student()`). 기존 함수의 뜻은 바꾸지 않는다.
-- 학생 앱·인트라넷이 더한 권한 함수: `is_student()`·`current_student_no()`(학생), `is_guard()`·`current_guard_campus()`(가드 공용 계정), `staff_has_campus(캠퍼스)`(직원이 맡은 캠퍼스, `staff_campuses`). `20261108100000_student_intranet.sql`. 직원끼리 이름을 보는 `staff_directory()`(`20261108130000_intranet_deploy.sql`, `staff_users` RLS 는 그대로).
+- 학생 앱·인트라넷이 더한 권한 함수: `is_student()`·`current_student_no()`(학생), `is_guard()`·`current_guard_campus()`(가드 공용 계정), `staff_has_campus(캠퍼스)`(직원이 맡은 캠퍼스, `staff_campuses`). `20261108100000_student_intranet.sql`. 직원끼리 이름을 보는 `staff_directory()`(`20261108130000_intranet_deploy.sql`, `staff_users` RLS 는 그대로). 학생 계정 만들기·초기화 접근 기록 `student_account_audit()`(`20261108180000_student_account_admin.sql`).
 - 권한 시험은 `supabase/tests/*.mjs`에 둔다. PGlite(Postgres WebAssembly)에 Supabase 흉내를 만들어 역할별로 읽기·쓰기를 확인한다(의존성에 넣지 않고 `npm i --no-save`로 임시 설치). CI가 함께 돌리므로 `legacy_tables`처럼 시험이 쓰는 마이그레이션을 바꾸면 결과를 확인한다. `pg-supabase.mjs`는 Supabase Auth·REST를 흉내 내는 시험 서버다.
 - `legacy_*`(업체 원본)는 직원만 읽는다. 다른 앱을 위해 이 RLS를 넓히지 않는다. 필요하면 security definer 함수나 그 앱용 테이블을 만든다.
 - `auth.users`에는 `on_partner_signup` 트리거가 있다. 메타데이터 `portal='partner'`일 때만 동작한다. 다른 앱은 다른 `portal` 값을 쓴다.

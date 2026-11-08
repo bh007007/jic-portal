@@ -12,13 +12,17 @@ import { handleIntranetApi } from '../server/core';
 import { accountCaches, serviceHeaders, userHeaders } from '../server/supabaseData';
 import { approvedOvernights, supabaseStores } from '../server/supabaseStores';
 import { serviceKeycardSecret, type KeycardSecret } from '../../student/server/keycard';
+import { supabaseAccountAdmin } from '../../student/server/accountAdmin';
+import { DEFAULT_EMAIL_DOMAIN } from '../../student/server/accounts';
 
 export interface Env {
   ASSETS: { fetch(req: Request): Promise<Response> };
   SUPABASE_URL?: string;
   SUPABASE_ANON_KEY?: string;
-  /** 비밀 변수: 가드 태블릿이 재학생 명단과 승인된 외박을 읽는 데만 쓴다. 없으면 가드 요청만 500 */
+  /** 비밀 변수: 가드 태블릿(재학생 명단·승인된 외박·카드키 비밀 값)과 직원의 학생 계정 관리(만들기·비밀번호 초기화)에만 쓴다. 없으면 그 요청만 안 됨 */
   SUPABASE_SERVICE_ROLE_KEY?: string;
+  /** 학생 계정 이메일 도메인(학생 앱 VITE_STUDENT_EMAIL_DOMAIN 과 같게). 없으면 students.jic.internal */
+  STUDENT_EMAIL_DOMAIN?: string;
 }
 
 const BODY_LIMIT = 32 * 1024; // 로컬 개발 서버와 같음(공지 본문 5000자)
@@ -85,7 +89,17 @@ export async function handleApi(req: Request, env: Env, fetchFn: typeof fetch = 
 
     const db = await caches.c.db(userHeaders(conf, token));
     const { status, body: out } = await handleIntranetApi(
-      { ...base, db, stores, actor: account.name, session: { role: 'staff' } },
+      {
+        ...base,
+        db,
+        stores,
+        actor: account.name,
+        session: { role: 'staff' },
+        // 학생 계정 관리는 서비스 키로(Auth Admin API). 계정 작업 경로에서만 쓰인다
+        accounts: env.SUPABASE_SERVICE_ROLE_KEY ? supabaseAccountAdmin(conf.url, env.SUPABASE_SERVICE_ROLE_KEY, env.STUDENT_EMAIL_DOMAIN || DEFAULT_EMAIL_DOMAIN, fetchFn) : undefined,
+        accountsUnavailable: env.SUPABASE_SERVICE_ROLE_KEY ? undefined : 'server_config',
+        studentEmailDomain: env.STUDENT_EMAIL_DOMAIN || DEFAULT_EMAIL_DOMAIN,
+      },
       req.method,
       url.pathname,
       url.searchParams,

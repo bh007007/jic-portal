@@ -342,6 +342,38 @@ x = await api('PUT', `/api/trips/${tripId}`, tC, tripBody);
 ok('취소한 여행 수정 409', x.status === 409 && x.body.error === 'trip_cancelled', x);
 ok('홈 요약: 다가오는 여행 0', (await api('GET', '/api/summary', tC)).body.tripsUpcoming === 0);
 
+// ── 학생 계정 관리: 직원이 계정을 만들고(서비스 키, 8명씩) 비밀번호를 생년월일로 되돌린다. 접근 기록에 남는다
+x = await api('GET', '/api/accounts', tC);
+ok('학생 계정 목록(배포): 대상·상태', x.status === 200 && x.body.available === true && x.body.rows.length > 0 && x.body.counts.none > 0, x.body.counts ?? x);
+const before = x.body.counts;
+let made = 0;
+for (let i = 0; i < 40; i++) {
+  const c = await api('POST', '/api/accounts/create', tC, {});
+  if (c.status !== 200) {
+    ok('계정 만들기', false, c);
+    break;
+  }
+  made += c.body.linked;
+  if (!c.body.remaining) break;
+}
+x = await api('GET', '/api/accounts', tC);
+ok('계정 없는 학생이 모두 계정을 받음(첫 비밀번호 변경 전)', x.body.counts.none === 0 && made === before.none && x.body.counts.pending >= before.none, { before, after: x.body.counts, made });
+const stR = x.body.rows.find((r) => r.status === 'pending').stId;
+const birth = (await sb.sql(`select data->>'st_birthday' b from public.legacy_students where id = $1`, [stR]))[0].b.replace(/-/g, '');
+let lr = await (await fetch(`${sb.url}/auth/v1/token?grant_type=password`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ email: `${stR}@students.jic.internal`, password: birth }) })).json();
+ok('만든 계정으로 학생번호 + 생년월일 로그인', !!lr.access_token, lr);
+await fetch(`${sb.url}/auth/v1/user`, { method: 'PUT', headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${lr.access_token}` }, body: JSON.stringify({ password: 'changed1234' }) });
+x = await api('POST', `/api/accounts/${stR}/reset`, tP, {});
+ok('다른 직원이 비밀번호 초기화', x.status === 200 && x.body.status === 'pending', x);
+lr = await (await fetch(`${sb.url}/auth/v1/token?grant_type=password`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ email: `${stR}@students.jic.internal`, password: birth }) })).json();
+ok('초기화 뒤 다시 생년월일로 로그인, 변경 강제', !!lr.access_token && (await sb.sql(`select must_change_password m from public.student_users where student_no = $1`, [stR]))[0].m === true, lr);
+const aud = await sb.sql(`select action, actor_id::text, count(*)::int n from public.audit_logs where target = 'student_account' group by 1, 2 order by 1`);
+ok('접근 기록: 만들기(직원C)·초기화(직원P)', aud.some((a) => a.action === 'account_create' && a.actor_id === U.staffC && a.n === made) && aud.some((a) => a.action === 'password_reset' && a.actor_id === U.staffP && a.n === 1), aud);
+x = await api('GET', '/api/accounts', tG);
+ok('가드는 학생 계정 403', x.status === 403 && x.body.error === 'guard_forbidden', x);
+x = await handleApi(new Request('https://intranet.example/api/accounts', { headers: { Authorization: `Bearer ${tC}` } }), { ...env, SUPABASE_SERVICE_ROLE_KEY: undefined });
+ok('서비스 키가 없으면 안내(server_config)', (await x.json()).reason === 'server_config');
+
 await sb.close();
 console.log(fails ? `${fails}건 실패` : '모두 통과');
 process.exit(fails ? 1 : 0);

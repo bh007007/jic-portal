@@ -202,9 +202,9 @@ npm run student:accounts -- --reset 30095 --apply   # 비밀번호를 잊은 학
 
 ### 설정 순서 (레오 PC의 Claude, 테스트 프로젝트는 샘플 데이터만)
 
-1. Supabase에 마이그레이션 `20261108100000_student_intranet.sql`, `20261108120000_student_request_ids.sql`, `20261108140000_nonacademic_requests.sql`(생활 요청), `20261108150000_overnight_travel.sql`(외박·여행 정보), `20261108160000_school_trips.sql`(학교 여행), `20261108170000_keycard_qr.sql`(출입 QR)을 차례로 적용한다.
+1. Supabase에 마이그레이션 `20261108100000_student_intranet.sql`, `20261108120000_student_request_ids.sql`, `20261108140000_nonacademic_requests.sql`(생활 요청), `20261108150000_overnight_travel.sql`(외박·여행 정보), `20261108160000_school_trips.sql`(학교 여행), `20261108170000_keycard_qr.sql`(출입 QR), `20261108180000_student_account_admin.sql`(인트라넷 학생 계정 관리)을 차례로 적용한다.
 2. 샘플 업체 원본을 올린다(`scripts/upload-to-supabase.mjs`, 이미 올라가 있으면 건너뜀).
-3. 학생 계정을 만든다: `npm run student:accounts -- --apply`(위 '학생 계정과 로그인').
+3. 학생 계정을 만든다: 인트라넷 **학생 계정** 화면의 '계정 없는 학생 계정 만들기'(배포, 서비스 키 필요) 또는 `npm run student:accounts -- --apply`(위 '학생 계정과 로그인').
 4. **Workers & Pages → Create → Workers → Import a repository** → `jic-portal`
 
    | 항목 | 값 |

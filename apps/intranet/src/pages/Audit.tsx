@@ -64,7 +64,7 @@ export default function Audit() {
                   <th>직원</th>
                   <th>종류</th>
                   <th className="left">학생</th>
-                  <th className="left">상담 기록</th>
+                  <th className="left">대상</th>
                 </tr>
               </thead>
               <tbody>
@@ -82,7 +82,7 @@ export default function Audit() {
                         <StudentLink stId={l.stId} name={l.name} /> <span className="muted small">{l.stId}</span>
                       </td>
                       <td className="left">
-                        <Link to={`/counseling/${l.targetId}`}>{l.title || l.targetId}</Link>
+                        {l.target === 'student_account' ? <Link to="/accounts">학생 계정</Link> : <Link to={`/counseling/${l.targetId}`}>{l.title || l.targetId}</Link>}
                       </td>
                     </tr>
                   ))

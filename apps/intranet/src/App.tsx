@@ -27,6 +27,7 @@ import StudentFileDetail from './pages/StudentFileDetail';
 import TripDetail from './pages/TripDetail';
 import TripForm from './pages/TripForm';
 import Trips from './pages/Trips';
+import StudentAccounts from './pages/StudentAccounts';
 import StudentFiles from './pages/StudentFiles';
 
 /**
@@ -109,6 +110,7 @@ export default function App() {
               <Route path="/trips/new" element={<TripForm key="new" />} />
               <Route path="/trips/:id" element={<TripDetail />} />
               <Route path="/trips/:id/edit" element={<TripForm key="edit" />} />
+              <Route path="/accounts" element={<StudentAccounts />} />
               <Route path="/student-file" element={<StudentFiles />} />
               <Route path="/student-file/:stId" element={<StudentFileDetail />} />
               <Route path="*" element={<NotReady />} />
