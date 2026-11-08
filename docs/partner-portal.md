@@ -45,7 +45,7 @@
 - 지금 들어 있는 것은 **샘플 규칙(`sample-1`, 초안)** 이다. 상담 화면 위에 '승인 전' 안내가 나온다. 센터장 승인본이 나오면 관리자 화면 '추천 규칙'에서 질문·규칙·단계 기본값을 바꾸고, 상태를 '승인본'으로 저장한다.
 - 규칙은 위에서부터 조건이 모두 맞는 첫 규칙을 쓰고, 조건이 빈 규칙이 기본값이다(`src/consult/engine.ts`).
 
-## 로컬 실행
+
 ```powershell
 copy apps\partner\.env.example apps\partner\.env.local
 npm run partner
