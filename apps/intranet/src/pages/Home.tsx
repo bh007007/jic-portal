@@ -31,6 +31,20 @@ export default function Home() {
             <small>건</small>
           </span>
         </Link>
+        <Link to="/requests/absences">
+          <span className="label">결석 신청 대기</span>
+          <span className="value">
+            {data.pendingAbsences}
+            <small>건</small>
+          </span>
+        </Link>
+        <Link to="/requests/overnights">
+          <span className="label">외박 신청 대기 · 오늘 밤 외박</span>
+          <span className="value">
+            {data.pendingOvernights}
+            <small>건 · {data.overnightTonight}명</small>
+          </span>
+        </Link>
         <div>
           <span className="label">재학생</span>
           <span className="value">

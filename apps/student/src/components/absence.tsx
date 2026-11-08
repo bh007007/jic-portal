@@ -1,5 +1,5 @@
 import { Link } from 'react-router-dom';
-import type { Absence } from '../api';
+import type { Absence, OvernightRow } from '../api';
 import { dayOfWeek, md, mdhm } from '../format';
 import { useI18n, type T } from '../i18n';
 
@@ -32,6 +32,23 @@ export function AbsenceRow({ a }: { a: Absence }) {
         <span className="list-sub">{t('abs.submitted', { t: mdhm(a.submittedAt) })}</span>
       </span>
       <StatusText status={a.status} />
+    </Link>
+  );
+}
+
+/** 외박 목록 한 줄: "11.08 (일) ~ 11.10 (화) · 2박" / "11.07 21:40 제출" / 상태 */
+export function OvernightRowLink({ o }: { o: OvernightRow }) {
+  const { t, weekday } = useI18n();
+  return (
+    <Link to={`/requests/overnight/${o.id}`} className="list-row">
+      <span className="list-main">
+        <span className="list-title">
+          {md(o.from)} ({weekday(dayOfWeek(o.from))}) ~ {md(o.until)} ({weekday(dayOfWeek(o.until))})
+          <span className="list-extra"> · {t('ov.nights', { n: o.nights })}</span>
+        </span>
+        <span className="list-sub">{t('abs.submitted', { t: mdhm(o.submittedAt) })}</span>
+      </span>
+      <StatusText status={o.status} />
     </Link>
   );
 }

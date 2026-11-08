@@ -173,6 +173,7 @@ button, input, select { font: inherit; }
 .cell-input { height: 30px; padding: 0 8px; border: 1px solid #c5cad2; border-radius: 3px; background: #fff; font-size: 13px; color: var(--ink); }
 .cell-input.num-input { width: 80px; text-align: right; }
 .cell-input.wide { width: 100%; max-width: 360px; height: auto; padding: 6px 8px; line-height: 1.5; }
+.memo-input { width: 260px; }
 .form-actions { display: flex; flex-wrap: wrap; align-items: center; justify-content: flex-end; gap: 12px; padding-top: 12px; }
 .tbl td.right, .tbl th.right { text-align: right; }
 .field.range input[type='date'] { flex: 1 1 130px; min-width: 120px; }
@@ -225,6 +226,7 @@ button, input, select { font: inherit; }
 .guard-out { flex: 1 1 auto; min-height: 240px; background: #fff; border: 1px solid #c9ced6; border-radius: 4px; display: flex; flex-direction: column; }
 .guard-out-head { display: flex; align-items: center; justify-content: space-between; padding: 12px 18px; border-bottom: 1px solid var(--line-2); }
 .guard-out-head h2 { margin: 0; font-size: 17px; font-weight: 700; }
+.guard-sub-dark { font-size: 14px; color: var(--ink-2); }
 .guard-out-list { flex: 1 1 auto; overflow-y: auto; max-height: 52vh; }
 .guard-out table { width: 100%; border-collapse: collapse; font-size: 15px; }
 .guard-out th { position: sticky; top: 0; padding: 10px 8px; background: var(--head-bg); border-bottom: 1px solid var(--line); font-weight: 500; font-size: 13px; color: #444; }

@@ -1,8 +1,8 @@
 /** /api 호출. 로컬에는 로그인이 없다(관리자 앱과 같다). 배포에서는 직원·가드 로그인 토큰을 붙인다(docs/intranet.md). */
 import { useCallback, useEffect, useState } from 'react';
-import type { GuardView, OutingList, OutingRow, PenaltyList, PenaltyRules, Settings, Summary } from '../server/core';
+import type { GuardView, OutingList, OutingRow, PenaltyList, PenaltyRules, RequestList, Settings, Summary } from '../server/core';
 
-export type { GuardView, OutingList, OutingRow, PenaltyList, PenaltyRules, Settings, Summary };
+export type { GuardView, OutingList, OutingRow, PenaltyList, PenaltyRules, RequestList, Settings, Summary };
 export type PenaltyRow = PenaltyList['rows'][number];
 
 export class ApiError extends Error {
@@ -78,5 +78,6 @@ const MESSAGES: Record<string, string> = {
   invalid_rules: '점수는 0~100, 경고 기준은 1 이상이며 단계가 올라갈수록 커야 합니다.',
   invalid_settings: '통금 시각과 근무자 이름을 확인하세요.',
   ids_required: '처리할 건을 고르세요.',
+  invalid_decision: '승인 또는 반려를 고르세요.',
 };
 export const errorText = (code: string) => MESSAGES[code] ?? `처리하지 못했습니다 (${code}).`;

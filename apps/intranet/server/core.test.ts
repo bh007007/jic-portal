@@ -4,6 +4,7 @@
  */
 import path from 'node:path';
 import { loadDir } from '../../admin/server/localData';
+import type { Absence, Overnight, RequestStore } from '../../student/server/requests';
 import { handleIntranetApi, type Stores } from './core';
 
 function memRepo<T extends { id: string }>() {
@@ -20,6 +21,23 @@ function memRepo<T extends { id: string }>() {
     },
   };
 }
+function memReq<T extends { id: string; stId: string }>(): RequestStore<T> {
+  const m = new Map<string, T>();
+  return {
+    async listAll() {
+      return [...m.values()].map((x) => ({ ...x }));
+    },
+    async listByStudent(stId) {
+      return [...m.values()].filter((x) => x.stId === stId);
+    },
+    async get(id) {
+      return m.has(id) ? { ...m.get(id)! } : null;
+    },
+    async put(x) {
+      m.set(x.id, { ...x });
+    },
+  };
+}
 function memDoc<T>() {
   let v: T | null = null;
   return {
@@ -33,7 +51,7 @@ function memDoc<T>() {
 }
 
 const db = loadDir(path.resolve(process.cwd(), '../../data-sample/tables'));
-const stores: Stores = { outings: memRepo(), penalties: memRepo(), settings: memDoc(), rules: memDoc() };
+const stores: Stores = { outings: memRepo(), penalties: memRepo(), settings: memDoc(), rules: memDoc(), absences: memReq<Absence>(), overnights: memReq<Overnight>() };
 let clock = Date.parse('2026-11-05T19:02:00+08:00');
 let n = 0;
 const ctx = { db, stores, now: () => new Date(clock), newId: () => 'o' + ++n };
@@ -139,5 +157,52 @@ r = await call('POST', '/penalties/decide', { ids: [], approve: true });
 expect('ids 없으면 400', r.status === 400, r);
 const sm = (await call('GET', '/summary')).body as any;
 expect('summary', typeof sm.pending === 'number' && sm.current > 0, sm);
+
+// ── 외박 허용과 신청 처리
+await call('PUT', '/settings', { curfew: '23:00', guards: [] });
+const req = (id: string, stId: string, extra: Record<string, unknown>) => ({
+  id, stId, trId: '', reason: '사유', status: 'pending', submittedAt: '2026-11-04T01:00:00.000Z', updatedAt: '2026-11-04T01:00:00.000Z', decidedAt: null, decidedBy: null, comment: null, ...extra,
+});
+// C 는 11/05 밤 미귀가 → 귀가 01:20 이었던 학생. 11/05~11/06 외박 신청(대기)
+await stores.overnights.put(req('ov1', C, { from: '2026-11-05', until: '2026-11-06' }) as Overnight);
+await stores.absences.put(req('ab1', A, { date: '2026-11-09', periods: [], kind: 'sick' }) as Absence);
+await stores.absences.put(req('ab2', B, { date: '2026-11-10', periods: [3, 4], kind: 'official' }) as Absence);
+pl = (await call('GET', '/penalties')).body as any;
+expect('대기 중 외박은 통금 판정에 영향 없음: C 후보 그대로', pl.rows.some((x: any) => x.stId === C && x.date === '2026-11-05'), pl.rows.map((x: any) => x.stId));
+let rq = (await call('GET', '/requests/overnights')).body as any;
+expect('외박 대기 1건, 1박', rq.counts.pending === 1 && rq.overnights[0].nights === 1 && rq.overnights[0].name, rq);
+r = await call('POST', '/requests/overnights/decide', { ids: ['ov1'], approve: true, comment: '보호자 확인' });
+expect('외박 승인 done 1', (r.body as any).done === 1, r.body);
+pl = (await call('GET', '/penalties')).body as any;
+expect('외박 승인 후 C 의 11/05 밤 통금 위반 후보가 빠짐', !pl.rows.some((x: any) => x.stId === C && x.date === '2026-11-05'), pl.rows.map((x: any) => [x.stId, x.date]));
+const ovl = (await call('GET', '/outings', null, 'date=2026-11-05')).body as any;
+const cRow = ovl.rows.find((x: any) => x.stId === C);
+expect('외출 기록에 외박 허용(복귀일 11-06) 표시, 위반 아님', cRow.overnightUntil === '2026-11-06' && cRow.breach === null, cRow);
+rq = (await call('GET', '/requests/absences', null, 'kind=official')).body as any;
+expect('결석 대기 2건, 종류 검색 1건', rq.counts.pending === 2 && rq.absences.length === 1 && rq.absences[0].id === 'ab2', rq);
+r = await call('POST', '/requests/absences/decide', { ids: ['ab1', 'ab2', 'nope'], approve: false, comment: '진단서 필요' });
+expect('결석 반려 2건, 없는 id 건너뜀', (r.body as any).done === 2 && (r.body as any).skipped[0] === 'nope', r.body);
+const ab1 = await stores.absences.get('ab1');
+expect('반려 메모가 학생 신청에 남음', ab1?.status === 'rejected' && ab1?.comment === '진단서 필요' && ab1?.decidedAt !== null, ab1);
+r = await call('POST', '/requests/absences/decide', { ids: ['ab1'], approve: true });
+expect('처리된 결석은 다시 처리 안 됨', (r.body as any).done === 0, r.body);
+rq = (await call('GET', '/requests/absences', null, 'tab=rejected')).body as any;
+expect('반려 탭 2건', rq.absences.length === 2, rq.absences.length);
+r = await call('POST', '/requests/absences/decide', { ids: ['ab1'] });
+expect('승인/반려 값 없으면 400', r.status === 400, r);
+// 오늘 밤 외박 허용 수: 지금(11/07 00:05 이후)을 11/07 밤으로 옮겨 확인
+at('2026-11-07T21:00:00');
+await stores.overnights.put(req('ov2', D, { from: '2026-11-07', until: '2026-11-09', status: 'approved' }) as Overnight);
+const campusD = cur.find((x) => x.stId === D)!.campus;
+const gv = (await call('GET', '/guard', null, 'campus=' + campusD)).body as any;
+expect('가드 화면(D 의 캠퍼스) 오늘 밤 외박 허용 1명', gv.overnightTonight === 1, gv.overnightTonight);
+const otherCampus = gv.campuses.find((c: string) => c !== campusD);
+if (otherCampus) {
+  const gv2 = (await call('GET', '/guard', null, 'campus=' + otherCampus)).body as any;
+  expect('다른 캠퍼스 가드 화면에는 안 셈', gv2.overnightTonight === 0, gv2.overnightTonight);
+}
+const sm2 = (await call('GET', '/summary')).body as any;
+expect('홈 요약: 결석 대기 0, 외박 대기 0, 오늘 밤 외박 1', sm2.pendingAbsences === 0 && sm2.pendingOvernights === 0 && sm2.overnightTonight === 1, sm2);
+
 console.log(fails ? `\n${fails}건 실패` : '\n모두 통과');
 if (fails) process.exit(1);

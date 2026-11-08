@@ -2,43 +2,33 @@
  * 학생 앱 /api/* 계산. 파일·네트워크에 의존하지 않는다.
  * - 학생·연수 정보는 관리자 앱 core(createDb → studentDetail)를 그대로 쓰고, 학생 본인에게 보여도 되는 항목만 골라 내보낸다.
  *   메모(에이전시·회계 등), 입금액·포인트 금액, 에이전시·납부 방법은 내보내지 않는다.
- * - 결석 신청 저장은 AbsenceStore 로 분리한다. 로컬은 파일(server/localData.ts), 배포는 Supabase absence_requests(예정, docs/student-app.md).
+ * - 결석·외박 신청의 모양과 규칙은 server/requests.ts(인트라넷과 같이 씀). 저장은 RequestStore 로 분리한다.
  */
 import type { Db } from '../../admin/server/core';
+import {
+  cancelRequest,
+  newAbsence,
+  newOvernight,
+  nightsBetween,
+  PERIOD_COUNT,
+  REASON_MAX,
+  requestWindows,
+  type Absence,
+  type AbsenceInput,
+  type AbsenceStore,
+  type Outcome,
+  type Overnight,
+  type OvernightInput,
+  type OvernightStore,
+} from './requests';
 
-export const ABSENCE_KINDS = ['sick', 'official', 'personal'] as const;
-export type AbsenceKind = (typeof ABSENCE_KINDS)[number];
-export type AbsenceStatus = 'pending' | 'approved' | 'rejected' | 'cancelled';
-
-/** 교시 수. 시간표가 연결되기 전 임시값이며 LMS 담당자와 확인 후 확정한다(docs/student-app.md). */
-export const PERIOD_COUNT = 8;
-export const REASON_MAX = 500;
-
-export interface Absence {
-  id: string;
-  stId: string;
-  trId: string;
-  date: string; // YYYY-MM-DD
-  periods: number[]; // 빈 배열 = 종일
-  kind: AbsenceKind;
-  reason: string;
-  status: AbsenceStatus;
-  submittedAt: string; // ISO
-  updatedAt: string;
-  decidedAt: string | null; // 담당자 승인·반려 시각
-  decidedBy: string | null;
-  comment: string | null; // 담당자 메모(반려 사유 등)
-}
-
-export interface AbsenceStore {
-  listByStudent(stId: string): Promise<Absence[]>;
-  get(id: string): Promise<Absence | null>;
-  put(a: Absence): Promise<void>;
-}
+export { ABSENCE_KINDS, PERIOD_COUNT, REASON_MAX } from './requests';
+export type { Absence, AbsenceInput, AbsenceKind, AbsenceStore, Overnight, OvernightInput, OvernightStore, RequestStatus } from './requests';
 
 export interface StudentCtx {
   db: Db;
   store: AbsenceStore;
+  overnights: OvernightStore;
   /** 로그인한 학생 번호. 없으면 null. */
   stId: string | null;
   /** 학생번호 + 생년월일 로그인(/api/login)을 열지. 로컬 개발 서버에서만 true. */
@@ -50,11 +40,10 @@ export interface StudentCtx {
 type Result = { status: number; body: unknown };
 const ok = (body: unknown, status = 200): Result => ({ status, body });
 const fail = (status: number, error: string): Result => ({ status, body: { error } });
+const fromOutcome = <T>(o: Outcome<T>): Result => (o.ok ? ok(o.value, o.status) : fail(o.status, o.error));
 
 const DAY = 864e5;
 const daysBetween = (from: string, to: string) => Math.round((Date.parse(to) - Date.parse(from)) / DAY);
-const isDate = (v: unknown): v is string =>
-  typeof v === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(v) && !Number.isNaN(Date.parse(v)) && new Date(v).toISOString().slice(0, 10) === v;
 const digits = (v: unknown) => String(v ?? '').replace(/\D/g, '');
 
 /** 졸업 전 확인 목록을 보여 주는 기간(관리자 앱의 '졸업임박'과 같은 14일). */
@@ -104,78 +93,37 @@ function profile(db: Db, stId: string) {
 }
 export type Profile = NonNullable<ReturnType<typeof profile>>;
 
-/** 결석 신청이 가능한 기간: 재학 중이거나 입학 예정인 연수의 기간. 연장으로 연수가 여러 개면 여러 구간이 된다. */
-function absenceWindows(db: Db, stId: string) {
-  const d = db.studentDetail(stId);
-  if (!d) return [];
-  return d.enrollments
-    .filter((e) => (e.status === 'current' || e.status === 'upcoming') && e.start && e.end)
-    .map((e) => ({ trId: e.trId, from: e.start, to: e.end }))
-    .sort((a, b) => a.from.localeCompare(b.from));
-}
-
-const overlaps = (a: number[], b: number[]) => a.length === 0 || b.length === 0 || a.some((p) => b.includes(p));
-const byNewest = (a: Absence, b: Absence) => b.submittedAt.localeCompare(a.submittedAt);
+const byNewest = (a: { submittedAt: string }, b: { submittedAt: string }) => b.submittedAt.localeCompare(a.submittedAt);
 
 async function listAbsences(ctx: StudentCtx, stId: string) {
   const rows = (await ctx.store.listByStudent(stId)).sort(byNewest);
-  return { refDate: ctx.db.refDate, periodCount: PERIOD_COUNT, reasonMax: REASON_MAX, windows: absenceWindows(ctx.db, stId), rows };
+  return { refDate: ctx.db.refDate, periodCount: PERIOD_COUNT, reasonMax: REASON_MAX, windows: requestWindows(ctx.db, stId), rows };
 }
 export type AbsenceList = Awaited<ReturnType<typeof listAbsences>>;
 
-export interface AbsenceInput {
-  date?: unknown;
-  periods?: unknown;
-  kind?: unknown;
-  reason?: unknown;
-}
-
 async function createAbsence(ctx: StudentCtx, stId: string, input: AbsenceInput): Promise<Result> {
-  const { date, kind } = input;
-  const reason = typeof input.reason === 'string' ? input.reason.trim() : '';
-  const periodsIn = Array.isArray(input.periods) ? input.periods : [];
-  const periods = [...new Set(periodsIn.map(Number))].sort((a, b) => a - b);
-
-  if (!isDate(date)) return fail(400, 'invalid_date');
-  if (!ABSENCE_KINDS.includes(kind as AbsenceKind)) return fail(400, 'invalid_kind');
-  if (periods.some((p) => !Number.isInteger(p) || p < 1 || p > PERIOD_COUNT)) return fail(400, 'invalid_periods');
-  if (!reason) return fail(400, 'reason_required');
-  if (reason.length > REASON_MAX) return fail(400, 'reason_too_long');
-
-  const win = absenceWindows(ctx.db, stId).find((w) => w.from <= date && date <= w.to);
-  if (!win) return fail(400, 'date_out_of_range');
-
-  const mine = await ctx.store.listByStudent(stId);
-  const clash = mine.some((a) => a.date === date && (a.status === 'pending' || a.status === 'approved') && overlaps(a.periods, periods));
-  if (clash) return fail(409, 'duplicate');
-
-  const now = ctx.now().toISOString();
-  const rec: Absence = {
-    id: ctx.newId(),
-    stId,
-    trId: win.trId,
-    date,
-    periods,
-    kind: kind as AbsenceKind,
-    reason,
-    status: 'pending',
-    submittedAt: now,
-    updatedAt: now,
-    decidedAt: null,
-    decidedBy: null,
-    comment: null,
-  };
-  await ctx.store.put(rec);
-  return ok(rec, 201);
+  const out = newAbsence({ ...ctx, stId }, await ctx.store.listByStudent(stId), input);
+  if (out.ok) await ctx.store.put(out.value);
+  return fromOutcome(out);
 }
 
-async function cancelAbsence(ctx: StudentCtx, stId: string, id: string): Promise<Result> {
-  const a = await ctx.store.get(id);
-  if (!a || a.stId !== stId) return fail(404, 'not_found');
-  if (a.status !== 'pending') return fail(409, 'not_pending');
-  const next: Absence = { ...a, status: 'cancelled', updatedAt: ctx.now().toISOString() };
-  await ctx.store.put(next);
-  return ok(next);
+async function listOvernights(ctx: StudentCtx, stId: string) {
+  const rows = (await ctx.overnights.listByStudent(stId)).sort(byNewest).map((o) => ({ ...o, nights: nightsBetween(o.from, o.until) }));
+  return { refDate: ctx.db.refDate, reasonMax: REASON_MAX, windows: requestWindows(ctx.db, stId), rows };
+}
+export type OvernightList = Awaited<ReturnType<typeof listOvernights>>;
+export type OvernightRow = OvernightList['rows'][number];
+
+async function createOvernight(ctx: StudentCtx, stId: string, input: OvernightInput): Promise<Result> {
+  const out = newOvernight({ ...ctx, stId }, await ctx.overnights.listByStudent(stId), input);
+  if (out.ok) await ctx.overnights.put(out.value);
+  return fromOutcome(out);
+}
+
+async function cancelIn<T extends Absence | Overnight>(store: { get(id: string): Promise<T | null>; put(x: T): Promise<void> }, stId: string, id: string, now: Date): Promise<Result> {
+  const out = cancelRequest(await store.get(id), stId, now);
+  if (out.ok) await store.put(out.value);
+  return fromOutcome(out);
 }
 
 /** 로컬 개발용 로그인: 학생번호 + 생년월일(YYYYMMDD). 배포에서는 Supabase Auth 학생 계정으로 바꾼다. */
@@ -217,8 +165,12 @@ export async function handleStudentApi(ctx: StudentCtx, method: string, pathname
     }
     if (p === '/absences' && method === 'GET') return ok(await listAbsences(ctx, stId));
     if (p === '/absences' && method === 'POST') return await createAbsence(ctx, stId, input);
-    const m = p.match(/^\/absences\/([\w-]+)\/cancel$/);
-    if (m && method === 'POST') return await cancelAbsence(ctx, stId, m[1]);
+    if (p === '/overnights' && method === 'GET') return ok(await listOvernights(ctx, stId));
+    if (p === '/overnights' && method === 'POST') return await createOvernight(ctx, stId, input);
+    const m = p.match(/^\/(absences|overnights)\/([\w-]+)\/cancel$/);
+    if (m && method === 'POST') {
+      return m[1] === 'absences' ? await cancelIn(ctx.store, stId, m[2], ctx.now()) : await cancelIn(ctx.overnights, stId, m[2], ctx.now());
+    }
 
     return fail(404, 'not_found');
   } catch (e) {

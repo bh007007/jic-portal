@@ -1,7 +1,7 @@
 import { Link } from 'react-router-dom';
 import { useApi, type OutingList } from '../api';
 import { Loading, PageTitle, Tabs } from '../components/ui';
-import { dateWithDay, duration, mdhm } from '../format';
+import { dateWithDay, duration, md, mdhm } from '../format';
 import { useSearchForm } from '../useSearchForm';
 
 const KEYS = ['date', 'campus', 'q'] as const;
@@ -112,7 +112,9 @@ export default function Outings({ mode }: { mode: 'outings' | 'curfew' }) {
                       <td>
                         {r.outBy || '-'} / {r.inBy || '-'}
                       </td>
-                      <td className="left">{r.breach ? <span className="text-red">{r.breach}</span> : <span className="muted">-</span>}</td>
+                      <td className="left">
+                        {r.breach ? <span className="text-red">{r.breach}</span> : r.overnightUntil ? <span className="text-blue">외박 허용 ~{md(r.overnightUntil)}</span> : <span className="muted">-</span>}
+                      </td>
                     </tr>
                   ))
                 )}

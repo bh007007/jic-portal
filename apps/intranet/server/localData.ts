@@ -3,6 +3,7 @@
  * - 학생·연수는 관리자 앱과 같은 파일을 관리자 앱의 loadDir 로 읽는다.
  * - 외출·귀가 기록과 패널티는 storeDir(저장소 루트 .local-db/intranet, Git 제외)의 NDJSON 파일에 쓴다.
  *   샘플 데이터와 실제 추출본을 섞지 않도록 데이터 종류별로 파일을 나눈다. 통금·근무자·점수표 설정은 공용 JSON.
+ * - 결석·외박 신청은 학생 앱의 파일(studentStoreDir, .local-db/student)을 같이 열어 승인·반려한다.
  * - 로컬에는 로그인이 없다(관리자 앱과 같다). 이 PC(127.0.0.1)에서만 열린다.
  */
 import fs from 'node:fs';
@@ -11,6 +12,8 @@ import crypto from 'node:crypto';
 import type { IncomingMessage, ServerResponse } from 'node:http';
 import type { Plugin } from 'vite';
 import { loadDir } from '../../admin/server/localData';
+import { fileStore, requestFiles } from '../../student/server/localData';
+import type { Absence, Overnight } from '../../student/server/requests';
 import { handleIntranetApi, type DocRepo, type Repo, type Stores } from './core';
 
 function writeAtomic(file: string, text: string) {
@@ -82,13 +85,16 @@ function readJson(req: IncomingMessage): Promise<unknown> {
   });
 }
 
-export function intranetLocalPlugin(dataDir: string, storeDir: string): Plugin {
+export function intranetLocalPlugin(dataDir: string, storeDir: string, studentStoreDir: string): Plugin {
   return {
     name: 'jic-intranet-local',
     configureServer(server) {
       const db = loadDir(dataDir);
       const source = db.meta().source;
+      const req = requestFiles(studentStoreDir, source); // 학생 앱과 같은 파일
       const stores: Stores = {
+        absences: fileStore<Absence>(req.absences),
+        overnights: fileStore<Overnight>(req.overnights),
         outings: fileRepo(path.join(storeDir, `outings-${source}.ndjson`)),
         penalties: fileRepo(path.join(storeDir, `penalties-${source}.ndjson`)),
         settings: fileDoc(path.join(storeDir, 'settings.json')),
