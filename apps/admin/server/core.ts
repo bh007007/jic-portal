@@ -546,19 +546,29 @@ export function createDb(input: DataInput) {
   }
 
   // ── 회계: 연수별 인보이스 요약.
-  // sum_id_amount = 입금 매칭 합계. 포인트 충전·사용은 pointsOf(포인트 원장 우선, 없으면 sum_pd_point/sum_pu_point).
-  // 인보이스 총액은 추출본에 없다(sum_td_amount 는 총액이 아님). 총액·미수금은 만들지 않는다.
+  // sum_ic_price = 해외 인보이스 총액(인보이스 항목 합계), sum_id_amount = 입금 매칭 합계.
+  //   추출본 확인(11/8): 완납(FULL)의 91%가 입금 = 총액, 미납(NONE)은 모두 입금 < 총액. 업체 화면도 이 차이로 잔액을 본다.
+  //   미입금 = 총액 − 입금 매칭이며 미납·부분납에만 계산한다(완납은 업체 판정대로 0).
+  // sum_tc_price / sum_td_amount = 현지 인보이스 청구 / 현지 납부(통화 열이 없고 금액 크기로 보아 페소). 화면 표에는 넣지 않고 엑셀에만.
+  // 포인트 충전·사용은 pointsOf(포인트 원장 우선, 없으면 sum_pd_point/sum_pu_point).
   const PAY_NAMES = ['미납', '부분납', '완납'];
   const nationOf = (r: { nation: string }) => r.nation || '미상';
   const invAll = all.map(({ raw, row }) => {
     const inv = invoiceByTr.get(row.trId);
     const { pointIn, pointOut } = pointsOf(row.trId, inv);
+    const total = num(inv?.sum_ic_price);
+    const paid = num(inv?.sum_id_amount);
     return {
       ...row,
       agId: agencyIdOf(raw),
       currency: str(inv?.tr_currency || raw.tr_currency),
       hasInvoice: !!inv,
-      paid: num(inv?.sum_id_amount),
+      total,
+      paid,
+      // 입금 매칭이 음수(환불)인 행이 있어 총액을 넘지 않게 한다.
+      remaining: row.pay !== '완납' && total > paid ? Math.min(total, total - paid) : 0,
+      localBilled: num(inv?.sum_tc_price),
+      localPaid: num(inv?.sum_td_amount),
       pointIn,
       pointOut,
       pointBalance: pointIn - pointOut,
@@ -624,7 +634,9 @@ export function createDb(input: DataInput) {
     list = [...byKeyword(list, q)].sort(TAB_SORT[tab] ?? TAB_SORT.all);
     const totals = {
       byPay: PAY_NAMES.map((name) => ({ name, count: list.filter((r) => r.pay === name).length })),
+      totalByCurrency: sumByCurrency(list, (r) => r.currency, (r) => r.total),
       paidByCurrency: sumByCurrency(list, (r) => r.currency, (r) => r.paid),
+      remainingByCurrency: sumByCurrency(list, (r) => r.currency, (r) => r.remaining),
     };
     return { refDate, tab, tabCounts: statusCounts(invAll), facets, totals, ...paginate<InvoiceRow>(list, q) };
   }
@@ -650,6 +662,7 @@ export function createDb(input: DataInput) {
       byPay: PAY_NAMES.slice(0, 2).map((name) => ({ name, count: list.filter((r) => r.pay === name).length })),
       overdue: list.filter((r) => r.dueDate && r.dueDate < refDate).length,
       paidByCurrency: sumByCurrency(list, (r) => r.currency, (r) => r.paid),
+      remainingByCurrency: sumByCurrency(list, (r) => r.currency, (r) => r.remaining),
     };
     return { refDate, scope, scopeCounts: statusCounts(unpaidAll), views: viewCounts(), facets, totals, ...paginate<InvoiceRow>(list, q) };
   }

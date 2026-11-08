@@ -46,7 +46,7 @@ npm run admin
 - `/api/*` 계산은 `apps/admin/server/core.ts` 한 곳이다. 로컬은 `server/localData.ts`가 파일을, 배포는 `functions/api/[[path]].ts`가 Supabase를 읽어 같은 core에 넘긴다.
 - 로컬에서는 로그인이 없다. 배포 주소(Cloudflare Pages)에서는 Supabase 직원 계정으로 로그인한다.
 - 기준일은 추출 시각(`data/tables/meta.json`)이다. 다시 추출하고 분리하면 서버를 재시작해 반영한다.
-- 추출본에 없는 항목: 방·침대 번호, 인보이스 총액. 추가 추출 후 화면에 붙인다. 회계 화면은 입금 매칭 합계(`sum_id_amount`)와 포인트 충전·사용 합계만 보여 주고 총액·미수금은 만들지 않는다.
+- 추출본에 없는 항목: 침대 배정(업체 포털에 기록 없음), 인보이스 항목별 상세 금액. 회계 화면의 인보이스 총액은 `sum_ic_price`, 입금 매칭은 `sum_id_amount`이고, 미입금(총액 − 입금 매칭)은 미납·부분납에만 보여 준다. 현지 인보이스 청구·납부(`sum_tc_price`·`sum_td_amount`)는 통화 열이 없어 엑셀 다운로드에만 넣는다.
 - 입금 원장은 로컬에서는 `deposits.ndjson`, 배포에서는 `legacy_deposits`(받는 계좌 열 제외)를 읽는다. 비어 있으면 입금 매칭 > 입금 원장 탭에 '데이터 없음'이 표시된다.
 
 ## 학생 앱 실행 (로컬)
@@ -85,6 +85,10 @@ powershell -ExecutionPolicy Bypass -File scripts/split-export.ps1
 ### 추가 추출 (포인트 잔액, 방·침대)
 
 전체 추출에 없는 것만 받는 짧은 스크립트다(3~5분). 같은 방법으로 [scripts/extract/portal-extract-extra.js](scripts/extract/portal-extract-extra.js)를 콘솔에서 실행하고, 받은 `jic_portal_extra_YYYY-MM-DD.json.gz`를 `data/raw/`에 두고 `split-export.ps1`을 실행한다. 기존 표와 `meta.json`(기준일)은 그대로 두고 표만 더하며, 열 목록과 화면 구조는 `docs/data-dictionary-extra.md`에 쓴다. 콘솔에 '일부 단계가 비었습니다'가 나오면 파일은 그대로 두고 Claude에게 알린다(`data/tables/extra_meta.json`에 화면 구조가 남아 있어 다음 수정에 쓴다).
+
+### 화면 구조 조사 (새 데이터를 받기 전에)
+
+업체 화면의 검색 조건과 조회 주소를 모를 때 먼저 [scripts/extract/portal-probe.js](scripts/extract/portal-probe.js)를 같은 방법으로 실행한다(30초 안쪽). 화면마다 검색 항목 이름, 화면 코드가 부르는 주소와 넘기는 값의 이름, 응답 모양(키 이름·자료형·건수)만 담은 `jic_portal_probe_YYYY-MM-DD.json`이 내려받아진다. 학생 값은 담지 않는다. `data/raw/`에 두고 Claude에게 알리면 그 구조로 추출 스크립트를 맞춘다. 조사할 화면은 스크립트 위쪽 `PAGES`에서 고른다(지금은 회계팀 인보이스 화면들).
 
 ## 데이터 원칙
 
