@@ -1,0 +1,151 @@
+/**
+ * 학생 앱 core 시험: 가짜 시계와 메모리 저장소로 결석·외박 신청 규칙을 확인한다.
+ * 실행: npm --workspace apps/student run test (빌드할 때도 함께 돈다). 샘플 데이터(data-sample)만 쓴다.
+ */
+import path from 'node:path';
+import { loadDir } from '../../admin/server/localData';
+import { handleStudentApi } from './core';
+import { decideRide, rideState, type Departure, type Ride } from './departures';
+import { decideRequest, overnightFor, type Absence, type Overnight, type RequestStore } from './requests';
+
+function memStore<T extends { id: string; stId: string }>(): RequestStore<T> {
+  const m = new Map<string, T>();
+  return {
+    async listAll() {
+      return [...m.values()];
+    },
+    async listByStudent(stId) {
+      return [...m.values()].filter((x) => x.stId === stId);
+    },
+    async get(id) {
+      return m.get(id) ?? null;
+    },
+    async put(x) {
+      m.set(x.id, { ...x });
+    },
+  };
+}
+
+const db = loadDir(path.resolve(process.cwd(), '../../data-sample/tables'));
+const store = memStore<Absence>();
+const overnights = memStore<Overnight>();
+const departures = memStore<Departure>();
+const rides = memStore<Ride>();
+let n = 0;
+const now = new Date('2026-11-08T02:00:00Z');
+const stId = '30095'; // 샘플: 재학 2026-07-26 ~ 2026-11-13
+const ctx = (who: string | null = stId) => ({ db, store, overnights, departures, rides, stId: who, localLogin: true, now: () => now, newId: () => 'r' + ++n });
+const call = (m: string, p: string, body: unknown = null, who: string | null = stId) => handleStudentApi(ctx(who), m, p, body);
+let fails = 0;
+const expect = (label: string, cond: boolean, extra?: unknown) => {
+  if (!cond) fails++;
+  console.log((cond ? 'ok  ' : 'FAIL') + ' ' + label + (cond ? '' : ' ' + JSON.stringify(extra)));
+};
+const err = (r: { body: unknown }) => (r.body as { error?: string }).error;
+
+// 결석
+let r = await call('POST', '/absences', { date: '2026-11-10', kind: 'sick', periods: [], reason: '감기' });
+expect('결석 신청 201', r.status === 201, r);
+const absId = (r.body as Absence).id;
+r = await call('POST', '/absences', { date: '2026-11-10', kind: 'official', periods: [3], reason: 'x' });
+expect('같은 날 종일과 겹침 409', r.status === 409 && err(r) === 'duplicate', r);
+r = await call('POST', '/absences', { date: '2026-11-20', kind: 'sick', reason: 'x' });
+expect('연수 기간 밖 400', err(r) === 'date_out_of_range', r);
+r = await call('POST', '/absences', { date: '2026-02-30', kind: 'sick', reason: 'x' });
+expect('없는 날짜 400', err(r) === 'invalid_date', r);
+r = await call('GET', '/absences', null, null);
+expect('로그인 없이 401', r.status === 401, r);
+
+// 외박
+r = await call('POST', '/overnights', { from: '2026-11-08', until: '2026-11-10', reason: '마닐라 친척 집' });
+expect('외박 신청 201', r.status === 201, r);
+const ovId = (r.body as Overnight).id;
+r = await call('POST', '/overnights', { from: '2026-11-09', until: '2026-11-11', reason: 'x' });
+expect('밤이 겹치는 외박 409', r.status === 409 && err(r) === 'duplicate', r);
+r = await call('POST', '/overnights', { from: '2026-11-10', until: '2026-11-11', reason: '복귀일 밤부터는 안 겹침' });
+expect('복귀일 밤부터는 겹치지 않음 201', r.status === 201, r);
+r = await call('POST', '/overnights', { from: '2026-11-12', until: '2026-11-12', reason: 'x' });
+expect('복귀일이 출발일과 같으면 400', err(r) === 'invalid_range', r);
+r = await call('POST', '/overnights', { from: '2026-11-13', until: '2026-11-15', reason: 'x' });
+expect('마지막 밤(11/14)이 연수 종료(11/13) 뒤면 400', err(r) === 'date_out_of_range', r);
+r = await call('POST', '/overnights', { from: '2026-11-12', until: '2026-11-14', reason: '마지막 밤 11/13' });
+expect('마지막 밤이 연수 종료일이면 201', r.status === 201, r);
+r = await call('POST', '/overnights', { from: '2026-11-11', until: '2026-11-12', reason: '' });
+expect('사유 없음 400', err(r) === 'reason_required', r);
+r = await call('GET', '/overnights');
+const ol = r.body as { rows: (Overnight & { nights: number })[] };
+expect('외박 목록 3건, 2박 계산', ol.rows.length === 3 && ol.rows.find((o) => o.id === ovId)?.nights === 2, ol.rows);
+
+// 취소
+r = await call('POST', `/overnights/${ovId}/cancel`, {}, '30001');
+expect('다른 학생은 취소 못 함 404', r.status === 404, r);
+r = await call('POST', `/absences/${absId}/cancel`, {});
+expect('본인 결석 취소 200', r.status === 200 && (r.body as Absence).status === 'cancelled', r);
+
+// 담당자 처리(인트라넷이 쓰는 함수)
+const ov = (await overnights.get(ovId))!;
+const d1 = decideRequest(ov, true, '보호자 확인', null, now);
+expect('대기 → 승인', d1.ok && d1.value.status === 'approved' && d1.value.comment === '보호자 확인', d1);
+if (d1.ok) await overnights.put(d1.value);
+const d2 = decideRequest((await overnights.get(ovId))!, false, null, null, now);
+expect('처리된 건 다시 처리 409', !d2.ok && d2.status === 409, d2);
+r = await call('POST', `/overnights/${ovId}/cancel`, {});
+expect('승인된 외박은 학생이 취소 못 함 409', err(r) === 'not_pending', r);
+const all = await overnights.listAll();
+expect('11/08 밤 외박 허용', overnightFor(all, stId, '2026-11-08')?.id === ovId);
+expect('11/09 밤 외박 허용', overnightFor(all, stId, '2026-11-09')?.id === ovId);
+expect('복귀일(11/10) 밤은 허용 아님', overnightFor(all, stId, '2026-11-10') === null);
+expect('대기 중 외박은 허용 아님', overnightFor(all, stId, '2026-11-12') === null);
+
+// 귀국 항공편 (지금 2026-11-08 10:00 필리핀, 연수 종료 11/13, 출발일은 종료 30일 뒤 12/13까지)
+r = await call('GET', '/departure');
+const dv = r.body as any;
+expect('귀국 항공편: 등록 전, 연수 종료 11/13, 마지막 12/13, 오늘 11/08', dv.departure === null && dv.enrollment.end === '2026-11-13' && dv.enrollment.latest === '2026-12-13' && dv.today === '2026-11-08', dv);
+const good = { date: '2026-11-14', time: '10:30', flight: 'pr 468', airport: 'MANILA', needsRide: true, note: '' };
+r = await call('PUT', '/departure', { ...good, date: '2026-11-07' });
+expect('지난 날짜 400', err(r) === 'date_out_of_range', r);
+r = await call('PUT', '/departure', { ...good, date: '2026-12-14' });
+expect('연수 종료 30일 뒤를 넘으면 400', err(r) === 'date_out_of_range', r);
+r = await call('PUT', '/departure', { ...good, time: '24:00' });
+expect('시각 확인', err(r) === 'invalid_time', r);
+r = await call('PUT', '/departure', { ...good, flight: '!' });
+expect('항공편명 확인', err(r) === 'invalid_flight', r);
+r = await call('PUT', '/departure', { ...good, airport: 'OTHER' });
+expect('기타 공항이면 메모 필수', err(r) === 'note_required', r);
+r = await call('PUT', '/departure', good);
+expect('등록 201, 편명 대문자', r.status === 201 && (r.body as Departure).flight === 'PR 468' && (r.body as Departure).id === 'dep-800095', r);
+r = await call('PUT', '/departure', { ...good, time: '11:15', needsRide: false });
+expect('수정 200, 같은 건', r.status === 200 && (r.body as Departure).time === '11:15' && !(r.body as Departure).needsRide && (await departures.listAll()).length === 1, r);
+r = await call('GET', '/me');
+expect('내 정보에 귀국 항공편', (r.body as any).departure?.flight === 'PR 468', (r.body as any).departure);
+const passed = { ...(await departures.get('dep-800095'))!, date: '2026-11-07' };
+await departures.put(passed);
+r = await call('PUT', '/departure', good);
+expect('출발일이 지난 항공편은 수정 불가 409', err(r) === 'departure_passed', r);
+r = await call('PUT', '/departure', good, null);
+expect('로그인 없이 401', r.status === 401, r);
+
+// 공항 이동 배차(직원 처리 함수 + 학생에게 보이는 상태)
+const depNow = { ...(await departures.get('dep-800095'))!, date: '2026-11-14', time: '06:10', needsRide: true };
+await departures.put(depNow);
+r = await call('GET', '/departure');
+expect('배차: 요청, 처리 전', (r.body as any).ride.state === 'requested', (r.body as any).ride);
+let dr = decideRide(depNow, { decision: 'confirmed', pickupDate: '2026-11-14', pickupTime: '06:30' }, '오피스 김', now);
+expect('비행기보다 늦은 기숙사 출발 400', !dr.ok && dr.error === 'pickup_after_flight', dr);
+dr = decideRide(depNow, { decision: 'confirmed', pickupDate: '2026-11-12', pickupTime: '23:00' }, '오피스 김', now);
+expect('출발일 이틀 전 기숙사 출발 400', !dr.ok && dr.error === 'invalid_pickup_date', dr);
+dr = decideRide(depNow, { decision: 'declined', note: '' }, '오피스 김', now);
+expect('불가는 사유 필수', !dr.ok && dr.error === 'reason_required', dr);
+dr = decideRide(depNow, { decision: 'confirmed', pickupDate: '2026-11-13', pickupTime: '23:30', note: '정문, 밴 2호차' }, '오피스 김', now);
+expect('전날 밤 기숙사 출발로 확정', dr.ok && dr.value.forTime === '06:10', dr);
+if (dr.ok) await rides.put(dr.value);
+r = await call('GET', '/departure');
+const rv = (r.body as any).ride;
+expect('학생에게 확정·기숙사 출발 일시·메모, 처리자는 안 보임', rv.state === 'confirmed' && rv.pickupDate === '2026-11-13' && rv.pickupTime === '23:30' && rv.note === '정문, 밴 2호차' && !('decidedBy' in rv), rv);
+const changed = { ...depNow, time: '08:00' };
+expect('학생이 시각을 바꾸면 재확인', rideState(changed, (await rides.get('dep-800095'))!) === 'changed');
+expect('학생이 차량 요청을 빼면 요청 취소', rideState({ ...depNow, needsRide: false }, (await rides.get('dep-800095'))!) === 'withdrawn');
+expect('차량 요청 없는 항공편은 처리 불가', (() => { const x = decideRide({ ...depNow, needsRide: false }, { decision: 'declined', note: 'x' }, 'a', now); return !x.ok && x.error === 'no_ride_request'; })());
+
+console.log(fails ? `\n${fails}건 실패` : '\n모두 통과');
+if (fails) process.exit(1);

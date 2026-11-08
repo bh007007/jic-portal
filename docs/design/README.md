@@ -8,11 +8,11 @@ Claude 디자인 캔버스([JIC 포털 디자인](https://claude.ai/artifact/DwJ
 | Students.dc.html | 02 재학생 현황 | `apps/admin/src/pages/Students.tsx` |
 | StudentFile.dc.html | 03 학생 상세 | `apps/admin/src/pages/StudentDetail.tsx` |
 | Dorm.dc.html | 04 기숙사 배정 현황 (방·침대 보드) | `apps/admin/src/pages/Dorm.tsx` (타입별 현황만, 방·침대 데이터 없음) |
-| StudentPortal.dc.html | 05 학생 앱 홈 (모바일 390×844) | 미구현 |
+| StudentPortal.dc.html | 05 학생 앱 홈 (모바일 390×844) | `apps/student/src/pages/Home.tsx` (귀국 항공편은 학생이 `Departure.tsx`에서 등록) |
 | PartnerHome.dc.html | P1 파트너 포털 홈 | 미구현 |
 | PartnerConsult.dc.html | P2 상담 · 추천 결과 | 미구현 |
-| IntranetPenalty.dc.html | I1 인트라넷 패널티 승인 | 미구현 |
-| GuardTablet.dc.html | I2 외출·귀가 가드 태블릿 (1180×820) | 미구현 |
+| IntranetPenalty.dc.html | I1 인트라넷 패널티 승인 | `apps/intranet/src/pages/Penalties.tsx` (통금 위반 자동 후보, 점수는 점수표 화면) |
+| GuardTablet.dc.html | I2 외출·귀가 가드 태블릿 (1180×820) | `apps/intranet/src/pages/Guard.tsx` (외박 허용은 학생 앱 외박 신청 승인과 연결) |
 
 - `.dc.html`은 캔버스 전용 형식(`<x-dc>`, `<sc-for>`, `{{값}}`)이라 브라우저로 바로 열면 깨진다. 텍스트로 읽어 레이아웃과 스타일 값을 가져다 쓴다.
 - 디자인 기준: Noto Sans KR, 본문 13px, 주색 `#24427A`(네이비), 로고 `#D52B1E`, 모서리 3–4px, 표 위쪽 진한 선(`#3A3F47`), 회색 검색 조건 박스 + 초기화/조회 버튼.

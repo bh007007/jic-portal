@@ -1,0 +1,332 @@
+import { Link, useParams } from 'react-router-dom';
+import { useApi, type StudentFile } from '../api';
+import { Loading, PageTitle } from '../components/ui';
+import { duration, md, mdhm } from '../format';
+import { FollowUp } from './Counseling';
+
+// 학생 한 명의 생활 기록. 기본 정보·연수·회계·메모는 관리자 앱 학생 상세에 있다.
+const ADMIN_URL = import.meta.env.VITE_ADMIN_URL ?? 'http://127.0.0.1:5173';
+const STATUS: Record<string, string> = { pending: '대기', approved: '승인', rejected: '반려', cancelled: '학생 취소' };
+const STATUS_CLASS: Record<string, string> = { pending: 'text-amber', approved: 'text-blue', rejected: 'text-red', cancelled: 'muted' };
+const ENROLL: Record<string, string> = { current: '재학', upcoming: '입학 예정', graduated: '졸업', cancelled: '취소', other: '기타' };
+const KIND: Record<string, string> = { sick: '병결', official: '공결', personal: '개인 사유' };
+const AIRPORT: Record<string, string> = { MANILA: '마닐라', CLARK: '클락', OTHER: '기타' };
+const Status = ({ s }: { s: string }) => <span className={STATUS_CLASS[s]}>{STATUS[s] ?? s}</span>;
+
+export default function StudentFileDetail() {
+  const { stId = '' } = useParams();
+  const { data, error, reload } = useApi<StudentFile>(`/api/students/${encodeURIComponent(stId)}`);
+  const path = '홈 > 학생 생활 > Student File';
+  if (!data) return error === 'not_found' ? <div className="state-msg">학생을 찾을 수 없습니다.</div> : <Loading error={error} onRetry={reload} />;
+  const s = data.student;
+
+  return (
+    <>
+      <PageTitle
+        title={`${s.name} (${s.stId})`}
+        path={path}
+        actions={
+          <>
+            <Link to="/student-file" className="btn">
+              목록
+            </Link>
+            <a href={`${ADMIN_URL}/students/${s.stId}`} className="btn">
+              통합관리 학생 상세
+            </a>
+          </>
+        }
+      />
+      <section className="panel">
+        <div className="panel-body">
+          <table className="kv">
+            <tbody>
+              <tr>
+                <th>국적 / 성별</th>
+                <td>
+                  {s.nation || '-'} / {s.gender || '-'}
+                </td>
+                <th>상태</th>
+                <td>{ENROLL[s.status] ?? s.status}</td>
+              </tr>
+              <tr>
+                <th>캠퍼스 / 기숙사</th>
+                <td>
+                  {s.campus} / {s.dorm || '-'}
+                </td>
+                <th>코스 / 기간</th>
+                <td>
+                  {s.course || '-'} / {s.start} ~ {s.end}
+                </td>
+              </tr>
+              <tr>
+                <th>귀국 항공편</th>
+                <td colSpan={3}>
+                  {data.departure ? (
+                    <>
+                      {data.departure.date} {data.departure.time} · {data.departure.flight} · {AIRPORT[data.departure.airport] ?? data.departure.airport}
+                      {data.departure.needsRide && <span className="text-amber"> · 공항 이동 차량 요청</span>}
+                    </>
+                  ) : (
+                    <span className="muted">학생 앱에서 미등록</span>
+                  )}
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <div className="summary">
+        <div>
+          <span className="label">누적 점수 (승인)</span>
+          <span className="value">
+            {data.total}
+            <small>점</small>
+          </span>
+          <span className="sub">경고 단계 {data.stagesSet ? (data.stage ?? '-') : '기준 미정'}</span>
+        </div>
+        <div>
+          <span className="label">통금 위반</span>
+          <span className="value">
+            {data.breachCount}
+            <small>회 / 외출 기록 {data.outingCount}건</small>
+          </span>
+          <span className="sub">통금 {data.curfew}</span>
+        </div>
+        <div>
+          <span className="label">결석 신청</span>
+          <span className="value">
+            {data.absences.length}
+            <small>건</small>
+          </span>
+          <span className="sub">대기 {data.absences.filter((a) => a.status === 'pending').length}</span>
+        </div>
+        <div>
+          <span className="label">외박 신청</span>
+          <span className="value">
+            {data.overnights.length}
+            <small>건</small>
+          </span>
+          <span className="sub">대기 {data.overnights.filter((o) => o.status === 'pending').length}</span>
+        </div>
+      </div>
+
+      <section className="panel">
+        <div className="panel-head">
+          <h2>
+            패널티 이력 <small>({data.penalties.length}건)</small>
+          </h2>
+          <Link to={`/penalties?q=${s.stId}`} className="more">
+            패널티 승인 &gt;
+          </Link>
+        </div>
+        <div className="panel-body">
+          <table className="tbl center">
+            <thead>
+              <tr>
+                <th>발생일</th>
+                <th>위반 종류</th>
+                <th className="left">근거</th>
+                <th>점수</th>
+                <th>상태</th>
+                <th>처리</th>
+              </tr>
+            </thead>
+            <tbody>
+              {data.penalties.length === 0 ? (
+                <tr className="empty">
+                  <td colSpan={6}>패널티 기록이 없습니다.</td>
+                </tr>
+              ) : (
+                data.penalties.map((p) => (
+                  <tr key={p.id}>
+                    <td>{md(p.date)}</td>
+                    <td>{p.kindName}</td>
+                    <td className="left">{p.basis}</td>
+                    <td>{p.score === null ? <span className="muted">미정</span> : p.score}</td>
+                    <td>
+                      <Status s={p.status} />
+                    </td>
+                    <td>{mdhm(p.decidedAt)}</td>
+                  </tr>
+                ))
+              )}
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <section className="panel">
+        <div className="panel-head">
+          <h2>
+            상담 기록 <small>({data.counseling.length}건 · 내용은 상세에서)</small>
+          </h2>
+          <Link to={`/counseling/new?stId=${s.stId}`} className="more">
+            상담 기록 작성 &gt;
+          </Link>
+        </div>
+        <div className="panel-body">
+          <table className="tbl center">
+            <thead>
+              <tr>
+                <th>상담일</th>
+                <th className="left">제목</th>
+                <th>작성자</th>
+                <th>후속 조치</th>
+              </tr>
+            </thead>
+            <tbody>
+              {data.counseling.length === 0 ? (
+                <tr className="empty">
+                  <td colSpan={4}>상담 기록이 없습니다.</td>
+                </tr>
+              ) : (
+                data.counseling.map((n) => (
+                  <tr key={n.id}>
+                    <td>{md(n.date)}</td>
+                    <td className="left">
+                      <Link to={`/counseling/${n.id}`}>{n.title}</Link>
+                    </td>
+                    <td>{n.author}</td>
+                    <td>
+                      <FollowUp n={n} />
+                    </td>
+                  </tr>
+                ))
+              )}
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <section className="panel">
+        <div className="panel-head">
+          <h2>
+            외출·귀가 기록 <small>(최근 {data.outings.length}건 / 전체 {data.outingCount}건)</small>
+          </h2>
+        </div>
+        <div className="panel-body">
+          <table className="tbl center">
+            <thead>
+              <tr>
+                <th>밤</th>
+                <th>외출</th>
+                <th>귀가</th>
+                <th>외출 시간</th>
+                <th>출입구</th>
+                <th className="left">통금</th>
+              </tr>
+            </thead>
+            <tbody>
+              {data.outings.length === 0 ? (
+                <tr className="empty">
+                  <td colSpan={6}>외출 기록이 없습니다.</td>
+                </tr>
+              ) : (
+                data.outings.map((o) => (
+                  <tr key={o.id}>
+                    <td>{md(o.night)}</td>
+                    <td>{o.outAt ? mdhm(o.outAt) : <span className="muted">기록 없음</span>}</td>
+                    <td>{o.inAt ? mdhm(o.inAt) : <span className="text-amber">외출 중</span>}</td>
+                    <td>{duration(o.minutes)}</td>
+                    <td>{o.campus}</td>
+                    <td className="left">
+                      {o.breach ? <span className="text-red">{o.breach}</span> : o.overnightUntil ? <span className="text-blue">외박 허용 ~{md(o.overnightUntil)}</span> : <span className="muted">-</span>}
+                    </td>
+                  </tr>
+                ))
+              )}
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <div className="row">
+        <section className="panel">
+          <div className="panel-head">
+            <h2>
+              결석 신청 <small>({data.absences.length}건)</small>
+            </h2>
+          </div>
+          <div className="panel-body">
+            <table className="tbl center">
+              <thead>
+                <tr>
+                  <th>결석일</th>
+                  <th>종류</th>
+                  <th>교시</th>
+                  <th className="left">사유</th>
+                  <th>상태</th>
+                </tr>
+              </thead>
+              <tbody>
+                {data.absences.length === 0 ? (
+                  <tr className="empty">
+                    <td colSpan={5}>신청이 없습니다.</td>
+                  </tr>
+                ) : (
+                  data.absences.map((a) => (
+                    <tr key={a.id}>
+                      <td>{md(a.date)}</td>
+                      <td>{KIND[a.kind] ?? a.kind}</td>
+                      <td>{a.periods.length ? `${a.periods.join('·')}교시` : '종일'}</td>
+                      <td className="left">
+                        {a.reason}
+                        {a.comment && <div className="muted small">메모: {a.comment}</div>}
+                      </td>
+                      <td>
+                        <Status s={a.status} />
+                      </td>
+                    </tr>
+                  ))
+                )}
+              </tbody>
+            </table>
+          </div>
+        </section>
+        <section className="panel">
+          <div className="panel-head">
+            <h2>
+              외박 신청 <small>({data.overnights.length}건)</small>
+            </h2>
+          </div>
+          <div className="panel-body">
+            <table className="tbl center">
+              <thead>
+                <tr>
+                  <th>기간</th>
+                  <th>박</th>
+                  <th className="left">사유</th>
+                  <th>상태</th>
+                </tr>
+              </thead>
+              <tbody>
+                {data.overnights.length === 0 ? (
+                  <tr className="empty">
+                    <td colSpan={4}>신청이 없습니다.</td>
+                  </tr>
+                ) : (
+                  data.overnights.map((o) => (
+                    <tr key={o.id}>
+                      <td className="nowrap">
+                        {md(o.from)} ~ {md(o.until)}
+                      </td>
+                      <td>{o.nights}</td>
+                      <td className="left">
+                        {o.reason}
+                        {o.comment && <div className="muted small">메모: {o.comment}</div>}
+                      </td>
+                      <td>
+                        <Status s={o.status} />
+                      </td>
+                    </tr>
+                  ))
+                )}
+              </tbody>
+            </table>
+          </div>
+        </section>
+      </div>
+    </>
+  );
+}

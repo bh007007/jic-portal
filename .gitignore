@@ -2,6 +2,9 @@
 /data/
 *.json.gz
 
+# 로컬 개발 서버가 쓰는 파일(학생 앱 결석 신청, 인트라넷 외출·귀가·패널티 등). 실제 데이터로 실행하면 개인정보가 들어간다.
+/.local-db/
+
 # 인수인계 압축 파일 (scripts/make-handoff.ps1 결과물)
 /handoff/
 

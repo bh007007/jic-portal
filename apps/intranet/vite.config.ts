@@ -1,0 +1,27 @@
+import fs from 'node:fs';
+import path from 'node:path';
+import { fileURLToPath } from 'node:url';
+import { defineConfig } from 'vite';
+import react from '@vitejs/plugin-react';
+import { intranetLocalPlugin } from './server/localData';
+
+const here = path.dirname(fileURLToPath(import.meta.url));
+
+// 데이터 위치는 관리자 앱과 같다: JIC_DATA_DIR → data/tables(실제 추출본, Git 제외) → data-sample/tables(가짜 샘플).
+// 외출·귀가 기록, 패널티, 설정은 저장소 루트 .local-db/intranet(Git 제외)에 파일로 남긴다.
+// 서버는 이 PC(127.0.0.1)에서만 열린다. 실제 태블릿 연결은 배포(직원·가드 로그인) 이후에 한다.
+const realDir = path.resolve(here, '../../data/tables');
+const sampleDir = path.resolve(here, '../../data-sample/tables');
+const dataDir = process.env.JIC_DATA_DIR
+  ? path.resolve(process.env.JIC_DATA_DIR)
+  : fs.existsSync(path.join(realDir, 'enrollments.ndjson'))
+    ? realDir
+    : sampleDir;
+const storeDir = path.resolve(here, '../../.local-db/intranet');
+const studentStoreDir = path.resolve(here, '../../.local-db/student'); // 결석·외박 신청은 학생 앱과 같은 파일
+
+export default defineConfig({
+  plugins: [react(), intranetLocalPlugin(dataDir, storeDir, studentStoreDir)],
+  server: { host: '127.0.0.1', port: 5177, strictPort: true },
+  preview: { host: '127.0.0.1', port: 5177 },
+});
