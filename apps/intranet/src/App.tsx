@@ -1,0 +1,34 @@
+import { Route, Routes } from 'react-router-dom';
+import Shell from './components/Shell';
+import Guard from './pages/Guard';
+import Home from './pages/Home';
+import NotReady from './pages/NotReady';
+import Outings from './pages/Outings';
+import Penalties from './pages/Penalties';
+import PenaltyRules from './pages/PenaltyRules';
+import Settings from './pages/Settings';
+
+export default function App() {
+  return (
+    <Routes>
+      {/* 가드 태블릿은 메뉴 없이 전체 화면 */}
+      <Route path="/guard" element={<Guard />} />
+      <Route
+        path="*"
+        element={
+          <Shell>
+            <Routes>
+              <Route path="/" element={<Home />} />
+              <Route path="/penalties" element={<Penalties />} />
+              <Route path="/penalty-rules" element={<PenaltyRules />} />
+              <Route path="/outings" element={<Outings key="outings" mode="outings" />} />
+              <Route path="/curfew" element={<Outings key="curfew" mode="curfew" />} />
+              <Route path="/settings" element={<Settings />} />
+              <Route path="*" element={<NotReady />} />
+            </Routes>
+          </Shell>
+        }
+      />
+    </Routes>
+  );
+}

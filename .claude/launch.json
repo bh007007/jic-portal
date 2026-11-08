@@ -18,6 +18,12 @@
       "runtimeExecutable": "C:\\Program Files\\nodejs\\node.exe",
       "runtimeArgs": ["node_modules/vite/bin/vite.js", "apps/student"],
       "port": 5176
+    },
+    {
+      "name": "intranet",
+      "runtimeExecutable": "C:\\Program Files\\nodejs\\node.exe",
+      "runtimeArgs": ["node_modules/vite/bin/vite.js", "apps/intranet"],
+      "port": 5177
     }
   ]
 }

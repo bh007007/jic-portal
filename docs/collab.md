@@ -9,7 +9,7 @@
 | 파트너 포털 | `apps/partner` | 레오 PC의 Claude |
 | 배포용 서버 | `functions/` | 레오 PC의 Claude |
 | 학생 앱 | `apps/student` | 다른 계정의 Claude |
-| 인트라넷 | `apps/intranet` | 정하지 않음 (시작 전에 사용자에게 확인) |
+| 인트라넷 | `apps/intranet` | 다른 계정의 Claude (11/8 사용자 진행 요청) |
 | DB 변경 | `supabase/migrations/` | 각자 자기 앱용 **새 파일만** 추가 |
 | Supabase 적용, Cloudflare 배포, 업체 포털 추출 | 대시보드·레오 PC | 레오 PC의 Claude (계정 접근이 있는 쪽) |
 
@@ -19,8 +19,8 @@
 - **`.github/workflows/ci.yml`**: 자기 앱 빌드 줄 하나만 더한다.
 - **`HANDOFF.md`, `README.md`**: 자기 앱 항목만 고친다. 표의 다른 줄은 그대로 둔다.
 - **`data-sample/`**: `scripts/make-sample-data.mjs`로만 바꾼다. 새 필드는 별도 시드로 만들어 기존 학생·연수 값이 바뀌지 않게 한다.
-- **학생 앱의 관리자 core 의존**: `apps/student`는 `apps/admin/server/core.ts`의 `createDb`·`studentDetail`과 `server/localData.ts`의 `loadDir`을 가져다 쓴다. 이 응답 모양을 바꾸면 `npm run student:build`도 확인한다(CI가 함께 빌드한다).
-- **개발 서버 포트**: 관리자 5173(샘플 데이터 실행 5174), 파트너 5175, 학생 5176. 새 앱은 5177부터.
+- **학생 앱·인트라넷의 관리자 core 의존**: `apps/student`와 `apps/intranet`은 `apps/admin/server/core.ts`의 `createDb`·`studentDetail`과 `server/localData.ts`의 `loadDir`을 가져다 쓴다. 이 응답 모양을 바꾸면 `npm run student:build`도 확인한다(CI가 함께 빌드한다).
+- **개발 서버 포트**: 관리자 5173(샘플 데이터 실행 5174), 파트너 5175, 학생 5176, 인트라넷 5177. 새 앱은 5178부터.
 
 ## 데이터베이스 규칙
 - 마이그레이션 파일 이름은 `YYYYMMDDHHMMSS_설명.sql`로 하고, main에 있는 마지막 파일보다 뒤 시각을 쓴다.
@@ -39,5 +39,4 @@
 
 ## 열린 결정 (진행 전에 사용자 확인)
 - 학생 계정 생성 방식(원칙 V4: 학생 번호와 생년월일로 미리 생성, 첫 로그인 때 비밀번호 변경)과 담당자
-- 인트라넷 담당
 - 정규화 스키마(`docs/plan.md`)로 옮기는 시점. `core.ts`와 `functions/`를 크게 바꾸므로 관리자 앱 담당이 진행한다.
