@@ -13,7 +13,7 @@ const CAMPUSES = ['', 'Challenger', 'Premium', 'MCO'];
 const KIND: Record<Holiday['kind'], string> = { public: '공휴일', school: '학원 휴일' };
 
 /**
- * 휴일(업체 포털 기초코드관리 > 휴일, 기획안 holidays). 관리자 포털에서만 쓰고 강사 포털(출석)·학생 포털·달력이 읽는다(원칙 C2).
+ * 휴일(업체 포털 기초코드관리 > 휴일, 기획안 holidays). 관리자 포털에서만 쓰고, 학생수 달력·강사 포털 홈이 읽는다(출석은 연결 예정, 원칙 C2).
  * 데이터는 Supabase 에 있어 배포 주소(로그인한 직원)에서 동작한다. 공휴일은 확인된 날만 넣는다(원칙 C8).
  */
 export default function Holidays() {
@@ -109,7 +109,6 @@ export default function Holidays() {
           <strong>{year}년</strong>
           <button type="button" className="btn" aria-label="다음 해" onClick={() => setYear(year + 1)}>›</button>
         </span>
-        <span className="muted" style={{ fontSize: 12 }}>강사 포털 출석·달력·학생 포털이 같은 휴일을 읽습니다.</span>
       </div>
 
       {!rows ? (

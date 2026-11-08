@@ -186,7 +186,8 @@ a.hub-name:hover { color: var(--primary); }
 .cal td.blank { background: #fafbfc; }
 .cal td.today { box-shadow: inset 0 0 0 2px var(--primary); }
 .cal td.on { background: var(--primary-soft); }
-.cal-day { font-size: 12px; font-weight: 500; }
+.cal-day { font-size: 12px; font-weight: 500; display: flex; gap: 4px; align-items: baseline; min-width: 0; }
+.cal-holiday { font-size: 11px; font-weight: 400; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .cal button { padding: 0; border: 0; background: none; font: inherit; cursor: pointer; }
 .cal button:hover { text-decoration: underline; }
 .cal-in { display: block; margin: 2px 0; font-size: 18px; font-weight: 700; color: var(--ink); }
