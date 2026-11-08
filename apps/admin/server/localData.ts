@@ -31,6 +31,7 @@ export function loadDir(dataDir: string) {
     agents: readNdjson(path.join(dataDir, 'agents.ndjson')),
     deposits: readNdjson(path.join(dataDir, 'deposits.ndjson')),
     pointHistory: readNdjson(path.join(dataDir, 'point_history.ndjson')).map(pick(POINT_HISTORY_COLUMNS)),
+    rooms: readNdjson(path.join(dataDir, 'rooms.ndjson')),
   });
 }
 

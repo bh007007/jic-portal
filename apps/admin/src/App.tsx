@@ -8,6 +8,7 @@ import Dashboard from './pages/Dashboard';
 import Students from './pages/Students';
 import StudentDetail from './pages/StudentDetail';
 import Dorm from './pages/Dorm';
+import Rooms from './pages/Rooms';
 import Arrivals from './pages/Arrivals';
 import Agencies from './pages/Agencies';
 import AgencyDetail from './pages/AgencyDetail';
@@ -44,6 +45,7 @@ export default function App() {
         <Route path="/students/:stId" element={<StudentDetail />} />
         <Route path="/arrivals" element={<Arrivals />} />
         <Route path="/dorm" element={<Dorm />} />
+        <Route path="/rooms" element={<Rooms />} />
         <Route path="/agencies" element={<Agencies />} />
         <Route path="/agencies/:agId" element={<AgencyDetail />} />
         <Route path="/agents" element={<Agents />} />
