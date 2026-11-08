@@ -3,9 +3,9 @@
  * 상담 기록 작성·열람자와 접근 기록에 남길 직원 이름은 이 브라우저에 입력해 두고 X-Staff-Name 헤더로 보낸다(로컬 전용).
  */
 import { useCallback, useEffect, useState } from 'react';
-import type { GuardView, OutingList, OutingRow, PenaltyList, PenaltyRules, RequestList, Settings, StudentFile, StudentFileList, Summary } from '../server/core';
+import type { GuardView, OutingList, OutingRow, PenaltyList, PenaltyRules, ReportList, RequestList, Settings, StudentFile, StudentFileList, Summary } from '../server/core';
 
-export type { GuardView, OutingList, OutingRow, PenaltyList, PenaltyRules, RequestList, Settings, StudentFile, StudentFileList, Summary };
+export type { GuardView, OutingList, OutingRow, PenaltyList, PenaltyRules, ReportList, RequestList, Settings, StudentFile, StudentFileList, Summary };
 export type PenaltyRow = PenaltyList['rows'][number];
 export type { AuditList, CounselingDetail, CounselingList } from '../server/counseling';
 export type { NoticeDetail, NoticeList } from '../server/notices';
@@ -129,5 +129,8 @@ const MESSAGES: Record<string, string> = {
   not_found: '찾을 수 없습니다.',
   invalid_campus: '대상 캠퍼스를 다시 고르세요.',
   invalid_until: '게시 종료일을 확인하세요(새 공지는 오늘 이후).',
+  invalid_kind: '종류를 고르세요.',
+  invalid_note: '내용을 입력하세요(500자까지).',
+  invalid_time: '발생 시각을 확인하세요.',
 };
 export const errorText = (code: string) => MESSAGES[code] ?? `처리하지 못했습니다 (${code}).`;

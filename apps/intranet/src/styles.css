@@ -161,6 +161,7 @@ button, input, select { font: inherit; }
 .row > .panel.grow-2 { flex: 2 1 560px; }
 
 /* ── 인트라넷 추가 */
+textarea { font: inherit; }
 .small { font-size: 12px; }
 .text-primary { color: var(--primary); }
 .page-title { align-items: center; }
@@ -239,6 +240,25 @@ button, input, select { font: inherit; }
 .guard-big.in { color: var(--green); }
 .guard-big.out { color: var(--primary); }
 .guard-breach { color: var(--red); font-weight: 700; }
+.guard-big.report { color: var(--red); font-size: 22px; }
+.guard-report-btn { height: 48px; border: 1px dashed #8a929e; border-radius: 4px; background: transparent; color: var(--ink-2); font-size: 15px; cursor: pointer; }
+.guard-report-btn:hover { border-style: solid; color: var(--ink); background: #fff; }
+.guard-report { background: #fff; border: 1px solid #c9ced6; border-radius: 4px; padding: 18px 20px; gap: 14px; }
+.guard-report h2 { margin: 0; font-size: 18px; }
+.guard-field { display: flex; align-items: center; gap: 12px; font-size: 14px; color: var(--ink-2); }
+.guard-field.top { align-items: flex-start; }
+.guard-field > span { flex: 0 0 72px; padding-top: 2px; }
+.guard-field input, .guard-field textarea { flex: 1 1 auto; min-width: 0; min-height: 48px; padding: 8px 12px; border: 1px solid #b8bec8; border-radius: 4px; font-size: 17px; color: var(--ink); background: #fff; }
+.guard-field input[type='time'] { flex: 0 0 160px; }
+.guard-field textarea { line-height: 1.5; resize: vertical; }
+.guard-field em { font-style: normal; font-size: 13px; color: var(--ink-3); }
+.guard-kinds { flex: 1 1 auto; display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 8px; }
+.guard-kinds button { height: 52px; border: 1px solid #b8bec8; border-radius: 4px; background: #fff; font-size: 16px; color: var(--ink); cursor: pointer; }
+.guard-kinds button[aria-pressed='true'] { border-color: var(--red); background: #fdf2f2; color: var(--red); font-weight: 700; }
+.guard-report-actions { display: flex; justify-content: flex-end; gap: 8px; margin-top: auto; }
+.guard-report-actions button { height: 52px; min-width: 120px; border: 1px solid #b8bec8; border-radius: 4px; background: #fff; font-size: 16px; cursor: pointer; }
+.guard-report-actions .primary { border-color: var(--red); background: var(--red); color: #fff; font-weight: 700; }
+.guard-report-actions .primary:disabled { opacity: 0.6; }
 .guard-out { flex: 1 1 auto; min-height: 240px; background: #fff; border: 1px solid #c9ced6; border-radius: 4px; display: flex; flex-direction: column; }
 .guard-out-head { display: flex; align-items: center; justify-content: space-between; padding: 12px 18px; border-bottom: 1px solid var(--line-2); }
 .guard-out-head h2 { margin: 0; font-size: 17px; font-weight: 700; }

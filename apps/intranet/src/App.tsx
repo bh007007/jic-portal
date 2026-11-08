@@ -12,6 +12,7 @@ import Notices from './pages/Notices';
 import NotReady from './pages/NotReady';
 import Outings from './pages/Outings';
 import Penalties from './pages/Penalties';
+import Reports from './pages/Reports';
 import Requests from './pages/Requests';
 import PenaltyRules from './pages/PenaltyRules';
 import Settings from './pages/Settings';
@@ -41,6 +42,7 @@ export default function App() {
               <Route path="/counseling/:id" element={<CounselingDetail />} />
               <Route path="/counseling/:id/edit" element={<CounselingForm key="edit" />} />
               <Route path="/audit" element={<Audit />} />
+              <Route path="/reports" element={<Reports />} />
               <Route path="/notices" element={<Notices />} />
               <Route path="/notices/new" element={<NoticeForm key="new" />} />
               <Route path="/notices/:id" element={<NoticeDetail />} />
