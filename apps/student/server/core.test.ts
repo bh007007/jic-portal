@@ -11,6 +11,7 @@ import { decideRide, rideState, type Departure, type Ride } from './departures';
 import { handleLifeRequest, LIFE_OPEN_MAX, type LifeRequest } from './lifeRequests';
 import { decideRequest, overnightFor, type Absence, type Overnight, type RequestStore } from './requests';
 import { memoryTripStore, removeSignup, saveTrip, tripPermits, type Trip } from './trips';
+import { KEYCARD_PERIOD, keycardCode, readKeycard } from './keycard';
 
 function memStore<T extends { id: string; stId: string }>(): RequestStore<T> {
   const m = new Map<string, T>();
@@ -37,10 +38,11 @@ const departures = memStore<Departure>();
 const rides = memStore<Ride>();
 const life = memStore<LifeRequest>();
 const trips = memoryTripStore();
+const SECRET = 'a'.repeat(64);
 let n = 0;
 const now = new Date('2026-11-08T02:00:00Z');
 const stId = '30095'; // 샘플: 재학 2026-07-26 ~ 2026-11-13
-const ctx = (who: string | null = stId) => ({ db, store, overnights, departures, rides, life, trips, stId: who, localLogin: true, now: () => now, newId: () => 'r' + ++n });
+const ctx = (who: string | null = stId) => ({ db, store, overnights, departures, rides, life, trips, keycardSecret: async () => SECRET, stId: who, localLogin: true, now: () => now, newId: () => 'r' + ++n });
 const call = (m: string, p: string, body: unknown = null, who: string | null = stId) => handleStudentApi(ctx(who), m, p, body);
 const TRIP = { destination: 'Manila', contact: '+63 917 123 4567' };
 let fails = 0;
@@ -335,6 +337,36 @@ expect('신청한 여행이 취소되면 목록에 취소로', tl.rows.find((x: 
 const permits = tripPermits(await trips.listTrips(), await trips.listSignups());
 expect('1박 여행 참가 → 출발일 밤 외박 허용(여행 이름)', !!overnightFor(permits, stId, '2026-11-11') && !overnightFor(permits, stId, '2026-11-12') && overnightFor(permits, stId, '2026-11-11')?.reason === '보라카이 1박', permits);
 expect('당일 여행·취소된 여행은 외박 허용 아님', !overnightFor(permits, '30140', '2026-11-10') && permits.every((p) => p.tripId === T1.id), permits.map((p) => p.tripId));
+
+// ── 출입 QR (keycard.ts): 1분마다 바뀌는 서명 값
+r = await call('GET', '/keycard');
+const kc = r.body as any;
+expect('출입 QR: 값·끝나는 시각·서버 시각', r.status === 200 && /^JIC1\.30095\.\d+\.[0-9a-f]{20}$/.test(kc.code) && kc.period === KEYCARD_PERIOD && Date.parse(kc.expiresAt) > now.getTime() && kc.now === now.toISOString(), kc);
+const secretFn = async () => SECRET;
+let kr = await readKeycard(secretFn, kc.code, now.getTime());
+expect('QR 확인: 학생번호, qr', kr.ok && kr.stId === stId && kr.via === 'qr', kr);
+kr = await readKeycard(secretFn, kc.code, now.getTime() + KEYCARD_PERIOD * 1000);
+expect('다음 1분까지는 받음(직전 창)', kr.ok, kr);
+kr = await readKeycard(secretFn, kc.code, now.getTime() + 2 * KEYCARD_PERIOD * 1000);
+expect('2분 지나면 만료', !kr.ok && kr.error === 'qr_expired', kr);
+kr = await readKeycard(secretFn, kc.code.replace('JIC1.30095.', 'JIC1.30140.'), now.getTime());
+expect('학생번호를 바꾸면 서명이 안 맞음', !kr.ok && kr.error === 'invalid_qr', kr);
+kr = await readKeycard(async () => 'b'.repeat(64), kc.code, now.getTime());
+expect('다른 비밀 값으로는 안 맞음', !kr.ok && kr.error === 'invalid_qr', kr);
+const future = await keycardCode(SECRET, stId, now.getTime() + 3 * KEYCARD_PERIOD * 1000);
+kr = await readKeycard(secretFn, future.code, now.getTime());
+expect('너무 앞선 시각의 QR 거절', !kr.ok && kr.error === 'invalid_qr', kr);
+kr = await readKeycard(secretFn, 'JIC1.30095.abc', now.getTime());
+expect('모양이 틀린 QR', !kr.ok && kr.error === 'invalid_qr', kr);
+kr = await readKeycard(undefined, kc.code, now.getTime());
+expect('비밀 값이 없으면 QR 못 받음', !kr.ok && kr.error === 'qr_unavailable', kr);
+kr = await readKeycard(undefined, ' 30095 ', now.getTime());
+expect('숫자는 직접 입력한 학생번호', kr.ok && kr.stId === stId && kr.via === 'number', kr);
+expect('빈 값', (await readKeycard(secretFn, '  ', now.getTime())).ok === false);
+r = await handleStudentApi({ ...ctx(), keycardSecret: undefined }, 'GET', '/api/keycard', null);
+expect('비밀 값이 없는 서버는 404', r.status === 404 && err(r) === 'keycard_unavailable', r);
+r = await call('GET', '/keycard', null, '99999999');
+expect('연수가 없는 학생은 403', r.status === 403 && err(r) === 'no_enrollment', r);
 
 console.log(fails ? `\n${fails}건 실패` : '\n모두 통과');
 if (fails) process.exit(1);

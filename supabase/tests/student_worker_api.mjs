@@ -38,6 +38,7 @@ ok('계정 생성 스크립트', run.status === 0 && /실패 0/.test(run.text), 
 const out = `${REPO}node_modules/.cache/student-worker.mjs`;
 await build({ entryPoints: [`${REPO}apps/student/worker/index.ts`], bundle: true, platform: 'node', format: 'esm', outfile: out, logLevel: 'warning' });
 const { handleApi, default: worker } = await import(pathToFileURL(out).href);
+await build({ entryPoints: [`${REPO}apps/student/server/keycard.ts`], bundle: true, platform: 'node', format: 'esm', outfile: `${REPO}node_modules/.cache/keycard-test.mjs`, logLevel: 'warning' });
 
 const env = { ASSETS: { fetch: async () => new Response('asset') }, SUPABASE_URL: SB, SUPABASE_ANON_KEY: 'anon-key', SUPABASE_SERVICE_ROLE_KEY: 'service-key' };
 const api = async (method, path, token, body) => {
@@ -225,6 +226,16 @@ ok('DB: 신청 수 0', tdb[0].seats_taken === 0, tdb);
 await sql(`update public.trips set status = 'cancelled' where id = $1`, [trip1], { role: 'authenticated', sub: staff });
 x = await api('GET', '/api/trips', tS2);
 ok('신청했던 여행이 취소되면 목록에 취소로 남음', x.body.rows?.find((t) => t.id === trip1)?.status === 'cancelled', x.body.rows);
+
+// ── 출입 QR: 서비스 키로 읽은 비밀 값으로 서명(1분마다 바뀜)
+x = await api('GET', '/api/keycard', tA);
+ok('출입 QR 값(JIC1.학생번호.창.서명)', x.status === 200 && new RegExp(`^JIC1\\.${A}\\.\\d+\\.[0-9a-f]{20}$`).test(x.body.code) && x.body.period === 60, x);
+const { readKeycard } = await import(pathToFileURL(`${REPO}node_modules/.cache/keycard-test.mjs`).href);
+const secret = (await sql(`select secret from public.keycard_secret where id = 1`))[0].secret;
+const kr = await readKeycard(async () => secret, x.body.code, Date.now());
+ok('DB 비밀 값으로 확인됨', kr.ok && kr.stId === A && kr.via === 'qr', kr);
+x = await api('GET', '/api/keycard');
+ok('로그인 없이 출입 QR 401', x.status === 401, x);
 
 // ── 본문 검사
 x = await api('POST', '/api/absences', tA, 'x'.repeat(17 * 1024));

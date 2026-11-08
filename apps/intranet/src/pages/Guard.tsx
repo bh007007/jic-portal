@@ -4,10 +4,11 @@ import { api, ApiError, errorText, useApi, type GuardView, type OutingRow } from
 import { authMode, signOut } from '../auth';
 import { REPORT_KINDS, REPORT_LABEL, type ReportKind } from '../../server/reports';
 import { duration, hm, md } from '../format';
+import { QrCamera } from '../components/QrCamera';
 
 // 디자인 I2(GuardTablet.dc.html). 이 기기에서 고른 캠퍼스·근무자·처리 종류는 기기에만 기억한다.
 type Mode = 'out' | 'in';
-const KEY = { campus: 'jic-guard-campus', guard: 'jic-guard-name', mode: 'jic-guard-mode' };
+const KEY = { campus: 'jic-guard-campus', guard: 'jic-guard-name', mode: 'jic-guard-mode', camera: 'jic-guard-camera', facing: 'jic-guard-facing' };
 const load = (k: string) => {
   try {
     return localStorage.getItem(k) ?? '';
@@ -135,6 +136,18 @@ function GuardScreen({ view, campus, onCampus, reload }: { view: GuardView; camp
   const [reporting, setReporting] = useState(false);
   const [reported, setReported] = useState<Reported | null>(null);
   const input = useRef<HTMLInputElement>(null);
+  // 카메라: 이 기기에서 켜 두면 기억한다. 앞(학생 쪽) 카메라가 기본(경비실 태블릿을 학생 쪽으로 세워 두는 경우)
+  const [camera, setCameraState] = useState(load(KEY.camera) === '1');
+  const [facing, setFacingState] = useState<'user' | 'environment'>(load(KEY.facing) === 'environment' ? 'environment' : 'user');
+  const setCamera = (on: boolean) => {
+    save(KEY.camera, on ? '1' : '');
+    setCameraState(on);
+    input.current?.focus();
+  };
+  const setFacing = (f: 'user' | 'environment') => {
+    save(KEY.facing, f);
+    setFacingState(f);
+  };
 
   const setMode = (m: Mode) => {
     save(KEY.mode, m);
@@ -151,9 +164,9 @@ function GuardScreen({ view, campus, onCampus, reload }: { view: GuardView; camp
     input.current?.focus();
   }, []);
 
-  async function submit(e?: FormEvent) {
+  async function submit(e?: FormEvent, scanned?: string) {
     e?.preventDefault();
-    const value = code.trim();
+    const value = (scanned ?? code).trim();
     if (!value || busy) return;
     setBusy(true);
     try {
@@ -206,13 +219,33 @@ function GuardScreen({ view, campus, onCampus, reload }: { view: GuardView; camp
               귀가
             </button>
           </div>
-          <button type="button" className="guard-viewfinder" onClick={() => input.current?.focus()}>
-            <span aria-hidden="true" className="corner tl" />
-            <span aria-hidden="true" className="corner tr" />
-            <span aria-hidden="true" className="corner bl" />
-            <span aria-hidden="true" className="corner br" />
-            카드키 QR을 비춰주세요
-          </button>
+          {camera ? (
+            <div className="guard-viewfinder camera">
+              <QrCamera facing={facing} onCode={(c) => void submit(undefined, c)} />
+              <span aria-hidden="true" className="corner tl" />
+              <span aria-hidden="true" className="corner tr" />
+              <span aria-hidden="true" className="corner bl" />
+              <span aria-hidden="true" className="corner br" />
+            </div>
+          ) : (
+            <button type="button" className="guard-viewfinder" onClick={() => input.current?.focus()}>
+              <span aria-hidden="true" className="corner tl" />
+              <span aria-hidden="true" className="corner tr" />
+              <span aria-hidden="true" className="corner bl" />
+              <span aria-hidden="true" className="corner br" />
+              카드키 QR을 비춰주세요
+            </button>
+          )}
+          <div className="guard-camera-bar">
+            <button type="button" aria-pressed={camera} onClick={() => setCamera(!camera)}>
+              {camera ? '카메라 끄기' : '카메라로 읽기'}
+            </button>
+            {camera && (
+              <button type="button" onClick={() => setFacing(facing === 'user' ? 'environment' : 'user')}>
+                {facing === 'user' ? '뒤 카메라로' : '앞 카메라로'}
+              </button>
+            )}
+          </div>
           <form className="guard-input" onSubmit={submit}>
             <label>
               <span>학생번호</span>
@@ -254,6 +287,7 @@ function GuardScreen({ view, campus, onCampus, reload }: { view: GuardView; camp
                   <span className="muted">
                     {last.stId} · {last.campus}
                   </span>
+                  {(lastMode === 'in' ? last.inVia : last.outVia) === 'number' && <span className="muted small">학생번호 직접 입력</span>}
                   {lastMode === 'in' ? (
                     <>
                       <span className="guard-big in">귀가 {hm(last.inAt)}</span>

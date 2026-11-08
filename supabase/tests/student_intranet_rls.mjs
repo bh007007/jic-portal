@@ -1,5 +1,5 @@
 // 학생 앱·인트라넷 마이그레이션(20261108100000_student_intranet.sql, 20261108120000_student_request_ids.sql,
-// 20261108140000_nonacademic_requests.sql, 20261108150000_overnight_travel.sql, 20261108160000_school_trips.sql)의 권한 시험.
+// 20261108140000_nonacademic_requests.sql, 20261108150000_overnight_travel.sql, 20261108160000_school_trips.sql, 20261108170000_keycard_qr.sql, 20261108180000_student_account_admin.sql)의 권한 시험.
 // 실제 Postgres(PGlite, WebAssembly)에 Supabase 흉내(auth.uid, anon/authenticated/service_role)를 만들고
 // 마이그레이션을 두 번 실행한 뒤(여러 번 실행 가능 확인) 역할별로 읽기·쓰기를 시험한다. 데이터는 전부 가짜.
 //
@@ -39,6 +39,10 @@ await db.exec(mig('20261108150000_overnight_travel.sql'));
 await db.exec(mig('20261108150000_overnight_travel.sql'));
 await db.exec(mig('20261108160000_school_trips.sql'));
 await db.exec(mig('20261108160000_school_trips.sql'));
+await db.exec(mig('20261108170000_keycard_qr.sql'));
+await db.exec(mig('20261108170000_keycard_qr.sql'));
+await db.exec(mig('20261108180000_student_account_admin.sql'));
+await db.exec(mig('20261108180000_student_account_admin.sql'));
 ok('마이그레이션 2회 실행', true);
 
 // ── 가짜 사용자
@@ -393,6 +397,41 @@ await as(null, async () => {
   await denied('익명 여행 읽기', `select * from trips`, PERM);
   await denied('익명 참가 신청', `select trip_sign_up('${trip2}', 'trA')`, PERM);
 });
+
+// ── 카드키 QR: 서명 비밀 값은 서비스 키만, 외출·귀가에 찍은 방법
+for (const [who, name] of [[U.stA, '학생'], [U.staffC, '직원'], [U.guardC, '가드'], [null, '익명']]) {
+  await as(who, async () => denied(`${name}는 카드키 비밀 값을 못 읽음`, `select secret from keycard_secret`, PERM));
+}
+await db.exec(`set role service_role`);
+const ks = await q(`select secret from keycard_secret`);
+ok('비밀 값 한 행(64자), 다시 실행해도 그대로', ks.length === 1 && ks[0].secret.length === 64);
+await db.exec(`reset role`);
+await db.exec(mig('20261108170000_keycard_qr.sql'));
+await db.exec(`set role service_role`);
+ok('마이그레이션을 다시 실행해도 비밀 값이 바뀌지 않음', (await one(`select secret from keycard_secret`)).secret === ks[0].secret);
+await db.exec(`reset role`);
+await as(U.guardC, async () => {
+  const r = await one(`insert into outings (student_no, campus, out_at, out_by, out_via) values ('1001', 'Challenger', now(), '근무자', 'qr') returning id, out_via`);
+  ok('가드가 QR 로 외출 기록(out_via)', r.out_via === 'qr');
+  ok('귀가에 찍은 방법(in_via)', (await affected(`update outings set in_at = now(), in_by = '근무자', in_via = 'number' where id = '${r.id}'`)) === 1);
+  await denied('찍은 방법은 qr·number 만', `insert into outings (student_no, campus, out_at, out_via) values ('1002', 'Challenger', now(), 'face')`, CHECK);
+  await denied('외출 방법은 나중에 못 바꿈', `update outings set out_via = 'number' where id = '${r.id}'`, PERM);
+});
+
+// ── 학생 계정 관리: 만들기·초기화 접근 기록은 직원만, 처리자는 로그인한 직원
+await as(U.staffC, async () => {
+  await q(`select student_account_audit('password_reset', '1001', 'Challenger')`);
+  const a = await one(`select actor_id::text, actor_name, target, student_no from audit_logs where action = 'password_reset'`);
+  ok('직원: 비밀번호 초기화 접근 기록(처리자 = 로그인한 직원)', a?.actor_id === U.staffC && a.actor_name === '직원C' && a.target === 'student_account' && a.student_no === '1001', JSON.stringify(a));
+  await denied('없는 종류는 거절', `select student_account_audit('view', '1001', 'Challenger')`, /invalid_action/);
+  await denied('학생번호 모양 확인', `select student_account_audit('account_create', '1001; drop', 'Challenger')`, /invalid_student/);
+  await denied('직원도 접근 기록을 직접 못 씀', `insert into audit_logs (actor_name, action, target_id, student_no, campus) values ('x', 'password_reset', '1', '1', 'Challenger')`, PERM);
+});
+await as(U.stA, async () => denied('학생은 계정 접근 기록 함수 못 씀', `select student_account_audit('password_reset', '1001', 'Challenger')`, /staff_only/));
+await as(U.guardC, async () => denied('가드는 계정 접근 기록 함수 못 씀', `select student_account_audit('account_create', '1001', 'Challenger')`, /staff_only/));
+await as(null, async () => denied('익명은 계정 접근 기록 함수 못 씀', `select student_account_audit('account_create', '1001', 'Challenger')`, PERM));
+const sp = await q(`select proname, proconfig from pg_proc where proname in ('manila_today', 'near_now')`);
+ok('manila_today·near_now search_path 고정(보안 점검)', sp.length === 2 && sp.every((r) => (r.proconfig ?? []).some((c) => c.startsWith('search_path='))), JSON.stringify(sp));
 
 // ── 익명, 서비스 키
 await as(null, async () => {

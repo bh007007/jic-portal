@@ -17,6 +17,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { loadDir } from '../../admin/server/localData';
 import { DEFAULT_EMAIL_DOMAIN, initialPassword, planAccounts } from '../server/accounts';
+import { supabaseAccountAdmin } from '../server/accountAdmin';
 
 // npm 이 워크스페이스 스크립트를 apps/student 에서 실행하므로 저장소 루트는 두 단계 위다.
 const repo = path.resolve(process.cwd(), '../..');
@@ -39,37 +40,18 @@ if (!path.relative(repo, dir).replace(/\\/g, '/').startsWith('data-sample/') && 
   stop('실제 추출본으로는 보안 점검 전까지 계정을 만들지 않습니다(2026-11-07 결정). 필요하면 --allow-real 을 붙이세요.');
 }
 
-// 예전 형식 service_role 키(eyJ…)는 Authorization 에도 넣고, 새 형식(sb_secret_…)은 apikey 헤더만 쓴다(scripts/upload-to-supabase.mjs 와 같음).
-const headers: Record<string, string> = { apikey: key, 'Content-Type': 'application/json', ...(key.startsWith('eyJ') ? { Authorization: `Bearer ${key}` } : {}) };
-
-async function call<T>(method: string, pathAndQuery: string, body?: unknown, extra: Record<string, string> = {}): Promise<T> {
-  const r = await fetch(`${url}${pathAndQuery}`, { method, headers: { ...headers, ...extra }, body: body === undefined ? undefined : JSON.stringify(body) });
-  const text = await r.text();
-  if (!r.ok) throw new Error(`${method} ${pathAndQuery.split('?')[0]} ${r.status}: ${text.slice(0, 200)}`);
-  return (text ? JSON.parse(text) : null) as T;
-}
+const admin = supabaseAccountAdmin(url, key, domain);
 
 async function linkedStudents(): Promise<Set<string>> {
-  const out = new Set<string>();
-  for (let offset = 0; ; offset += 1000) {
-    const rows = await call<{ student_no: string }[]>('GET', `/rest/v1/student_users?select=student_no&order=student_no&limit=1000&offset=${offset}`);
-    rows.forEach((r) => out.add(r.student_no));
-    if (rows.length < 1000) return out;
-  }
+  return new Set((await admin.linked()).map((a) => a.stNo));
 }
 
 /** 이 도메인의 Auth 사용자(이메일 → id). 지난 실행이 계정만 만들고 끊긴 경우를 잇기 위해 본다. */
 async function authUsers(): Promise<Map<string, string>> {
-  const out = new Map<string, string>();
-  for (let page = 1; ; page++) {
-    const r = await call<{ users: { id: string; email?: string }[] }>('GET', `/auth/v1/admin/users?page=${page}&per_page=1000`);
-    for (const u of r.users) if (u.email?.toLowerCase().endsWith(`@${domain}`)) out.set(u.email.toLowerCase(), u.id);
-    if (r.users.length < 1000) return out;
-  }
+  return new Map((await admin.authUsers()).map((u) => [u.email, u.id]));
 }
 
-const link = (userId: string, stNo: string) =>
-  call('POST', '/rest/v1/student_users', { user_id: userId, student_no: stNo }, { Prefer: 'return=minimal' });
+const link = (userId: string, stNo: string) => admin.link(userId, stNo);
 
 function saveFailures(kind: string, rows: { stNo: string; error: string }[]) {
   if (!rows.length) return;
@@ -85,13 +67,12 @@ console.log(`데이터: ${path.relative(repo, dir)} (${db.meta().source === 'sam
 const resetNo = val('--reset');
 if (resetNo !== undefined) {
   // 비밀번호 초기화: 생년월일로 되돌리고 첫 로그인처럼 다시 바꾸게 한다.
-  const rows = await call<{ user_id: string }[]>('GET', `/rest/v1/student_users?select=user_id&student_no=eq.${encodeURIComponent(resetNo)}`);
-  if (!rows[0]) stop('그 학생 번호로 연결된 계정이 없습니다.');
+  const acc = (await admin.linked()).find((a) => a.stNo === resetNo);
+  if (!acc) stop('그 학생 번호로 연결된 계정이 없습니다.');
   const password = initialPassword(db.studentDetail(resetNo)?.student.birthday);
   if (!password) stop('데이터에서 그 학생의 생년월일을 찾지 못했습니다.');
   if (!has('--apply')) stop('미리보기: 계정 1건을 생년월일 비밀번호로 되돌립니다. 실행하려면 --apply 를 붙이세요.');
-  await call('PUT', `/auth/v1/admin/users/${rows[0].user_id}`, { password });
-  await call('PATCH', `/rest/v1/student_users?student_no=eq.${encodeURIComponent(resetNo)}`, { must_change_password: true }, { Prefer: 'return=minimal' });
+  await admin.resetPassword(acc.userId, resetNo, password);
   console.log('비밀번호를 생년월일로 되돌렸습니다. 다음 로그인 때 새 비밀번호를 정하게 됩니다.');
   process.exit(0);
 }
@@ -116,14 +97,9 @@ for (const x of plan.link) {
 }
 for (const x of plan.create) {
   try {
-    const u = await call<{ id: string }>('POST', '/auth/v1/admin/users', {
-      email: x.email,
-      password: x.password,
-      email_confirm: true, // 가짜 주소라 확인 메일을 보내지 않는다
-      user_metadata: { portal: 'student' }, // on_partner_signup 트리거는 'partner' 만 처리
-    });
+    const userId = await admin.create(x.email, x.password);
     created++;
-    await link(u.id, x.stNo);
+    await link(userId, x.stNo);
     linked++;
   } catch (e) {
     failures.push({ stNo: x.stNo, error: (e as Error).message });

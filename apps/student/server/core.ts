@@ -34,6 +34,7 @@ import {
   type LifeRequest,
   type LifeRequestStore,
 } from './lifeRequests';
+import { keycardCode, type KeycardSecret } from './keycard';
 import { cancelSignup, seatsLeft, signUp, studentCampuses, tripNights, visibleTo, type Trip, type TripSignup, type TripStore } from './trips';
 
 export { ABSENCE_KINDS, PERIOD_COUNT, REASON_MAX } from './requests';
@@ -52,6 +53,8 @@ export interface StudentCtx {
   life: LifeRequestStore;
   /** 학교 여행·액티비티와 참가 신청(server/trips.ts, 인트라넷과 같이 씀) */
   trips: TripStore;
+  /** 카드키 QR 비밀 값(server/keycard.ts). 없으면 출입 QR 을 만들지 않는다. */
+  keycardSecret?: KeycardSecret;
   /** 로그인한 학생 번호. 없으면 null. */
   stId: string | null;
   /** 학생번호 + 생년월일 로그인(/api/login)을 열지. 로컬 개발 서버에서만 true. */
@@ -303,6 +306,13 @@ export async function handleStudentApi(ctx: StudentCtx, method: string, pathname
     if (p === '/life-requests' && method === 'POST') return await createLife(ctx, stId, input);
     const lc = p.match(/^\/life-requests\/([\w-]+)\/cancel$/);
     if (lc && method === 'POST') return await cancelLife(ctx, stId, lc[1]);
+    if (p === '/keycard' && method === 'GET') {
+      // 출입 QR: 1분마다 바뀌는 서명 값(가드 태블릿이 읽는다). 재학·입학 예정 학생만
+      if (!ctx.keycardSecret) return fail(404, 'keycard_unavailable');
+      if (!lifeEnrollment(ctx.db, stId)) return fail(403, 'no_enrollment');
+      const k = await keycardCode(await ctx.keycardSecret(), stId, ctx.now().getTime());
+      return ok({ ...k, now: ctx.now().toISOString() }); // now: 기기 시계가 달라도 남은 시간을 맞게 보이도록
+    }
     if (p === '/trips' && method === 'GET') return ok(await tripRows(ctx, stId));
     const tr = p.match(/^\/trips\/([\w-]+)(?:\/(signup|cancel))?$/);
     if (tr && !tr[2] && method === 'GET') {

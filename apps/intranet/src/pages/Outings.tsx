@@ -107,8 +107,14 @@ export default function Outings({ mode }: { mode: 'outings' | 'curfew' }) {
                         <StudentLink stId={r.stId} name={r.name} /> <span className="muted">{r.stId}</span>
                       </td>
                       <td>{r.campus}</td>
-                      <td>{r.outAt ? mdhm(r.outAt) : <span className="muted">기록 없음</span>}</td>
-                      <td>{r.inAt ? mdhm(r.inAt) : <span className="text-amber">외출 중</span>}</td>
+                      <td>
+                        {r.outAt ? mdhm(r.outAt) : <span className="muted">기록 없음</span>}
+                        {r.outVia === 'number' && <div className="muted small">번호 입력</div>}
+                      </td>
+                      <td>
+                        {r.inAt ? mdhm(r.inAt) : <span className="text-amber">외출 중</span>}
+                        {r.inVia === 'number' && <div className="muted small">번호 입력</div>}
+                      </td>
                       <td>{duration(r.minutes)}</td>
                       <td>
                         {r.outBy || '-'} / {r.inBy || '-'}

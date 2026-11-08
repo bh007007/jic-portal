@@ -231,6 +231,12 @@ textarea { font: inherit; }
 .guard-mode button:first-child { border-right: 1px solid #b8bec8; }
 .guard-mode button[aria-pressed='true'] { background: var(--primary); color: #fff; font-weight: 700; }
 .guard-viewfinder { position: relative; flex: 1 1 auto; min-height: 260px; border: 0; border-radius: 4px; background: #2a2f37; color: #d7dbe1; font-size: 18px; display: flex; align-items: center; justify-content: center; cursor: text; }
+.guard-viewfinder.camera { overflow: hidden; cursor: default; }
+.guard-video { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
+.guard-camera-error { margin: 0 24px; color: #ffd27a; font-size: 16px; text-align: center; }
+.guard-camera-bar { display: flex; gap: 8px; }
+.guard-camera-bar button { min-height: 44px; padding: 0 16px; border: 1px solid #b8bec8; border-radius: 4px; background: #fff; color: var(--ink-2); font-size: 15px; cursor: pointer; }
+.guard-camera-bar button[aria-pressed='true'] { border-color: var(--primary); color: var(--primary); font-weight: 700; }
 .corner { position: absolute; width: 40px; height: 40px; border: 0 solid #fff; }
 .corner.tl { left: 25%; top: 18%; border-left-width: 4px; border-top-width: 4px; }
 .corner.tr { right: 25%; top: 18%; border-right-width: 4px; border-top-width: 4px; }

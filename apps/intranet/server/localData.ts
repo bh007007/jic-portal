@@ -13,7 +13,7 @@ import crypto from 'node:crypto';
 import type { IncomingMessage, ServerResponse } from 'node:http';
 import type { Plugin } from 'vite';
 import { loadDir } from '../../admin/server/localData';
-import { fileStore, requestFiles, tripFileStore } from '../../student/server/localData';
+import { fileStore, localKeycardSecret, requestFiles, tripFileStore } from '../../student/server/localData';
 import type { Departure, Ride } from '../../student/server/departures';
 import type { LifeRequest } from '../../student/server/lifeRequests';
 import type { Absence, Overnight } from '../../student/server/requests';
@@ -113,6 +113,7 @@ export function intranetLocalPlugin(dataDir: string, storeDir: string, studentSt
         noticeReads: fileRepo(path.join(storeDir, 'notice-reads.ndjson')),
         reports: fileRepo(path.join(storeDir, `reports-${source}.ndjson`)),
       };
+      const keycardSecret = localKeycardSecret(req.keycardSecret); // 학생 앱과 같은 파일(출입 QR 확인)
       server.config.logger.info(`[intranet-local] ${db.summary()} · 기준일 ${db.refDate} · 저장 폴더 ${storeDir}`);
 
       server.middlewares.use('/api', async (req: IncomingMessage, res: ServerResponse) => {
@@ -145,7 +146,7 @@ export function intranetLocalPlugin(dataDir: string, storeDir: string, studentSt
           }
         }
         const { status, body: out } = await handleIntranetApi(
-          { db, stores, actor, now: () => new Date(), newId: () => crypto.randomUUID() },
+          { db, stores, actor, keycardSecret, now: () => new Date(), newId: () => crypto.randomUUID() },
           method,
           url.pathname,
           url.searchParams,
