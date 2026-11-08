@@ -15,6 +15,7 @@ portal/
 ├─ apps/admin/            관리자 화면 (React + Vite)
 ├─ apps/partner/          파트너 포털 (React + Vite + Supabase) · docs/partner-portal.md
 ├─ apps/student/          학생 앱 (모바일, 로컬 전용)
+├─ apps/intranet/         인트라넷 (가드 태블릿·통금·패널티, 로컬 전용)
 ├─ functions/api/         배포용 /api 서버 (Cloudflare Pages Function → Supabase)
 ├─ supabase/migrations/   Supabase 테이블·권한 SQL
 ├─ .github/workflows/     빌드 확인, DB 반영
@@ -57,6 +58,16 @@ npm run student
 ```
 
 http://127.0.0.1:5176 을 연다. 로그인은 학생번호 + 생년월일 8자리이며, 샘플 데이터로 실행하면 시험용 학생이 로그인 화면에 나온다. 자세한 내용은 [docs/student-app.md](docs/student-app.md), 두 작업 세션의 분담은 [docs/collab.md](docs/collab.md).
+
+## 인트라넷 실행 (로컬)
+
+`apps/intranet`은 직원용 화면과 경비실 가드 태블릿이다. 외출·귀가 기록, 통금 확인, 패널티 승인·점수표, 통금·근무자 설정이 있고, 기록은 `.local-db/`(Git 제외)에 저장한다.
+
+```powershell
+npm run intranet
+```
+
+http://127.0.0.1:5177 (가드 태블릿은 `/guard`). 자세한 내용은 [docs/intranet.md](docs/intranet.md).
 
 ## 데이터 다시 추출하기
 

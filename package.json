@@ -11,6 +11,8 @@
     "partner:build": "npm --workspace apps/partner run build",
     "student": "npm --workspace apps/student run dev",
     "student:build": "npm --workspace apps/student run build",
-    "typecheck": "npm --workspace apps/admin run typecheck && npm --workspace apps/partner run typecheck && npm --workspace apps/student run typecheck"
+    "intranet": "npm --workspace apps/intranet run dev",
+    "intranet:build": "npm --workspace apps/intranet run build",
+    "typecheck": "npm --workspace apps/admin run typecheck && npm --workspace apps/partner run typecheck && npm --workspace apps/student run typecheck && npm --workspace apps/intranet run typecheck"
   }
 }
