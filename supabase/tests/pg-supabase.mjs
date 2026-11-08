@@ -11,7 +11,7 @@ import fs from 'node:fs';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 
 const REPO = fileURLToPath(new URL('../../', import.meta.url));
-const MIGRATIONS = ['20261107000000_legacy_tables.sql', '20261107020000_legacy_deposits.sql', '20261108000000_legacy_point_history.sql', '20261108010000_legacy_rooms.sql', '20261108100000_student_intranet.sql', '20261108120000_student_request_ids.sql', '20261108130000_intranet_deploy.sql', '20261108140000_nonacademic_requests.sql', '20261108150000_overnight_travel.sql', '20261108160000_school_trips.sql', '20261108200000_teacher_portal.sql'];
+const MIGRATIONS = ['20261107000000_legacy_tables.sql', '20261107020000_legacy_deposits.sql', '20261108000000_legacy_point_history.sql', '20261108010000_legacy_rooms.sql', '20261108100000_student_intranet.sql', '20261108120000_student_request_ids.sql', '20261108130000_intranet_deploy.sql', '20261108140000_nonacademic_requests.sql', '20261108150000_overnight_travel.sql', '20261108160000_school_trips.sql', '20261108200000_teacher_portal.sql', '20261108220000_lms_absences.sql'];
 
 export async function startPgSupabase({ port = 0 } = {}) {
   const { PGlite } = await import(process.env.PGLITE ? pathToFileURL(process.env.PGLITE).href : '@electric-sql/pglite');

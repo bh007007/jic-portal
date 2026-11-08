@@ -22,6 +22,7 @@ button, input, select { font: inherit; }
 .small { font-size: 12px; }
 .strong { font-weight: 700; }
 .err { margin: 0; color: var(--red); font-size: 12px; }
+.ok { color: #2e7d32; font-size: 12px; }
 .nowrap { white-space: nowrap; }
 .num { text-align: right; }
 

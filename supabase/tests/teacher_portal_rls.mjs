@@ -26,6 +26,8 @@ await db.exec(`
 for (const f of ['20261107000000_legacy_tables.sql', '20261108100000_student_intranet.sql']) await db.exec(mig(f));
 await db.exec(mig('20261108200000_teacher_portal.sql'));
 await db.exec(mig('20261108200000_teacher_portal.sql')); // 두 번째 실행
+await db.exec(mig('20261108220000_lms_absences.sql'));
+await db.exec(mig('20261108220000_lms_absences.sql'));
 ok('마이그레이션 2회 실행', true);
 
 const U = {
@@ -144,7 +146,26 @@ await as(U.teacher, async () => {
 });
 await as(U.manager, async () => ok('매니저가 강사 등록', (await affected(`insert into staff (name, legacy_id) values ('Teacher Ben', 'te-9')`)) === 1));
 
+// ── 결석 신청 보기(lms_absences): 사유 글 없이 종류·상태만
+const absId = await as(U.student, async () => (await q(`insert into absence_requests (student_no, enrollment_id, absence_date, periods, kind, reason)
+  values ('1001', 'tr1', '${today}', '{1,2}', 'sick', '열이 나요') returning id`))[0].id);
+await as(U.student, async () => {
+  await q(`insert into absence_requests (student_no, enrollment_id, absence_date, kind, reason) values ('1001', 'tr1', '${plus(today, 1)}', 'personal', '취소할 신청') returning id`);
+  await q(`select cancel_absence_request(id) from absence_requests where absence_date = '${plus(today, 1)}'`);
+});
+await as(U.teacher, async () => {
+  const rows = await q(`select * from lms_absences()`);
+  ok('강사: 오늘 결석 신청 1건(이름·캠퍼스·교시·종류·상태)', rows.length === 1 && rows[0].name === 'KIM A' && rows[0].campus === 'Premium' && rows[0].kind === 'sick' && rows[0].status === 'pending' && rows[0].periods.join() === '1,2', JSON.stringify(rows));
+  ok('강사: 사유 글은 없음', !('reason' in (rows[0] ?? {})));
+  ok('강사: 취소한 신청은 안 보임', (await q(`select * from lms_absences('${today}', '${plus(today, 3)}')`)).length === 1);
+  ok('강사: 결석 신청 표는 직접 못 읽음(RLS 0행)', (await count(`select count(*) n from absence_requests`)) === 0);
+  ok('강사: 31일 넘는 기간은 0행', (await q(`select * from lms_absences('${today}', '${plus(today, 40)}')`)).length === 0);
+});
+await as(U.student, async () => ok('학생은 이 함수로 결석 신청을 못 봄(강사 포털 사용자 아님)', (await q(`select * from lms_absences()`)).length === 0));
+ok('결석 신청 id', !!absId);
+
 await as(null, async () => {
+  await denied('익명 결석 신청 보기', `select * from lms_absences()`, PERM);
   await denied('익명 학생 목록', `select * from lms_students()`, PERM);
   await denied('익명 성적', `select * from test_results`, PERM);
 });

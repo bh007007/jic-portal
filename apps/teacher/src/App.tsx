@@ -11,6 +11,7 @@ import Materials from './pages/Materials';
 import More from './pages/More';
 import TestTypes from './pages/TestTypes';
 import Staff from './pages/Staff';
+import Absences from './pages/Absences';
 import NotReady from './pages/NotReady';
 
 export default function App() {
@@ -38,6 +39,7 @@ export default function App() {
         <Route path="/more" element={<More />} />
         <Route path="/tests" element={me.isManager ? <TestTypes /> : <Navigate to="/more" replace />} />
         <Route path="/staff" element={me.isManager ? <Staff /> : <Navigate to="/more" replace />} />
+        <Route path="/absences" element={<Absences />} />
         <Route path="/attendance" element={<NotReady title="출석 체크" />} />
         <Route path="*" element={<NotReady title="없는 화면" />} />
       </Routes>

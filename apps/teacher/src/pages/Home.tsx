@@ -1,6 +1,6 @@
 import { Link } from 'react-router-dom';
 import { useAuth } from '../auth';
-import { loadRecentResults, loadStudents } from '../data';
+import { ABSENCE_KIND, ABSENCE_STATUS, loadAbsences, loadRecentResults, loadStudents, periodText } from '../data';
 import { manilaToday } from '../supabase';
 import { PageHead, Section, fmtDate, useLoad } from '../ui';
 
@@ -11,6 +11,7 @@ export default function Home() {
   const today = manilaToday();
   const students = useLoad(() => loadStudents(), []);
   const recent = useLoad(() => loadRecentResults(8), []);
+  const absences = useLoad(() => loadAbsences(), []);
   const current = (students.data ?? []).filter((s) => s.start_date <= today);
   const arriving = (students.data ?? []).filter((s) => s.start_date > today);
   const byCampus = new Map<string, number>();
@@ -22,6 +23,26 @@ export default function Home() {
 
       <Section title="오늘 수업 · 출석">
         <p className="muted">업체 포털 수업 시간표를 연결한 뒤 열립니다(원칙 V1·V6). 지금은 업체 포털에서 출석을 입력합니다.</p>
+      </Section>
+
+      <Section title="오늘 결석 신청" extra={<Link to="/absences" className="more">날짜별 보기</Link>}>
+        {absences.loading ? (
+          <p className="muted">불러오는 중…</p>
+        ) : absences.error ? (
+          <p className="err">{absences.error}</p>
+        ) : (absences.data ?? []).length === 0 ? (
+          <p className="muted">오늘 결석 신청이 없습니다.</p>
+        ) : (
+          <ul className="rows">
+            {(absences.data ?? []).map((a) => (
+              <li key={a.id}>
+                <Link to={`/students/${a.student_no}`}>{a.name || a.student_no}</Link>
+                <span className={a.status === 'approved' ? 'ok' : a.status === 'rejected' ? 'err' : 'muted'}>{ABSENCE_STATUS[a.status]}</span>
+                <span className="muted small">{a.campus} · {periodText(a.periods)} · {ABSENCE_KIND[a.kind]}</span>
+              </li>
+            ))}
+          </ul>
+        )}
       </Section>
 
       <Section title="학생" extra={<Link to="/students" className="more">전체 보기</Link>}>
