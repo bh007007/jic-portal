@@ -26,6 +26,8 @@ import { PENALTY_KIND_OF, REPORT_KINDS, REPORT_LABEL, REPORT_NOTE_MAX, type Inci
 import { createNotice, listNotices, noticeSummary, openNotice, updateNotice, type Notice, type NoticeCtx, type NoticeRead } from './notices';
 import { COMMENT_MAX, decideRequest, nightsBetween, overnightFor, type Absence, type Overnight, type RequestStatus, type RequestStore } from '../../student/server/requests';
 import { readKeycard, type KeycardSecret } from '../../student/server/keycard';
+import type { AccountAdmin } from '../../student/server/accountAdmin';
+import { createAccounts, listAccounts, resetAccount, type AccountAction, type AccountsCtx } from './studentAccounts';
 import {
   isAccepting,
   REMOVE_REASON_MAX,
@@ -162,6 +164,8 @@ export interface Stores {
   lifeRequests: LifeRequestStore;
   /** 학교 여행·액티비티(직원이 올림)와 참가 신청(학생이 냄, 학생 앱 server/trips.ts) */
   trips: TripStore;
+  /** 배포: 학생 계정 만들기·초기화 접근 기록(DB 함수 student_account_audit). 없으면 audit 저장소에 남긴다 */
+  accountAudit?: (action: AccountAction, stNo: string, campus: string) => Promise<void>;
   /** 학생 앱과 같이 쓰는 귀국 항공편과, 직원이 쓰는 공항 이동 배차 */
   departures: DepartureStore;
   rides: RideStore;
@@ -176,6 +180,10 @@ export interface IntranetCtx {
   actor?: string | null;
   /** 카드키 QR 서명 비밀 값(학생 앱 server/keycard.ts). 로컬은 파일, 배포는 가드 요청에서 서비스 키로. 없으면 QR 은 받지 않고 번호만 */
   keycardSecret?: KeycardSecret;
+  /** 학생 계정 관리(서비스 키, 배포 직원 요청만). 없으면 '학생 계정' 화면은 안내만 */
+  accounts?: AccountAdmin;
+  accountsUnavailable?: 'local' | 'server_config';
+  studentEmailDomain?: string;
   /** 배포: 로그인한 계정 종류. 가드 공용 계정은 그 출입구(캠퍼스)로 고정한다. 로컬은 없음. */
   session?: { role: 'staff' | 'guard'; campus?: string | null };
 }
@@ -956,6 +964,19 @@ async function studentFile(ctx: IntranetCtx, stId: string) {
 }
 export type StudentFile = NonNullable<Awaited<ReturnType<typeof studentFile>>>;
 
+function accountsCtx(ctx: IntranetCtx): AccountsCtx {
+  return {
+    db: ctx.db,
+    accounts: ctx.accounts,
+    unavailable: ctx.accounts ? undefined : (ctx.accountsUnavailable ?? 'local'),
+    domain: ctx.studentEmailDomain,
+    log: async (action, stNo, campus) => {
+      if (ctx.stores.accountAudit) return ctx.stores.accountAudit(action, stNo, campus);
+      await ctx.stores.audit.put({ id: ctx.newId(), at: ctx.now().toISOString(), actor: ctx.actor ?? '', action, target: 'student_account', targetId: stNo, stId: stNo });
+    },
+  };
+}
+
 function noticeCtx(ctx: IntranetCtx): NoticeCtx {
   return {
     stores: ctx.stores,
@@ -1076,6 +1097,10 @@ export async function handleIntranetApi(ctx: IntranetCtx, method: string, pathna
         return await decideRequests(ctx, 'overnights', input);
       case 'GET /requests/life':
         return ok(await listLifeRequests(ctx, q));
+      case 'GET /accounts':
+        return ok(await listAccounts(accountsCtx(ctx), q));
+      case 'POST /accounts/create':
+        return await createAccounts(accountsCtx(ctx));
       case 'GET /trips':
         return ok(await listTrips(ctx, q));
       case 'POST /trips':
@@ -1089,6 +1114,8 @@ export async function handleIntranetApi(ctx: IntranetCtx, method: string, pathna
         return ok(s);
       }
     }
+    const ar = p.match(/^\/accounts\/(\d+)\/reset$/);
+    if (ar && method === 'POST') return await resetAccount(accountsCtx(ctx), ar[1]);
     const ts = p.match(/^\/trips\/signups\/([\w-]+)\/remove$/);
     if (ts && method === 'POST') return await removeSignupRoute(ctx, ts[1], input);
     const tr = p.match(/^\/trips\/([\w-]+)(\/status)?$/);
