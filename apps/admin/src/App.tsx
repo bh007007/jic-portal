@@ -22,6 +22,7 @@ import StudentCalendar from './pages/StudentCalendar';
 import Registrations from './pages/Registrations';
 import Cancellations from './pages/Cancellations';
 import Memos from './pages/Memos';
+import Users from './pages/Users';
 import NotReady from './pages/NotReady';
 
 // undefined = 세션 확인 중, null = 로그인 안 됨
@@ -62,6 +63,7 @@ export default function App() {
         <Route path="/stats/registrations" element={<Registrations />} />
         <Route path="/cancellations" element={<Cancellations />} />
         <Route path="/memos" element={<Memos />} />
+        <Route path="/users" element={<Users />} />
         <Route path="*" element={<NotReady />} />
       </Routes>
     </Shell>

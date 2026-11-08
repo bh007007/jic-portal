@@ -10,12 +10,15 @@ PR이 CI를 통과하면 GitHub에서 **Merge pull request**를 누르거나 Cla
 | --- | --- | --- |
 | [#37](https://github.com/bh007007/jic-portal/pull/37) | JIC 포털 첫 화면(4개 포털 선택), 관리자 포털 `/admin`, 구조 문서, 이 목록 | 1 |
 | [#39](https://github.com/bh007007/jic-portal/pull/39) | 강사 포털(LMS) 1차 `/teacher`: 학생·성적·자료실·시험 종류·강사 목록. #37 위에 쌓음 | 2 (#37 다음) |
+| #40 (아래 링크) | 관리자 포털 '사용자·권한': 계정 목록(4개 포털 종류), 강사 포털 역할 주기·회수, 강사 목록 연결. #39 위에 쌓음 | 3 |
 | (밤사이 추가되는 PR은 여기에 적는다) | | |
 
 ## 머지할 때 같이 할 일 (밤사이 권한 확인에 막힘: Supabase 적용·Cloudflare 설정은 배포로 분류됨)
 
 말씀만 주시면 Claude가 한다("적용하기", "Cloudflare 바꿔").
-- **Supabase 마이그레이션 적용**: `supabase/migrations/20261108200000_teacher_portal.sql`(#39). 새 테이블·함수만 만든다. 권한 시험 38개 통과.
+- **Supabase 마이그레이션 적용**(새 테이블·함수만, 순서대로):
+  - `supabase/migrations/20261108200000_teacher_portal.sql`(#39). 권한 시험 38개 통과.
+  - `supabase/migrations/20261108210000_user_directory.sql`(#40). 권한 시험 13개 통과.
 - **Cloudflare Pages 빌드 명령**: `npm run portal:build && npm run teacher:portal --if-present`로 바꾼다(#39 강사 포털을 `/teacher`에 넣음). `--if-present`라 머지 전에 바꿔도 깨지지 않는다.
 - **강사 시험 계정**: 강사 포털을 보려면 Supabase Auth에 강사 계정이 하나 있어야 한다. 직원 계정(레오님)은 역할 없이도 들어가진다. 강사 계정이 필요하면 `docs/teacher-portal.md` '강사 계정 만들기'를 따른다.
 
