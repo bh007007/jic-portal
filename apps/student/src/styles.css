@@ -212,3 +212,8 @@ a.list-row:hover { color: var(--ink); background: #fafbfc; }
 .login-note.sample { color: var(--amber); }
 .login-box.in-app { margin-top: 4px; }
 .pad-stack { display: flex; flex-direction: column; gap: 8px; }
+
+/* 출입 QR */
+.qr-page { display: flex; flex-direction: column; align-items: center; gap: 8px; padding: 20px 16px 28px; text-align: center; }
+.qr-svg { width: min(260px, 72vw); height: auto; padding: 12px; background: #fff; border: 1px solid var(--line); border-radius: 8px; }
+.qr-name { margin: 6px 0 0; font-size: 16px; font-weight: 700; }

@@ -181,6 +181,13 @@ const MESSAGES: Record<string, string> = {
   invalid_contact: '연락처를 확인하세요.',
   invalid_companion: '같이 가는 학생번호를 확인하세요.',
   // 배포(Supabase)
+  accounts_local: '로컬 개발 서버에는 학생 계정이 없습니다.',
+  server_config: '서버 설정(서비스 키)이 빠져 있습니다. 관리자에게 알려 주세요.',
+  no_account: '아직 계정이 없는 학생입니다. 먼저 계정을 만드세요.',
+  no_birthday: '생년월일이 없어 첫 비밀번호를 정할 수 없습니다. 학생 정보를 먼저 고치세요.',
+  invalid_qr: '올바른 카드키 QR이 아닙니다. 학생 앱의 출입 QR을 다시 비춰 주세요.',
+  qr_expired: '시간이 지난 QR입니다. 학생 앱에서 새 QR을 비춰 주세요(캡처한 QR은 쓸 수 없습니다).',
+  qr_unavailable: '지금은 카드키 QR을 확인할 수 없습니다. 학생번호로 입력하세요.',
   title_required: '제목을 입력하세요.',
   title_too_long: '제목은 100자까지 쓸 수 있습니다.',
   place_required: '장소를 입력하세요.',

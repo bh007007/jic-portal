@@ -105,19 +105,21 @@ const toOuting = (r: Row): Outing => ({
   outBy: String(r.out_by ?? ''),
   inAt: iso(r.in_at),
   inBy: String(r.in_by ?? ''),
+  outVia: (r.out_via as Outing['outVia']) ?? null,
+  inVia: (r.in_via as Outing['inVia']) ?? null,
 });
 function outingStore(rest: Rest): Repo<Outing> {
   return {
     all: async () => (await rest('GET', 'outings?select=*&order=created_at.asc')).map(toOuting),
     async put(x) {
-      // 새 기록은 넣고, 있던 기록은 귀가만 찍는다(가드 권한도 in_at, in_by 만)
+      // 새 기록은 넣고, 있던 기록은 귀가만 찍는다(가드 권한도 in_at, in_by, in_via 만)
       await upsert(
         rest,
         'outings',
         'id',
         x.id,
-        { id: x.id, student_no: x.stId, enrollment_id: x.trId, campus: x.campus, out_at: x.outAt, out_by: x.outBy, in_at: x.inAt, in_by: x.inBy },
-        { in_at: x.inAt, in_by: x.inBy },
+        { id: x.id, student_no: x.stId, enrollment_id: x.trId, campus: x.campus, out_at: x.outAt, out_by: x.outBy, in_at: x.inAt, in_by: x.inBy, out_via: x.outVia ?? null, in_via: x.inVia ?? null },
+        { in_at: x.inAt, in_by: x.inBy, in_via: x.inVia ?? null },
       );
     },
     remove: readOnly,
@@ -238,7 +240,7 @@ function counselingStores(rest: Rest): { counseling: Repo<CounselingNote>; audit
           at: iso(r.at)!,
           actor: String(r.actor_name),
           action: r.action as AuditLog['action'],
-          target: 'counseling' as const,
+          target: (r.target === 'student_account' ? 'student_account' : 'counseling') as AuditLog['target'],
           targetId: String(r.target_id),
           stId: String(r.student_no),
         })),
@@ -405,6 +407,10 @@ export function supabaseStores(conf: SupabaseConf, token: string, userId: string
     rides: rideStore(rest, names, userId),
     lifeRequests: lifeRequestStore(rest, names),
     trips: tripStore(rest, names),
+    // 학생 계정 만들기·초기화 접근 기록: 직원 토큰으로 DB 함수(처리자 = 로그인한 직원)
+    accountAudit: async (action, stNo, campus) => {
+      await rest('POST', 'rpc/student_account_audit', { p_action: action, p_student_no: stNo, p_campus: campus }, 'return=minimal');
+    },
   };
 }
 export type { Departure };

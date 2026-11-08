@@ -262,4 +262,10 @@ export const jp: Record<MsgKey, string> = {
   'err.outside_enrollment': '旅行の日程が研修期間外のため申し込めません。',
   'err.deadline_passed': '申込締切を過ぎたため取り消せません。担当スタッフに伝えてください。',
   'err.not_applied': '取り消す申込がありません。',
+  'qr.button': '出入りQR',
+  'qr.title': '出入りQR',
+  'qr.left': '{s}秒後に新しいQRに変わります',
+  'qr.hint': '外出・帰宅のときにガードのタブレットのカメラにかざしてください。スクリーンショットのQRは使えません。',
+  'err.qr_offline': 'QRを取得できませんでした。インターネット接続を確認してください。',
+  'err.keycard_unavailable': '現在、出入りQRは使えません。事務室にお問い合わせください。',
 };
