@@ -136,6 +136,36 @@ export default function StudentDetail() {
         </div>
       )}
 
+      {data.enrollments.filter((e) => e.points.length > 0).map((en) => (
+        <Panel key={en.trId} title={<>포인트 내역 <small>({en.batch} · {en.start} ~ {en.end} · {en.points.length}건 · 1P = 1페소)</small></>}>
+          <table className="tbl center" style={{ minWidth: 720 }}>
+            <thead>
+              <tr><th>일시</th><th>구분</th><th className="left">항목</th><th>금액(P)</th><th>잔액(P)</th><th>처리</th><th className="left">메모</th></tr>
+            </thead>
+            <tbody>
+              {(() => {
+                let bal = 0;
+                return en.points.map((p, i) => {
+                  const delta = p.kind === '충전' ? p.amount : -p.amount; // 사용이 음수면 환불
+                  bal += delta;
+                  return (
+                    <tr key={i}>
+                      <td className="nowrap">{p.dt}</td>
+                      <td className={p.kind === '충전' ? 'text-blue' : ''}>{p.kind}</td>
+                      <td className="left">{p.item || '-'}</td>
+                      <td className="num">{delta > 0 ? '+' : ''}{fmt(delta)}</td>
+                      <td className="num strong">{fmt(bal)}</td>
+                      <td className="muted">{p.staff}</td>
+                      <td className="left memo-text">{p.memo}</td>
+                    </tr>
+                  );
+                });
+              })()}
+            </tbody>
+          </table>
+        </Panel>
+      ))}
+
       <Panel title={<>메모 <small>({memos.length}건)</small></>}>
         <table className="tbl" style={{ minWidth: 720 }}>
           <thead>

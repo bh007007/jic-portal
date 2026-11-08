@@ -6,7 +6,9 @@ import fs from 'node:fs';
 import path from 'node:path';
 import type { IncomingMessage, ServerResponse } from 'node:http';
 import type { Plugin } from 'vite';
-import { createDb, handleApi, type Raw } from './core';
+import { createDb, handleApi, POINT_HISTORY_COLUMNS, type Raw } from './core';
+
+const pick = (cols: string[]) => (r: Raw) => Object.fromEntries(cols.map((c) => [c, r[c] ?? null]));
 
 function readNdjson(file: string): Raw[] {
   if (!fs.existsSync(file)) return [];
@@ -28,6 +30,7 @@ export function loadDir(dataDir: string) {
     agencies: readNdjson(path.join(dataDir, 'agencies.ndjson')),
     agents: readNdjson(path.join(dataDir, 'agents.ndjson')),
     deposits: readNdjson(path.join(dataDir, 'deposits.ndjson')),
+    pointHistory: readNdjson(path.join(dataDir, 'point_history.ndjson')).map(pick(POINT_HISTORY_COLUMNS)),
   });
 }
 

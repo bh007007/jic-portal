@@ -1,0 +1,810 @@
+{"tr_id":"800001","tr_st_id":"30001","campus":"Premium","staff_id":"1","type":"D","dt":"2026-03-23 09:25:00","point":"31000","php":"31000","ec_name":null,"nickname":"Mia","memo":null}
+{"tr_id":"800001","tr_st_id":"30001","campus":"Premium","staff_id":"2","type":"U","dt":"2026-03-23 10:28:00","point":"6500","php":"6500","ec_name":"SSP (Valid for 6 mon)","nickname":"Ken","memo":null}
+{"tr_id":"800001","tr_st_id":"30001","campus":"Premium","staff_id":"2","type":"U","dt":"2026-03-23 10:14:00","point":"500","php":"500","ec_name":"Student ID Card","nickname":"Ken","memo":null}
+{"tr_id":"800001","tr_st_id":"30001","campus":"Premium","staff_id":"2","type":"U","dt":"2026-03-23 10:54:00","point":"1000","php":"1000","ec_name":"Class Materials","nickname":"Joy","memo":null}
+{"tr_id":"800001","tr_st_id":"30001","campus":"Premium","staff_id":"2","type":"U","dt":"2026-03-23 10:06:00","point":"3800","php":"3800","ec_name":"Visa","nickname":"Ken","memo":null}
+{"tr_id":"800001","tr_st_id":"30001","campus":"Premium","staff_id":"2","type":"U","dt":"2026-03-23 10:17:00","point":"2400","php":"2400","ec_name":"Maintenance (4w basis)","nickname":"Joy","memo":null}
+{"tr_id":"800001","tr_st_id":"30001","campus":"Premium","staff_id":"2","type":"U","dt":"2026-03-23 10:38:00","point":"3000","php":"3000","ec_name":"Laundry Fee (4w basis)","nickname":"Ken","memo":null}
+{"tr_id":"800001","tr_st_id":"30001","campus":"Premium","staff_id":"2","type":"U","dt":"2026-03-23 10:12:00","point":"7200","php":"7200","ec_name":"Utility Bill (4w basis)","nickname":"Ken","memo":null}
+{"tr_id":"800001","tr_st_id":"30001","campus":"Premium","staff_id":"2","type":"U","dt":"2026-03-23 10:23:00","point":"3000","php":"3000","ec_name":"Deposit","nickname":"Joy","memo":null}
+{"tr_id":"800002","tr_st_id":"30002","campus":"Premium","staff_id":"1","type":"D","dt":"2026-03-23 09:56:00","point":"30000","php":"30000","ec_name":null,"nickname":"Mia","memo":null}
+{"tr_id":"800002","tr_st_id":"30002","campus":"Premium","staff_id":"2","type":"U","dt":"2026-03-23 10:31:00","point":"6500","php":"6500","ec_name":"SSP (Valid for 6 mon)","nickname":"Ken","memo":null}
+{"tr_id":"800002","tr_st_id":"30002","campus":"Premium","staff_id":"2","type":"U","dt":"2026-03-23 10:52:00","point":"500","php":"500","ec_name":"Student ID Card","nickname":"Joy","memo":null}
+{"tr_id":"800002","tr_st_id":"30002","campus":"Premium","staff_id":"2","type":"U","dt":"2026-03-23 10:20:00","point":"1000","php":"1000","ec_name":"Class Materials","nickname":"Joy","memo":null}
+{"tr_id":"800002","tr_st_id":"30002","campus":"Premium","staff_id":"2","type":"U","dt":"2026-03-23 10:33:00","point":"3800","php":"3800","ec_name":"Visa","nickname":"Ken","memo":null}
+{"tr_id":"800002","tr_st_id":"30002","campus":"Premium","staff_id":"2","type":"U","dt":"2026-03-23 10:17:00","point":"2400","php":"2400","ec_name":"Maintenance (4w basis)","nickname":"Joy","memo":null}
+{"tr_id":"800002","tr_st_id":"30002","campus":"Premium","staff_id":"2","type":"U","dt":"2026-03-23 10:18:00","point":"3000","php":"3000","ec_name":"Laundry Fee (4w basis)","nickname":"Joy","memo":null}
+{"tr_id":"800002","tr_st_id":"30002","campus":"Premium","staff_id":"2","type":"U","dt":"2026-03-23 10:13:00","point":"7200","php":"7200","ec_name":"Utility Bill (4w basis)","nickname":"Ken","memo":null}
+{"tr_id":"800002","tr_st_id":"30002","campus":"Premium","staff_id":"2","type":"U","dt":"2026-03-23 10:21:00","point":"3000","php":"3000","ec_name":"Deposit","nickname":"Ken","memo":null}
+{"tr_id":"800003","tr_st_id":"30003","campus":"Premium","staff_id":"1","type":"D","dt":"2026-03-23 09:00:00","point":"41000","php":"41000","ec_name":null,"nickname":"Mia","memo":null}
+{"tr_id":"800003","tr_st_id":"30003","campus":"Premium","staff_id":"2","type":"U","dt":"2026-03-23 10:24:00","point":"6500","php":"6500","ec_name":"SSP (Valid for 6 mon)","nickname":"Ken","memo":null}
+{"tr_id":"800003","tr_st_id":"30003","campus":"Premium","staff_id":"2","type":"U","dt":"2026-03-23 10:10:00","point":"500","php":"500","ec_name":"Student ID Card","nickname":"Joy","memo":null}
+{"tr_id":"800003","tr_st_id":"30003","campus":"Premium","staff_id":"2","type":"U","dt":"2026-03-23 10:27:00","point":"1000","php":"1000","ec_name":"Class Materials","nickname":"Ken","memo":null}
+{"tr_id":"800003","tr_st_id":"30003","campus":"Premium","staff_id":"2","type":"U","dt":"2026-03-23 10:12:00","point":"3800","php":"3800","ec_name":"Visa","nickname":"Ken","memo":null}
+{"tr_id":"800003","tr_st_id":"30003","campus":"Premium","staff_id":"2","type":"U","dt":"2026-03-23 10:46:00","point":"4800","php":"4800","ec_name":"Maintenance (4w basis)","nickname":"Ken","memo":null}
+{"tr_id":"800003","tr_st_id":"30003","campus":"Premium","staff_id":"2","type":"U","dt":"2026-03-23 10:39:00","point":"6000","php":"6000","ec_name":"Laundry Fee (4w basis)","nickname":"Ken","memo":null}
+{"tr_id":"800003","tr_st_id":"30003","campus":"Premium","staff_id":"2","type":"U","dt":"2026-03-23 10:40:00","point":"14400","php":"14400","ec_name":"Utility Bill (4w basis)","nickname":"Ken","memo":null}
+{"tr_id":"800003","tr_st_id":"30003","campus":"Premium","staff_id":"2","type":"U","dt":"2026-03-23 10:09:00","point":"3000","php":"3000","ec_name":"Deposit","nickname":"Joy","memo":null}
+{"tr_id":"800006","tr_st_id":"30006","campus":"Premium","staff_id":"1","type":"D","dt":"2026-03-23 09:20:00","point":"25000","php":"25000","ec_name":null,"nickname":"Mia","memo":null}
+{"tr_id":"800006","tr_st_id":"30006","campus":"Premium","staff_id":"2","type":"U","dt":"2026-03-23 10:19:00","point":"6500","php":"6500","ec_name":"SSP (Valid for 6 mon)","nickname":"Joy","memo":null}
+{"tr_id":"800006","tr_st_id":"30006","campus":"Premium","staff_id":"2","type":"U","dt":"2026-03-23 10:17:00","point":"500","php":"500","ec_name":"Student ID Card","nickname":"Joy","memo":null}
+{"tr_id":"800006","tr_st_id":"30006","campus":"Premium","staff_id":"2","type":"U","dt":"2026-03-23 10:21:00","point":"1000","php":"1000","ec_name":"Class Materials","nickname":"Joy","memo":null}
+{"tr_id":"800006","tr_st_id":"30006","campus":"Premium","staff_id":"2","type":"U","dt":"2026-03-23 10:33:00","point":"3800","php":"3800","ec_name":"Visa","nickname":"Ken","memo":null}
+{"tr_id":"800006","tr_st_id":"30006","campus":"Premium","staff_id":"2","type":"U","dt":"2026-03-23 10:49:00","point":"1600","php":"1600","ec_name":"Maintenance (4w basis)","nickname":"Ken","memo":null}
+{"tr_id":"800006","tr_st_id":"30006","campus":"Premium","staff_id":"2","type":"U","dt":"2026-03-23 10:28:00","point":"2000","php":"2000","ec_name":"Laundry Fee (4w basis)","nickname":"Ken","memo":null}
+{"tr_id":"800006","tr_st_id":"30006","campus":"Premium","staff_id":"2","type":"U","dt":"2026-03-23 10:36:00","point":"4800","php":"4800","ec_name":"Utility Bill (4w basis)","nickname":"Joy","memo":null}
+{"tr_id":"800006","tr_st_id":"30006","campus":"Premium","staff_id":"2","type":"U","dt":"2026-03-23 10:52:00","point":"3000","php":"3000","ec_name":"Deposit","nickname":"Joy","memo":null}
+{"tr_id":"800007","tr_st_id":"30007","campus":"Premium","staff_id":"1","type":"D","dt":"2026-03-23 09:01:00","point":"31000","php":"31000","ec_name":null,"nickname":"Mia","memo":null}
+{"tr_id":"800007","tr_st_id":"30007","campus":"Premium","staff_id":"2","type":"U","dt":"2026-03-23 10:33:00","point":"6500","php":"6500","ec_name":"SSP (Valid for 6 mon)","nickname":"Ken","memo":null}
+{"tr_id":"800007","tr_st_id":"30007","campus":"Premium","staff_id":"2","type":"U","dt":"2026-03-23 10:19:00","point":"500","php":"500","ec_name":"Student ID Card","nickname":"Ken","memo":null}
+{"tr_id":"800007","tr_st_id":"30007","campus":"Premium","staff_id":"2","type":"U","dt":"2026-03-23 10:36:00","point":"1000","php":"1000","ec_name":"Class Materials","nickname":"Joy","memo":null}
+{"tr_id":"800007","tr_st_id":"30007","campus":"Premium","staff_id":"2","type":"U","dt":"2026-03-23 10:28:00","point":"3800","php":"3800","ec_name":"Visa","nickname":"Ken","memo":null}
+{"tr_id":"800007","tr_st_id":"30007","campus":"Premium","staff_id":"2","type":"U","dt":"2026-03-23 10:26:00","point":"2400","php":"2400","ec_name":"Maintenance (4w basis)","nickname":"Ken","memo":null}
+{"tr_id":"800007","tr_st_id":"30007","campus":"Premium","staff_id":"2","type":"U","dt":"2026-03-23 10:14:00","point":"3000","php":"3000","ec_name":"Laundry Fee (4w basis)","nickname":"Ken","memo":null}
+{"tr_id":"800007","tr_st_id":"30007","campus":"Premium","staff_id":"2","type":"U","dt":"2026-03-23 10:59:00","point":"7200","php":"7200","ec_name":"Utility Bill (4w basis)","nickname":"Joy","memo":null}
+{"tr_id":"800007","tr_st_id":"30007","campus":"Premium","staff_id":"2","type":"U","dt":"2026-03-23 10:28:00","point":"3000","php":"3000","ec_name":"Deposit","nickname":"Ken","memo":null}
+{"tr_id":"800010","tr_st_id":"30010","campus":"Premium","staff_id":"1","type":"D","dt":"2026-03-23 09:17:00","point":"21000","php":"21000","ec_name":null,"nickname":"Mia","memo":null}
+{"tr_id":"800010","tr_st_id":"30010","campus":"Premium","staff_id":"2","type":"U","dt":"2026-03-23 10:21:00","point":"6500","php":"6500","ec_name":"SSP (Valid for 6 mon)","nickname":"Joy","memo":null}
+{"tr_id":"800010","tr_st_id":"30010","campus":"Premium","staff_id":"2","type":"U","dt":"2026-03-23 10:36:00","point":"500","php":"500","ec_name":"Student ID Card","nickname":"Joy","memo":null}
+{"tr_id":"800010","tr_st_id":"30010","campus":"Premium","staff_id":"2","type":"U","dt":"2026-03-23 10:19:00","point":"1000","php":"1000","ec_name":"Class Materials","nickname":"Ken","memo":null}
+{"tr_id":"800010","tr_st_id":"30010","campus":"Premium","staff_id":"2","type":"U","dt":"2026-03-23 10:34:00","point":"3800","php":"3800","ec_name":"Visa","nickname":"Ken","memo":null}
+{"tr_id":"800010","tr_st_id":"30010","campus":"Premium","staff_id":"2","type":"U","dt":"2026-03-23 10:27:00","point":"800","php":"800","ec_name":"Maintenance (4w basis)","nickname":"Joy","memo":null}
+{"tr_id":"800010","tr_st_id":"30010","campus":"Premium","staff_id":"2","type":"U","dt":"2026-03-23 10:24:00","point":"1000","php":"1000","ec_name":"Laundry Fee (4w basis)","nickname":"Joy","memo":null}
+{"tr_id":"800010","tr_st_id":"30010","campus":"Premium","staff_id":"2","type":"U","dt":"2026-03-23 10:19:00","point":"2400","php":"2400","ec_name":"Utility Bill (4w basis)","nickname":"Joy","memo":null}
+{"tr_id":"800010","tr_st_id":"30010","campus":"Premium","staff_id":"2","type":"U","dt":"2026-03-23 10:44:00","point":"3000","php":"3000","ec_name":"Deposit","nickname":"Joy","memo":null}
+{"tr_id":"800011","tr_st_id":"30011","campus":"Premium","staff_id":"1","type":"D","dt":"2026-04-06 09:12:00","point":"31000","php":"31000","ec_name":null,"nickname":"Mia","memo":null}
+{"tr_id":"800011","tr_st_id":"30011","campus":"Premium","staff_id":"2","type":"U","dt":"2026-04-06 10:14:00","point":"6500","php":"6500","ec_name":"SSP (Valid for 6 mon)","nickname":"Ken","memo":null}
+{"tr_id":"800011","tr_st_id":"30011","campus":"Premium","staff_id":"2","type":"U","dt":"2026-04-06 10:10:00","point":"500","php":"500","ec_name":"Student ID Card","nickname":"Joy","memo":null}
+{"tr_id":"800011","tr_st_id":"30011","campus":"Premium","staff_id":"2","type":"U","dt":"2026-04-06 10:41:00","point":"1000","php":"1000","ec_name":"Class Materials","nickname":"Joy","memo":null}
+{"tr_id":"800011","tr_st_id":"30011","campus":"Premium","staff_id":"2","type":"U","dt":"2026-04-06 10:10:00","point":"3800","php":"3800","ec_name":"Visa","nickname":"Joy","memo":null}
+{"tr_id":"800011","tr_st_id":"30011","campus":"Premium","staff_id":"2","type":"U","dt":"2026-04-06 10:02:00","point":"2400","php":"2400","ec_name":"Maintenance (4w basis)","nickname":"Ken","memo":null}
+{"tr_id":"800011","tr_st_id":"30011","campus":"Premium","staff_id":"2","type":"U","dt":"2026-04-06 10:29:00","point":"3000","php":"3000","ec_name":"Laundry Fee (4w basis)","nickname":"Ken","memo":null}
+{"tr_id":"800011","tr_st_id":"30011","campus":"Premium","staff_id":"2","type":"U","dt":"2026-04-06 10:53:00","point":"7200","php":"7200","ec_name":"Utility Bill (4w basis)","nickname":"Joy","memo":null}
+{"tr_id":"800011","tr_st_id":"30011","campus":"Premium","staff_id":"2","type":"U","dt":"2026-04-06 10:53:00","point":"3000","php":"3000","ec_name":"Deposit","nickname":"Joy","memo":null}
+{"tr_id":"800012","tr_st_id":"30012","campus":"Premium","staff_id":"1","type":"D","dt":"2026-04-06 09:12:00","point":"29000","php":"29000","ec_name":null,"nickname":"Mia","memo":null}
+{"tr_id":"800012","tr_st_id":"30012","campus":"Premium","staff_id":"2","type":"U","dt":"2026-04-06 10:09:00","point":"6500","php":"6500","ec_name":"SSP (Valid for 6 mon)","nickname":"Ken","memo":null}
+{"tr_id":"800012","tr_st_id":"30012","campus":"Premium","staff_id":"2","type":"U","dt":"2026-04-06 10:19:00","point":"500","php":"500","ec_name":"Student ID Card","nickname":"Joy","memo":null}
+{"tr_id":"800012","tr_st_id":"30012","campus":"Premium","staff_id":"2","type":"U","dt":"2026-04-06 10:02:00","point":"1000","php":"1000","ec_name":"Class Materials","nickname":"Ken","memo":null}
+{"tr_id":"800012","tr_st_id":"30012","campus":"Premium","staff_id":"2","type":"U","dt":"2026-04-06 10:27:00","point":"3800","php":"3800","ec_name":"Visa","nickname":"Joy","memo":null}
+{"tr_id":"800012","tr_st_id":"30012","campus":"Premium","staff_id":"2","type":"U","dt":"2026-04-06 10:57:00","point":"2400","php":"2400","ec_name":"Maintenance (4w basis)","nickname":"Joy","memo":null}
+{"tr_id":"800012","tr_st_id":"30012","campus":"Premium","staff_id":"2","type":"U","dt":"2026-04-06 10:02:00","point":"3000","php":"3000","ec_name":"Laundry Fee (4w basis)","nickname":"Ken","memo":null}
+{"tr_id":"800012","tr_st_id":"30012","campus":"Premium","staff_id":"2","type":"U","dt":"2026-04-06 10:51:00","point":"7200","php":"7200","ec_name":"Utility Bill (4w basis)","nickname":"Ken","memo":null}
+{"tr_id":"800012","tr_st_id":"30012","campus":"Premium","staff_id":"2","type":"U","dt":"2026-04-06 10:27:00","point":"3000","php":"3000","ec_name":"Deposit","nickname":"Joy","memo":null}
+{"tr_id":"800013","tr_st_id":"30013","campus":"Premium","staff_id":"1","type":"D","dt":"2026-04-06 09:53:00","point":"21000","php":"21000","ec_name":null,"nickname":"Mia","memo":null}
+{"tr_id":"800013","tr_st_id":"30013","campus":"Premium","staff_id":"2","type":"U","dt":"2026-04-06 10:20:00","point":"6500","php":"6500","ec_name":"SSP (Valid for 6 mon)","nickname":"Joy","memo":null}
+{"tr_id":"800013","tr_st_id":"30013","campus":"Premium","staff_id":"2","type":"U","dt":"2026-04-06 10:51:00","point":"500","php":"500","ec_name":"Student ID Card","nickname":"Ken","memo":null}
+{"tr_id":"800013","tr_st_id":"30013","campus":"Premium","staff_id":"2","type":"U","dt":"2026-04-06 10:07:00","point":"1000","php":"1000","ec_name":"Class Materials","nickname":"Ken","memo":null}
+{"tr_id":"800013","tr_st_id":"30013","campus":"Premium","staff_id":"2","type":"U","dt":"2026-04-06 10:17:00","point":"3800","php":"3800","ec_name":"Visa","nickname":"Ken","memo":null}
+{"tr_id":"800013","tr_st_id":"30013","campus":"Premium","staff_id":"2","type":"U","dt":"2026-04-06 10:17:00","point":"800","php":"800","ec_name":"Maintenance (4w basis)","nickname":"Joy","memo":null}
+{"tr_id":"800013","tr_st_id":"30013","campus":"Premium","staff_id":"2","type":"U","dt":"2026-04-06 10:28:00","point":"1000","php":"1000","ec_name":"Laundry Fee (4w basis)","nickname":"Ken","memo":null}
+{"tr_id":"800013","tr_st_id":"30013","campus":"Premium","staff_id":"2","type":"U","dt":"2026-04-06 10:13:00","point":"2400","php":"2400","ec_name":"Utility Bill (4w basis)","nickname":"Ken","memo":null}
+{"tr_id":"800013","tr_st_id":"30013","campus":"Premium","staff_id":"2","type":"U","dt":"2026-04-06 10:11:00","point":"3000","php":"3000","ec_name":"Deposit","nickname":"Joy","memo":null}
+{"tr_id":"800014","tr_st_id":"30014","campus":"Premium","staff_id":"1","type":"D","dt":"2026-04-06 09:31:00","point":"29000","php":"29000","ec_name":null,"nickname":"Mia","memo":null}
+{"tr_id":"800014","tr_st_id":"30014","campus":"Premium","staff_id":"2","type":"U","dt":"2026-04-06 10:48:00","point":"6500","php":"6500","ec_name":"SSP (Valid for 6 mon)","nickname":"Joy","memo":null}
+{"tr_id":"800014","tr_st_id":"30014","campus":"Premium","staff_id":"2","type":"U","dt":"2026-04-06 10:28:00","point":"500","php":"500","ec_name":"Student ID Card","nickname":"Ken","memo":null}
+{"tr_id":"800014","tr_st_id":"30014","campus":"Premium","staff_id":"2","type":"U","dt":"2026-04-06 10:20:00","point":"1000","php":"1000","ec_name":"Class Materials","nickname":"Ken","memo":null}
+{"tr_id":"800014","tr_st_id":"30014","campus":"Premium","staff_id":"2","type":"U","dt":"2026-04-06 10:38:00","point":"3800","php":"3800","ec_name":"Visa","nickname":"Joy","memo":null}
+{"tr_id":"800014","tr_st_id":"30014","campus":"Premium","staff_id":"2","type":"U","dt":"2026-04-06 10:38:00","point":"2400","php":"2400","ec_name":"Maintenance (4w basis)","nickname":"Ken","memo":null}
+{"tr_id":"800014","tr_st_id":"30014","campus":"Premium","staff_id":"2","type":"U","dt":"2026-04-06 10:08:00","point":"3000","php":"3000","ec_name":"Laundry Fee (4w basis)","nickname":"Ken","memo":null}
+{"tr_id":"800014","tr_st_id":"30014","campus":"Premium","staff_id":"2","type":"U","dt":"2026-04-06 10:19:00","point":"7200","php":"7200","ec_name":"Utility Bill (4w basis)","nickname":"Joy","memo":null}
+{"tr_id":"800014","tr_st_id":"30014","campus":"Premium","staff_id":"2","type":"U","dt":"2026-04-06 10:56:00","point":"3000","php":"3000","ec_name":"Deposit","nickname":"Joy","memo":null}
+{"tr_id":"800017","tr_st_id":"30017","campus":"Premium","staff_id":"1","type":"D","dt":"2026-04-06 09:33:00","point":"26000","php":"26000","ec_name":null,"nickname":"Mia","memo":null}
+{"tr_id":"800017","tr_st_id":"30017","campus":"Premium","staff_id":"2","type":"U","dt":"2026-04-06 10:05:00","point":"6500","php":"6500","ec_name":"SSP (Valid for 6 mon)","nickname":"Ken","memo":null}
+{"tr_id":"800017","tr_st_id":"30017","campus":"Premium","staff_id":"2","type":"U","dt":"2026-04-06 10:22:00","point":"500","php":"500","ec_name":"Student ID Card","nickname":"Ken","memo":null}
+{"tr_id":"800017","tr_st_id":"30017","campus":"Premium","staff_id":"2","type":"U","dt":"2026-04-06 10:48:00","point":"1000","php":"1000","ec_name":"Class Materials","nickname":"Ken","memo":null}
+{"tr_id":"800017","tr_st_id":"30017","campus":"Premium","staff_id":"2","type":"U","dt":"2026-04-06 10:59:00","point":"3800","php":"3800","ec_name":"Visa","nickname":"Joy","memo":null}
+{"tr_id":"800017","tr_st_id":"30017","campus":"Premium","staff_id":"2","type":"U","dt":"2026-04-06 10:12:00","point":"1600","php":"1600","ec_name":"Maintenance (4w basis)","nickname":"Joy","memo":null}
+{"tr_id":"800017","tr_st_id":"30017","campus":"Premium","staff_id":"2","type":"U","dt":"2026-04-06 10:21:00","point":"2000","php":"2000","ec_name":"Laundry Fee (4w basis)","nickname":"Joy","memo":null}
+{"tr_id":"800017","tr_st_id":"30017","campus":"Premium","staff_id":"2","type":"U","dt":"2026-04-06 10:27:00","point":"4800","php":"4800","ec_name":"Utility Bill (4w basis)","nickname":"Ken","memo":null}
+{"tr_id":"800017","tr_st_id":"30017","campus":"Premium","staff_id":"2","type":"U","dt":"2026-04-06 10:10:00","point":"3000","php":"3000","ec_name":"Deposit","nickname":"Joy","memo":null}
+{"tr_id":"800023","tr_st_id":"30023","campus":"Premium","staff_id":"1","type":"D","dt":"2026-04-20 09:33:00","point":"31000","php":"31000","ec_name":null,"nickname":"Mia","memo":null}
+{"tr_id":"800023","tr_st_id":"30023","campus":"Premium","staff_id":"2","type":"U","dt":"2026-04-20 10:47:00","point":"6500","php":"6500","ec_name":"SSP (Valid for 6 mon)","nickname":"Ken","memo":null}
+{"tr_id":"800023","tr_st_id":"30023","campus":"Premium","staff_id":"2","type":"U","dt":"2026-04-20 10:19:00","point":"500","php":"500","ec_name":"Student ID Card","nickname":"Joy","memo":null}
+{"tr_id":"800023","tr_st_id":"30023","campus":"Premium","staff_id":"2","type":"U","dt":"2026-04-20 10:38:00","point":"1000","php":"1000","ec_name":"Class Materials","nickname":"Ken","memo":null}
+{"tr_id":"800023","tr_st_id":"30023","campus":"Premium","staff_id":"2","type":"U","dt":"2026-04-20 10:38:00","point":"3800","php":"3800","ec_name":"Visa","nickname":"Ken","memo":null}
+{"tr_id":"800023","tr_st_id":"30023","campus":"Premium","staff_id":"2","type":"U","dt":"2026-04-20 10:14:00","point":"2400","php":"2400","ec_name":"Maintenance (4w basis)","nickname":"Ken","memo":null}
+{"tr_id":"800023","tr_st_id":"30023","campus":"Premium","staff_id":"2","type":"U","dt":"2026-04-20 10:16:00","point":"3000","php":"3000","ec_name":"Laundry Fee (4w basis)","nickname":"Joy","memo":null}
+{"tr_id":"800023","tr_st_id":"30023","campus":"Premium","staff_id":"2","type":"U","dt":"2026-04-20 10:06:00","point":"7200","php":"7200","ec_name":"Utility Bill (4w basis)","nickname":"Ken","memo":null}
+{"tr_id":"800023","tr_st_id":"30023","campus":"Premium","staff_id":"2","type":"U","dt":"2026-04-20 10:03:00","point":"3000","php":"3000","ec_name":"Deposit","nickname":"Ken","memo":null}
+{"tr_id":"800024","tr_st_id":"30024","campus":"Premium","staff_id":"1","type":"D","dt":"2026-04-20 09:03:00","point":"27000","php":"27000","ec_name":null,"nickname":"Mia","memo":null}
+{"tr_id":"800024","tr_st_id":"30024","campus":"Premium","staff_id":"2","type":"U","dt":"2026-04-20 10:50:00","point":"6500","php":"6500","ec_name":"SSP (Valid for 6 mon)","nickname":"Joy","memo":null}
+{"tr_id":"800024","tr_st_id":"30024","campus":"Premium","staff_id":"2","type":"U","dt":"2026-04-20 10:59:00","point":"500","php":"500","ec_name":"Student ID Card","nickname":"Joy","memo":null}
+{"tr_id":"800024","tr_st_id":"30024","campus":"Premium","staff_id":"2","type":"U","dt":"2026-04-20 10:59:00","point":"1000","php":"1000","ec_name":"Class Materials","nickname":"Ken","memo":null}
+{"tr_id":"800024","tr_st_id":"30024","campus":"Premium","staff_id":"2","type":"U","dt":"2026-04-20 10:33:00","point":"3800","php":"3800","ec_name":"Visa","nickname":"Ken","memo":null}
+{"tr_id":"800024","tr_st_id":"30024","campus":"Premium","staff_id":"2","type":"U","dt":"2026-04-20 10:27:00","point":"1600","php":"1600","ec_name":"Maintenance (4w basis)","nickname":"Joy","memo":null}
+{"tr_id":"800024","tr_st_id":"30024","campus":"Premium","staff_id":"2","type":"U","dt":"2026-04-20 10:09:00","point":"2000","php":"2000","ec_name":"Laundry Fee (4w basis)","nickname":"Joy","memo":null}
+{"tr_id":"800024","tr_st_id":"30024","campus":"Premium","staff_id":"2","type":"U","dt":"2026-04-20 10:52:00","point":"4800","php":"4800","ec_name":"Utility Bill (4w basis)","nickname":"Ken","memo":null}
+{"tr_id":"800024","tr_st_id":"30024","campus":"Premium","staff_id":"2","type":"U","dt":"2026-04-20 10:34:00","point":"3000","php":"3000","ec_name":"Deposit","nickname":"Ken","memo":null}
+{"tr_id":"800031","tr_st_id":"30031","campus":"Premium","staff_id":"1","type":"D","dt":"2026-04-20 09:19:00","point":"26000","php":"26000","ec_name":null,"nickname":"Mia","memo":null}
+{"tr_id":"800031","tr_st_id":"30031","campus":"Premium","staff_id":"2","type":"U","dt":"2026-04-20 10:46:00","point":"6500","php":"6500","ec_name":"SSP (Valid for 6 mon)","nickname":"Joy","memo":null}
+{"tr_id":"800031","tr_st_id":"30031","campus":"Premium","staff_id":"2","type":"U","dt":"2026-04-20 10:15:00","point":"500","php":"500","ec_name":"Student ID Card","nickname":"Joy","memo":null}
+{"tr_id":"800031","tr_st_id":"30031","campus":"Premium","staff_id":"2","type":"U","dt":"2026-04-20 10:40:00","point":"1000","php":"1000","ec_name":"Class Materials","nickname":"Ken","memo":null}
+{"tr_id":"800031","tr_st_id":"30031","campus":"Premium","staff_id":"2","type":"U","dt":"2026-04-20 10:43:00","point":"3800","php":"3800","ec_name":"Visa","nickname":"Joy","memo":null}
+{"tr_id":"800031","tr_st_id":"30031","campus":"Premium","staff_id":"2","type":"U","dt":"2026-04-20 10:11:00","point":"1600","php":"1600","ec_name":"Maintenance (4w basis)","nickname":"Joy","memo":null}
+{"tr_id":"800031","tr_st_id":"30031","campus":"Premium","staff_id":"2","type":"U","dt":"2026-04-20 10:10:00","point":"2000","php":"2000","ec_name":"Laundry Fee (4w basis)","nickname":"Ken","memo":null}
+{"tr_id":"800031","tr_st_id":"30031","campus":"Premium","staff_id":"2","type":"U","dt":"2026-04-20 10:00:00","point":"4800","php":"4800","ec_name":"Utility Bill (4w basis)","nickname":"Ken","memo":null}
+{"tr_id":"800031","tr_st_id":"30031","campus":"Premium","staff_id":"2","type":"U","dt":"2026-04-20 10:33:00","point":"3000","php":"3000","ec_name":"Deposit","nickname":"Joy","memo":null}
+{"tr_id":"800032","tr_st_id":"30032","campus":"Premium","staff_id":"1","type":"D","dt":"2026-05-04 09:31:00","point":"32000","php":"32000","ec_name":null,"nickname":"Mia","memo":null}
+{"tr_id":"800032","tr_st_id":"30032","campus":"Premium","staff_id":"2","type":"U","dt":"2026-05-04 10:36:00","point":"6500","php":"6500","ec_name":"SSP (Valid for 6 mon)","nickname":"Ken","memo":null}
+{"tr_id":"800032","tr_st_id":"30032","campus":"Premium","staff_id":"2","type":"U","dt":"2026-05-04 10:52:00","point":"500","php":"500","ec_name":"Student ID Card","nickname":"Joy","memo":null}
+{"tr_id":"800032","tr_st_id":"30032","campus":"Premium","staff_id":"2","type":"U","dt":"2026-05-04 10:22:00","point":"1000","php":"1000","ec_name":"Class Materials","nickname":"Joy","memo":null}
+{"tr_id":"800032","tr_st_id":"30032","campus":"Premium","staff_id":"2","type":"U","dt":"2026-05-04 10:46:00","point":"3800","php":"3800","ec_name":"Visa","nickname":"Joy","memo":null}
+{"tr_id":"800032","tr_st_id":"30032","campus":"Premium","staff_id":"2","type":"U","dt":"2026-05-04 10:53:00","point":"2400","php":"2400","ec_name":"Maintenance (4w basis)","nickname":"Joy","memo":null}
+{"tr_id":"800032","tr_st_id":"30032","campus":"Premium","staff_id":"2","type":"U","dt":"2026-05-04 10:06:00","point":"3000","php":"3000","ec_name":"Laundry Fee (4w basis)","nickname":"Ken","memo":null}
+{"tr_id":"800032","tr_st_id":"30032","campus":"Premium","staff_id":"2","type":"U","dt":"2026-05-04 10:11:00","point":"7200","php":"7200","ec_name":"Utility Bill (4w basis)","nickname":"Joy","memo":null}
+{"tr_id":"800032","tr_st_id":"30032","campus":"Premium","staff_id":"2","type":"U","dt":"2026-05-04 10:00:00","point":"3000","php":"3000","ec_name":"Deposit","nickname":"Joy","memo":null}
+{"tr_id":"800035","tr_st_id":"30035","campus":"Premium","staff_id":"1","type":"D","dt":"2026-05-04 09:35:00","point":"33000","php":"33000","ec_name":null,"nickname":"Mia","memo":null}
+{"tr_id":"800035","tr_st_id":"30035","campus":"Premium","staff_id":"2","type":"U","dt":"2026-05-04 10:33:00","point":"6500","php":"6500","ec_name":"SSP (Valid for 6 mon)","nickname":"Joy","memo":null}
+{"tr_id":"800035","tr_st_id":"30035","campus":"Premium","staff_id":"2","type":"U","dt":"2026-05-04 10:36:00","point":"500","php":"500","ec_name":"Student ID Card","nickname":"Ken","memo":null}
+{"tr_id":"800035","tr_st_id":"30035","campus":"Premium","staff_id":"2","type":"U","dt":"2026-05-04 10:22:00","point":"1000","php":"1000","ec_name":"Class Materials","nickname":"Joy","memo":null}
+{"tr_id":"800035","tr_st_id":"30035","campus":"Premium","staff_id":"2","type":"U","dt":"2026-05-04 10:42:00","point":"3800","php":"3800","ec_name":"Visa","nickname":"Joy","memo":null}
+{"tr_id":"800035","tr_st_id":"30035","campus":"Premium","staff_id":"2","type":"U","dt":"2026-05-04 10:02:00","point":"3200","php":"3200","ec_name":"Maintenance (4w basis)","nickname":"Joy","memo":null}
+{"tr_id":"800035","tr_st_id":"30035","campus":"Premium","staff_id":"2","type":"U","dt":"2026-05-04 10:09:00","point":"4000","php":"4000","ec_name":"Laundry Fee (4w basis)","nickname":"Joy","memo":null}
+{"tr_id":"800035","tr_st_id":"30035","campus":"Premium","staff_id":"2","type":"U","dt":"2026-05-04 10:28:00","point":"9600","php":"9600","ec_name":"Utility Bill (4w basis)","nickname":"Ken","memo":null}
+{"tr_id":"800035","tr_st_id":"30035","campus":"Premium","staff_id":"2","type":"U","dt":"2026-05-04 10:53:00","point":"3000","php":"3000","ec_name":"Deposit","nickname":"Joy","memo":null}
+{"tr_id":"800036","tr_st_id":"30036","campus":"Premium","staff_id":"1","type":"D","dt":"2026-05-04 09:29:00","point":"27000","php":"27000","ec_name":null,"nickname":"Mia","memo":null}
+{"tr_id":"800036","tr_st_id":"30036","campus":"Premium","staff_id":"2","type":"U","dt":"2026-05-04 10:31:00","point":"6500","php":"6500","ec_name":"SSP (Valid for 6 mon)","nickname":"Joy","memo":null}
+{"tr_id":"800036","tr_st_id":"30036","campus":"Premium","staff_id":"2","type":"U","dt":"2026-05-04 10:28:00","point":"500","php":"500","ec_name":"Student ID Card","nickname":"Joy","memo":null}
+{"tr_id":"800036","tr_st_id":"30036","campus":"Premium","staff_id":"2","type":"U","dt":"2026-05-04 10:14:00","point":"1000","php":"1000","ec_name":"Class Materials","nickname":"Ken","memo":null}
+{"tr_id":"800036","tr_st_id":"30036","campus":"Premium","staff_id":"2","type":"U","dt":"2026-05-04 10:35:00","point":"3800","php":"3800","ec_name":"Visa","nickname":"Joy","memo":null}
+{"tr_id":"800036","tr_st_id":"30036","campus":"Premium","staff_id":"2","type":"U","dt":"2026-05-04 10:17:00","point":"1600","php":"1600","ec_name":"Maintenance (4w basis)","nickname":"Joy","memo":null}
+{"tr_id":"800036","tr_st_id":"30036","campus":"Premium","staff_id":"2","type":"U","dt":"2026-05-04 10:18:00","point":"2000","php":"2000","ec_name":"Laundry Fee (4w basis)","nickname":"Joy","memo":null}
+{"tr_id":"800036","tr_st_id":"30036","campus":"Premium","staff_id":"2","type":"U","dt":"2026-05-04 10:10:00","point":"4800","php":"4800","ec_name":"Utility Bill (4w basis)","nickname":"Ken","memo":null}
+{"tr_id":"800036","tr_st_id":"30036","campus":"Premium","staff_id":"2","type":"U","dt":"2026-05-04 10:12:00","point":"3000","php":"3000","ec_name":"Deposit","nickname":"Joy","memo":null}
+{"tr_id":"800039","tr_st_id":"30039","campus":"Premium","staff_id":"1","type":"D","dt":"2026-05-04 09:08:00","point":"30000","php":"30000","ec_name":null,"nickname":"Mia","memo":null}
+{"tr_id":"800039","tr_st_id":"30039","campus":"Premium","staff_id":"2","type":"U","dt":"2026-05-04 10:49:00","point":"6500","php":"6500","ec_name":"SSP (Valid for 6 mon)","nickname":"Ken","memo":null}
+{"tr_id":"800039","tr_st_id":"30039","campus":"Premium","staff_id":"2","type":"U","dt":"2026-05-04 10:02:00","point":"500","php":"500","ec_name":"Student ID Card","nickname":"Joy","memo":null}
+{"tr_id":"800039","tr_st_id":"30039","campus":"Premium","staff_id":"2","type":"U","dt":"2026-05-04 10:46:00","point":"1000","php":"1000","ec_name":"Class Materials","nickname":"Joy","memo":null}
+{"tr_id":"800039","tr_st_id":"30039","campus":"Premium","staff_id":"2","type":"U","dt":"2026-05-04 10:53:00","point":"3800","php":"3800","ec_name":"Visa","nickname":"Joy","memo":null}
+{"tr_id":"800039","tr_st_id":"30039","campus":"Premium","staff_id":"2","type":"U","dt":"2026-05-04 10:06:00","point":"2400","php":"2400","ec_name":"Maintenance (4w basis)","nickname":"Ken","memo":null}
+{"tr_id":"800039","tr_st_id":"30039","campus":"Premium","staff_id":"2","type":"U","dt":"2026-05-04 10:38:00","point":"3000","php":"3000","ec_name":"Laundry Fee (4w basis)","nickname":"Joy","memo":null}
+{"tr_id":"800039","tr_st_id":"30039","campus":"Premium","staff_id":"2","type":"U","dt":"2026-05-04 10:38:00","point":"7200","php":"7200","ec_name":"Utility Bill (4w basis)","nickname":"Joy","memo":null}
+{"tr_id":"800039","tr_st_id":"30039","campus":"Premium","staff_id":"2","type":"U","dt":"2026-05-04 10:30:00","point":"3000","php":"3000","ec_name":"Deposit","nickname":"Ken","memo":null}
+{"tr_id":"800040","tr_st_id":"30040","campus":"Premium","staff_id":"1","type":"D","dt":"2026-05-04 09:16:00","point":"29000","php":"29000","ec_name":null,"nickname":"Mia","memo":null}
+{"tr_id":"800040","tr_st_id":"30040","campus":"Premium","staff_id":"2","type":"U","dt":"2026-05-04 10:29:00","point":"6500","php":"6500","ec_name":"SSP (Valid for 6 mon)","nickname":"Joy","memo":null}
+{"tr_id":"800040","tr_st_id":"30040","campus":"Premium","staff_id":"2","type":"U","dt":"2026-05-04 10:43:00","point":"500","php":"500","ec_name":"Student ID Card","nickname":"Joy","memo":null}
+{"tr_id":"800040","tr_st_id":"30040","campus":"Premium","staff_id":"2","type":"U","dt":"2026-05-04 10:45:00","point":"1000","php":"1000","ec_name":"Class Materials","nickname":"Ken","memo":null}
+{"tr_id":"800040","tr_st_id":"30040","campus":"Premium","staff_id":"2","type":"U","dt":"2026-05-04 10:43:00","point":"3800","php":"3800","ec_name":"Visa","nickname":"Joy","memo":null}
+{"tr_id":"800040","tr_st_id":"30040","campus":"Premium","staff_id":"2","type":"U","dt":"2026-05-04 10:19:00","point":"2400","php":"2400","ec_name":"Maintenance (4w basis)","nickname":"Joy","memo":null}
+{"tr_id":"800040","tr_st_id":"30040","campus":"Premium","staff_id":"2","type":"U","dt":"2026-05-04 10:42:00","point":"3000","php":"3000","ec_name":"Laundry Fee (4w basis)","nickname":"Joy","memo":null}
+{"tr_id":"800040","tr_st_id":"30040","campus":"Premium","staff_id":"2","type":"U","dt":"2026-05-04 10:47:00","point":"7200","php":"7200","ec_name":"Utility Bill (4w basis)","nickname":"Ken","memo":null}
+{"tr_id":"800040","tr_st_id":"30040","campus":"Premium","staff_id":"2","type":"U","dt":"2026-05-04 10:58:00","point":"3000","php":"3000","ec_name":"Deposit","nickname":"Joy","memo":null}
+{"tr_id":"800044","tr_st_id":"30044","campus":"Premium","staff_id":"1","type":"D","dt":"2026-05-04 09:47:00","point":"20000","php":"20000","ec_name":null,"nickname":"Mia","memo":null}
+{"tr_id":"800044","tr_st_id":"30044","campus":"Premium","staff_id":"2","type":"U","dt":"2026-05-04 10:13:00","point":"6500","php":"6500","ec_name":"SSP (Valid for 6 mon)","nickname":"Joy","memo":null}
+{"tr_id":"800044","tr_st_id":"30044","campus":"Premium","staff_id":"2","type":"U","dt":"2026-05-04 10:09:00","point":"500","php":"500","ec_name":"Student ID Card","nickname":"Ken","memo":null}
+{"tr_id":"800044","tr_st_id":"30044","campus":"Premium","staff_id":"2","type":"U","dt":"2026-05-04 10:30:00","point":"1000","php":"1000","ec_name":"Class Materials","nickname":"Ken","memo":null}
+{"tr_id":"800044","tr_st_id":"30044","campus":"Premium","staff_id":"2","type":"U","dt":"2026-05-04 10:53:00","point":"3800","php":"3800","ec_name":"Visa","nickname":"Ken","memo":null}
+{"tr_id":"800044","tr_st_id":"30044","campus":"Premium","staff_id":"2","type":"U","dt":"2026-05-04 10:41:00","point":"800","php":"800","ec_name":"Maintenance (4w basis)","nickname":"Joy","memo":null}
+{"tr_id":"800044","tr_st_id":"30044","campus":"Premium","staff_id":"2","type":"U","dt":"2026-05-04 10:25:00","point":"1000","php":"1000","ec_name":"Laundry Fee (4w basis)","nickname":"Ken","memo":null}
+{"tr_id":"800044","tr_st_id":"30044","campus":"Premium","staff_id":"2","type":"U","dt":"2026-05-04 10:52:00","point":"2400","php":"2400","ec_name":"Utility Bill (4w basis)","nickname":"Ken","memo":null}
+{"tr_id":"800044","tr_st_id":"30044","campus":"Premium","staff_id":"2","type":"U","dt":"2026-05-04 10:47:00","point":"3000","php":"3000","ec_name":"Deposit","nickname":"Ken","memo":null}
+{"tr_id":"800045","tr_st_id":"30045","campus":"Premium","staff_id":"1","type":"D","dt":"2026-05-18 09:42:00","point":"43000","php":"43000","ec_name":null,"nickname":"Mia","memo":null}
+{"tr_id":"800045","tr_st_id":"30045","campus":"Premium","staff_id":"2","type":"U","dt":"2026-05-18 10:59:00","point":"6500","php":"6500","ec_name":"SSP (Valid for 6 mon)","nickname":"Ken","memo":null}
+{"tr_id":"800045","tr_st_id":"30045","campus":"Premium","staff_id":"2","type":"U","dt":"2026-05-18 10:18:00","point":"500","php":"500","ec_name":"Student ID Card","nickname":"Ken","memo":null}
+{"tr_id":"800045","tr_st_id":"30045","campus":"Premium","staff_id":"2","type":"U","dt":"2026-05-18 10:11:00","point":"1000","php":"1000","ec_name":"Class Materials","nickname":"Ken","memo":null}
+{"tr_id":"800045","tr_st_id":"30045","campus":"Premium","staff_id":"2","type":"U","dt":"2026-05-18 10:34:00","point":"3800","php":"3800","ec_name":"Visa","nickname":"Joy","memo":null}
+{"tr_id":"800045","tr_st_id":"30045","campus":"Premium","staff_id":"2","type":"U","dt":"2026-05-18 10:24:00","point":"4800","php":"4800","ec_name":"Maintenance (4w basis)","nickname":"Joy","memo":null}
+{"tr_id":"800045","tr_st_id":"30045","campus":"Premium","staff_id":"2","type":"U","dt":"2026-05-18 10:57:00","point":"6000","php":"6000","ec_name":"Laundry Fee (4w basis)","nickname":"Joy","memo":null}
+{"tr_id":"800045","tr_st_id":"30045","campus":"Premium","staff_id":"2","type":"U","dt":"2026-05-18 10:12:00","point":"14400","php":"14400","ec_name":"Utility Bill (4w basis)","nickname":"Ken","memo":null}
+{"tr_id":"800045","tr_st_id":"30045","campus":"Premium","staff_id":"2","type":"U","dt":"2026-05-18 10:19:00","point":"3000","php":"3000","ec_name":"Deposit","nickname":"Joy","memo":null}
+{"tr_id":"800048","tr_st_id":"30048","campus":"Premium","staff_id":"1","type":"D","dt":"2026-05-18 09:39:00","point":"22000","php":"22000","ec_name":null,"nickname":"Mia","memo":null}
+{"tr_id":"800048","tr_st_id":"30048","campus":"Premium","staff_id":"2","type":"U","dt":"2026-05-18 10:22:00","point":"6500","php":"6500","ec_name":"SSP (Valid for 6 mon)","nickname":"Ken","memo":null}
+{"tr_id":"800048","tr_st_id":"30048","campus":"Premium","staff_id":"2","type":"U","dt":"2026-05-18 10:37:00","point":"500","php":"500","ec_name":"Student ID Card","nickname":"Ken","memo":null}
+{"tr_id":"800048","tr_st_id":"30048","campus":"Premium","staff_id":"2","type":"U","dt":"2026-05-18 10:56:00","point":"1000","php":"1000","ec_name":"Class Materials","nickname":"Joy","memo":null}
+{"tr_id":"800048","tr_st_id":"30048","campus":"Premium","staff_id":"2","type":"U","dt":"2026-05-18 10:16:00","point":"3800","php":"3800","ec_name":"Visa","nickname":"Ken","memo":null}
+{"tr_id":"800048","tr_st_id":"30048","campus":"Premium","staff_id":"2","type":"U","dt":"2026-05-18 10:18:00","point":"800","php":"800","ec_name":"Maintenance (4w basis)","nickname":"Joy","memo":null}
+{"tr_id":"800048","tr_st_id":"30048","campus":"Premium","staff_id":"2","type":"U","dt":"2026-05-18 10:51:00","point":"1000","php":"1000","ec_name":"Laundry Fee (4w basis)","nickname":"Ken","memo":null}
+{"tr_id":"800048","tr_st_id":"30048","campus":"Premium","staff_id":"2","type":"U","dt":"2026-05-18 10:38:00","point":"2400","php":"2400","ec_name":"Utility Bill (4w basis)","nickname":"Joy","memo":null}
+{"tr_id":"800048","tr_st_id":"30048","campus":"Premium","staff_id":"2","type":"U","dt":"2026-05-18 10:39:00","point":"3000","php":"3000","ec_name":"Deposit","nickname":"Ken","memo":null}
+{"tr_id":"800053","tr_st_id":"30053","campus":"Premium","staff_id":"1","type":"D","dt":"2026-05-18 09:15:00","point":"25000","php":"25000","ec_name":null,"nickname":"Mia","memo":null}
+{"tr_id":"800053","tr_st_id":"30053","campus":"Premium","staff_id":"2","type":"U","dt":"2026-05-18 10:17:00","point":"6500","php":"6500","ec_name":"SSP (Valid for 6 mon)","nickname":"Joy","memo":null}
+{"tr_id":"800053","tr_st_id":"30053","campus":"Premium","staff_id":"2","type":"U","dt":"2026-05-18 10:21:00","point":"500","php":"500","ec_name":"Student ID Card","nickname":"Joy","memo":null}
+{"tr_id":"800053","tr_st_id":"30053","campus":"Premium","staff_id":"2","type":"U","dt":"2026-05-18 10:06:00","point":"1000","php":"1000","ec_name":"Class Materials","nickname":"Joy","memo":null}
+{"tr_id":"800053","tr_st_id":"30053","campus":"Premium","staff_id":"2","type":"U","dt":"2026-05-18 10:04:00","point":"3800","php":"3800","ec_name":"Visa","nickname":"Joy","memo":null}
+{"tr_id":"800053","tr_st_id":"30053","campus":"Premium","staff_id":"2","type":"U","dt":"2026-05-18 10:05:00","point":"1600","php":"1600","ec_name":"Maintenance (4w basis)","nickname":"Ken","memo":null}
+{"tr_id":"800053","tr_st_id":"30053","campus":"Premium","staff_id":"2","type":"U","dt":"2026-05-18 10:13:00","point":"2000","php":"2000","ec_name":"Laundry Fee (4w basis)","nickname":"Ken","memo":null}
+{"tr_id":"800053","tr_st_id":"30053","campus":"Premium","staff_id":"2","type":"U","dt":"2026-05-18 10:22:00","point":"4800","php":"4800","ec_name":"Utility Bill (4w basis)","nickname":"Joy","memo":null}
+{"tr_id":"800053","tr_st_id":"30053","campus":"Premium","staff_id":"2","type":"U","dt":"2026-05-18 10:47:00","point":"3000","php":"3000","ec_name":"Deposit","nickname":"Ken","memo":null}
+{"tr_id":"800056","tr_st_id":"30056","campus":"Premium","staff_id":"1","type":"D","dt":"2026-05-18 09:01:00","point":"30000","php":"30000","ec_name":null,"nickname":"Mia","memo":null}
+{"tr_id":"800056","tr_st_id":"30056","campus":"Premium","staff_id":"2","type":"U","dt":"2026-05-18 10:38:00","point":"6500","php":"6500","ec_name":"SSP (Valid for 6 mon)","nickname":"Joy","memo":null}
+{"tr_id":"800056","tr_st_id":"30056","campus":"Premium","staff_id":"2","type":"U","dt":"2026-05-18 10:19:00","point":"500","php":"500","ec_name":"Student ID Card","nickname":"Ken","memo":null}
+{"tr_id":"800056","tr_st_id":"30056","campus":"Premium","staff_id":"2","type":"U","dt":"2026-05-18 10:50:00","point":"1000","php":"1000","ec_name":"Class Materials","nickname":"Ken","memo":null}
+{"tr_id":"800056","tr_st_id":"30056","campus":"Premium","staff_id":"2","type":"U","dt":"2026-05-18 10:00:00","point":"3800","php":"3800","ec_name":"Visa","nickname":"Joy","memo":null}
+{"tr_id":"800056","tr_st_id":"30056","campus":"Premium","staff_id":"2","type":"U","dt":"2026-05-18 10:02:00","point":"2400","php":"2400","ec_name":"Maintenance (4w basis)","nickname":"Ken","memo":null}
+{"tr_id":"800056","tr_st_id":"30056","campus":"Premium","staff_id":"2","type":"U","dt":"2026-05-18 10:52:00","point":"3000","php":"3000","ec_name":"Laundry Fee (4w basis)","nickname":"Ken","memo":null}
+{"tr_id":"800056","tr_st_id":"30056","campus":"Premium","staff_id":"2","type":"U","dt":"2026-05-18 10:25:00","point":"7200","php":"7200","ec_name":"Utility Bill (4w basis)","nickname":"Ken","memo":null}
+{"tr_id":"800056","tr_st_id":"30056","campus":"Premium","staff_id":"2","type":"U","dt":"2026-05-18 10:06:00","point":"3000","php":"3000","ec_name":"Deposit","nickname":"Ken","memo":null}
+{"tr_id":"800057","tr_st_id":"30057","campus":"Premium","staff_id":"1","type":"D","dt":"2026-06-01 09:39:00","point":"24000","php":"24000","ec_name":null,"nickname":"Mia","memo":null}
+{"tr_id":"800057","tr_st_id":"30057","campus":"Premium","staff_id":"2","type":"U","dt":"2026-06-01 10:27:00","point":"6500","php":"6500","ec_name":"SSP (Valid for 6 mon)","nickname":"Joy","memo":null}
+{"tr_id":"800057","tr_st_id":"30057","campus":"Premium","staff_id":"2","type":"U","dt":"2026-06-01 10:30:00","point":"500","php":"500","ec_name":"Student ID Card","nickname":"Joy","memo":null}
+{"tr_id":"800057","tr_st_id":"30057","campus":"Premium","staff_id":"2","type":"U","dt":"2026-06-01 10:09:00","point":"1000","php":"1000","ec_name":"Class Materials","nickname":"Ken","memo":null}
+{"tr_id":"800057","tr_st_id":"30057","campus":"Premium","staff_id":"2","type":"U","dt":"2026-06-01 10:16:00","point":"3800","php":"3800","ec_name":"Visa","nickname":"Ken","memo":null}
+{"tr_id":"800057","tr_st_id":"30057","campus":"Premium","staff_id":"2","type":"U","dt":"2026-06-01 10:17:00","point":"1600","php":"1600","ec_name":"Maintenance (4w basis)","nickname":"Joy","memo":null}
+{"tr_id":"800057","tr_st_id":"30057","campus":"Premium","staff_id":"2","type":"U","dt":"2026-06-01 10:39:00","point":"2000","php":"2000","ec_name":"Laundry Fee (4w basis)","nickname":"Joy","memo":null}
+{"tr_id":"800057","tr_st_id":"30057","campus":"Premium","staff_id":"2","type":"U","dt":"2026-06-01 10:40:00","point":"4800","php":"4800","ec_name":"Utility Bill (4w basis)","nickname":"Ken","memo":null}
+{"tr_id":"800057","tr_st_id":"30057","campus":"Premium","staff_id":"2","type":"U","dt":"2026-06-01 10:09:00","point":"3000","php":"3000","ec_name":"Deposit","nickname":"Joy","memo":null}
+{"tr_id":"800061","tr_st_id":"30061","campus":"Premium","staff_id":"1","type":"D","dt":"2026-06-01 09:41:00","point":"30000","php":"30000","ec_name":null,"nickname":"Mia","memo":null}
+{"tr_id":"800061","tr_st_id":"30061","campus":"Premium","staff_id":"2","type":"U","dt":"2026-06-01 10:33:00","point":"6500","php":"6500","ec_name":"SSP (Valid for 6 mon)","nickname":"Ken","memo":null}
+{"tr_id":"800061","tr_st_id":"30061","campus":"Premium","staff_id":"2","type":"U","dt":"2026-06-01 10:12:00","point":"500","php":"500","ec_name":"Student ID Card","nickname":"Joy","memo":null}
+{"tr_id":"800061","tr_st_id":"30061","campus":"Premium","staff_id":"2","type":"U","dt":"2026-06-01 10:18:00","point":"1000","php":"1000","ec_name":"Class Materials","nickname":"Ken","memo":null}
+{"tr_id":"800061","tr_st_id":"30061","campus":"Premium","staff_id":"2","type":"U","dt":"2026-06-01 10:07:00","point":"3800","php":"3800","ec_name":"Visa","nickname":"Joy","memo":null}
+{"tr_id":"800061","tr_st_id":"30061","campus":"Premium","staff_id":"2","type":"U","dt":"2026-06-01 10:46:00","point":"2400","php":"2400","ec_name":"Maintenance (4w basis)","nickname":"Joy","memo":null}
+{"tr_id":"800061","tr_st_id":"30061","campus":"Premium","staff_id":"2","type":"U","dt":"2026-06-01 10:29:00","point":"3000","php":"3000","ec_name":"Laundry Fee (4w basis)","nickname":"Joy","memo":null}
+{"tr_id":"800061","tr_st_id":"30061","campus":"Premium","staff_id":"2","type":"U","dt":"2026-06-01 10:59:00","point":"7200","php":"7200","ec_name":"Utility Bill (4w basis)","nickname":"Ken","memo":null}
+{"tr_id":"800061","tr_st_id":"30061","campus":"Premium","staff_id":"2","type":"U","dt":"2026-06-01 10:49:00","point":"3000","php":"3000","ec_name":"Deposit","nickname":"Ken","memo":null}
+{"tr_id":"800064","tr_st_id":"30064","campus":"Premium","staff_id":"1","type":"D","dt":"2026-06-15 09:56:00","point":"27000","php":"27000","ec_name":null,"nickname":"Mia","memo":null}
+{"tr_id":"800064","tr_st_id":"30064","campus":"Premium","staff_id":"2","type":"U","dt":"2026-06-15 10:13:00","point":"6500","php":"6500","ec_name":"SSP (Valid for 6 mon)","nickname":"Ken","memo":null}
+{"tr_id":"800064","tr_st_id":"30064","campus":"Premium","staff_id":"2","type":"U","dt":"2026-06-15 10:03:00","point":"500","php":"500","ec_name":"Student ID Card","nickname":"Ken","memo":null}
+{"tr_id":"800064","tr_st_id":"30064","campus":"Premium","staff_id":"2","type":"U","dt":"2026-06-15 10:35:00","point":"1000","php":"1000","ec_name":"Class Materials","nickname":"Ken","memo":null}
+{"tr_id":"800064","tr_st_id":"30064","campus":"Premium","staff_id":"2","type":"U","dt":"2026-06-15 10:02:00","point":"3800","php":"3800","ec_name":"Visa","nickname":"Joy","memo":null}
+{"tr_id":"800064","tr_st_id":"30064","campus":"Premium","staff_id":"2","type":"U","dt":"2026-06-15 10:33:00","point":"1600","php":"1600","ec_name":"Maintenance (4w basis)","nickname":"Ken","memo":null}
+{"tr_id":"800064","tr_st_id":"30064","campus":"Premium","staff_id":"2","type":"U","dt":"2026-06-15 10:38:00","point":"2000","php":"2000","ec_name":"Laundry Fee (4w basis)","nickname":"Ken","memo":null}
+{"tr_id":"800064","tr_st_id":"30064","campus":"Premium","staff_id":"2","type":"U","dt":"2026-06-15 10:17:00","point":"4800","php":"4800","ec_name":"Utility Bill (4w basis)","nickname":"Ken","memo":null}
+{"tr_id":"800064","tr_st_id":"30064","campus":"Premium","staff_id":"2","type":"U","dt":"2026-06-15 10:37:00","point":"3000","php":"3000","ec_name":"Deposit","nickname":"Joy","memo":null}
+{"tr_id":"800066","tr_st_id":"30066","campus":"Premium","staff_id":"1","type":"D","dt":"2026-06-15 09:33:00","point":"29000","php":"29000","ec_name":null,"nickname":"Mia","memo":null}
+{"tr_id":"800066","tr_st_id":"30066","campus":"Premium","staff_id":"2","type":"U","dt":"2026-06-15 10:53:00","point":"6500","php":"6500","ec_name":"SSP (Valid for 6 mon)","nickname":"Ken","memo":null}
+{"tr_id":"800066","tr_st_id":"30066","campus":"Premium","staff_id":"2","type":"U","dt":"2026-06-15 10:17:00","point":"500","php":"500","ec_name":"Student ID Card","nickname":"Ken","memo":null}
+{"tr_id":"800066","tr_st_id":"30066","campus":"Premium","staff_id":"2","type":"U","dt":"2026-06-15 10:22:00","point":"1000","php":"1000","ec_name":"Class Materials","nickname":"Ken","memo":null}
+{"tr_id":"800066","tr_st_id":"30066","campus":"Premium","staff_id":"2","type":"U","dt":"2026-06-15 10:56:00","point":"3800","php":"3800","ec_name":"Visa","nickname":"Ken","memo":null}
+{"tr_id":"800066","tr_st_id":"30066","campus":"Premium","staff_id":"2","type":"U","dt":"2026-06-15 10:43:00","point":"2400","php":"2400","ec_name":"Maintenance (4w basis)","nickname":"Joy","memo":null}
+{"tr_id":"800066","tr_st_id":"30066","campus":"Premium","staff_id":"2","type":"U","dt":"2026-06-15 10:15:00","point":"3000","php":"3000","ec_name":"Laundry Fee (4w basis)","nickname":"Ken","memo":null}
+{"tr_id":"800066","tr_st_id":"30066","campus":"Premium","staff_id":"2","type":"U","dt":"2026-06-15 10:47:00","point":"7200","php":"7200","ec_name":"Utility Bill (4w basis)","nickname":"Joy","memo":null}
+{"tr_id":"800066","tr_st_id":"30066","campus":"Premium","staff_id":"2","type":"U","dt":"2026-06-15 10:34:00","point":"3000","php":"3000","ec_name":"Deposit","nickname":"Joy","memo":null}
+{"tr_id":"800071","tr_st_id":"30071","campus":"Premium","staff_id":"1","type":"D","dt":"2026-06-15 09:30:00","point":"31000","php":"31000","ec_name":null,"nickname":"Mia","memo":null}
+{"tr_id":"800071","tr_st_id":"30071","campus":"Premium","staff_id":"2","type":"U","dt":"2026-06-15 10:07:00","point":"6500","php":"6500","ec_name":"SSP (Valid for 6 mon)","nickname":"Joy","memo":null}
+{"tr_id":"800071","tr_st_id":"30071","campus":"Premium","staff_id":"2","type":"U","dt":"2026-06-15 10:52:00","point":"500","php":"500","ec_name":"Student ID Card","nickname":"Joy","memo":null}
+{"tr_id":"800071","tr_st_id":"30071","campus":"Premium","staff_id":"2","type":"U","dt":"2026-06-15 10:37:00","point":"1000","php":"1000","ec_name":"Class Materials","nickname":"Joy","memo":null}
+{"tr_id":"800071","tr_st_id":"30071","campus":"Premium","staff_id":"2","type":"U","dt":"2026-06-15 10:54:00","point":"3800","php":"3800","ec_name":"Visa","nickname":"Joy","memo":null}
+{"tr_id":"800071","tr_st_id":"30071","campus":"Premium","staff_id":"2","type":"U","dt":"2026-06-15 10:31:00","point":"2400","php":"2400","ec_name":"Maintenance (4w basis)","nickname":"Joy","memo":null}
+{"tr_id":"800071","tr_st_id":"30071","campus":"Premium","staff_id":"2","type":"U","dt":"2026-06-15 10:12:00","point":"3000","php":"3000","ec_name":"Laundry Fee (4w basis)","nickname":"Joy","memo":null}
+{"tr_id":"800071","tr_st_id":"30071","campus":"Premium","staff_id":"2","type":"U","dt":"2026-06-15 10:35:00","point":"7200","php":"7200","ec_name":"Utility Bill (4w basis)","nickname":"Joy","memo":null}
+{"tr_id":"800071","tr_st_id":"30071","campus":"Premium","staff_id":"2","type":"U","dt":"2026-06-15 10:03:00","point":"3000","php":"3000","ec_name":"Deposit","nickname":"Joy","memo":null}
+{"tr_id":"800072","tr_st_id":"30072","campus":"Premium","staff_id":"1","type":"D","dt":"2026-06-15 09:49:00","point":"24000","php":"24000","ec_name":null,"nickname":"Mia","memo":null}
+{"tr_id":"800072","tr_st_id":"30072","campus":"Premium","staff_id":"2","type":"U","dt":"2026-06-15 10:35:00","point":"6500","php":"6500","ec_name":"SSP (Valid for 6 mon)","nickname":"Ken","memo":null}
+{"tr_id":"800072","tr_st_id":"30072","campus":"Premium","staff_id":"2","type":"U","dt":"2026-06-15 10:10:00","point":"500","php":"500","ec_name":"Student ID Card","nickname":"Joy","memo":null}
+{"tr_id":"800072","tr_st_id":"30072","campus":"Premium","staff_id":"2","type":"U","dt":"2026-06-15 10:11:00","point":"1000","php":"1000","ec_name":"Class Materials","nickname":"Joy","memo":null}
+{"tr_id":"800072","tr_st_id":"30072","campus":"Premium","staff_id":"2","type":"U","dt":"2026-06-15 10:20:00","point":"3800","php":"3800","ec_name":"Visa","nickname":"Ken","memo":null}
+{"tr_id":"800072","tr_st_id":"30072","campus":"Premium","staff_id":"2","type":"U","dt":"2026-06-15 10:25:00","point":"1600","php":"1600","ec_name":"Maintenance (4w basis)","nickname":"Ken","memo":null}
+{"tr_id":"800072","tr_st_id":"30072","campus":"Premium","staff_id":"2","type":"U","dt":"2026-06-15 10:37:00","point":"2000","php":"2000","ec_name":"Laundry Fee (4w basis)","nickname":"Ken","memo":null}
+{"tr_id":"800072","tr_st_id":"30072","campus":"Premium","staff_id":"2","type":"U","dt":"2026-06-15 10:46:00","point":"4800","php":"4800","ec_name":"Utility Bill (4w basis)","nickname":"Ken","memo":null}
+{"tr_id":"800072","tr_st_id":"30072","campus":"Premium","staff_id":"2","type":"U","dt":"2026-06-15 10:05:00","point":"3000","php":"3000","ec_name":"Deposit","nickname":"Ken","memo":null}
+{"tr_id":"800078","tr_st_id":"30078","campus":"Premium","staff_id":"1","type":"D","dt":"2026-06-29 09:49:00","point":"27000","php":"27000","ec_name":null,"nickname":"Mia","memo":null}
+{"tr_id":"800078","tr_st_id":"30078","campus":"Premium","staff_id":"2","type":"U","dt":"2026-06-29 10:52:00","point":"6500","php":"6500","ec_name":"SSP (Valid for 6 mon)","nickname":"Joy","memo":null}
+{"tr_id":"800078","tr_st_id":"30078","campus":"Premium","staff_id":"2","type":"U","dt":"2026-06-29 10:57:00","point":"500","php":"500","ec_name":"Student ID Card","nickname":"Ken","memo":null}
+{"tr_id":"800078","tr_st_id":"30078","campus":"Premium","staff_id":"2","type":"U","dt":"2026-06-29 10:46:00","point":"1000","php":"1000","ec_name":"Class Materials","nickname":"Ken","memo":null}
+{"tr_id":"800078","tr_st_id":"30078","campus":"Premium","staff_id":"2","type":"U","dt":"2026-06-29 10:57:00","point":"3800","php":"3800","ec_name":"Visa","nickname":"Joy","memo":null}
+{"tr_id":"800078","tr_st_id":"30078","campus":"Premium","staff_id":"2","type":"U","dt":"2026-06-29 10:33:00","point":"1600","php":"1600","ec_name":"Maintenance (4w basis)","nickname":"Joy","memo":null}
+{"tr_id":"800078","tr_st_id":"30078","campus":"Premium","staff_id":"2","type":"U","dt":"2026-06-29 10:47:00","point":"2000","php":"2000","ec_name":"Laundry Fee (4w basis)","nickname":"Joy","memo":null}
+{"tr_id":"800078","tr_st_id":"30078","campus":"Premium","staff_id":"2","type":"U","dt":"2026-06-29 10:37:00","point":"4800","php":"4800","ec_name":"Utility Bill (4w basis)","nickname":"Joy","memo":null}
+{"tr_id":"800078","tr_st_id":"30078","campus":"Premium","staff_id":"2","type":"U","dt":"2026-06-29 10:57:00","point":"3000","php":"3000","ec_name":"Deposit","nickname":"Joy","memo":null}
+{"tr_id":"800081","tr_st_id":"30081","campus":"Premium","staff_id":"1","type":"D","dt":"2026-06-29 09:47:00","point":"26000","php":"26000","ec_name":null,"nickname":"Mia","memo":null}
+{"tr_id":"800081","tr_st_id":"30081","campus":"Premium","staff_id":"2","type":"U","dt":"2026-06-29 10:43:00","point":"6500","php":"6500","ec_name":"SSP (Valid for 6 mon)","nickname":"Joy","memo":null}
+{"tr_id":"800081","tr_st_id":"30081","campus":"Premium","staff_id":"2","type":"U","dt":"2026-06-29 10:14:00","point":"500","php":"500","ec_name":"Student ID Card","nickname":"Joy","memo":null}
+{"tr_id":"800081","tr_st_id":"30081","campus":"Premium","staff_id":"2","type":"U","dt":"2026-06-29 10:11:00","point":"1000","php":"1000","ec_name":"Class Materials","nickname":"Joy","memo":null}
+{"tr_id":"800081","tr_st_id":"30081","campus":"Premium","staff_id":"2","type":"U","dt":"2026-06-29 10:59:00","point":"3800","php":"3800","ec_name":"Visa","nickname":"Joy","memo":null}
+{"tr_id":"800081","tr_st_id":"30081","campus":"Premium","staff_id":"2","type":"U","dt":"2026-06-29 10:40:00","point":"1600","php":"1600","ec_name":"Maintenance (4w basis)","nickname":"Joy","memo":null}
+{"tr_id":"800081","tr_st_id":"30081","campus":"Premium","staff_id":"2","type":"U","dt":"2026-06-29 10:42:00","point":"2000","php":"2000","ec_name":"Laundry Fee (4w basis)","nickname":"Joy","memo":null}
+{"tr_id":"800081","tr_st_id":"30081","campus":"Premium","staff_id":"2","type":"U","dt":"2026-06-29 10:45:00","point":"4800","php":"4800","ec_name":"Utility Bill (4w basis)","nickname":"Joy","memo":null}
+{"tr_id":"800081","tr_st_id":"30081","campus":"Premium","staff_id":"2","type":"U","dt":"2026-06-29 10:44:00","point":"3000","php":"3000","ec_name":"Deposit","nickname":"Joy","memo":null}
+{"tr_id":"800088","tr_st_id":"30088","campus":"Premium","staff_id":"1","type":"D","dt":"2026-07-13 09:29:00","point":"29000","php":"29000","ec_name":null,"nickname":"Mia","memo":null}
+{"tr_id":"800088","tr_st_id":"30088","campus":"Premium","staff_id":"2","type":"U","dt":"2026-07-13 10:27:00","point":"6500","php":"6500","ec_name":"SSP (Valid for 6 mon)","nickname":"Ken","memo":null}
+{"tr_id":"800088","tr_st_id":"30088","campus":"Premium","staff_id":"2","type":"U","dt":"2026-07-13 10:03:00","point":"500","php":"500","ec_name":"Student ID Card","nickname":"Joy","memo":null}
+{"tr_id":"800088","tr_st_id":"30088","campus":"Premium","staff_id":"2","type":"U","dt":"2026-07-13 10:30:00","point":"1000","php":"1000","ec_name":"Class Materials","nickname":"Joy","memo":null}
+{"tr_id":"800088","tr_st_id":"30088","campus":"Premium","staff_id":"2","type":"U","dt":"2026-07-13 10:24:00","point":"3800","php":"3800","ec_name":"Visa","nickname":"Ken","memo":null}
+{"tr_id":"800088","tr_st_id":"30088","campus":"Premium","staff_id":"2","type":"U","dt":"2026-07-13 10:16:00","point":"2400","php":"2400","ec_name":"Maintenance (4w basis)","nickname":"Ken","memo":null}
+{"tr_id":"800088","tr_st_id":"30088","campus":"Premium","staff_id":"2","type":"U","dt":"2026-07-13 10:36:00","point":"3000","php":"3000","ec_name":"Laundry Fee (4w basis)","nickname":"Ken","memo":null}
+{"tr_id":"800088","tr_st_id":"30088","campus":"Premium","staff_id":"2","type":"U","dt":"2026-07-13 10:53:00","point":"7200","php":"7200","ec_name":"Utility Bill (4w basis)","nickname":"Ken","memo":null}
+{"tr_id":"800088","tr_st_id":"30088","campus":"Premium","staff_id":"2","type":"U","dt":"2026-07-13 10:19:00","point":"3000","php":"3000","ec_name":"Deposit","nickname":"Joy","memo":null}
+{"tr_id":"800089","tr_st_id":"30089","campus":"Premium","staff_id":"1","type":"D","dt":"2026-07-13 09:14:00","point":"26000","php":"26000","ec_name":null,"nickname":"Mia","memo":null}
+{"tr_id":"800089","tr_st_id":"30089","campus":"Premium","staff_id":"2","type":"U","dt":"2026-07-13 10:21:00","point":"6500","php":"6500","ec_name":"SSP (Valid for 6 mon)","nickname":"Joy","memo":null}
+{"tr_id":"800089","tr_st_id":"30089","campus":"Premium","staff_id":"2","type":"U","dt":"2026-07-13 10:34:00","point":"500","php":"500","ec_name":"Student ID Card","nickname":"Joy","memo":null}
+{"tr_id":"800089","tr_st_id":"30089","campus":"Premium","staff_id":"2","type":"U","dt":"2026-07-13 10:18:00","point":"1000","php":"1000","ec_name":"Class Materials","nickname":"Joy","memo":null}
+{"tr_id":"800089","tr_st_id":"30089","campus":"Premium","staff_id":"2","type":"U","dt":"2026-07-13 10:19:00","point":"3800","php":"3800","ec_name":"Visa","nickname":"Ken","memo":null}
+{"tr_id":"800089","tr_st_id":"30089","campus":"Premium","staff_id":"2","type":"U","dt":"2026-07-13 10:06:00","point":"1600","php":"1600","ec_name":"Maintenance (4w basis)","nickname":"Ken","memo":null}
+{"tr_id":"800089","tr_st_id":"30089","campus":"Premium","staff_id":"2","type":"U","dt":"2026-07-13 10:27:00","point":"2000","php":"2000","ec_name":"Laundry Fee (4w basis)","nickname":"Joy","memo":null}
+{"tr_id":"800089","tr_st_id":"30089","campus":"Premium","staff_id":"2","type":"U","dt":"2026-07-13 10:14:00","point":"4800","php":"4800","ec_name":"Utility Bill (4w basis)","nickname":"Ken","memo":null}
+{"tr_id":"800089","tr_st_id":"30089","campus":"Premium","staff_id":"2","type":"U","dt":"2026-07-13 10:24:00","point":"3000","php":"3000","ec_name":"Deposit","nickname":"Ken","memo":null}
+{"tr_id":"800091","tr_st_id":"30091","campus":"Premium","staff_id":"1","type":"D","dt":"2026-07-13 09:37:00","point":"34000","php":"34000","ec_name":null,"nickname":"Mia","memo":null}
+{"tr_id":"800091","tr_st_id":"30091","campus":"Premium","staff_id":"2","type":"U","dt":"2026-07-13 10:28:00","point":"6500","php":"6500","ec_name":"SSP (Valid for 6 mon)","nickname":"Ken","memo":null}
+{"tr_id":"800091","tr_st_id":"30091","campus":"Premium","staff_id":"2","type":"U","dt":"2026-07-13 10:46:00","point":"500","php":"500","ec_name":"Student ID Card","nickname":"Ken","memo":null}
+{"tr_id":"800091","tr_st_id":"30091","campus":"Premium","staff_id":"2","type":"U","dt":"2026-07-13 10:13:00","point":"1000","php":"1000","ec_name":"Class Materials","nickname":"Ken","memo":null}
+{"tr_id":"800091","tr_st_id":"30091","campus":"Premium","staff_id":"2","type":"U","dt":"2026-07-13 10:10:00","point":"3800","php":"3800","ec_name":"Visa","nickname":"Joy","memo":null}
+{"tr_id":"800091","tr_st_id":"30091","campus":"Premium","staff_id":"2","type":"U","dt":"2026-07-13 10:40:00","point":"3200","php":"3200","ec_name":"Maintenance (4w basis)","nickname":"Joy","memo":null}
+{"tr_id":"800091","tr_st_id":"30091","campus":"Premium","staff_id":"2","type":"U","dt":"2026-07-13 10:29:00","point":"4000","php":"4000","ec_name":"Laundry Fee (4w basis)","nickname":"Ken","memo":null}
+{"tr_id":"800091","tr_st_id":"30091","campus":"Premium","staff_id":"2","type":"U","dt":"2026-07-13 10:39:00","point":"9600","php":"9600","ec_name":"Utility Bill (4w basis)","nickname":"Ken","memo":null}
+{"tr_id":"800091","tr_st_id":"30091","campus":"Premium","staff_id":"2","type":"U","dt":"2026-07-13 10:19:00","point":"3000","php":"3000","ec_name":"Deposit","nickname":"Joy","memo":null}
+{"tr_id":"800092","tr_st_id":"30092","campus":"Premium","staff_id":"1","type":"D","dt":"2026-07-13 09:05:00","point":"29000","php":"29000","ec_name":null,"nickname":"Mia","memo":null}
+{"tr_id":"800092","tr_st_id":"30092","campus":"Premium","staff_id":"2","type":"U","dt":"2026-07-13 10:08:00","point":"6500","php":"6500","ec_name":"SSP (Valid for 6 mon)","nickname":"Ken","memo":null}
+{"tr_id":"800092","tr_st_id":"30092","campus":"Premium","staff_id":"2","type":"U","dt":"2026-07-13 10:20:00","point":"500","php":"500","ec_name":"Student ID Card","nickname":"Joy","memo":null}
+{"tr_id":"800092","tr_st_id":"30092","campus":"Premium","staff_id":"2","type":"U","dt":"2026-07-13 10:47:00","point":"1000","php":"1000","ec_name":"Class Materials","nickname":"Ken","memo":null}
+{"tr_id":"800092","tr_st_id":"30092","campus":"Premium","staff_id":"2","type":"U","dt":"2026-07-13 10:37:00","point":"3800","php":"3800","ec_name":"Visa","nickname":"Joy","memo":null}
+{"tr_id":"800092","tr_st_id":"30092","campus":"Premium","staff_id":"2","type":"U","dt":"2026-07-13 10:41:00","point":"2400","php":"2400","ec_name":"Maintenance (4w basis)","nickname":"Joy","memo":null}
+{"tr_id":"800092","tr_st_id":"30092","campus":"Premium","staff_id":"2","type":"U","dt":"2026-07-13 10:31:00","point":"3000","php":"3000","ec_name":"Laundry Fee (4w basis)","nickname":"Joy","memo":null}
+{"tr_id":"800092","tr_st_id":"30092","campus":"Premium","staff_id":"2","type":"U","dt":"2026-07-13 10:49:00","point":"7200","php":"7200","ec_name":"Utility Bill (4w basis)","nickname":"Joy","memo":null}
+{"tr_id":"800092","tr_st_id":"30092","campus":"Premium","staff_id":"2","type":"U","dt":"2026-07-13 10:58:00","point":"3000","php":"3000","ec_name":"Deposit","nickname":"Ken","memo":null}
+{"tr_id":"800094","tr_st_id":"30094","campus":"Premium","staff_id":"1","type":"D","dt":"2026-07-13 09:59:00","point":"35000","php":"35000","ec_name":null,"nickname":"Mia","memo":null}
+{"tr_id":"800094","tr_st_id":"30094","campus":"Premium","staff_id":"2","type":"U","dt":"2026-07-13 10:16:00","point":"6500","php":"6500","ec_name":"SSP (Valid for 6 mon)","nickname":"Joy","memo":null}
+{"tr_id":"800094","tr_st_id":"30094","campus":"Premium","staff_id":"2","type":"U","dt":"2026-07-13 10:11:00","point":"500","php":"500","ec_name":"Student ID Card","nickname":"Joy","memo":null}
+{"tr_id":"800094","tr_st_id":"30094","campus":"Premium","staff_id":"2","type":"U","dt":"2026-07-13 10:33:00","point":"1000","php":"1000","ec_name":"Class Materials","nickname":"Joy","memo":null}
+{"tr_id":"800094","tr_st_id":"30094","campus":"Premium","staff_id":"2","type":"U","dt":"2026-07-13 10:10:00","point":"3800","php":"3800","ec_name":"Visa","nickname":"Ken","memo":null}
+{"tr_id":"800094","tr_st_id":"30094","campus":"Premium","staff_id":"2","type":"U","dt":"2026-07-13 10:45:00","point":"3200","php":"3200","ec_name":"Maintenance (4w basis)","nickname":"Ken","memo":null}
+{"tr_id":"800094","tr_st_id":"30094","campus":"Premium","staff_id":"2","type":"U","dt":"2026-07-13 10:02:00","point":"4000","php":"4000","ec_name":"Laundry Fee (4w basis)","nickname":"Joy","memo":null}
+{"tr_id":"800094","tr_st_id":"30094","campus":"Premium","staff_id":"2","type":"U","dt":"2026-07-13 10:53:00","point":"9600","php":"9600","ec_name":"Utility Bill (4w basis)","nickname":"Joy","memo":null}
+{"tr_id":"800094","tr_st_id":"30094","campus":"Premium","staff_id":"2","type":"U","dt":"2026-07-13 10:13:00","point":"3000","php":"3000","ec_name":"Deposit","nickname":"Ken","memo":null}
+{"tr_id":"800096","tr_st_id":"30096","campus":"Premium","staff_id":"1","type":"D","dt":"2026-07-27 09:15:00","point":"27000","php":"27000","ec_name":null,"nickname":"Mia","memo":null}
+{"tr_id":"800096","tr_st_id":"30096","campus":"Premium","staff_id":"2","type":"U","dt":"2026-07-27 10:28:00","point":"6500","php":"6500","ec_name":"SSP (Valid for 6 mon)","nickname":"Ken","memo":null}
+{"tr_id":"800096","tr_st_id":"30096","campus":"Premium","staff_id":"2","type":"U","dt":"2026-07-27 10:08:00","point":"500","php":"500","ec_name":"Student ID Card","nickname":"Joy","memo":null}
+{"tr_id":"800096","tr_st_id":"30096","campus":"Premium","staff_id":"2","type":"U","dt":"2026-07-27 10:32:00","point":"1000","php":"1000","ec_name":"Class Materials","nickname":"Joy","memo":null}
+{"tr_id":"800096","tr_st_id":"30096","campus":"Premium","staff_id":"2","type":"U","dt":"2026-07-27 10:55:00","point":"3800","php":"3800","ec_name":"Visa","nickname":"Ken","memo":null}
+{"tr_id":"800096","tr_st_id":"30096","campus":"Premium","staff_id":"2","type":"U","dt":"2026-07-27 10:32:00","point":"1600","php":"1600","ec_name":"Maintenance (4w basis)","nickname":"Joy","memo":null}
+{"tr_id":"800096","tr_st_id":"30096","campus":"Premium","staff_id":"2","type":"U","dt":"2026-07-27 10:10:00","point":"2000","php":"2000","ec_name":"Laundry Fee (4w basis)","nickname":"Joy","memo":null}
+{"tr_id":"800096","tr_st_id":"30096","campus":"Premium","staff_id":"2","type":"U","dt":"2026-07-27 10:10:00","point":"4800","php":"4800","ec_name":"Utility Bill (4w basis)","nickname":"Joy","memo":null}
+{"tr_id":"800096","tr_st_id":"30096","campus":"Premium","staff_id":"2","type":"U","dt":"2026-07-27 10:29:00","point":"3000","php":"3000","ec_name":"Deposit","nickname":"Ken","memo":null}
+{"tr_id":"800097","tr_st_id":"30097","campus":"Premium","staff_id":"1","type":"D","dt":"2026-07-27 09:30:00","point":"24000","php":"24000","ec_name":null,"nickname":"Mia","memo":null}
+{"tr_id":"800097","tr_st_id":"30097","campus":"Premium","staff_id":"2","type":"U","dt":"2026-07-27 10:14:00","point":"6500","php":"6500","ec_name":"SSP (Valid for 6 mon)","nickname":"Joy","memo":null}
+{"tr_id":"800097","tr_st_id":"30097","campus":"Premium","staff_id":"2","type":"U","dt":"2026-07-27 10:34:00","point":"500","php":"500","ec_name":"Student ID Card","nickname":"Ken","memo":null}
+{"tr_id":"800097","tr_st_id":"30097","campus":"Premium","staff_id":"2","type":"U","dt":"2026-07-27 10:49:00","point":"1000","php":"1000","ec_name":"Class Materials","nickname":"Joy","memo":null}
+{"tr_id":"800097","tr_st_id":"30097","campus":"Premium","staff_id":"2","type":"U","dt":"2026-07-27 10:40:00","point":"3800","php":"3800","ec_name":"Visa","nickname":"Joy","memo":null}
+{"tr_id":"800097","tr_st_id":"30097","campus":"Premium","staff_id":"2","type":"U","dt":"2026-07-27 10:46:00","point":"1600","php":"1600","ec_name":"Maintenance (4w basis)","nickname":"Ken","memo":null}
+{"tr_id":"800097","tr_st_id":"30097","campus":"Premium","staff_id":"2","type":"U","dt":"2026-07-27 10:06:00","point":"2000","php":"2000","ec_name":"Laundry Fee (4w basis)","nickname":"Joy","memo":null}
+{"tr_id":"800097","tr_st_id":"30097","campus":"Premium","staff_id":"2","type":"U","dt":"2026-07-27 10:49:00","point":"4800","php":"4800","ec_name":"Utility Bill (4w basis)","nickname":"Joy","memo":null}
+{"tr_id":"800097","tr_st_id":"30097","campus":"Premium","staff_id":"2","type":"U","dt":"2026-07-27 10:38:00","point":"3000","php":"3000","ec_name":"Deposit","nickname":"Ken","memo":null}
+{"tr_id":"800099","tr_st_id":"30099","campus":"Premium","staff_id":"1","type":"D","dt":"2026-07-27 09:38:00","point":"35000","php":"35000","ec_name":null,"nickname":"Mia","memo":null}
+{"tr_id":"800099","tr_st_id":"30099","campus":"Premium","staff_id":"2","type":"U","dt":"2026-07-27 10:05:00","point":"6500","php":"6500","ec_name":"SSP (Valid for 6 mon)","nickname":"Joy","memo":null}
+{"tr_id":"800099","tr_st_id":"30099","campus":"Premium","staff_id":"2","type":"U","dt":"2026-07-27 10:02:00","point":"500","php":"500","ec_name":"Student ID Card","nickname":"Ken","memo":null}
+{"tr_id":"800099","tr_st_id":"30099","campus":"Premium","staff_id":"2","type":"U","dt":"2026-07-27 10:09:00","point":"1000","php":"1000","ec_name":"Class Materials","nickname":"Ken","memo":null}
+{"tr_id":"800099","tr_st_id":"30099","campus":"Premium","staff_id":"2","type":"U","dt":"2026-07-27 10:28:00","point":"3800","php":"3800","ec_name":"Visa","nickname":"Ken","memo":null}
+{"tr_id":"800099","tr_st_id":"30099","campus":"Premium","staff_id":"2","type":"U","dt":"2026-07-27 10:34:00","point":"3200","php":"3200","ec_name":"Maintenance (4w basis)","nickname":"Ken","memo":null}
+{"tr_id":"800099","tr_st_id":"30099","campus":"Premium","staff_id":"2","type":"U","dt":"2026-07-27 10:27:00","point":"4000","php":"4000","ec_name":"Laundry Fee (4w basis)","nickname":"Ken","memo":null}
+{"tr_id":"800099","tr_st_id":"30099","campus":"Premium","staff_id":"2","type":"U","dt":"2026-07-27 10:16:00","point":"9600","php":"9600","ec_name":"Utility Bill (4w basis)","nickname":"Joy","memo":null}
+{"tr_id":"800099","tr_st_id":"30099","campus":"Premium","staff_id":"2","type":"U","dt":"2026-07-27 10:37:00","point":"3000","php":"3000","ec_name":"Deposit","nickname":"Ken","memo":null}
+{"tr_id":"800101","tr_st_id":"30101","campus":"Premium","staff_id":"1","type":"D","dt":"2026-07-27 09:50:00","point":"31000","php":"31000","ec_name":null,"nickname":"Mia","memo":null}
+{"tr_id":"800101","tr_st_id":"30101","campus":"Premium","staff_id":"2","type":"U","dt":"2026-07-27 10:12:00","point":"6500","php":"6500","ec_name":"SSP (Valid for 6 mon)","nickname":"Joy","memo":null}
+{"tr_id":"800101","tr_st_id":"30101","campus":"Premium","staff_id":"2","type":"U","dt":"2026-07-27 10:39:00","point":"500","php":"500","ec_name":"Student ID Card","nickname":"Joy","memo":null}
+{"tr_id":"800101","tr_st_id":"30101","campus":"Premium","staff_id":"2","type":"U","dt":"2026-07-27 10:50:00","point":"1000","php":"1000","ec_name":"Class Materials","nickname":"Joy","memo":null}
+{"tr_id":"800101","tr_st_id":"30101","campus":"Premium","staff_id":"2","type":"U","dt":"2026-07-27 10:39:00","point":"3800","php":"3800","ec_name":"Visa","nickname":"Ken","memo":null}
+{"tr_id":"800101","tr_st_id":"30101","campus":"Premium","staff_id":"2","type":"U","dt":"2026-07-27 10:59:00","point":"2400","php":"2400","ec_name":"Maintenance (4w basis)","nickname":"Joy","memo":null}
+{"tr_id":"800101","tr_st_id":"30101","campus":"Premium","staff_id":"2","type":"U","dt":"2026-07-27 10:23:00","point":"3000","php":"3000","ec_name":"Laundry Fee (4w basis)","nickname":"Ken","memo":null}
+{"tr_id":"800101","tr_st_id":"30101","campus":"Premium","staff_id":"2","type":"U","dt":"2026-07-27 10:17:00","point":"7200","php":"7200","ec_name":"Utility Bill (4w basis)","nickname":"Joy","memo":null}
+{"tr_id":"800101","tr_st_id":"30101","campus":"Premium","staff_id":"2","type":"U","dt":"2026-07-27 10:30:00","point":"3000","php":"3000","ec_name":"Deposit","nickname":"Joy","memo":null}
+{"tr_id":"800102","tr_st_id":"30102","campus":"Premium","staff_id":"1","type":"D","dt":"2026-07-27 09:18:00","point":"30000","php":"30000","ec_name":null,"nickname":"Mia","memo":null}
+{"tr_id":"800102","tr_st_id":"30102","campus":"Premium","staff_id":"2","type":"U","dt":"2026-07-27 10:30:00","point":"6500","php":"6500","ec_name":"SSP (Valid for 6 mon)","nickname":"Ken","memo":null}
+{"tr_id":"800102","tr_st_id":"30102","campus":"Premium","staff_id":"2","type":"U","dt":"2026-07-27 10:49:00","point":"500","php":"500","ec_name":"Student ID Card","nickname":"Ken","memo":null}
+{"tr_id":"800102","tr_st_id":"30102","campus":"Premium","staff_id":"2","type":"U","dt":"2026-07-27 10:07:00","point":"1000","php":"1000","ec_name":"Class Materials","nickname":"Joy","memo":null}
+{"tr_id":"800102","tr_st_id":"30102","campus":"Premium","staff_id":"2","type":"U","dt":"2026-07-27 10:45:00","point":"3800","php":"3800","ec_name":"Visa","nickname":"Joy","memo":null}
+{"tr_id":"800102","tr_st_id":"30102","campus":"Premium","staff_id":"2","type":"U","dt":"2026-07-27 10:17:00","point":"2400","php":"2400","ec_name":"Maintenance (4w basis)","nickname":"Ken","memo":null}
+{"tr_id":"800102","tr_st_id":"30102","campus":"Premium","staff_id":"2","type":"U","dt":"2026-07-27 10:31:00","point":"3000","php":"3000","ec_name":"Laundry Fee (4w basis)","nickname":"Joy","memo":null}
+{"tr_id":"800102","tr_st_id":"30102","campus":"Premium","staff_id":"2","type":"U","dt":"2026-07-27 10:00:00","point":"7200","php":"7200","ec_name":"Utility Bill (4w basis)","nickname":"Joy","memo":null}
+{"tr_id":"800102","tr_st_id":"30102","campus":"Premium","staff_id":"2","type":"U","dt":"2026-07-27 10:51:00","point":"3000","php":"3000","ec_name":"Deposit","nickname":"Ken","memo":null}
+{"tr_id":"800106","tr_st_id":"30106","campus":"Premium","staff_id":"1","type":"D","dt":"2026-08-10 09:58:00","point":"26000","php":"26000","ec_name":null,"nickname":"Mia","memo":null}
+{"tr_id":"800106","tr_st_id":"30106","campus":"Premium","staff_id":"2","type":"U","dt":"2026-08-10 10:08:00","point":"6500","php":"6500","ec_name":"SSP (Valid for 6 mon)","nickname":"Ken","memo":null}
+{"tr_id":"800106","tr_st_id":"30106","campus":"Premium","staff_id":"2","type":"U","dt":"2026-08-10 10:24:00","point":"500","php":"500","ec_name":"Student ID Card","nickname":"Ken","memo":null}
+{"tr_id":"800106","tr_st_id":"30106","campus":"Premium","staff_id":"2","type":"U","dt":"2026-08-10 10:05:00","point":"1000","php":"1000","ec_name":"Class Materials","nickname":"Ken","memo":null}
+{"tr_id":"800106","tr_st_id":"30106","campus":"Premium","staff_id":"2","type":"U","dt":"2026-08-10 10:45:00","point":"3800","php":"3800","ec_name":"Visa","nickname":"Ken","memo":null}
+{"tr_id":"800106","tr_st_id":"30106","campus":"Premium","staff_id":"2","type":"U","dt":"2026-08-10 10:58:00","point":"1600","php":"1600","ec_name":"Maintenance (4w basis)","nickname":"Joy","memo":null}
+{"tr_id":"800106","tr_st_id":"30106","campus":"Premium","staff_id":"2","type":"U","dt":"2026-08-10 10:50:00","point":"2000","php":"2000","ec_name":"Laundry Fee (4w basis)","nickname":"Joy","memo":null}
+{"tr_id":"800106","tr_st_id":"30106","campus":"Premium","staff_id":"2","type":"U","dt":"2026-08-10 10:00:00","point":"4800","php":"4800","ec_name":"Utility Bill (4w basis)","nickname":"Joy","memo":null}
+{"tr_id":"800106","tr_st_id":"30106","campus":"Premium","staff_id":"2","type":"U","dt":"2026-08-10 10:40:00","point":"3000","php":"3000","ec_name":"Deposit","nickname":"Joy","memo":null}
+{"tr_id":"800109","tr_st_id":"30109","campus":"Premium","staff_id":"1","type":"D","dt":"2026-08-10 09:13:00","point":"26000","php":"26000","ec_name":null,"nickname":"Mia","memo":null}
+{"tr_id":"800109","tr_st_id":"30109","campus":"Premium","staff_id":"2","type":"U","dt":"2026-08-10 10:41:00","point":"6500","php":"6500","ec_name":"SSP (Valid for 6 mon)","nickname":"Ken","memo":null}
+{"tr_id":"800109","tr_st_id":"30109","campus":"Premium","staff_id":"2","type":"U","dt":"2026-08-10 10:24:00","point":"500","php":"500","ec_name":"Student ID Card","nickname":"Ken","memo":null}
+{"tr_id":"800109","tr_st_id":"30109","campus":"Premium","staff_id":"2","type":"U","dt":"2026-08-10 10:59:00","point":"1000","php":"1000","ec_name":"Class Materials","nickname":"Ken","memo":null}
+{"tr_id":"800109","tr_st_id":"30109","campus":"Premium","staff_id":"2","type":"U","dt":"2026-08-10 10:42:00","point":"3800","php":"3800","ec_name":"Visa","nickname":"Joy","memo":null}
+{"tr_id":"800109","tr_st_id":"30109","campus":"Premium","staff_id":"2","type":"U","dt":"2026-08-10 10:52:00","point":"1600","php":"1600","ec_name":"Maintenance (4w basis)","nickname":"Ken","memo":null}
+{"tr_id":"800109","tr_st_id":"30109","campus":"Premium","staff_id":"2","type":"U","dt":"2026-08-10 10:15:00","point":"2000","php":"2000","ec_name":"Laundry Fee (4w basis)","nickname":"Joy","memo":null}
+{"tr_id":"800109","tr_st_id":"30109","campus":"Premium","staff_id":"2","type":"U","dt":"2026-08-10 10:51:00","point":"4800","php":"4800","ec_name":"Utility Bill (4w basis)","nickname":"Ken","memo":null}
+{"tr_id":"800109","tr_st_id":"30109","campus":"Premium","staff_id":"2","type":"U","dt":"2026-08-10 10:34:00","point":"3000","php":"3000","ec_name":"Deposit","nickname":"Ken","memo":null}
+{"tr_id":"800110","tr_st_id":"30110","campus":"Premium","staff_id":"1","type":"D","dt":"2026-08-10 09:35:00","point":"31000","php":"31000","ec_name":null,"nickname":"Mia","memo":null}
+{"tr_id":"800110","tr_st_id":"30110","campus":"Premium","staff_id":"2","type":"U","dt":"2026-08-10 10:04:00","point":"6500","php":"6500","ec_name":"SSP (Valid for 6 mon)","nickname":"Joy","memo":null}
+{"tr_id":"800110","tr_st_id":"30110","campus":"Premium","staff_id":"2","type":"U","dt":"2026-08-10 10:21:00","point":"500","php":"500","ec_name":"Student ID Card","nickname":"Ken","memo":null}
+{"tr_id":"800110","tr_st_id":"30110","campus":"Premium","staff_id":"2","type":"U","dt":"2026-08-10 10:47:00","point":"1000","php":"1000","ec_name":"Class Materials","nickname":"Joy","memo":null}
+{"tr_id":"800110","tr_st_id":"30110","campus":"Premium","staff_id":"2","type":"U","dt":"2026-08-10 10:49:00","point":"3800","php":"3800","ec_name":"Visa","nickname":"Joy","memo":null}
+{"tr_id":"800110","tr_st_id":"30110","campus":"Premium","staff_id":"2","type":"U","dt":"2026-08-10 10:16:00","point":"2400","php":"2400","ec_name":"Maintenance (4w basis)","nickname":"Joy","memo":null}
+{"tr_id":"800110","tr_st_id":"30110","campus":"Premium","staff_id":"2","type":"U","dt":"2026-08-10 10:29:00","point":"3000","php":"3000","ec_name":"Laundry Fee (4w basis)","nickname":"Ken","memo":null}
+{"tr_id":"800110","tr_st_id":"30110","campus":"Premium","staff_id":"2","type":"U","dt":"2026-08-10 10:45:00","point":"7200","php":"7200","ec_name":"Utility Bill (4w basis)","nickname":"Ken","memo":null}
+{"tr_id":"800110","tr_st_id":"30110","campus":"Premium","staff_id":"2","type":"U","dt":"2026-08-10 10:37:00","point":"3000","php":"3000","ec_name":"Deposit","nickname":"Joy","memo":null}
+{"tr_id":"800111","tr_st_id":"30111","campus":"Premium","staff_id":"1","type":"D","dt":"2026-08-10 09:22:00","point":"25000","php":"25000","ec_name":null,"nickname":"Mia","memo":null}
+{"tr_id":"800111","tr_st_id":"30111","campus":"Premium","staff_id":"2","type":"U","dt":"2026-08-10 10:41:00","point":"6500","php":"6500","ec_name":"SSP (Valid for 6 mon)","nickname":"Ken","memo":null}
+{"tr_id":"800111","tr_st_id":"30111","campus":"Premium","staff_id":"2","type":"U","dt":"2026-08-10 10:19:00","point":"500","php":"500","ec_name":"Student ID Card","nickname":"Joy","memo":null}
+{"tr_id":"800111","tr_st_id":"30111","campus":"Premium","staff_id":"2","type":"U","dt":"2026-08-10 10:33:00","point":"1000","php":"1000","ec_name":"Class Materials","nickname":"Ken","memo":null}
+{"tr_id":"800111","tr_st_id":"30111","campus":"Premium","staff_id":"2","type":"U","dt":"2026-08-10 10:15:00","point":"3800","php":"3800","ec_name":"Visa","nickname":"Joy","memo":null}
+{"tr_id":"800111","tr_st_id":"30111","campus":"Premium","staff_id":"2","type":"U","dt":"2026-08-10 10:54:00","point":"1600","php":"1600","ec_name":"Maintenance (4w basis)","nickname":"Joy","memo":null}
+{"tr_id":"800111","tr_st_id":"30111","campus":"Premium","staff_id":"2","type":"U","dt":"2026-08-10 10:56:00","point":"2000","php":"2000","ec_name":"Laundry Fee (4w basis)","nickname":"Ken","memo":null}
+{"tr_id":"800111","tr_st_id":"30111","campus":"Premium","staff_id":"2","type":"U","dt":"2026-08-10 10:08:00","point":"4800","php":"4800","ec_name":"Utility Bill (4w basis)","nickname":"Ken","memo":null}
+{"tr_id":"800111","tr_st_id":"30111","campus":"Premium","staff_id":"2","type":"U","dt":"2026-08-10 10:19:00","point":"3000","php":"3000","ec_name":"Deposit","nickname":"Joy","memo":null}
+{"tr_id":"800112","tr_st_id":"30112","campus":"Premium","staff_id":"1","type":"D","dt":"2026-08-10 09:14:00","point":"20000","php":"20000","ec_name":null,"nickname":"Mia","memo":null}
+{"tr_id":"800112","tr_st_id":"30112","campus":"Premium","staff_id":"2","type":"U","dt":"2026-08-10 10:59:00","point":"6500","php":"6500","ec_name":"SSP (Valid for 6 mon)","nickname":"Ken","memo":null}
+{"tr_id":"800112","tr_st_id":"30112","campus":"Premium","staff_id":"2","type":"U","dt":"2026-08-10 10:40:00","point":"500","php":"500","ec_name":"Student ID Card","nickname":"Joy","memo":null}
+{"tr_id":"800112","tr_st_id":"30112","campus":"Premium","staff_id":"2","type":"U","dt":"2026-08-10 10:07:00","point":"1000","php":"1000","ec_name":"Class Materials","nickname":"Ken","memo":null}
+{"tr_id":"800112","tr_st_id":"30112","campus":"Premium","staff_id":"2","type":"U","dt":"2026-08-10 10:40:00","point":"3800","php":"3800","ec_name":"Visa","nickname":"Joy","memo":null}
+{"tr_id":"800112","tr_st_id":"30112","campus":"Premium","staff_id":"2","type":"U","dt":"2026-08-10 10:04:00","point":"800","php":"800","ec_name":"Maintenance (4w basis)","nickname":"Ken","memo":null}
+{"tr_id":"800112","tr_st_id":"30112","campus":"Premium","staff_id":"2","type":"U","dt":"2026-08-10 10:42:00","point":"1000","php":"1000","ec_name":"Laundry Fee (4w basis)","nickname":"Joy","memo":null}
+{"tr_id":"800112","tr_st_id":"30112","campus":"Premium","staff_id":"2","type":"U","dt":"2026-08-10 10:47:00","point":"2400","php":"2400","ec_name":"Utility Bill (4w basis)","nickname":"Ken","memo":null}
+{"tr_id":"800112","tr_st_id":"30112","campus":"Premium","staff_id":"2","type":"U","dt":"2026-08-10 10:15:00","point":"3000","php":"3000","ec_name":"Deposit","nickname":"Joy","memo":null}
+{"tr_id":"800113","tr_st_id":"30113","campus":"Premium","staff_id":"1","type":"D","dt":"2026-08-10 09:31:00","point":"34000","php":"34000","ec_name":null,"nickname":"Mia","memo":null}
+{"tr_id":"800113","tr_st_id":"30113","campus":"Premium","staff_id":"2","type":"U","dt":"2026-08-10 10:21:00","point":"6500","php":"6500","ec_name":"SSP (Valid for 6 mon)","nickname":"Joy","memo":null}
+{"tr_id":"800113","tr_st_id":"30113","campus":"Premium","staff_id":"2","type":"U","dt":"2026-08-10 10:33:00","point":"500","php":"500","ec_name":"Student ID Card","nickname":"Ken","memo":null}
+{"tr_id":"800113","tr_st_id":"30113","campus":"Premium","staff_id":"2","type":"U","dt":"2026-08-10 10:12:00","point":"1000","php":"1000","ec_name":"Class Materials","nickname":"Joy","memo":null}
+{"tr_id":"800113","tr_st_id":"30113","campus":"Premium","staff_id":"2","type":"U","dt":"2026-08-10 10:49:00","point":"3800","php":"3800","ec_name":"Visa","nickname":"Ken","memo":null}
+{"tr_id":"800113","tr_st_id":"30113","campus":"Premium","staff_id":"2","type":"U","dt":"2026-08-10 10:02:00","point":"3200","php":"3200","ec_name":"Maintenance (4w basis)","nickname":"Ken","memo":null}
+{"tr_id":"800113","tr_st_id":"30113","campus":"Premium","staff_id":"2","type":"U","dt":"2026-08-10 10:21:00","point":"4000","php":"4000","ec_name":"Laundry Fee (4w basis)","nickname":"Ken","memo":null}
+{"tr_id":"800113","tr_st_id":"30113","campus":"Premium","staff_id":"2","type":"U","dt":"2026-08-10 10:55:00","point":"9600","php":"9600","ec_name":"Utility Bill (4w basis)","nickname":"Joy","memo":null}
+{"tr_id":"800113","tr_st_id":"30113","campus":"Premium","staff_id":"2","type":"U","dt":"2026-08-10 10:18:00","point":"3000","php":"3000","ec_name":"Deposit","nickname":"Joy","memo":null}
+{"tr_id":"800114","tr_st_id":"30114","campus":"Premium","staff_id":"1","type":"D","dt":"2026-08-24 09:53:00","point":"36000","php":"36000","ec_name":null,"nickname":"Mia","memo":null}
+{"tr_id":"800114","tr_st_id":"30114","campus":"Premium","staff_id":"2","type":"U","dt":"2026-08-24 10:10:00","point":"6500","php":"6500","ec_name":"SSP (Valid for 6 mon)","nickname":"Joy","memo":null}
+{"tr_id":"800114","tr_st_id":"30114","campus":"Premium","staff_id":"2","type":"U","dt":"2026-08-24 10:13:00","point":"500","php":"500","ec_name":"Student ID Card","nickname":"Ken","memo":null}
+{"tr_id":"800114","tr_st_id":"30114","campus":"Premium","staff_id":"2","type":"U","dt":"2026-08-24 10:45:00","point":"1000","php":"1000","ec_name":"Class Materials","nickname":"Joy","memo":null}
+{"tr_id":"800114","tr_st_id":"30114","campus":"Premium","staff_id":"2","type":"U","dt":"2026-08-24 10:37:00","point":"3800","php":"3800","ec_name":"Visa","nickname":"Ken","memo":null}
+{"tr_id":"800114","tr_st_id":"30114","campus":"Premium","staff_id":"2","type":"U","dt":"2026-08-24 10:51:00","point":"3200","php":"3200","ec_name":"Maintenance (4w basis)","nickname":"Ken","memo":null}
+{"tr_id":"800114","tr_st_id":"30114","campus":"Premium","staff_id":"2","type":"U","dt":"2026-08-24 10:45:00","point":"4000","php":"4000","ec_name":"Laundry Fee (4w basis)","nickname":"Ken","memo":null}
+{"tr_id":"800114","tr_st_id":"30114","campus":"Premium","staff_id":"2","type":"U","dt":"2026-08-24 10:50:00","point":"9600","php":"9600","ec_name":"Utility Bill (4w basis)","nickname":"Joy","memo":null}
+{"tr_id":"800114","tr_st_id":"30114","campus":"Premium","staff_id":"2","type":"U","dt":"2026-08-24 10:30:00","point":"3000","php":"3000","ec_name":"Deposit","nickname":"Ken","memo":null}
+{"tr_id":"800116","tr_st_id":"30116","campus":"Premium","staff_id":"1","type":"D","dt":"2026-08-24 09:47:00","point":"27000","php":"27000","ec_name":null,"nickname":"Mia","memo":null}
+{"tr_id":"800116","tr_st_id":"30116","campus":"Premium","staff_id":"2","type":"U","dt":"2026-08-24 10:43:00","point":"6500","php":"6500","ec_name":"SSP (Valid for 6 mon)","nickname":"Ken","memo":null}
+{"tr_id":"800116","tr_st_id":"30116","campus":"Premium","staff_id":"2","type":"U","dt":"2026-08-24 10:36:00","point":"500","php":"500","ec_name":"Student ID Card","nickname":"Ken","memo":null}
+{"tr_id":"800116","tr_st_id":"30116","campus":"Premium","staff_id":"2","type":"U","dt":"2026-08-24 10:59:00","point":"1000","php":"1000","ec_name":"Class Materials","nickname":"Joy","memo":null}
+{"tr_id":"800116","tr_st_id":"30116","campus":"Premium","staff_id":"2","type":"U","dt":"2026-08-24 10:44:00","point":"3800","php":"3800","ec_name":"Visa","nickname":"Joy","memo":null}
+{"tr_id":"800116","tr_st_id":"30116","campus":"Premium","staff_id":"2","type":"U","dt":"2026-08-24 10:07:00","point":"1600","php":"1600","ec_name":"Maintenance (4w basis)","nickname":"Ken","memo":null}
+{"tr_id":"800116","tr_st_id":"30116","campus":"Premium","staff_id":"2","type":"U","dt":"2026-08-24 10:17:00","point":"2000","php":"2000","ec_name":"Laundry Fee (4w basis)","nickname":"Ken","memo":null}
+{"tr_id":"800116","tr_st_id":"30116","campus":"Premium","staff_id":"2","type":"U","dt":"2026-08-24 10:42:00","point":"4800","php":"4800","ec_name":"Utility Bill (4w basis)","nickname":"Joy","memo":null}
+{"tr_id":"800116","tr_st_id":"30116","campus":"Premium","staff_id":"2","type":"U","dt":"2026-08-24 10:58:00","point":"3000","php":"3000","ec_name":"Deposit","nickname":"Joy","memo":null}
+{"tr_id":"800117","tr_st_id":"30117","campus":"Premium","staff_id":"1","type":"D","dt":"2026-08-24 09:39:00","point":"20000","php":"20000","ec_name":null,"nickname":"Mia","memo":null}
+{"tr_id":"800117","tr_st_id":"30117","campus":"Premium","staff_id":"2","type":"U","dt":"2026-08-24 10:52:00","point":"6500","php":"6500","ec_name":"SSP (Valid for 6 mon)","nickname":"Joy","memo":null}
+{"tr_id":"800117","tr_st_id":"30117","campus":"Premium","staff_id":"2","type":"U","dt":"2026-08-24 10:28:00","point":"500","php":"500","ec_name":"Student ID Card","nickname":"Ken","memo":null}
+{"tr_id":"800117","tr_st_id":"30117","campus":"Premium","staff_id":"2","type":"U","dt":"2026-08-24 10:02:00","point":"1000","php":"1000","ec_name":"Class Materials","nickname":"Joy","memo":null}
+{"tr_id":"800117","tr_st_id":"30117","campus":"Premium","staff_id":"2","type":"U","dt":"2026-08-24 10:11:00","point":"3800","php":"3800","ec_name":"Visa","nickname":"Joy","memo":null}
+{"tr_id":"800117","tr_st_id":"30117","campus":"Premium","staff_id":"2","type":"U","dt":"2026-08-24 10:31:00","point":"800","php":"800","ec_name":"Maintenance (4w basis)","nickname":"Ken","memo":null}
+{"tr_id":"800117","tr_st_id":"30117","campus":"Premium","staff_id":"2","type":"U","dt":"2026-08-24 10:10:00","point":"1000","php":"1000","ec_name":"Laundry Fee (4w basis)","nickname":"Ken","memo":null}
+{"tr_id":"800117","tr_st_id":"30117","campus":"Premium","staff_id":"2","type":"U","dt":"2026-08-24 10:11:00","point":"2400","php":"2400","ec_name":"Utility Bill (4w basis)","nickname":"Joy","memo":null}
+{"tr_id":"800117","tr_st_id":"30117","campus":"Premium","staff_id":"2","type":"U","dt":"2026-08-24 10:40:00","point":"3000","php":"3000","ec_name":"Deposit","nickname":"Ken","memo":null}
+{"tr_id":"800118","tr_st_id":"30118","campus":"Premium","staff_id":"1","type":"D","dt":"2026-08-24 09:27:00","point":"29000","php":"29000","ec_name":null,"nickname":"Mia","memo":null}
+{"tr_id":"800118","tr_st_id":"30118","campus":"Premium","staff_id":"2","type":"U","dt":"2026-08-24 10:32:00","point":"6500","php":"6500","ec_name":"SSP (Valid for 6 mon)","nickname":"Ken","memo":null}
+{"tr_id":"800118","tr_st_id":"30118","campus":"Premium","staff_id":"2","type":"U","dt":"2026-08-24 10:05:00","point":"500","php":"500","ec_name":"Student ID Card","nickname":"Ken","memo":null}
+{"tr_id":"800118","tr_st_id":"30118","campus":"Premium","staff_id":"2","type":"U","dt":"2026-08-24 10:38:00","point":"1000","php":"1000","ec_name":"Class Materials","nickname":"Joy","memo":null}
+{"tr_id":"800118","tr_st_id":"30118","campus":"Premium","staff_id":"2","type":"U","dt":"2026-08-24 10:51:00","point":"3800","php":"3800","ec_name":"Visa","nickname":"Joy","memo":null}
+{"tr_id":"800118","tr_st_id":"30118","campus":"Premium","staff_id":"2","type":"U","dt":"2026-08-24 10:51:00","point":"2400","php":"2400","ec_name":"Maintenance (4w basis)","nickname":"Joy","memo":null}
+{"tr_id":"800118","tr_st_id":"30118","campus":"Premium","staff_id":"2","type":"U","dt":"2026-08-24 10:21:00","point":"3000","php":"3000","ec_name":"Laundry Fee (4w basis)","nickname":"Joy","memo":null}
+{"tr_id":"800118","tr_st_id":"30118","campus":"Premium","staff_id":"2","type":"U","dt":"2026-08-24 10:42:00","point":"7200","php":"7200","ec_name":"Utility Bill (4w basis)","nickname":"Joy","memo":null}
+{"tr_id":"800118","tr_st_id":"30118","campus":"Premium","staff_id":"2","type":"U","dt":"2026-08-24 10:42:00","point":"3000","php":"3000","ec_name":"Deposit","nickname":"Ken","memo":null}
+{"tr_id":"800123","tr_st_id":"30123","campus":"Premium","staff_id":"1","type":"D","dt":"2026-08-24 09:15:00","point":"25000","php":"25000","ec_name":null,"nickname":"Mia","memo":null}
+{"tr_id":"800123","tr_st_id":"30123","campus":"Premium","staff_id":"2","type":"U","dt":"2026-08-24 10:31:00","point":"6500","php":"6500","ec_name":"SSP (Valid for 6 mon)","nickname":"Ken","memo":null}
+{"tr_id":"800123","tr_st_id":"30123","campus":"Premium","staff_id":"2","type":"U","dt":"2026-08-24 10:57:00","point":"500","php":"500","ec_name":"Student ID Card","nickname":"Joy","memo":null}
+{"tr_id":"800123","tr_st_id":"30123","campus":"Premium","staff_id":"2","type":"U","dt":"2026-08-24 10:04:00","point":"1000","php":"1000","ec_name":"Class Materials","nickname":"Joy","memo":null}
+{"tr_id":"800123","tr_st_id":"30123","campus":"Premium","staff_id":"2","type":"U","dt":"2026-08-24 10:55:00","point":"3800","php":"3800","ec_name":"Visa","nickname":"Ken","memo":null}
+{"tr_id":"800123","tr_st_id":"30123","campus":"Premium","staff_id":"2","type":"U","dt":"2026-08-24 10:51:00","point":"1600","php":"1600","ec_name":"Maintenance (4w basis)","nickname":"Joy","memo":null}
+{"tr_id":"800123","tr_st_id":"30123","campus":"Premium","staff_id":"2","type":"U","dt":"2026-08-24 10:33:00","point":"2000","php":"2000","ec_name":"Laundry Fee (4w basis)","nickname":"Joy","memo":null}
+{"tr_id":"800123","tr_st_id":"30123","campus":"Premium","staff_id":"2","type":"U","dt":"2026-08-24 10:15:00","point":"4800","php":"4800","ec_name":"Utility Bill (4w basis)","nickname":"Joy","memo":null}
+{"tr_id":"800123","tr_st_id":"30123","campus":"Premium","staff_id":"2","type":"U","dt":"2026-08-24 10:56:00","point":"3000","php":"3000","ec_name":"Deposit","nickname":"Joy","memo":null}
+{"tr_id":"800128","tr_st_id":"30128","campus":"Premium","staff_id":"1","type":"D","dt":"2026-09-07 09:55:00","point":"29000","php":"29000","ec_name":null,"nickname":"Mia","memo":null}
+{"tr_id":"800128","tr_st_id":"30128","campus":"Premium","staff_id":"2","type":"U","dt":"2026-09-07 10:43:00","point":"6500","php":"6500","ec_name":"SSP (Valid for 6 mon)","nickname":"Ken","memo":null}
+{"tr_id":"800128","tr_st_id":"30128","campus":"Premium","staff_id":"2","type":"U","dt":"2026-09-07 10:17:00","point":"500","php":"500","ec_name":"Student ID Card","nickname":"Ken","memo":null}
+{"tr_id":"800128","tr_st_id":"30128","campus":"Premium","staff_id":"2","type":"U","dt":"2026-09-07 10:25:00","point":"1000","php":"1000","ec_name":"Class Materials","nickname":"Joy","memo":null}
+{"tr_id":"800128","tr_st_id":"30128","campus":"Premium","staff_id":"2","type":"U","dt":"2026-09-07 10:16:00","point":"3800","php":"3800","ec_name":"Visa","nickname":"Ken","memo":null}
+{"tr_id":"800128","tr_st_id":"30128","campus":"Premium","staff_id":"2","type":"U","dt":"2026-09-07 10:26:00","point":"2400","php":"2400","ec_name":"Maintenance (4w basis)","nickname":"Ken","memo":null}
+{"tr_id":"800128","tr_st_id":"30128","campus":"Premium","staff_id":"2","type":"U","dt":"2026-09-07 10:39:00","point":"3000","php":"3000","ec_name":"Laundry Fee (4w basis)","nickname":"Ken","memo":null}
+{"tr_id":"800128","tr_st_id":"30128","campus":"Premium","staff_id":"2","type":"U","dt":"2026-09-07 10:32:00","point":"7200","php":"7200","ec_name":"Utility Bill (4w basis)","nickname":"Joy","memo":null}
+{"tr_id":"800128","tr_st_id":"30128","campus":"Premium","staff_id":"2","type":"U","dt":"2026-09-07 10:35:00","point":"3000","php":"3000","ec_name":"Deposit","nickname":"Ken","memo":null}
+{"tr_id":"800131","tr_st_id":"30131","campus":"Premium","staff_id":"1","type":"D","dt":"2026-09-07 09:15:00","point":"41000","php":"41000","ec_name":null,"nickname":"Mia","memo":null}
+{"tr_id":"800131","tr_st_id":"30131","campus":"Premium","staff_id":"2","type":"U","dt":"2026-09-07 10:10:00","point":"6500","php":"6500","ec_name":"SSP (Valid for 6 mon)","nickname":"Ken","memo":null}
+{"tr_id":"800131","tr_st_id":"30131","campus":"Premium","staff_id":"2","type":"U","dt":"2026-09-07 10:05:00","point":"500","php":"500","ec_name":"Student ID Card","nickname":"Joy","memo":null}
+{"tr_id":"800131","tr_st_id":"30131","campus":"Premium","staff_id":"2","type":"U","dt":"2026-09-07 10:07:00","point":"1000","php":"1000","ec_name":"Class Materials","nickname":"Ken","memo":null}
+{"tr_id":"800131","tr_st_id":"30131","campus":"Premium","staff_id":"2","type":"U","dt":"2026-09-07 10:54:00","point":"3800","php":"3800","ec_name":"Visa","nickname":"Joy","memo":null}
+{"tr_id":"800131","tr_st_id":"30131","campus":"Premium","staff_id":"2","type":"U","dt":"2026-09-07 10:50:00","point":"4800","php":"4800","ec_name":"Maintenance (4w basis)","nickname":"Joy","memo":null}
+{"tr_id":"800131","tr_st_id":"30131","campus":"Premium","staff_id":"2","type":"U","dt":"2026-09-07 10:38:00","point":"6000","php":"6000","ec_name":"Laundry Fee (4w basis)","nickname":"Joy","memo":null}
+{"tr_id":"800131","tr_st_id":"30131","campus":"Premium","staff_id":"2","type":"U","dt":"2026-09-07 10:53:00","point":"14400","php":"14400","ec_name":"Utility Bill (4w basis)","nickname":"Joy","memo":null}
+{"tr_id":"800131","tr_st_id":"30131","campus":"Premium","staff_id":"2","type":"U","dt":"2026-09-07 10:26:00","point":"3000","php":"3000","ec_name":"Deposit","nickname":"Joy","memo":null}
+{"tr_id":"800132","tr_st_id":"30132","campus":"Premium","staff_id":"1","type":"D","dt":"2026-09-07 09:18:00","point":"28000","php":"28000","ec_name":null,"nickname":"Mia","memo":null}
+{"tr_id":"800132","tr_st_id":"30132","campus":"Premium","staff_id":"2","type":"U","dt":"2026-09-07 10:47:00","point":"6500","php":"6500","ec_name":"SSP (Valid for 6 mon)","nickname":"Ken","memo":null}
+{"tr_id":"800132","tr_st_id":"30132","campus":"Premium","staff_id":"2","type":"U","dt":"2026-09-07 10:22:00","point":"500","php":"500","ec_name":"Student ID Card","nickname":"Joy","memo":null}
+{"tr_id":"800132","tr_st_id":"30132","campus":"Premium","staff_id":"2","type":"U","dt":"2026-09-07 10:01:00","point":"1000","php":"1000","ec_name":"Class Materials","nickname":"Joy","memo":null}
+{"tr_id":"800132","tr_st_id":"30132","campus":"Premium","staff_id":"2","type":"U","dt":"2026-09-07 10:11:00","point":"3800","php":"3800","ec_name":"Visa","nickname":"Ken","memo":null}
+{"tr_id":"800132","tr_st_id":"30132","campus":"Premium","staff_id":"2","type":"U","dt":"2026-09-07 10:46:00","point":"2400","php":"2400","ec_name":"Maintenance (4w basis)","nickname":"Joy","memo":null}
+{"tr_id":"800132","tr_st_id":"30132","campus":"Premium","staff_id":"2","type":"U","dt":"2026-09-07 10:01:00","point":"3000","php":"3000","ec_name":"Laundry Fee (4w basis)","nickname":"Joy","memo":null}
+{"tr_id":"800132","tr_st_id":"30132","campus":"Premium","staff_id":"2","type":"U","dt":"2026-09-07 10:31:00","point":"7200","php":"7200","ec_name":"Utility Bill (4w basis)","nickname":"Ken","memo":null}
+{"tr_id":"800132","tr_st_id":"30132","campus":"Premium","staff_id":"2","type":"U","dt":"2026-09-07 10:34:00","point":"3000","php":"3000","ec_name":"Deposit","nickname":"Joy","memo":null}
+{"tr_id":"800133","tr_st_id":"30133","campus":"Premium","staff_id":"1","type":"D","dt":"2026-09-07 09:24:00","point":"26000","php":"26000","ec_name":null,"nickname":"Mia","memo":null}
+{"tr_id":"800133","tr_st_id":"30133","campus":"Premium","staff_id":"2","type":"U","dt":"2026-09-07 10:18:00","point":"6500","php":"6500","ec_name":"SSP (Valid for 6 mon)","nickname":"Ken","memo":null}
+{"tr_id":"800133","tr_st_id":"30133","campus":"Premium","staff_id":"2","type":"U","dt":"2026-09-07 10:00:00","point":"500","php":"500","ec_name":"Student ID Card","nickname":"Ken","memo":null}
+{"tr_id":"800133","tr_st_id":"30133","campus":"Premium","staff_id":"2","type":"U","dt":"2026-09-07 10:43:00","point":"1000","php":"1000","ec_name":"Class Materials","nickname":"Ken","memo":null}
+{"tr_id":"800133","tr_st_id":"30133","campus":"Premium","staff_id":"2","type":"U","dt":"2026-09-07 10:37:00","point":"3800","php":"3800","ec_name":"Visa","nickname":"Joy","memo":null}
+{"tr_id":"800133","tr_st_id":"30133","campus":"Premium","staff_id":"2","type":"U","dt":"2026-09-07 10:34:00","point":"1600","php":"1600","ec_name":"Maintenance (4w basis)","nickname":"Ken","memo":null}
+{"tr_id":"800133","tr_st_id":"30133","campus":"Premium","staff_id":"2","type":"U","dt":"2026-09-07 10:49:00","point":"2000","php":"2000","ec_name":"Laundry Fee (4w basis)","nickname":"Ken","memo":null}
+{"tr_id":"800133","tr_st_id":"30133","campus":"Premium","staff_id":"2","type":"U","dt":"2026-09-07 10:04:00","point":"4800","php":"4800","ec_name":"Utility Bill (4w basis)","nickname":"Joy","memo":null}
+{"tr_id":"800133","tr_st_id":"30133","campus":"Premium","staff_id":"2","type":"U","dt":"2026-09-07 10:05:00","point":"3000","php":"3000","ec_name":"Deposit","nickname":"Ken","memo":null}
+{"tr_id":"800134","tr_st_id":"30134","campus":"Premium","staff_id":"1","type":"D","dt":"2026-09-07 09:54:00","point":"29000","php":"29000","ec_name":null,"nickname":"Mia","memo":null}
+{"tr_id":"800134","tr_st_id":"30134","campus":"Premium","staff_id":"2","type":"U","dt":"2026-09-07 10:13:00","point":"6500","php":"6500","ec_name":"SSP (Valid for 6 mon)","nickname":"Ken","memo":null}
+{"tr_id":"800134","tr_st_id":"30134","campus":"Premium","staff_id":"2","type":"U","dt":"2026-09-07 10:48:00","point":"500","php":"500","ec_name":"Student ID Card","nickname":"Ken","memo":null}
+{"tr_id":"800134","tr_st_id":"30134","campus":"Premium","staff_id":"2","type":"U","dt":"2026-09-07 10:45:00","point":"1000","php":"1000","ec_name":"Class Materials","nickname":"Ken","memo":null}
+{"tr_id":"800134","tr_st_id":"30134","campus":"Premium","staff_id":"2","type":"U","dt":"2026-09-07 10:17:00","point":"3800","php":"3800","ec_name":"Visa","nickname":"Joy","memo":null}
+{"tr_id":"800134","tr_st_id":"30134","campus":"Premium","staff_id":"2","type":"U","dt":"2026-09-07 10:52:00","point":"2400","php":"2400","ec_name":"Maintenance (4w basis)","nickname":"Ken","memo":null}
+{"tr_id":"800134","tr_st_id":"30134","campus":"Premium","staff_id":"2","type":"U","dt":"2026-09-07 10:02:00","point":"3000","php":"3000","ec_name":"Laundry Fee (4w basis)","nickname":"Joy","memo":null}
+{"tr_id":"800134","tr_st_id":"30134","campus":"Premium","staff_id":"2","type":"U","dt":"2026-09-07 10:52:00","point":"7200","php":"7200","ec_name":"Utility Bill (4w basis)","nickname":"Ken","memo":null}
+{"tr_id":"800134","tr_st_id":"30134","campus":"Premium","staff_id":"2","type":"U","dt":"2026-09-07 10:06:00","point":"3000","php":"3000","ec_name":"Deposit","nickname":"Ken","memo":null}
+{"tr_id":"800135","tr_st_id":"30135","campus":"Premium","staff_id":"1","type":"D","dt":"2026-09-07 09:20:00","point":"22000","php":"22000","ec_name":null,"nickname":"Mia","memo":null}
+{"tr_id":"800135","tr_st_id":"30135","campus":"Premium","staff_id":"2","type":"U","dt":"2026-09-07 10:23:00","point":"6500","php":"6500","ec_name":"SSP (Valid for 6 mon)","nickname":"Joy","memo":null}
+{"tr_id":"800135","tr_st_id":"30135","campus":"Premium","staff_id":"2","type":"U","dt":"2026-09-07 10:33:00","point":"500","php":"500","ec_name":"Student ID Card","nickname":"Ken","memo":null}
+{"tr_id":"800135","tr_st_id":"30135","campus":"Premium","staff_id":"2","type":"U","dt":"2026-09-07 10:05:00","point":"1000","php":"1000","ec_name":"Class Materials","nickname":"Joy","memo":null}
+{"tr_id":"800135","tr_st_id":"30135","campus":"Premium","staff_id":"2","type":"U","dt":"2026-09-07 10:31:00","point":"3800","php":"3800","ec_name":"Visa","nickname":"Joy","memo":null}
+{"tr_id":"800135","tr_st_id":"30135","campus":"Premium","staff_id":"2","type":"U","dt":"2026-09-07 10:50:00","point":"800","php":"800","ec_name":"Maintenance (4w basis)","nickname":"Joy","memo":null}
+{"tr_id":"800135","tr_st_id":"30135","campus":"Premium","staff_id":"2","type":"U","dt":"2026-09-07 10:29:00","point":"1000","php":"1000","ec_name":"Laundry Fee (4w basis)","nickname":"Ken","memo":null}
+{"tr_id":"800135","tr_st_id":"30135","campus":"Premium","staff_id":"2","type":"U","dt":"2026-09-07 10:52:00","point":"2400","php":"2400","ec_name":"Utility Bill (4w basis)","nickname":"Ken","memo":null}
+{"tr_id":"800135","tr_st_id":"30135","campus":"Premium","staff_id":"2","type":"U","dt":"2026-09-07 10:38:00","point":"3000","php":"3000","ec_name":"Deposit","nickname":"Ken","memo":null}
+{"tr_id":"800136","tr_st_id":"30136","campus":"Premium","staff_id":"1","type":"D","dt":"2026-09-07 09:32:00","point":"33000","php":"33000","ec_name":null,"nickname":"Mia","memo":null}
+{"tr_id":"800136","tr_st_id":"30136","campus":"Premium","staff_id":"2","type":"U","dt":"2026-09-07 10:10:00","point":"6500","php":"6500","ec_name":"SSP (Valid for 6 mon)","nickname":"Ken","memo":null}
+{"tr_id":"800136","tr_st_id":"30136","campus":"Premium","staff_id":"2","type":"U","dt":"2026-09-07 10:09:00","point":"500","php":"500","ec_name":"Student ID Card","nickname":"Joy","memo":null}
+{"tr_id":"800136","tr_st_id":"30136","campus":"Premium","staff_id":"2","type":"U","dt":"2026-09-07 10:53:00","point":"1000","php":"1000","ec_name":"Class Materials","nickname":"Joy","memo":null}
+{"tr_id":"800136","tr_st_id":"30136","campus":"Premium","staff_id":"2","type":"U","dt":"2026-09-07 10:48:00","point":"3800","php":"3800","ec_name":"Visa","nickname":"Ken","memo":null}
+{"tr_id":"800136","tr_st_id":"30136","campus":"Premium","staff_id":"2","type":"U","dt":"2026-09-07 10:07:00","point":"3200","php":"3200","ec_name":"Maintenance (4w basis)","nickname":"Ken","memo":null}
+{"tr_id":"800136","tr_st_id":"30136","campus":"Premium","staff_id":"2","type":"U","dt":"2026-09-07 10:56:00","point":"4000","php":"4000","ec_name":"Laundry Fee (4w basis)","nickname":"Ken","memo":null}
+{"tr_id":"800136","tr_st_id":"30136","campus":"Premium","staff_id":"2","type":"U","dt":"2026-09-07 10:08:00","point":"9600","php":"9600","ec_name":"Utility Bill (4w basis)","nickname":"Joy","memo":null}
+{"tr_id":"800136","tr_st_id":"30136","campus":"Premium","staff_id":"2","type":"U","dt":"2026-09-07 10:28:00","point":"3000","php":"3000","ec_name":"Deposit","nickname":"Joy","memo":null}
+{"tr_id":"800138","tr_st_id":"30138","campus":"Premium","staff_id":"1","type":"D","dt":"2026-09-07 09:00:00","point":"29000","php":"29000","ec_name":null,"nickname":"Mia","memo":null}
+{"tr_id":"800138","tr_st_id":"30138","campus":"Premium","staff_id":"2","type":"U","dt":"2026-09-07 10:19:00","point":"6500","php":"6500","ec_name":"SSP (Valid for 6 mon)","nickname":"Joy","memo":null}
+{"tr_id":"800138","tr_st_id":"30138","campus":"Premium","staff_id":"2","type":"U","dt":"2026-09-07 10:26:00","point":"500","php":"500","ec_name":"Student ID Card","nickname":"Joy","memo":null}
+{"tr_id":"800138","tr_st_id":"30138","campus":"Premium","staff_id":"2","type":"U","dt":"2026-09-07 10:23:00","point":"1000","php":"1000","ec_name":"Class Materials","nickname":"Joy","memo":null}
+{"tr_id":"800138","tr_st_id":"30138","campus":"Premium","staff_id":"2","type":"U","dt":"2026-09-07 10:40:00","point":"3800","php":"3800","ec_name":"Visa","nickname":"Joy","memo":null}
+{"tr_id":"800138","tr_st_id":"30138","campus":"Premium","staff_id":"2","type":"U","dt":"2026-09-07 10:19:00","point":"2400","php":"2400","ec_name":"Maintenance (4w basis)","nickname":"Ken","memo":null}
+{"tr_id":"800138","tr_st_id":"30138","campus":"Premium","staff_id":"2","type":"U","dt":"2026-09-07 10:33:00","point":"3000","php":"3000","ec_name":"Laundry Fee (4w basis)","nickname":"Joy","memo":null}
+{"tr_id":"800138","tr_st_id":"30138","campus":"Premium","staff_id":"2","type":"U","dt":"2026-09-07 10:52:00","point":"7200","php":"7200","ec_name":"Utility Bill (4w basis)","nickname":"Joy","memo":null}
+{"tr_id":"800138","tr_st_id":"30138","campus":"Premium","staff_id":"2","type":"U","dt":"2026-09-07 10:01:00","point":"3000","php":"3000","ec_name":"Deposit","nickname":"Ken","memo":null}
+{"tr_id":"800139","tr_st_id":"30139","campus":"Premium","staff_id":"1","type":"D","dt":"2026-09-07 09:03:00","point":"25000","php":"25000","ec_name":null,"nickname":"Mia","memo":null}
+{"tr_id":"800139","tr_st_id":"30139","campus":"Premium","staff_id":"2","type":"U","dt":"2026-09-07 10:36:00","point":"6500","php":"6500","ec_name":"SSP (Valid for 6 mon)","nickname":"Ken","memo":null}
+{"tr_id":"800139","tr_st_id":"30139","campus":"Premium","staff_id":"2","type":"U","dt":"2026-09-07 10:36:00","point":"500","php":"500","ec_name":"Student ID Card","nickname":"Joy","memo":null}
+{"tr_id":"800139","tr_st_id":"30139","campus":"Premium","staff_id":"2","type":"U","dt":"2026-09-07 10:23:00","point":"1000","php":"1000","ec_name":"Class Materials","nickname":"Joy","memo":null}
+{"tr_id":"800139","tr_st_id":"30139","campus":"Premium","staff_id":"2","type":"U","dt":"2026-09-07 10:12:00","point":"3800","php":"3800","ec_name":"Visa","nickname":"Joy","memo":null}
+{"tr_id":"800139","tr_st_id":"30139","campus":"Premium","staff_id":"2","type":"U","dt":"2026-09-07 10:27:00","point":"1600","php":"1600","ec_name":"Maintenance (4w basis)","nickname":"Ken","memo":null}
+{"tr_id":"800139","tr_st_id":"30139","campus":"Premium","staff_id":"2","type":"U","dt":"2026-09-07 10:15:00","point":"2000","php":"2000","ec_name":"Laundry Fee (4w basis)","nickname":"Ken","memo":null}
+{"tr_id":"800139","tr_st_id":"30139","campus":"Premium","staff_id":"2","type":"U","dt":"2026-09-07 10:39:00","point":"4800","php":"4800","ec_name":"Utility Bill (4w basis)","nickname":"Joy","memo":null}
+{"tr_id":"800139","tr_st_id":"30139","campus":"Premium","staff_id":"2","type":"U","dt":"2026-09-07 10:48:00","point":"3000","php":"3000","ec_name":"Deposit","nickname":"Joy","memo":null}
+{"tr_id":"800141","tr_st_id":"30141","campus":"Premium","staff_id":"1","type":"D","dt":"2026-09-21 09:04:00","point":"31000","php":"31000","ec_name":null,"nickname":"Mia","memo":null}
+{"tr_id":"800141","tr_st_id":"30141","campus":"Premium","staff_id":"2","type":"U","dt":"2026-09-21 10:43:00","point":"6500","php":"6500","ec_name":"SSP (Valid for 6 mon)","nickname":"Ken","memo":null}
+{"tr_id":"800141","tr_st_id":"30141","campus":"Premium","staff_id":"2","type":"U","dt":"2026-09-21 10:21:00","point":"500","php":"500","ec_name":"Student ID Card","nickname":"Ken","memo":null}
+{"tr_id":"800141","tr_st_id":"30141","campus":"Premium","staff_id":"2","type":"U","dt":"2026-09-21 10:44:00","point":"1000","php":"1000","ec_name":"Class Materials","nickname":"Ken","memo":null}
+{"tr_id":"800141","tr_st_id":"30141","campus":"Premium","staff_id":"2","type":"U","dt":"2026-09-21 10:20:00","point":"3800","php":"3800","ec_name":"Visa","nickname":"Ken","memo":null}
+{"tr_id":"800141","tr_st_id":"30141","campus":"Premium","staff_id":"2","type":"U","dt":"2026-09-21 10:57:00","point":"2400","php":"2400","ec_name":"Maintenance (4w basis)","nickname":"Ken","memo":null}
+{"tr_id":"800141","tr_st_id":"30141","campus":"Premium","staff_id":"2","type":"U","dt":"2026-09-21 10:25:00","point":"3000","php":"3000","ec_name":"Laundry Fee (4w basis)","nickname":"Ken","memo":null}
+{"tr_id":"800141","tr_st_id":"30141","campus":"Premium","staff_id":"2","type":"U","dt":"2026-09-21 10:03:00","point":"7200","php":"7200","ec_name":"Utility Bill (4w basis)","nickname":"Ken","memo":null}
+{"tr_id":"800141","tr_st_id":"30141","campus":"Premium","staff_id":"2","type":"U","dt":"2026-09-21 10:47:00","point":"3000","php":"3000","ec_name":"Deposit","nickname":"Joy","memo":null}
+{"tr_id":"800142","tr_st_id":"30142","campus":"Premium","staff_id":"1","type":"D","dt":"2026-09-21 09:14:00","point":"40000","php":"40000","ec_name":null,"nickname":"Mia","memo":null}
+{"tr_id":"800142","tr_st_id":"30142","campus":"Premium","staff_id":"2","type":"U","dt":"2026-09-21 10:53:00","point":"6500","php":"6500","ec_name":"SSP (Valid for 6 mon)","nickname":"Joy","memo":null}
+{"tr_id":"800142","tr_st_id":"30142","campus":"Premium","staff_id":"2","type":"U","dt":"2026-09-21 10:47:00","point":"500","php":"500","ec_name":"Student ID Card","nickname":"Joy","memo":null}
+{"tr_id":"800142","tr_st_id":"30142","campus":"Premium","staff_id":"2","type":"U","dt":"2026-09-21 10:29:00","point":"1000","php":"1000","ec_name":"Class Materials","nickname":"Ken","memo":null}
+{"tr_id":"800142","tr_st_id":"30142","campus":"Premium","staff_id":"2","type":"U","dt":"2026-09-21 10:31:00","point":"3800","php":"3800","ec_name":"Visa","nickname":"Joy","memo":null}
+{"tr_id":"800142","tr_st_id":"30142","campus":"Premium","staff_id":"2","type":"U","dt":"2026-09-21 10:26:00","point":"4800","php":"4800","ec_name":"Maintenance (4w basis)","nickname":"Ken","memo":null}
+{"tr_id":"800142","tr_st_id":"30142","campus":"Premium","staff_id":"2","type":"U","dt":"2026-09-21 10:22:00","point":"6000","php":"6000","ec_name":"Laundry Fee (4w basis)","nickname":"Ken","memo":null}
+{"tr_id":"800142","tr_st_id":"30142","campus":"Premium","staff_id":"2","type":"U","dt":"2026-09-21 10:27:00","point":"14400","php":"14400","ec_name":"Utility Bill (4w basis)","nickname":"Joy","memo":null}
+{"tr_id":"800142","tr_st_id":"30142","campus":"Premium","staff_id":"2","type":"U","dt":"2026-09-21 10:12:00","point":"3000","php":"3000","ec_name":"Deposit","nickname":"Ken","memo":null}
+{"tr_id":"800143","tr_st_id":"30143","campus":"Premium","staff_id":"1","type":"D","dt":"2026-09-21 09:35:00","point":"30000","php":"30000","ec_name":null,"nickname":"Mia","memo":null}
+{"tr_id":"800143","tr_st_id":"30143","campus":"Premium","staff_id":"2","type":"U","dt":"2026-09-21 10:27:00","point":"6500","php":"6500","ec_name":"SSP (Valid for 6 mon)","nickname":"Ken","memo":null}
+{"tr_id":"800143","tr_st_id":"30143","campus":"Premium","staff_id":"2","type":"U","dt":"2026-09-21 10:26:00","point":"500","php":"500","ec_name":"Student ID Card","nickname":"Ken","memo":null}
+{"tr_id":"800143","tr_st_id":"30143","campus":"Premium","staff_id":"2","type":"U","dt":"2026-09-21 10:14:00","point":"1000","php":"1000","ec_name":"Class Materials","nickname":"Joy","memo":null}
+{"tr_id":"800143","tr_st_id":"30143","campus":"Premium","staff_id":"2","type":"U","dt":"2026-09-21 10:09:00","point":"3800","php":"3800","ec_name":"Visa","nickname":"Joy","memo":null}
+{"tr_id":"800143","tr_st_id":"30143","campus":"Premium","staff_id":"2","type":"U","dt":"2026-09-21 10:19:00","point":"2400","php":"2400","ec_name":"Maintenance (4w basis)","nickname":"Joy","memo":null}
+{"tr_id":"800143","tr_st_id":"30143","campus":"Premium","staff_id":"2","type":"U","dt":"2026-09-21 10:37:00","point":"3000","php":"3000","ec_name":"Laundry Fee (4w basis)","nickname":"Ken","memo":null}
+{"tr_id":"800143","tr_st_id":"30143","campus":"Premium","staff_id":"2","type":"U","dt":"2026-09-21 10:15:00","point":"7200","php":"7200","ec_name":"Utility Bill (4w basis)","nickname":"Ken","memo":null}
+{"tr_id":"800143","tr_st_id":"30143","campus":"Premium","staff_id":"2","type":"U","dt":"2026-09-21 10:18:00","point":"3000","php":"3000","ec_name":"Deposit","nickname":"Joy","memo":null}
+{"tr_id":"800146","tr_st_id":"30146","campus":"Premium","staff_id":"1","type":"D","dt":"2026-09-21 09:21:00","point":"30000","php":"30000","ec_name":null,"nickname":"Mia","memo":null}
+{"tr_id":"800146","tr_st_id":"30146","campus":"Premium","staff_id":"2","type":"U","dt":"2026-09-21 10:42:00","point":"6500","php":"6500","ec_name":"SSP (Valid for 6 mon)","nickname":"Joy","memo":null}
+{"tr_id":"800146","tr_st_id":"30146","campus":"Premium","staff_id":"2","type":"U","dt":"2026-09-21 10:52:00","point":"500","php":"500","ec_name":"Student ID Card","nickname":"Joy","memo":null}
+{"tr_id":"800146","tr_st_id":"30146","campus":"Premium","staff_id":"2","type":"U","dt":"2026-09-21 10:22:00","point":"1000","php":"1000","ec_name":"Class Materials","nickname":"Joy","memo":null}
+{"tr_id":"800146","tr_st_id":"30146","campus":"Premium","staff_id":"2","type":"U","dt":"2026-09-21 10:15:00","point":"3800","php":"3800","ec_name":"Visa","nickname":"Ken","memo":null}
+{"tr_id":"800146","tr_st_id":"30146","campus":"Premium","staff_id":"2","type":"U","dt":"2026-09-21 10:50:00","point":"2400","php":"2400","ec_name":"Maintenance (4w basis)","nickname":"Ken","memo":null}
+{"tr_id":"800146","tr_st_id":"30146","campus":"Premium","staff_id":"2","type":"U","dt":"2026-09-21 10:06:00","point":"3000","php":"3000","ec_name":"Laundry Fee (4w basis)","nickname":"Ken","memo":null}
+{"tr_id":"800146","tr_st_id":"30146","campus":"Premium","staff_id":"2","type":"U","dt":"2026-09-21 10:38:00","point":"7200","php":"7200","ec_name":"Utility Bill (4w basis)","nickname":"Joy","memo":null}
+{"tr_id":"800146","tr_st_id":"30146","campus":"Premium","staff_id":"2","type":"U","dt":"2026-09-21 10:25:00","point":"3000","php":"3000","ec_name":"Deposit","nickname":"Joy","memo":null}
+{"tr_id":"800148","tr_st_id":"30148","campus":"Premium","staff_id":"1","type":"D","dt":"2026-09-21 09:56:00","point":"31000","php":"31000","ec_name":null,"nickname":"Mia","memo":null}
+{"tr_id":"800148","tr_st_id":"30148","campus":"Premium","staff_id":"2","type":"U","dt":"2026-09-21 10:14:00","point":"6500","php":"6500","ec_name":"SSP (Valid for 6 mon)","nickname":"Joy","memo":null}
+{"tr_id":"800148","tr_st_id":"30148","campus":"Premium","staff_id":"2","type":"U","dt":"2026-09-21 10:18:00","point":"500","php":"500","ec_name":"Student ID Card","nickname":"Ken","memo":null}
+{"tr_id":"800148","tr_st_id":"30148","campus":"Premium","staff_id":"2","type":"U","dt":"2026-09-21 10:01:00","point":"1000","php":"1000","ec_name":"Class Materials","nickname":"Joy","memo":null}
+{"tr_id":"800148","tr_st_id":"30148","campus":"Premium","staff_id":"2","type":"U","dt":"2026-09-21 10:36:00","point":"3800","php":"3800","ec_name":"Visa","nickname":"Ken","memo":null}
+{"tr_id":"800148","tr_st_id":"30148","campus":"Premium","staff_id":"2","type":"U","dt":"2026-09-21 10:03:00","point":"2400","php":"2400","ec_name":"Maintenance (4w basis)","nickname":"Joy","memo":null}
+{"tr_id":"800148","tr_st_id":"30148","campus":"Premium","staff_id":"2","type":"U","dt":"2026-09-21 10:02:00","point":"3000","php":"3000","ec_name":"Laundry Fee (4w basis)","nickname":"Joy","memo":null}
+{"tr_id":"800148","tr_st_id":"30148","campus":"Premium","staff_id":"2","type":"U","dt":"2026-09-21 10:22:00","point":"7200","php":"7200","ec_name":"Utility Bill (4w basis)","nickname":"Ken","memo":null}
+{"tr_id":"800148","tr_st_id":"30148","campus":"Premium","staff_id":"2","type":"U","dt":"2026-09-21 10:54:00","point":"3000","php":"3000","ec_name":"Deposit","nickname":"Ken","memo":null}
+{"tr_id":"800149","tr_st_id":"30149","campus":"Premium","staff_id":"1","type":"D","dt":"2026-09-21 09:54:00","point":"35000","php":"35000","ec_name":null,"nickname":"Mia","memo":null}
+{"tr_id":"800149","tr_st_id":"30149","campus":"Premium","staff_id":"2","type":"U","dt":"2026-09-21 10:26:00","point":"6500","php":"6500","ec_name":"SSP (Valid for 6 mon)","nickname":"Joy","memo":null}
+{"tr_id":"800149","tr_st_id":"30149","campus":"Premium","staff_id":"2","type":"U","dt":"2026-09-21 10:52:00","point":"500","php":"500","ec_name":"Student ID Card","nickname":"Ken","memo":null}
+{"tr_id":"800149","tr_st_id":"30149","campus":"Premium","staff_id":"2","type":"U","dt":"2026-09-21 10:58:00","point":"1000","php":"1000","ec_name":"Class Materials","nickname":"Joy","memo":null}
+{"tr_id":"800149","tr_st_id":"30149","campus":"Premium","staff_id":"2","type":"U","dt":"2026-09-21 10:41:00","point":"3800","php":"3800","ec_name":"Visa","nickname":"Joy","memo":null}
+{"tr_id":"800149","tr_st_id":"30149","campus":"Premium","staff_id":"2","type":"U","dt":"2026-09-21 10:16:00","point":"3200","php":"3200","ec_name":"Maintenance (4w basis)","nickname":"Ken","memo":null}
+{"tr_id":"800149","tr_st_id":"30149","campus":"Premium","staff_id":"2","type":"U","dt":"2026-09-21 10:09:00","point":"4000","php":"4000","ec_name":"Laundry Fee (4w basis)","nickname":"Ken","memo":null}
+{"tr_id":"800149","tr_st_id":"30149","campus":"Premium","staff_id":"2","type":"U","dt":"2026-09-21 10:15:00","point":"9600","php":"9600","ec_name":"Utility Bill (4w basis)","nickname":"Joy","memo":null}
+{"tr_id":"800149","tr_st_id":"30149","campus":"Premium","staff_id":"2","type":"U","dt":"2026-09-21 10:09:00","point":"3000","php":"3000","ec_name":"Deposit","nickname":"Joy","memo":null}
+{"tr_id":"800151","tr_st_id":"30151","campus":"Premium","staff_id":"1","type":"D","dt":"2026-09-21 09:42:00","point":"35000","php":"35000","ec_name":null,"nickname":"Mia","memo":null}
+{"tr_id":"800151","tr_st_id":"30151","campus":"Premium","staff_id":"2","type":"U","dt":"2026-09-21 10:21:00","point":"6500","php":"6500","ec_name":"SSP (Valid for 6 mon)","nickname":"Joy","memo":null}
+{"tr_id":"800151","tr_st_id":"30151","campus":"Premium","staff_id":"2","type":"U","dt":"2026-09-21 10:44:00","point":"500","php":"500","ec_name":"Student ID Card","nickname":"Ken","memo":null}
+{"tr_id":"800151","tr_st_id":"30151","campus":"Premium","staff_id":"2","type":"U","dt":"2026-09-21 10:10:00","point":"1000","php":"1000","ec_name":"Class Materials","nickname":"Joy","memo":null}
+{"tr_id":"800151","tr_st_id":"30151","campus":"Premium","staff_id":"2","type":"U","dt":"2026-09-21 10:19:00","point":"3800","php":"3800","ec_name":"Visa","nickname":"Ken","memo":null}
+{"tr_id":"800151","tr_st_id":"30151","campus":"Premium","staff_id":"2","type":"U","dt":"2026-09-21 10:27:00","point":"3200","php":"3200","ec_name":"Maintenance (4w basis)","nickname":"Joy","memo":null}
+{"tr_id":"800151","tr_st_id":"30151","campus":"Premium","staff_id":"2","type":"U","dt":"2026-09-21 10:41:00","point":"4000","php":"4000","ec_name":"Laundry Fee (4w basis)","nickname":"Ken","memo":null}
+{"tr_id":"800151","tr_st_id":"30151","campus":"Premium","staff_id":"2","type":"U","dt":"2026-09-21 10:25:00","point":"9600","php":"9600","ec_name":"Utility Bill (4w basis)","nickname":"Ken","memo":null}
+{"tr_id":"800151","tr_st_id":"30151","campus":"Premium","staff_id":"2","type":"U","dt":"2026-09-21 10:57:00","point":"3000","php":"3000","ec_name":"Deposit","nickname":"Ken","memo":null}
+{"tr_id":"800152","tr_st_id":"30152","campus":"Premium","staff_id":"1","type":"D","dt":"2026-09-21 09:49:00","point":"26000","php":"26000","ec_name":null,"nickname":"Mia","memo":null}
+{"tr_id":"800152","tr_st_id":"30152","campus":"Premium","staff_id":"2","type":"U","dt":"2026-09-21 10:54:00","point":"6500","php":"6500","ec_name":"SSP (Valid for 6 mon)","nickname":"Ken","memo":null}
+{"tr_id":"800152","tr_st_id":"30152","campus":"Premium","staff_id":"2","type":"U","dt":"2026-09-21 10:09:00","point":"500","php":"500","ec_name":"Student ID Card","nickname":"Ken","memo":null}
+{"tr_id":"800152","tr_st_id":"30152","campus":"Premium","staff_id":"2","type":"U","dt":"2026-09-21 10:31:00","point":"1000","php":"1000","ec_name":"Class Materials","nickname":"Ken","memo":null}
+{"tr_id":"800152","tr_st_id":"30152","campus":"Premium","staff_id":"2","type":"U","dt":"2026-09-21 10:04:00","point":"3800","php":"3800","ec_name":"Visa","nickname":"Joy","memo":null}
+{"tr_id":"800152","tr_st_id":"30152","campus":"Premium","staff_id":"2","type":"U","dt":"2026-09-21 10:43:00","point":"1600","php":"1600","ec_name":"Maintenance (4w basis)","nickname":"Joy","memo":null}
+{"tr_id":"800152","tr_st_id":"30152","campus":"Premium","staff_id":"2","type":"U","dt":"2026-09-21 10:05:00","point":"2000","php":"2000","ec_name":"Laundry Fee (4w basis)","nickname":"Joy","memo":null}
+{"tr_id":"800152","tr_st_id":"30152","campus":"Premium","staff_id":"2","type":"U","dt":"2026-09-21 10:56:00","point":"4800","php":"4800","ec_name":"Utility Bill (4w basis)","nickname":"Ken","memo":null}
+{"tr_id":"800152","tr_st_id":"30152","campus":"Premium","staff_id":"2","type":"U","dt":"2026-09-21 10:24:00","point":"3000","php":"3000","ec_name":"Deposit","nickname":"Joy","memo":null}
+{"tr_id":"800154","tr_st_id":"30154","campus":"Premium","staff_id":"1","type":"D","dt":"2026-10-05 09:03:00","point":"28000","php":"28000","ec_name":null,"nickname":"Mia","memo":null}
+{"tr_id":"800154","tr_st_id":"30154","campus":"Premium","staff_id":"2","type":"U","dt":"2026-10-05 10:59:00","point":"6500","php":"6500","ec_name":"SSP (Valid for 6 mon)","nickname":"Ken","memo":null}
+{"tr_id":"800154","tr_st_id":"30154","campus":"Premium","staff_id":"2","type":"U","dt":"2026-10-05 10:04:00","point":"500","php":"500","ec_name":"Student ID Card","nickname":"Joy","memo":null}
+{"tr_id":"800154","tr_st_id":"30154","campus":"Premium","staff_id":"2","type":"U","dt":"2026-10-05 10:55:00","point":"1000","php":"1000","ec_name":"Class Materials","nickname":"Ken","memo":null}
+{"tr_id":"800154","tr_st_id":"30154","campus":"Premium","staff_id":"2","type":"U","dt":"2026-10-05 10:00:00","point":"3800","php":"3800","ec_name":"Visa","nickname":"Ken","memo":null}
+{"tr_id":"800154","tr_st_id":"30154","campus":"Premium","staff_id":"2","type":"U","dt":"2026-10-05 10:25:00","point":"2400","php":"2400","ec_name":"Maintenance (4w basis)","nickname":"Joy","memo":null}
+{"tr_id":"800154","tr_st_id":"30154","campus":"Premium","staff_id":"2","type":"U","dt":"2026-10-05 10:48:00","point":"3000","php":"3000","ec_name":"Laundry Fee (4w basis)","nickname":"Joy","memo":null}
+{"tr_id":"800154","tr_st_id":"30154","campus":"Premium","staff_id":"2","type":"U","dt":"2026-10-05 10:46:00","point":"7200","php":"7200","ec_name":"Utility Bill (4w basis)","nickname":"Joy","memo":null}
+{"tr_id":"800154","tr_st_id":"30154","campus":"Premium","staff_id":"2","type":"U","dt":"2026-10-05 10:00:00","point":"3000","php":"3000","ec_name":"Deposit","nickname":"Ken","memo":null}
+{"tr_id":"800155","tr_st_id":"30155","campus":"Premium","staff_id":"1","type":"D","dt":"2026-10-05 09:35:00","point":"30000","php":"30000","ec_name":null,"nickname":"Mia","memo":null}
+{"tr_id":"800155","tr_st_id":"30155","campus":"Premium","staff_id":"2","type":"U","dt":"2026-10-05 10:30:00","point":"6500","php":"6500","ec_name":"SSP (Valid for 6 mon)","nickname":"Ken","memo":null}
+{"tr_id":"800155","tr_st_id":"30155","campus":"Premium","staff_id":"2","type":"U","dt":"2026-10-05 10:02:00","point":"500","php":"500","ec_name":"Student ID Card","nickname":"Ken","memo":null}
+{"tr_id":"800155","tr_st_id":"30155","campus":"Premium","staff_id":"2","type":"U","dt":"2026-10-05 10:04:00","point":"1000","php":"1000","ec_name":"Class Materials","nickname":"Ken","memo":null}
+{"tr_id":"800155","tr_st_id":"30155","campus":"Premium","staff_id":"2","type":"U","dt":"2026-10-05 10:16:00","point":"3800","php":"3800","ec_name":"Visa","nickname":"Ken","memo":null}
+{"tr_id":"800155","tr_st_id":"30155","campus":"Premium","staff_id":"2","type":"U","dt":"2026-10-05 10:43:00","point":"2400","php":"2400","ec_name":"Maintenance (4w basis)","nickname":"Ken","memo":null}
+{"tr_id":"800155","tr_st_id":"30155","campus":"Premium","staff_id":"2","type":"U","dt":"2026-10-05 10:24:00","point":"3000","php":"3000","ec_name":"Laundry Fee (4w basis)","nickname":"Joy","memo":null}
+{"tr_id":"800155","tr_st_id":"30155","campus":"Premium","staff_id":"2","type":"U","dt":"2026-10-05 10:15:00","point":"7200","php":"7200","ec_name":"Utility Bill (4w basis)","nickname":"Ken","memo":null}
+{"tr_id":"800155","tr_st_id":"30155","campus":"Premium","staff_id":"2","type":"U","dt":"2026-10-05 10:09:00","point":"3000","php":"3000","ec_name":"Deposit","nickname":"Ken","memo":null}
+{"tr_id":"800157","tr_st_id":"30157","campus":"Premium","staff_id":"1","type":"D","dt":"2026-10-05 09:36:00","point":"30000","php":"30000","ec_name":null,"nickname":"Mia","memo":null}
+{"tr_id":"800157","tr_st_id":"30157","campus":"Premium","staff_id":"2","type":"U","dt":"2026-10-05 10:32:00","point":"6500","php":"6500","ec_name":"SSP (Valid for 6 mon)","nickname":"Ken","memo":null}
+{"tr_id":"800157","tr_st_id":"30157","campus":"Premium","staff_id":"2","type":"U","dt":"2026-10-05 10:39:00","point":"500","php":"500","ec_name":"Student ID Card","nickname":"Ken","memo":null}
+{"tr_id":"800157","tr_st_id":"30157","campus":"Premium","staff_id":"2","type":"U","dt":"2026-10-05 10:59:00","point":"1000","php":"1000","ec_name":"Class Materials","nickname":"Joy","memo":null}
+{"tr_id":"800157","tr_st_id":"30157","campus":"Premium","staff_id":"2","type":"U","dt":"2026-10-05 10:28:00","point":"3800","php":"3800","ec_name":"Visa","nickname":"Joy","memo":null}
+{"tr_id":"800157","tr_st_id":"30157","campus":"Premium","staff_id":"2","type":"U","dt":"2026-10-05 10:16:00","point":"2400","php":"2400","ec_name":"Maintenance (4w basis)","nickname":"Joy","memo":null}
+{"tr_id":"800157","tr_st_id":"30157","campus":"Premium","staff_id":"2","type":"U","dt":"2026-10-05 10:40:00","point":"3000","php":"3000","ec_name":"Laundry Fee (4w basis)","nickname":"Ken","memo":null}
+{"tr_id":"800157","tr_st_id":"30157","campus":"Premium","staff_id":"2","type":"U","dt":"2026-10-05 10:26:00","point":"7200","php":"7200","ec_name":"Utility Bill (4w basis)","nickname":"Joy","memo":null}
+{"tr_id":"800157","tr_st_id":"30157","campus":"Premium","staff_id":"2","type":"U","dt":"2026-10-05 10:39:00","point":"3000","php":"3000","ec_name":"Deposit","nickname":"Ken","memo":null}
+{"tr_id":"800158","tr_st_id":"30158","campus":"Premium","staff_id":"1","type":"D","dt":"2026-10-05 09:51:00","point":"44000","php":"44000","ec_name":null,"nickname":"Mia","memo":null}
+{"tr_id":"800158","tr_st_id":"30158","campus":"Premium","staff_id":"2","type":"U","dt":"2026-10-05 10:43:00","point":"6500","php":"6500","ec_name":"SSP (Valid for 6 mon)","nickname":"Ken","memo":null}
+{"tr_id":"800158","tr_st_id":"30158","campus":"Premium","staff_id":"2","type":"U","dt":"2026-10-05 10:27:00","point":"500","php":"500","ec_name":"Student ID Card","nickname":"Joy","memo":null}
+{"tr_id":"800158","tr_st_id":"30158","campus":"Premium","staff_id":"2","type":"U","dt":"2026-10-05 10:13:00","point":"1000","php":"1000","ec_name":"Class Materials","nickname":"Ken","memo":null}
+{"tr_id":"800158","tr_st_id":"30158","campus":"Premium","staff_id":"2","type":"U","dt":"2026-10-05 10:03:00","point":"3800","php":"3800","ec_name":"Visa","nickname":"Joy","memo":null}
+{"tr_id":"800158","tr_st_id":"30158","campus":"Premium","staff_id":"2","type":"U","dt":"2026-10-05 10:43:00","point":"4800","php":"4800","ec_name":"Maintenance (4w basis)","nickname":"Ken","memo":null}
+{"tr_id":"800158","tr_st_id":"30158","campus":"Premium","staff_id":"2","type":"U","dt":"2026-10-05 10:08:00","point":"6000","php":"6000","ec_name":"Laundry Fee (4w basis)","nickname":"Ken","memo":null}
+{"tr_id":"800158","tr_st_id":"30158","campus":"Premium","staff_id":"2","type":"U","dt":"2026-10-05 10:46:00","point":"14400","php":"14400","ec_name":"Utility Bill (4w basis)","nickname":"Joy","memo":null}
+{"tr_id":"800158","tr_st_id":"30158","campus":"Premium","staff_id":"2","type":"U","dt":"2026-10-05 10:30:00","point":"3000","php":"3000","ec_name":"Deposit","nickname":"Joy","memo":null}
+{"tr_id":"800162","tr_st_id":"30162","campus":"Premium","staff_id":"1","type":"D","dt":"2026-10-05 09:02:00","point":"20000","php":"20000","ec_name":null,"nickname":"Mia","memo":null}
+{"tr_id":"800162","tr_st_id":"30162","campus":"Premium","staff_id":"2","type":"U","dt":"2026-10-05 10:37:00","point":"6500","php":"6500","ec_name":"SSP (Valid for 6 mon)","nickname":"Joy","memo":null}
+{"tr_id":"800162","tr_st_id":"30162","campus":"Premium","staff_id":"2","type":"U","dt":"2026-10-05 10:45:00","point":"500","php":"500","ec_name":"Student ID Card","nickname":"Ken","memo":null}
+{"tr_id":"800162","tr_st_id":"30162","campus":"Premium","staff_id":"2","type":"U","dt":"2026-10-05 10:11:00","point":"1000","php":"1000","ec_name":"Class Materials","nickname":"Joy","memo":null}
+{"tr_id":"800162","tr_st_id":"30162","campus":"Premium","staff_id":"2","type":"U","dt":"2026-10-05 10:29:00","point":"3800","php":"3800","ec_name":"Visa","nickname":"Joy","memo":null}
+{"tr_id":"800162","tr_st_id":"30162","campus":"Premium","staff_id":"2","type":"U","dt":"2026-10-05 10:10:00","point":"800","php":"800","ec_name":"Maintenance (4w basis)","nickname":"Ken","memo":null}
+{"tr_id":"800162","tr_st_id":"30162","campus":"Premium","staff_id":"2","type":"U","dt":"2026-10-05 10:36:00","point":"1000","php":"1000","ec_name":"Laundry Fee (4w basis)","nickname":"Joy","memo":null}
+{"tr_id":"800162","tr_st_id":"30162","campus":"Premium","staff_id":"2","type":"U","dt":"2026-10-05 10:34:00","point":"2400","php":"2400","ec_name":"Utility Bill (4w basis)","nickname":"Joy","memo":null}
+{"tr_id":"800162","tr_st_id":"30162","campus":"Premium","staff_id":"2","type":"U","dt":"2026-10-05 10:27:00","point":"3000","php":"3000","ec_name":"Deposit","nickname":"Joy","memo":null}
+{"tr_id":"800163","tr_st_id":"30163","campus":"Premium","staff_id":"1","type":"D","dt":"2026-10-19 09:44:00","point":"28000","php":"28000","ec_name":null,"nickname":"Mia","memo":null}
+{"tr_id":"800163","tr_st_id":"30163","campus":"Premium","staff_id":"2","type":"U","dt":"2026-10-19 10:34:00","point":"6500","php":"6500","ec_name":"SSP (Valid for 6 mon)","nickname":"Ken","memo":null}
+{"tr_id":"800163","tr_st_id":"30163","campus":"Premium","staff_id":"2","type":"U","dt":"2026-10-19 10:34:00","point":"500","php":"500","ec_name":"Student ID Card","nickname":"Joy","memo":null}
+{"tr_id":"800163","tr_st_id":"30163","campus":"Premium","staff_id":"2","type":"U","dt":"2026-10-19 10:17:00","point":"1000","php":"1000","ec_name":"Class Materials","nickname":"Ken","memo":null}
+{"tr_id":"800163","tr_st_id":"30163","campus":"Premium","staff_id":"2","type":"U","dt":"2026-10-19 10:31:00","point":"3800","php":"3800","ec_name":"Visa","nickname":"Ken","memo":null}
+{"tr_id":"800163","tr_st_id":"30163","campus":"Premium","staff_id":"2","type":"U","dt":"2026-10-19 10:32:00","point":"2400","php":"2400","ec_name":"Maintenance (4w basis)","nickname":"Ken","memo":null}
+{"tr_id":"800163","tr_st_id":"30163","campus":"Premium","staff_id":"2","type":"U","dt":"2026-10-19 10:12:00","point":"3000","php":"3000","ec_name":"Laundry Fee (4w basis)","nickname":"Joy","memo":null}
+{"tr_id":"800163","tr_st_id":"30163","campus":"Premium","staff_id":"2","type":"U","dt":"2026-10-19 10:00:00","point":"7200","php":"7200","ec_name":"Utility Bill (4w basis)","nickname":"Ken","memo":null}
+{"tr_id":"800163","tr_st_id":"30163","campus":"Premium","staff_id":"2","type":"U","dt":"2026-10-19 10:51:00","point":"3000","php":"3000","ec_name":"Deposit","nickname":"Ken","memo":null}
+{"tr_id":"800165","tr_st_id":"30165","campus":"Premium","staff_id":"1","type":"D","dt":"2026-10-19 09:45:00","point":"34000","php":"34000","ec_name":null,"nickname":"Mia","memo":null}
+{"tr_id":"800165","tr_st_id":"30165","campus":"Premium","staff_id":"2","type":"U","dt":"2026-10-19 10:08:00","point":"6500","php":"6500","ec_name":"SSP (Valid for 6 mon)","nickname":"Joy","memo":null}
+{"tr_id":"800165","tr_st_id":"30165","campus":"Premium","staff_id":"2","type":"U","dt":"2026-10-19 10:56:00","point":"500","php":"500","ec_name":"Student ID Card","nickname":"Joy","memo":null}
+{"tr_id":"800165","tr_st_id":"30165","campus":"Premium","staff_id":"2","type":"U","dt":"2026-10-19 10:12:00","point":"1000","php":"1000","ec_name":"Class Materials","nickname":"Joy","memo":null}
+{"tr_id":"800165","tr_st_id":"30165","campus":"Premium","staff_id":"2","type":"U","dt":"2026-10-19 10:40:00","point":"3800","php":"3800","ec_name":"Visa","nickname":"Joy","memo":null}
+{"tr_id":"800165","tr_st_id":"30165","campus":"Premium","staff_id":"2","type":"U","dt":"2026-10-19 10:03:00","point":"3200","php":"3200","ec_name":"Maintenance (4w basis)","nickname":"Ken","memo":null}
+{"tr_id":"800165","tr_st_id":"30165","campus":"Premium","staff_id":"2","type":"U","dt":"2026-10-19 10:09:00","point":"4000","php":"4000","ec_name":"Laundry Fee (4w basis)","nickname":"Ken","memo":null}
+{"tr_id":"800165","tr_st_id":"30165","campus":"Premium","staff_id":"2","type":"U","dt":"2026-10-19 10:11:00","point":"9600","php":"9600","ec_name":"Utility Bill (4w basis)","nickname":"Joy","memo":null}
+{"tr_id":"800165","tr_st_id":"30165","campus":"Premium","staff_id":"2","type":"U","dt":"2026-10-19 10:16:00","point":"3000","php":"3000","ec_name":"Deposit","nickname":"Joy","memo":null}
+{"tr_id":"800166","tr_st_id":"30166","campus":"Premium","staff_id":"1","type":"D","dt":"2026-10-19 09:42:00","point":"27000","php":"27000","ec_name":null,"nickname":"Mia","memo":null}
+{"tr_id":"800166","tr_st_id":"30166","campus":"Premium","staff_id":"2","type":"U","dt":"2026-10-19 10:26:00","point":"6500","php":"6500","ec_name":"SSP (Valid for 6 mon)","nickname":"Ken","memo":null}
+{"tr_id":"800166","tr_st_id":"30166","campus":"Premium","staff_id":"2","type":"U","dt":"2026-10-19 10:30:00","point":"500","php":"500","ec_name":"Student ID Card","nickname":"Joy","memo":null}
+{"tr_id":"800166","tr_st_id":"30166","campus":"Premium","staff_id":"2","type":"U","dt":"2026-10-19 10:00:00","point":"1000","php":"1000","ec_name":"Class Materials","nickname":"Ken","memo":null}
+{"tr_id":"800166","tr_st_id":"30166","campus":"Premium","staff_id":"2","type":"U","dt":"2026-10-19 10:03:00","point":"3800","php":"3800","ec_name":"Visa","nickname":"Ken","memo":null}
+{"tr_id":"800166","tr_st_id":"30166","campus":"Premium","staff_id":"2","type":"U","dt":"2026-10-19 10:43:00","point":"1600","php":"1600","ec_name":"Maintenance (4w basis)","nickname":"Ken","memo":null}
+{"tr_id":"800166","tr_st_id":"30166","campus":"Premium","staff_id":"2","type":"U","dt":"2026-10-19 10:46:00","point":"2000","php":"2000","ec_name":"Laundry Fee (4w basis)","nickname":"Ken","memo":null}
+{"tr_id":"800166","tr_st_id":"30166","campus":"Premium","staff_id":"2","type":"U","dt":"2026-10-19 10:59:00","point":"4800","php":"4800","ec_name":"Utility Bill (4w basis)","nickname":"Ken","memo":null}
+{"tr_id":"800166","tr_st_id":"30166","campus":"Premium","staff_id":"2","type":"U","dt":"2026-10-19 10:26:00","point":"3000","php":"3000","ec_name":"Deposit","nickname":"Joy","memo":null}
+{"tr_id":"800167","tr_st_id":"30167","campus":"Premium","staff_id":"1","type":"D","dt":"2026-10-19 09:04:00","point":"29000","php":"29000","ec_name":null,"nickname":"Mia","memo":null}
+{"tr_id":"800167","tr_st_id":"30167","campus":"Premium","staff_id":"2","type":"U","dt":"2026-10-19 10:40:00","point":"6500","php":"6500","ec_name":"SSP (Valid for 6 mon)","nickname":"Joy","memo":null}
+{"tr_id":"800167","tr_st_id":"30167","campus":"Premium","staff_id":"2","type":"U","dt":"2026-10-19 10:00:00","point":"500","php":"500","ec_name":"Student ID Card","nickname":"Ken","memo":null}
+{"tr_id":"800167","tr_st_id":"30167","campus":"Premium","staff_id":"2","type":"U","dt":"2026-10-19 10:32:00","point":"1000","php":"1000","ec_name":"Class Materials","nickname":"Ken","memo":null}
+{"tr_id":"800167","tr_st_id":"30167","campus":"Premium","staff_id":"2","type":"U","dt":"2026-10-19 10:50:00","point":"3800","php":"3800","ec_name":"Visa","nickname":"Joy","memo":null}
+{"tr_id":"800167","tr_st_id":"30167","campus":"Premium","staff_id":"2","type":"U","dt":"2026-10-19 10:39:00","point":"2400","php":"2400","ec_name":"Maintenance (4w basis)","nickname":"Joy","memo":null}
+{"tr_id":"800167","tr_st_id":"30167","campus":"Premium","staff_id":"2","type":"U","dt":"2026-10-19 10:00:00","point":"3000","php":"3000","ec_name":"Laundry Fee (4w basis)","nickname":"Ken","memo":null}
+{"tr_id":"800167","tr_st_id":"30167","campus":"Premium","staff_id":"2","type":"U","dt":"2026-10-19 10:07:00","point":"7200","php":"7200","ec_name":"Utility Bill (4w basis)","nickname":"Joy","memo":null}
+{"tr_id":"800167","tr_st_id":"30167","campus":"Premium","staff_id":"2","type":"U","dt":"2026-10-19 10:52:00","point":"3000","php":"3000","ec_name":"Deposit","nickname":"Joy","memo":null}
+{"tr_id":"800169","tr_st_id":"30169","campus":"Premium","staff_id":"1","type":"D","dt":"2026-10-19 09:09:00","point":"42000","php":"42000","ec_name":null,"nickname":"Mia","memo":null}
+{"tr_id":"800169","tr_st_id":"30169","campus":"Premium","staff_id":"2","type":"U","dt":"2026-10-19 10:08:00","point":"6500","php":"6500","ec_name":"SSP (Valid for 6 mon)","nickname":"Joy","memo":null}
+{"tr_id":"800169","tr_st_id":"30169","campus":"Premium","staff_id":"2","type":"U","dt":"2026-10-19 10:30:00","point":"500","php":"500","ec_name":"Student ID Card","nickname":"Ken","memo":null}
+{"tr_id":"800169","tr_st_id":"30169","campus":"Premium","staff_id":"2","type":"U","dt":"2026-10-19 10:37:00","point":"1000","php":"1000","ec_name":"Class Materials","nickname":"Ken","memo":null}
+{"tr_id":"800169","tr_st_id":"30169","campus":"Premium","staff_id":"2","type":"U","dt":"2026-10-19 10:24:00","point":"3800","php":"3800","ec_name":"Visa","nickname":"Ken","memo":null}
+{"tr_id":"800169","tr_st_id":"30169","campus":"Premium","staff_id":"2","type":"U","dt":"2026-10-19 10:24:00","point":"4800","php":"4800","ec_name":"Maintenance (4w basis)","nickname":"Joy","memo":null}
+{"tr_id":"800169","tr_st_id":"30169","campus":"Premium","staff_id":"2","type":"U","dt":"2026-10-19 10:37:00","point":"6000","php":"6000","ec_name":"Laundry Fee (4w basis)","nickname":"Ken","memo":null}
+{"tr_id":"800169","tr_st_id":"30169","campus":"Premium","staff_id":"2","type":"U","dt":"2026-10-19 10:06:00","point":"14400","php":"14400","ec_name":"Utility Bill (4w basis)","nickname":"Ken","memo":null}
+{"tr_id":"800169","tr_st_id":"30169","campus":"Premium","staff_id":"2","type":"U","dt":"2026-10-19 10:16:00","point":"3000","php":"3000","ec_name":"Deposit","nickname":"Ken","memo":null}
+{"tr_id":"800170","tr_st_id":"30170","campus":"Premium","staff_id":"1","type":"D","dt":"2026-10-19 09:58:00","point":"29000","php":"29000","ec_name":null,"nickname":"Mia","memo":null}
+{"tr_id":"800170","tr_st_id":"30170","campus":"Premium","staff_id":"2","type":"U","dt":"2026-10-19 10:46:00","point":"6500","php":"6500","ec_name":"SSP (Valid for 6 mon)","nickname":"Joy","memo":null}
+{"tr_id":"800170","tr_st_id":"30170","campus":"Premium","staff_id":"2","type":"U","dt":"2026-10-19 10:18:00","point":"500","php":"500","ec_name":"Student ID Card","nickname":"Joy","memo":null}
+{"tr_id":"800170","tr_st_id":"30170","campus":"Premium","staff_id":"2","type":"U","dt":"2026-10-19 10:09:00","point":"1000","php":"1000","ec_name":"Class Materials","nickname":"Ken","memo":null}
+{"tr_id":"800170","tr_st_id":"30170","campus":"Premium","staff_id":"2","type":"U","dt":"2026-10-19 10:29:00","point":"3800","php":"3800","ec_name":"Visa","nickname":"Ken","memo":null}
+{"tr_id":"800170","tr_st_id":"30170","campus":"Premium","staff_id":"2","type":"U","dt":"2026-10-19 10:28:00","point":"2400","php":"2400","ec_name":"Maintenance (4w basis)","nickname":"Ken","memo":null}
+{"tr_id":"800170","tr_st_id":"30170","campus":"Premium","staff_id":"2","type":"U","dt":"2026-10-19 10:59:00","point":"3000","php":"3000","ec_name":"Laundry Fee (4w basis)","nickname":"Joy","memo":null}
+{"tr_id":"800170","tr_st_id":"30170","campus":"Premium","staff_id":"2","type":"U","dt":"2026-10-19 10:32:00","point":"7200","php":"7200","ec_name":"Utility Bill (4w basis)","nickname":"Ken","memo":null}
+{"tr_id":"800170","tr_st_id":"30170","campus":"Premium","staff_id":"2","type":"U","dt":"2026-10-19 10:10:00","point":"3000","php":"3000","ec_name":"Deposit","nickname":"Joy","memo":null}
+{"tr_id":"800173","tr_st_id":"30173","campus":"Premium","staff_id":"1","type":"D","dt":"2026-11-02 09:22:00","point":"36000","php":"36000","ec_name":null,"nickname":"Mia","memo":null}
+{"tr_id":"800173","tr_st_id":"30173","campus":"Premium","staff_id":"2","type":"U","dt":"2026-11-02 10:18:00","point":"6500","php":"6500","ec_name":"SSP (Valid for 6 mon)","nickname":"Ken","memo":null}
+{"tr_id":"800173","tr_st_id":"30173","campus":"Premium","staff_id":"2","type":"U","dt":"2026-11-02 10:33:00","point":"500","php":"500","ec_name":"Student ID Card","nickname":"Joy","memo":null}
+{"tr_id":"800173","tr_st_id":"30173","campus":"Premium","staff_id":"2","type":"U","dt":"2026-11-02 10:30:00","point":"1000","php":"1000","ec_name":"Class Materials","nickname":"Joy","memo":null}
+{"tr_id":"800173","tr_st_id":"30173","campus":"Premium","staff_id":"2","type":"U","dt":"2026-11-02 10:54:00","point":"3800","php":"3800","ec_name":"Visa","nickname":"Joy","memo":null}
+{"tr_id":"800173","tr_st_id":"30173","campus":"Premium","staff_id":"2","type":"U","dt":"2026-11-02 10:57:00","point":"3200","php":"3200","ec_name":"Maintenance (4w basis)","nickname":"Ken","memo":null}
+{"tr_id":"800173","tr_st_id":"30173","campus":"Premium","staff_id":"2","type":"U","dt":"2026-11-02 10:38:00","point":"4000","php":"4000","ec_name":"Laundry Fee (4w basis)","nickname":"Joy","memo":null}
+{"tr_id":"800173","tr_st_id":"30173","campus":"Premium","staff_id":"2","type":"U","dt":"2026-11-02 10:11:00","point":"9600","php":"9600","ec_name":"Utility Bill (4w basis)","nickname":"Joy","memo":null}
+{"tr_id":"800173","tr_st_id":"30173","campus":"Premium","staff_id":"2","type":"U","dt":"2026-11-02 10:29:00","point":"3000","php":"3000","ec_name":"Deposit","nickname":"Joy","memo":null}
+{"tr_id":"800174","tr_st_id":"30174","campus":"Premium","staff_id":"1","type":"D","dt":"2026-11-02 09:16:00","point":"41000","php":"41000","ec_name":null,"nickname":"Mia","memo":null}
+{"tr_id":"800174","tr_st_id":"30174","campus":"Premium","staff_id":"2","type":"U","dt":"2026-11-02 10:36:00","point":"6500","php":"6500","ec_name":"SSP (Valid for 6 mon)","nickname":"Joy","memo":null}
+{"tr_id":"800174","tr_st_id":"30174","campus":"Premium","staff_id":"2","type":"U","dt":"2026-11-02 10:35:00","point":"500","php":"500","ec_name":"Student ID Card","nickname":"Joy","memo":null}
+{"tr_id":"800174","tr_st_id":"30174","campus":"Premium","staff_id":"2","type":"U","dt":"2026-11-02 10:17:00","point":"1000","php":"1000","ec_name":"Class Materials","nickname":"Ken","memo":null}
+{"tr_id":"800174","tr_st_id":"30174","campus":"Premium","staff_id":"2","type":"U","dt":"2026-11-02 10:04:00","point":"3800","php":"3800","ec_name":"Visa","nickname":"Joy","memo":null}
+{"tr_id":"800174","tr_st_id":"30174","campus":"Premium","staff_id":"2","type":"U","dt":"2026-11-02 10:57:00","point":"4800","php":"4800","ec_name":"Maintenance (4w basis)","nickname":"Joy","memo":null}
+{"tr_id":"800174","tr_st_id":"30174","campus":"Premium","staff_id":"2","type":"U","dt":"2026-11-02 10:46:00","point":"6000","php":"6000","ec_name":"Laundry Fee (4w basis)","nickname":"Joy","memo":null}
+{"tr_id":"800174","tr_st_id":"30174","campus":"Premium","staff_id":"2","type":"U","dt":"2026-11-02 10:59:00","point":"14400","php":"14400","ec_name":"Utility Bill (4w basis)","nickname":"Ken","memo":null}
+{"tr_id":"800174","tr_st_id":"30174","campus":"Premium","staff_id":"2","type":"U","dt":"2026-11-02 10:06:00","point":"3000","php":"3000","ec_name":"Deposit","nickname":"Joy","memo":null}
+{"tr_id":"800177","tr_st_id":"30177","campus":"Premium","staff_id":"1","type":"D","dt":"2026-11-02 09:50:00","point":"31000","php":"31000","ec_name":null,"nickname":"Mia","memo":null}
+{"tr_id":"800177","tr_st_id":"30177","campus":"Premium","staff_id":"2","type":"U","dt":"2026-11-02 10:28:00","point":"6500","php":"6500","ec_name":"SSP (Valid for 6 mon)","nickname":"Ken","memo":null}
+{"tr_id":"800177","tr_st_id":"30177","campus":"Premium","staff_id":"2","type":"U","dt":"2026-11-02 10:39:00","point":"500","php":"500","ec_name":"Student ID Card","nickname":"Joy","memo":null}
+{"tr_id":"800177","tr_st_id":"30177","campus":"Premium","staff_id":"2","type":"U","dt":"2026-11-02 10:55:00","point":"1000","php":"1000","ec_name":"Class Materials","nickname":"Ken","memo":null}
+{"tr_id":"800177","tr_st_id":"30177","campus":"Premium","staff_id":"2","type":"U","dt":"2026-11-02 10:47:00","point":"3800","php":"3800","ec_name":"Visa","nickname":"Joy","memo":null}
+{"tr_id":"800177","tr_st_id":"30177","campus":"Premium","staff_id":"2","type":"U","dt":"2026-11-02 10:19:00","point":"2400","php":"2400","ec_name":"Maintenance (4w basis)","nickname":"Ken","memo":null}
+{"tr_id":"800177","tr_st_id":"30177","campus":"Premium","staff_id":"2","type":"U","dt":"2026-11-02 10:42:00","point":"3000","php":"3000","ec_name":"Laundry Fee (4w basis)","nickname":"Ken","memo":null}
+{"tr_id":"800177","tr_st_id":"30177","campus":"Premium","staff_id":"2","type":"U","dt":"2026-11-02 10:51:00","point":"7200","php":"7200","ec_name":"Utility Bill (4w basis)","nickname":"Ken","memo":null}
+{"tr_id":"800177","tr_st_id":"30177","campus":"Premium","staff_id":"2","type":"U","dt":"2026-11-02 10:01:00","point":"3000","php":"3000","ec_name":"Deposit","nickname":"Joy","memo":null}
+{"tr_id":"800178","tr_st_id":"30178","campus":"Premium","staff_id":"1","type":"D","dt":"2026-11-02 09:23:00","point":"23000","php":"23000","ec_name":null,"nickname":"Mia","memo":null}
+{"tr_id":"800178","tr_st_id":"30178","campus":"Premium","staff_id":"2","type":"U","dt":"2026-11-02 10:30:00","point":"6500","php":"6500","ec_name":"SSP (Valid for 6 mon)","nickname":"Joy","memo":null}
+{"tr_id":"800178","tr_st_id":"30178","campus":"Premium","staff_id":"2","type":"U","dt":"2026-11-02 10:11:00","point":"500","php":"500","ec_name":"Student ID Card","nickname":"Joy","memo":null}
+{"tr_id":"800178","tr_st_id":"30178","campus":"Premium","staff_id":"2","type":"U","dt":"2026-11-02 10:27:00","point":"1000","php":"1000","ec_name":"Class Materials","nickname":"Joy","memo":null}
+{"tr_id":"800178","tr_st_id":"30178","campus":"Premium","staff_id":"2","type":"U","dt":"2026-11-02 10:57:00","point":"3800","php":"3800","ec_name":"Visa","nickname":"Ken","memo":null}
+{"tr_id":"800178","tr_st_id":"30178","campus":"Premium","staff_id":"2","type":"U","dt":"2026-11-02 10:55:00","point":"800","php":"800","ec_name":"Maintenance (4w basis)","nickname":"Ken","memo":null}
+{"tr_id":"800178","tr_st_id":"30178","campus":"Premium","staff_id":"2","type":"U","dt":"2026-11-02 10:57:00","point":"1000","php":"1000","ec_name":"Laundry Fee (4w basis)","nickname":"Ken","memo":null}
+{"tr_id":"800178","tr_st_id":"30178","campus":"Premium","staff_id":"2","type":"U","dt":"2026-11-02 10:16:00","point":"2400","php":"2400","ec_name":"Utility Bill (4w basis)","nickname":"Joy","memo":null}
+{"tr_id":"800178","tr_st_id":"30178","campus":"Premium","staff_id":"2","type":"U","dt":"2026-11-02 10:02:00","point":"3000","php":"3000","ec_name":"Deposit","nickname":"Joy","memo":null}
+{"tr_id":"800225","tr_st_id":"30001","campus":"Premium","staff_id":"1","type":"D","dt":"2026-06-15 09:41:00","point":"28000","php":"28000","ec_name":null,"nickname":"Mia","memo":null}
+{"tr_id":"800225","tr_st_id":"30001","campus":"Premium","staff_id":"2","type":"U","dt":"2026-06-15 10:27:00","point":"6500","php":"6500","ec_name":"SSP (Valid for 6 mon)","nickname":"Ken","memo":null}
+{"tr_id":"800225","tr_st_id":"30001","campus":"Premium","staff_id":"2","type":"U","dt":"2026-06-15 10:16:00","point":"500","php":"500","ec_name":"Student ID Card","nickname":"Joy","memo":null}
+{"tr_id":"800225","tr_st_id":"30001","campus":"Premium","staff_id":"2","type":"U","dt":"2026-06-15 10:06:00","point":"1000","php":"1000","ec_name":"Class Materials","nickname":"Ken","memo":null}
+{"tr_id":"800225","tr_st_id":"30001","campus":"Premium","staff_id":"2","type":"U","dt":"2026-06-15 10:13:00","point":"3800","php":"3800","ec_name":"Visa","nickname":"Joy","memo":null}
+{"tr_id":"800225","tr_st_id":"30001","campus":"Premium","staff_id":"2","type":"U","dt":"2026-06-15 10:00:00","point":"2400","php":"2400","ec_name":"Maintenance (4w basis)","nickname":"Joy","memo":null}
+{"tr_id":"800225","tr_st_id":"30001","campus":"Premium","staff_id":"2","type":"U","dt":"2026-06-15 10:23:00","point":"3000","php":"3000","ec_name":"Laundry Fee (4w basis)","nickname":"Joy","memo":null}
+{"tr_id":"800225","tr_st_id":"30001","campus":"Premium","staff_id":"2","type":"U","dt":"2026-06-15 10:30:00","point":"7200","php":"7200","ec_name":"Utility Bill (4w basis)","nickname":"Ken","memo":null}
+{"tr_id":"800225","tr_st_id":"30001","campus":"Premium","staff_id":"2","type":"U","dt":"2026-06-15 10:14:00","point":"3000","php":"3000","ec_name":"Deposit","nickname":"Joy","memo":null}
+{"tr_id":"800226","tr_st_id":"30002","campus":"Premium","staff_id":"1","type":"D","dt":"2026-06-15 09:15:00","point":"31000","php":"31000","ec_name":null,"nickname":"Mia","memo":null}
+{"tr_id":"800226","tr_st_id":"30002","campus":"Premium","staff_id":"2","type":"U","dt":"2026-06-15 10:41:00","point":"6500","php":"6500","ec_name":"SSP (Valid for 6 mon)","nickname":"Ken","memo":null}
+{"tr_id":"800226","tr_st_id":"30002","campus":"Premium","staff_id":"2","type":"U","dt":"2026-06-15 10:57:00","point":"500","php":"500","ec_name":"Student ID Card","nickname":"Joy","memo":null}
+{"tr_id":"800226","tr_st_id":"30002","campus":"Premium","staff_id":"2","type":"U","dt":"2026-06-15 10:57:00","point":"1000","php":"1000","ec_name":"Class Materials","nickname":"Joy","memo":null}
+{"tr_id":"800226","tr_st_id":"30002","campus":"Premium","staff_id":"2","type":"U","dt":"2026-06-15 10:50:00","point":"3800","php":"3800","ec_name":"Visa","nickname":"Joy","memo":null}
+{"tr_id":"800226","tr_st_id":"30002","campus":"Premium","staff_id":"2","type":"U","dt":"2026-06-15 10:51:00","point":"2400","php":"2400","ec_name":"Maintenance (4w basis)","nickname":"Ken","memo":null}
+{"tr_id":"800226","tr_st_id":"30002","campus":"Premium","staff_id":"2","type":"U","dt":"2026-06-15 10:54:00","point":"3000","php":"3000","ec_name":"Laundry Fee (4w basis)","nickname":"Joy","memo":null}
+{"tr_id":"800226","tr_st_id":"30002","campus":"Premium","staff_id":"2","type":"U","dt":"2026-06-15 10:22:00","point":"7200","php":"7200","ec_name":"Utility Bill (4w basis)","nickname":"Joy","memo":null}
+{"tr_id":"800226","tr_st_id":"30002","campus":"Premium","staff_id":"2","type":"U","dt":"2026-06-15 10:13:00","point":"3000","php":"3000","ec_name":"Deposit","nickname":"Joy","memo":null}
+{"tr_id":"800229","tr_st_id":"30005","campus":"Premium","staff_id":"1","type":"D","dt":"2026-04-20 09:08:00","point":"34000","php":"34000","ec_name":null,"nickname":"Mia","memo":null}
+{"tr_id":"800229","tr_st_id":"30005","campus":"Premium","staff_id":"2","type":"U","dt":"2026-04-20 10:19:00","point":"6500","php":"6500","ec_name":"SSP (Valid for 6 mon)","nickname":"Ken","memo":null}
+{"tr_id":"800229","tr_st_id":"30005","campus":"Premium","staff_id":"2","type":"U","dt":"2026-04-20 10:56:00","point":"500","php":"500","ec_name":"Student ID Card","nickname":"Joy","memo":null}
+{"tr_id":"800229","tr_st_id":"30005","campus":"Premium","staff_id":"2","type":"U","dt":"2026-04-20 10:40:00","point":"1000","php":"1000","ec_name":"Class Materials","nickname":"Joy","memo":null}
+{"tr_id":"800229","tr_st_id":"30005","campus":"Premium","staff_id":"2","type":"U","dt":"2026-04-20 10:06:00","point":"3800","php":"3800","ec_name":"Visa","nickname":"Joy","memo":null}
+{"tr_id":"800229","tr_st_id":"30005","campus":"Premium","staff_id":"2","type":"U","dt":"2026-04-20 10:52:00","point":"3200","php":"3200","ec_name":"Maintenance (4w basis)","nickname":"Joy","memo":null}
+{"tr_id":"800229","tr_st_id":"30005","campus":"Premium","staff_id":"2","type":"U","dt":"2026-04-20 10:59:00","point":"4000","php":"4000","ec_name":"Laundry Fee (4w basis)","nickname":"Ken","memo":null}
+{"tr_id":"800229","tr_st_id":"30005","campus":"Premium","staff_id":"2","type":"U","dt":"2026-04-20 10:20:00","point":"9600","php":"9600","ec_name":"Utility Bill (4w basis)","nickname":"Joy","memo":null}
+{"tr_id":"800229","tr_st_id":"30005","campus":"Premium","staff_id":"2","type":"U","dt":"2026-04-20 10:04:00","point":"3000","php":"3000","ec_name":"Deposit","nickname":"Ken","memo":null}
+{"tr_id":"800233","tr_st_id":"30009","campus":"Premium","staff_id":"1","type":"D","dt":"2026-06-15 09:06:00","point":"27000","php":"27000","ec_name":null,"nickname":"Mia","memo":null}
+{"tr_id":"800233","tr_st_id":"30009","campus":"Premium","staff_id":"2","type":"U","dt":"2026-06-15 10:15:00","point":"6500","php":"6500","ec_name":"SSP (Valid for 6 mon)","nickname":"Ken","memo":null}
+{"tr_id":"800233","tr_st_id":"30009","campus":"Premium","staff_id":"2","type":"U","dt":"2026-06-15 10:47:00","point":"500","php":"500","ec_name":"Student ID Card","nickname":"Ken","memo":null}
+{"tr_id":"800233","tr_st_id":"30009","campus":"Premium","staff_id":"2","type":"U","dt":"2026-06-15 10:10:00","point":"1000","php":"1000","ec_name":"Class Materials","nickname":"Ken","memo":null}
+{"tr_id":"800233","tr_st_id":"30009","campus":"Premium","staff_id":"2","type":"U","dt":"2026-06-15 10:10:00","point":"3800","php":"3800","ec_name":"Visa","nickname":"Joy","memo":null}
+{"tr_id":"800233","tr_st_id":"30009","campus":"Premium","staff_id":"2","type":"U","dt":"2026-06-15 10:31:00","point":"1600","php":"1600","ec_name":"Maintenance (4w basis)","nickname":"Ken","memo":null}
+{"tr_id":"800233","tr_st_id":"30009","campus":"Premium","staff_id":"2","type":"U","dt":"2026-06-15 10:05:00","point":"2000","php":"2000","ec_name":"Laundry Fee (4w basis)","nickname":"Joy","memo":null}
+{"tr_id":"800233","tr_st_id":"30009","campus":"Premium","staff_id":"2","type":"U","dt":"2026-06-15 10:02:00","point":"4800","php":"4800","ec_name":"Utility Bill (4w basis)","nickname":"Joy","memo":null}
+{"tr_id":"800233","tr_st_id":"30009","campus":"Premium","staff_id":"2","type":"U","dt":"2026-06-15 10:31:00","point":"3000","php":"3000","ec_name":"Deposit","nickname":"Joy","memo":null}
+{"tr_id":"800235","tr_st_id":"30011","campus":"Premium","staff_id":"1","type":"D","dt":"2026-06-29 09:15:00","point":"20000","php":"20000","ec_name":null,"nickname":"Mia","memo":null}
+{"tr_id":"800235","tr_st_id":"30011","campus":"Premium","staff_id":"2","type":"U","dt":"2026-06-29 10:44:00","point":"6500","php":"6500","ec_name":"SSP (Valid for 6 mon)","nickname":"Ken","memo":null}
+{"tr_id":"800235","tr_st_id":"30011","campus":"Premium","staff_id":"2","type":"U","dt":"2026-06-29 10:05:00","point":"500","php":"500","ec_name":"Student ID Card","nickname":"Ken","memo":null}
+{"tr_id":"800235","tr_st_id":"30011","campus":"Premium","staff_id":"2","type":"U","dt":"2026-06-29 10:42:00","point":"1000","php":"1000","ec_name":"Class Materials","nickname":"Joy","memo":null}
+{"tr_id":"800235","tr_st_id":"30011","campus":"Premium","staff_id":"2","type":"U","dt":"2026-06-29 10:45:00","point":"3800","php":"3800","ec_name":"Visa","nickname":"Joy","memo":null}
+{"tr_id":"800235","tr_st_id":"30011","campus":"Premium","staff_id":"2","type":"U","dt":"2026-06-29 10:02:00","point":"800","php":"800","ec_name":"Maintenance (4w basis)","nickname":"Joy","memo":null}
+{"tr_id":"800235","tr_st_id":"30011","campus":"Premium","staff_id":"2","type":"U","dt":"2026-06-29 10:38:00","point":"1000","php":"1000","ec_name":"Laundry Fee (4w basis)","nickname":"Joy","memo":null}
+{"tr_id":"800235","tr_st_id":"30011","campus":"Premium","staff_id":"2","type":"U","dt":"2026-06-29 10:05:00","point":"2400","php":"2400","ec_name":"Utility Bill (4w basis)","nickname":"Joy","memo":null}
+{"tr_id":"800235","tr_st_id":"30011","campus":"Premium","staff_id":"2","type":"U","dt":"2026-06-29 10:27:00","point":"3000","php":"3000","ec_name":"Deposit","nickname":"Ken","memo":null}

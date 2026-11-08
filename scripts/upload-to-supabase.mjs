@@ -40,6 +40,9 @@ const PLAN = [
   ['legacy_agencies', 'agencies.ndjson', (r) => r.ag_id],
   ['legacy_agents', 'agents.ndjson', (r) => r.am_id],
   ['legacy_deposits', 'deposits.ndjson', (r) => r.dp_id],
+  // 포인트 내역은 고유 번호가 없어 연수·시각·구분·순번으로 만든다. 화면에 쓰는 열만 올린다(apps/admin/server/core.ts POINT_HISTORY_COLUMNS).
+  ['legacy_point_history', 'point_history.ndjson', (r, i) => `${r.tr_id}-${r.dt}-${r.type}-${i}`,
+    ['tr_id', 'type', 'dt', 'point', 'php', 'ec_name', 'nickname', 'memo', 'campus']],
 ];
 // 예전 형식 service_role 키(eyJ…)는 Authorization 에도 넣고, 새 형식(sb_secret_…)은 apikey 헤더만 쓴다.
 const headers = { apikey: key, 'Content-Type': 'application/json', ...(key.startsWith('eyJ') ? { Authorization: `Bearer ${key}` } : {}) };
@@ -58,14 +61,16 @@ async function upload(table, rows) {
 }
 
 console.log('업로드 대상 폴더:', path.relative(root, dir));
-for (const [table, file, idOf] of PLAN) {
+for (const [table, file, idOf, cols] of PLAN) {
   const byId = new Map();
-  for (const r of read(file)) {
-    if (idOf(r) == null) continue;
+  read(file).forEach((r, i) => {
+    const id = idOf(r, i);
+    if (id == null) return;
     // 계좌 정보(bk_*, *_acct_bank/num/owner)는 올리지 않는다. (tr_acct_memo 같은 회계 메모는 올린다)
-    const data = Object.fromEntries(Object.entries(r).filter(([k]) => !/^bk_|_acct_(bank|num|owner)$/.test(k)));
-    byId.set(String(idOf(r)), { id: String(idOf(r)), data });
-  }
+    const entries = cols ? cols.map((c) => [c, r[c] ?? null]) : Object.entries(r);
+    const data = Object.fromEntries(entries.filter(([k]) => !/^bk_|_acct_(bank|num|owner)$/.test(k)));
+    byId.set(String(id), { id: String(id), data });
+  });
   await upload(table, [...byId.values()]);
 }
 const metaFile = path.join(dir, 'meta.json');
