@@ -15,7 +15,7 @@ JIC 포털은 사용자 종류로 나눈 **4개 포털**과 **하나의 DB**로 
 - Supabase 프로젝트 `jic-portal`(ref `isayrrexurledojngqbx`, 싱가포르) 하나에 모든 테이블과 로그인 계정이 있다. 포털마다 DB나 프로젝트를 따로 만들지 않는다.
 - 같은 데이터는 한 곳에서만 쓴다(원칙 C2). 예: 결석 신청은 학생 포털이 쓰고, 승인은 직원 화면이 쓴다. 출석·시험 결과는 강사 포털(LMS)이 쓴다(원칙 L1).
 - 로그인 계정은 Supabase Auth 하나다. 사용자 종류는 계정 표로 나눈다. 한 사람이 여러 표에 있을 수 있다.
-  - 직원 `staff_users` / `is_staff()`. 역할 세분화는 HANDOFF 6-4(원칙 C5의 9개 역할)이다.
+  - 직원 `staff_users` / `is_staff()`. 역할 세분화는 HANDOFF 6-4(원칙 C5의 9개 역할)이고, 화면별 권한표 초안은 `docs/roles.md`다.
   - 학생 `student_users` / `is_student()`. 학생번호@students.jic.internal, 첫 로그인 때 비밀번호를 바꾼다.
   - 에이전시 `agency_members` / `is_partner()`. 가입 신청 뒤 관리자가 승인한다.
   - 가드 `guard_accounts` / `is_guard()`. 출입구마다 공용 계정이다.

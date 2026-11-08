@@ -11,7 +11,7 @@ import fs from 'node:fs';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 
 const REPO = fileURLToPath(new URL('../../', import.meta.url));
-const MIGRATIONS = ['20261107000000_legacy_tables.sql', '20261107020000_legacy_deposits.sql', '20261108000000_legacy_point_history.sql', '20261108010000_legacy_rooms.sql', '20261108100000_student_intranet.sql', '20261108120000_student_request_ids.sql', '20261108130000_intranet_deploy.sql', '20261108140000_nonacademic_requests.sql', '20261108150000_overnight_travel.sql', '20261108160000_school_trips.sql', '20261108170000_keycard_qr.sql', '20261108180000_student_account_admin.sql', '20261108190000_guard_account_admin.sql', '20261108200000_teacher_portal.sql', '20261108220000_lms_absences.sql'];
+const MIGRATIONS = ['20261107000000_legacy_tables.sql', '20261107020000_legacy_deposits.sql', '20261108000000_legacy_point_history.sql', '20261108010000_legacy_rooms.sql', '20261108100000_student_intranet.sql', '20261108120000_student_request_ids.sql', '20261108130000_intranet_deploy.sql', '20261108140000_nonacademic_requests.sql', '20261108150000_overnight_travel.sql', '20261108160000_school_trips.sql', '20261108170000_keycard_qr.sql', '20261108180000_student_account_admin.sql', '20261108190000_guard_account_admin.sql', '20261108200000_teacher_portal.sql', '20261108220000_lms_absences.sql', '20261108230000_holidays.sql'];
 
 export async function startPgSupabase({ port = 0 } = {}) {
   const { PGlite } = await import(process.env.PGLITE ? pathToFileURL(process.env.PGLITE).href : '@electric-sql/pglite');
@@ -81,11 +81,13 @@ export async function startPgSupabase({ port = 0 } = {}) {
     const out = [];
     for (const [k, v] of params) {
       if (['select', 'order', 'limit', 'offset'].includes(k)) continue;
-      const m = v.match(/^eq\.(.*)$/s);
+      // eq 외에 기간 조회용 비교(gte·lte 등). 같은 열에 두 번 걸어도 된다(day=gte.…&day=lte.…)
+      const m = v.match(/^(eq|neq|gt|gte|lt|lte)\.(.*)$/s);
       if (!m) throw Object.assign(new Error(`unsupported filter ${k}`), { http: 400 });
-      values.push(m[1]);
+      values.push(m[2]);
       const jm = k.match(/^([a-z_]+)->>([a-z_]+)$/);
-      out.push(`${jm ? `${ident(jm[1])}->>'${jm[2]}'` : ident(k)} = $${values.length}`);
+      const op = { eq: '=', neq: '<>', gt: '>', gte: '>=', lt: '<', lte: '<=' }[m[1]];
+      out.push(`${jm ? `${ident(jm[1])}->>'${jm[2]}'` : ident(k)} ${op} $${values.length}`);
     }
     return out.length ? ` where ${out.join(' and ')}` : '';
   }

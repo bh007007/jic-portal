@@ -2,6 +2,7 @@ import type { ReactNode } from 'react';
 import { Link, NavLink } from 'react-router-dom';
 import { useApi } from '../api';
 import { supabase } from '../supabase';
+import { PORTALS } from '../portals';
 
 const MENU: { group?: string; items: { to: string; label: string }[] }[] = [
   { items: [{ to: '/', label: '대시보드' }] },
@@ -23,11 +24,13 @@ const MENU: { group?: string; items: { to: string; label: string }[] }[] = [
   { group: '기숙사', items: [{ to: '/dorm', label: '배정 현황' }, { to: '/rooms', label: '방·침대 관리' }] },
   { group: '회계', items: [{ to: '/invoices', label: '인보이스' }, { to: '/deposits', label: '입금 매칭' }, { to: '/points', label: '포인트' }] },
   { group: '에이전시', items: [{ to: '/agencies', label: '에이전시 목록' }, { to: '/agents', label: '담당자 계정' }] },
-  { group: '기초관리', items: [{ to: '/codes', label: '코스·기숙사' }, { to: '/batches', label: '캠퍼스·배치' }, { to: '/users', label: '사용자·권한' }] },
+  { group: '기초관리', items: [{ to: '/codes', label: '코스·기숙사' }, { to: '/batches', label: '캠퍼스·배치' }, { to: '/holidays', label: '휴일' }, { to: '/users', label: '사용자·권한' }] },
 ];
 
 // 인트라넷: 배포에서는 같은 주소 아래 /intranet/(npm run portal:build, 같은 로그인), 로컬 개발은 인트라넷 개발 서버
 const INTRANET_URL = import.meta.env.VITE_INTRANET_URL ?? (import.meta.env.DEV ? 'http://127.0.0.1:5177' : '/intranet/');
+// 강사 포털(LMS): 배포는 같은 주소 아래 /teacher/(같은 로그인), 로컬 개발은 강사 포털 개발 서버
+const TEACHER_URL = PORTALS.find((p) => p.key === 'teacher')?.url ?? '/teacher/';
 
 const today = new Date();
 const todayLabel = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')} (${'일월화수목금토'[today.getDay()]})`;
@@ -53,6 +56,9 @@ export default function Shell({ children, user }: { children: ReactNode; user?: 
           </a>
           <a href={INTRANET_URL} className="btn btn-xs">
             인트라넷
+          </a>
+          <a href={TEACHER_URL} className="btn btn-xs">
+            강사 포털
           </a>
           {supabase && (
             <button type="button" className="btn btn-xs" onClick={() => supabase?.auth.signOut()}>

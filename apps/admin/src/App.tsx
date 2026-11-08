@@ -24,6 +24,8 @@ import Cancellations from './pages/Cancellations';
 import Extensions from './pages/Extensions';
 import Changes from './pages/Changes';
 import Memos from './pages/Memos';
+import Users from './pages/Users';
+import Holidays from './pages/Holidays';
 import NotReady from './pages/NotReady';
 
 // undefined = 세션 확인 중, null = 로그인 안 됨
@@ -66,6 +68,8 @@ export default function App() {
         <Route path="/extensions" element={<Extensions />} />
         <Route path="/changes" element={<Changes />} />
         <Route path="/memos" element={<Memos />} />
+        <Route path="/users" element={<Users />} />
+        <Route path="/holidays" element={<Holidays />} />
         <Route path="*" element={<NotReady />} />
       </Routes>
     </Shell>

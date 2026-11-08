@@ -100,6 +100,18 @@ export const loadResults = (studentNo: string) =>
   must<TestResult[]>(supabase.from('test_results').select('*').eq('student_no', studentNo).order('test_date', { ascending: false }).order('created_at', { ascending: false }));
 export const loadRecentResults = (limit = 30) =>
   must<TestResult[]>(supabase.from('test_results').select('*').order('created_at', { ascending: false }).limit(limit));
+export interface Holiday {
+  day: string;
+  campus: string; // '' = 모든 캠퍼스
+  name: string;
+  kind: 'public' | 'school';
+}
+/** 휴일(관리자 포털 기초관리 > 휴일, 20261108230000_holidays.sql). 표가 아직 없거나 못 읽으면 빈 목록(홈 안내만 빠진다). */
+export async function loadHolidays(from: string, to: string): Promise<Holiday[]> {
+  const { data, error } = await supabase.from('holidays').select('day, campus, name, kind').gte('day', from).lte('day', to).order('day');
+  return error ? [] : ((data ?? []) as Holiday[]);
+}
+
 /** 한 시험·한 날짜의 기록(여러 명 입력에서 이미 넣은 점수 표시용) */
 export const loadResultsOn = (testType: string, date: string) =>
   must<TestResult[]>(supabase.from('test_results').select('*').eq('test_type', testType).eq('test_date', date));

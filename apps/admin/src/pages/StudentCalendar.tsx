@@ -2,6 +2,7 @@ import { Link, useSearchParams } from 'react-router-dom';
 import { fmt, useApi, type CalendarDay, type CalendarStudent, type StudentCalendar as Calendar } from '../api';
 import { saveCsv, type Column } from '../csv';
 import { DownloadButton, Loading, PageTitle, Panel } from '../components/ui';
+import { useHolidays } from '../holidays';
 
 const KIND_LABEL = { in: '재원', arrive: '입국', leave: '귀국' } as const;
 
@@ -42,6 +43,7 @@ export default function StudentCalendar() {
   const cells: (CalendarDay | null)[] = data ? [...Array(lead).fill(null), ...data.days] : [];
   while (cells.length % 7) cells.push(null);
   const sel = data?.selected;
+  const holidays = useHolidays(data?.days[0]?.date ?? '', data?.days[data.days.length - 1]?.date ?? '', data?.campus ?? '');
 
   return (
     <>
@@ -95,7 +97,12 @@ export default function StudentCalendar() {
                       d ? (
                         <td key={d.date} className={(d.date === data.refDate ? 'today' : '') + (sel?.date === d.date ? ' on' : '')}>
                           <div className="cal-day">
-                            <span className={i === 0 ? 'text-red' : i === 6 ? 'text-blue' : ''}>{Number(d.date.slice(8))}</span>
+                            <span className={i === 0 || holidays.has(d.date) ? 'text-red' : i === 6 ? 'text-blue' : ''}>{Number(d.date.slice(8))}</span>
+                            {holidays.has(d.date) && (
+                              <span className="cal-holiday text-red" title={holidays.get(d.date)!.map((h) => (h.campus ? `${h.name} (${h.campus})` : h.name)).join(', ')}>
+                                {holidays.get(d.date)!.map((h) => h.name).join(', ')}
+                              </span>
+                            )}
                           </div>
                           <button type="button" className="cal-in" onClick={() => choose(d.date, 'in')} aria-label={`${d.date} 재원 ${d.inSchool}명`}>
                             {fmt(d.inSchool)}

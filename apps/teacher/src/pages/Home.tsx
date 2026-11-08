@@ -1,6 +1,6 @@
 import { Link } from 'react-router-dom';
 import { useAuth } from '../auth';
-import { loadAbsences, loadRecentResults, loadStudents } from '../data';
+import { loadAbsences, loadHolidays, loadRecentResults, loadStudents } from '../data';
 import { useT } from '../i18n';
 import { manilaToday } from '../supabase';
 import { AbsenceRow, PageHead, Section, fmtDate, useLoad } from '../ui';
@@ -12,6 +12,8 @@ export default function Home() {
   const students = useLoad(() => loadStudents(), []);
   const recent = useLoad(() => loadRecentResults(8), []);
   const absences = useLoad(() => loadAbsences(), []);
+  const in14 = new Date(Date.parse(today) + 14 * 864e5).toISOString().slice(0, 10);
+  const holidays = useLoad(() => loadHolidays(today, in14), []);
   const current = (students.data ?? []).filter((s) => s.start_date <= today);
   const arriving = (students.data ?? []).filter((s) => s.start_date > today);
   const nameOf = new Map((students.data ?? []).map((s) => [s.student_no, s.name]));
@@ -22,6 +24,20 @@ export default function Home() {
   return (
     <>
       <PageHead title={`${today} (${dayName})`} sub={t('hello', { name: me?.name ?? '' })} />
+
+      {(holidays.data ?? []).length > 0 && (
+        <Section title={t('holidays14')}>
+          <ul className="rows">
+            {(holidays.data ?? []).map((h) => (
+              <li key={h.day + h.campus}>
+                <span className={h.day === today ? 'strong' : undefined}>{h.day === today ? `${t('today')} · ` : ''}{h.name}</span>
+                <span className="muted small">{t(h.kind === 'school' ? 'hol_school' : 'hol_public')}</span>
+                <span className="muted small">{fmtDate(h.day)} · {h.campus || t('allCampuses')}</span>
+              </li>
+            ))}
+          </ul>
+        </Section>
+      )}
 
       <Section title={t('todayClass')}>
         <p className="muted">{t('todayClassNote')}</p>
