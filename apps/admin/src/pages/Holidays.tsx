@@ -29,7 +29,7 @@ export default function Holidays() {
     if (!supabase) return;
     setError('');
     const { data, error: e } = await supabase.from('holidays').select('day, campus, name, kind').gte('day', `${year}-01-01`).lte('day', `${year}-12-31`).order('day');
-    if (e) setError(e.message);
+    if (e) setError(/holidays|PGRST205|does not exist/.test(e.message + e.code) ? '휴일 표가 아직 없습니다(Supabase 마이그레이션 20261108230000_holidays.sql 적용 전).' : e.message);
     else setRows((data as Holiday[]) ?? []);
   }, [year]);
   useEffect(() => {
