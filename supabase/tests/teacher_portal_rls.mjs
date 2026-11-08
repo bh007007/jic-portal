@@ -170,6 +170,32 @@ await as(null, async () => {
   await denied('익명 성적', `select * from test_results`, PERM);
 });
 
+// ── 연장(20261109040000_lms_students_extend.sql): 업체는 연장해도 tr_finish_date 를 그대로 둔다. 종료일 = 마지막 연장 종료일
+await db.exec(mig('20261109040000_lms_students_extend.sql'));
+await db.exec(mig('20261109040000_lms_students_extend.sql')); // 두 번째 실행
+await db.exec(`
+  insert into public.legacy_enrollments (id, data) values
+    ('tr5', '{"tr_st_id":"1005","st_name":"EXT E","first_co_ca_code":"MCO","tr_start_date":"${plus(today, -60)}","tr_finish_date":"${plus(today, -2)}","tr_state_name":"인보이스승인"}'),
+    ('tr6', '{"tr_st_id":"1006","st_name":"EXT CANCEL","tr_start_date":"${plus(today, -60)}","tr_finish_date":"${plus(today, -2)}","tr_state_name":"캔슬"}');
+  insert into public.legacy_extensions (id, data) values
+    ('tt1', '{"tr_id":"tr5","tt_start_date":"${plus(today, -1)}","tt_finish_date":"${plus(today, 6)}","sum_price":"999"}'),
+    ('tt2', '{"tr_id":"tr5","tt_start_date":"${plus(today, 7)}","tt_finish_date":"${plus(today, 13)}"}'),
+    ('tt3', '{"tr_id":"tr6","tt_start_date":"${plus(today, -1)}","tt_finish_date":"${plus(today, 6)}"}'),
+    ('tt4', '{"tr_id":"tr1","tt_start_date":"","tt_finish_date":"${plus(today, 90)}"}');
+`);
+const ymd = (d) => (d instanceof Date ? d.toISOString() : String(d ?? '')).slice(0, 10); // PGlite 는 date 를 Date(UTC 자정)로 준다
+await as(U.teacher, async () => {
+  const list = await q(`select * from lms_students()`);
+  const e5 = list.find((r) => r.student_no === '1005');
+  ok('연장: 원래 종료일이 지나도 연장 중이면 목록에 있음', !!e5, JSON.stringify(list.map((r) => r.student_no)));
+  ok('연장: 종료일은 마지막 연장 종료일', e5 && ymd(e5.end_date) === plus(today, 13), JSON.stringify(e5));
+  ok('연장: 취소 연수는 연장이 있어도 빠짐', !list.some((r) => r.student_no === '1006'));
+  ok('연장: 시작일 없는 연장 행은 무시', ymd(list.find((r) => r.student_no === '1001')?.end_date) === plus(today, 20));
+  ok('연장: 금액 같은 연장 열은 주지 않음', !('sum_price' in (e5 ?? {})));
+  ok('연장: 강사는 연장 표를 직접 못 읽음(RLS 0행)', (await count(`select count(*) n from legacy_extensions`)) === 0);
+});
+await as(U.staff, async () => ok('연장: 직원은 연장 표를 읽음', (await count(`select count(*) n from legacy_extensions`)) === 4));
+
 console.log(`통과 ${pass}, 실패 ${fails.length}`);
 for (const f of fails) console.log('  실패:', f);
 process.exit(fails.length ? 1 : 0);

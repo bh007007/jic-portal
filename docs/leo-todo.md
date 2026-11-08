@@ -17,6 +17,7 @@ PR이 CI를 통과하면 GitHub에서 **Merge pull request**를 누르거나 Cla
 | [#40](https://github.com/bh007007/jic-portal/pull/40) | 관리자 포털 '사용자·권한'(계정 목록, 강사 포털 역할 주기·회수), 기초관리 '휴일'(학생수 달력·강사 포털 홈에 표시), 학생 상세의 강사 포털 성적. #39 위에 쌓음 | 3 |
 | [#42](https://github.com/bh007007/jic-portal/pull/42) | 강사 포털 출석 체크(날짜별 수업 → 학생별 출석·결석·지각, 모두 출석, 결석 신청 표시), 매니저 마감·사유 인정, 업체 출석 추출 스크립트. #40 위에 쌓음 | 4 (#40 다음) |
 | [#44](https://github.com/bh007007/jic-portal/pull/44) | 권한표(docs/roles.md) 1단계: 관리자·오피스 구분, 사용자·권한은 관리자만, 강사 포털 성적·자료는 강사·매니저·관리자(체커·스케줄러·오피스 읽기만), 강사 포털 내부 공지. #42 위에 쌓음 | 5 (#42 다음) |
+| [#46](https://github.com/bh007007/jic-portal/pull/46) | 배포용 연장·변경 표(`legacy_extensions` 등)와 업로드·`functions/api` 읽기. #45(연장 현황·변경 이력, 11/9 머지)가 배포에서도 마지막 연장 종료일로 계산되게(재학 281 → 295명) | 순서 상관없음(main 위) |
 | (밤사이 추가되는 PR은 여기에 적는다) | | |
 
 ## 머지할 때 같이 할 일 (밤사이 권한 확인에 막힘: Supabase 적용·Cloudflare 설정은 배포로 분류됨)
@@ -29,6 +30,8 @@ PR이 CI를 통과하면 GitHub에서 **Merge pull request**를 누르거나 Cla
   - `supabase/migrations/20261108230000_holidays.sql`(#40, 관리자 포털 기초관리 > 휴일. 직원만 쓰고 모든 포털이 읽음). 권한 시험 통과(#40 두 파일 합쳐 22개).
   - `supabase/migrations/20261109000000_attendance.sql`(출석 PR, 교실·수업·출석·마감 표 4개와 함수). 권한 시험 56개 통과. 표만 만들고 데이터는 넣지 않는다(업체 출석은 보안 점검 뒤).
   - `supabase/migrations/20261109010000_roles.sql`, `20261109020000_user_directory_admin.sql`(역할 PR, 함수·정책만). 권한 시험 50 + 35개 통과. 적용해도 지금 직원은 모두 관리자로 남는다(오피스 역할을 줄 때부터 나뉜다).
+  - `supabase/migrations/20261109030000_legacy_extend.sql`(#46, 연장·변경 표 4개). 적용 뒤 `scripts/upload-sample.ps1`로 샘플을 다시 올리면 연장 샘플이 들어간다.
+  - `supabase/migrations/20261109040000_lms_students_extend.sql`(#44, 강사 포털 학생 목록 종료일을 마지막 연장 종료일로). 연장 표가 없으면 만들어서 #46과 순서 상관없다.
 - **Cloudflare Pages 빌드 명령**: `npm run portal:build && npm run teacher:portal --if-present`로 바꾼다(#39 강사 포털을 `/teacher`에 넣음). `--if-present`라 머지 전에 바꿔도 깨지지 않는다.
 - **강사 시험 계정**: 강사 포털을 보려면 Supabase Auth에 강사 계정이 하나 있어야 한다. 직원 계정(레오님)은 역할 없이도 들어가진다. 강사 계정이 필요하면 `docs/teacher-portal.md` '강사 계정 만들기'를 따른다.
 
