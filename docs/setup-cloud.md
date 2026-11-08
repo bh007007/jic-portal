@@ -109,6 +109,10 @@ Cloudflare는 이미 Pages 프로젝트에 연결된 저장소로 Pages 프로�
 
 파트너 포털과 같은 Workers 방식이지만 정적 파일에 `/api` 서버 코드가 붙는다(`apps/student/wrangler.jsonc`, `apps/student/worker/index.ts`). Project name `jic-student`, Build command `npm run student:build`, Deploy command `npx wrangler deploy --config apps/student/wrangler.jsonc`. 빌드 변수 외에 실행 변수(`SUPABASE_URL`, `SUPABASE_ANON_KEY`, Secret `SUPABASE_SERVICE_ROLE_KEY`)가 필요하다. 순서와 확인 방법은 `docs/student-app.md` '배포'.
 
+### 인트라넷 (Cloudflare Workers)
+
+학생 앱과 같은 방식(정적 파일 + `/api`, `apps/intranet/wrangler.jsonc`). Project name `jic-intranet`, Build command `npm run intranet:build`, Deploy command `npx wrangler deploy --config apps/intranet/wrangler.jsonc`. 실행 변수는 `SUPABASE_URL`, `SUPABASE_ANON_KEY`(서비스 키 없음). 순서는 `docs/intranet.md` '배포'.
+
 ## 3. GitHub (선택)
 
 - `.github/workflows/ci.yml`: PR과 `main`에서 빌드가 깨지지 않는지 확인한다. 설정할 것 없음.

@@ -1,6 +1,7 @@
 import { useState, type FormEvent, type ReactNode } from 'react';
 import { Link, NavLink } from 'react-router-dom';
 import { setStaffName, useApi, useStaffName, useSummaryChanged, type Summary } from '../api';
+import { authMode, signOut } from '../auth';
 import { dateWithDay, localDate } from '../format';
 
 // 디자인 I1(IntranetPenalty.dc.html)의 메뉴. 아직 없는 화면은 '준비 중'으로 연결된다.
@@ -36,7 +37,7 @@ const MENU: { group?: string; items: { to: string; label: string; badge?: Badge 
 const ADMIN_URL = import.meta.env.VITE_ADMIN_URL ?? 'http://127.0.0.1:5173';
 
 export default function Shell({ children }: { children: ReactNode }) {
-  const { data: meta } = useApi<{ source: 'sample' | 'extract' }>('/api/meta');
+  const { data: meta } = useApi<{ source: 'sample' | 'extract'; actor: string | null }>('/api/meta');
   const { data: summary, reload: reloadSummary } = useApi<Summary>('/api/summary', 60000);
   useSummaryChanged(reloadSummary);
   return (
@@ -48,8 +49,8 @@ export default function Shell({ children }: { children: ReactNode }) {
         </Link>
         <div className="topbar-right">
           <span>{dateWithDay(localDate(Date.now()))}</span>
-          <StaffName />
-          <span className={'data-badge' + (meta?.source === 'sample' ? ' sample' : '')}>{meta?.source === 'sample' ? '샘플 데이터' : '로컬 데이터'}</span>
+          {authMode === 'supabase' ? <LoggedIn name={meta?.actor ?? null} /> : <StaffName />}
+          <span className={'data-badge' + (meta?.source === 'sample' ? ' sample' : '')}>{meta?.source === 'sample' ? '샘플 데이터' : authMode === 'supabase' ? '업체 데이터' : '로컬 데이터'}</span>
           <a href={ADMIN_URL} className="btn btn-xs">
             통합관리
           </a>
@@ -72,6 +73,22 @@ export default function Shell({ children }: { children: ReactNode }) {
         <main className="content">{children}</main>
       </div>
     </div>
+  );
+}
+
+/** 배포: 로그인한 직원 이름(staff_users.name, 처리자로 남는다)과 로그아웃 */
+function LoggedIn({ name }: { name: string | null }) {
+  return (
+    <span>
+      {name && (
+        <>
+          <strong>{name}</strong>님{' '}
+        </>
+      )}
+      <button type="button" className="link-btn small" onClick={() => void signOut()}>
+        로그아웃
+      </button>
+    </span>
   );
 }
 

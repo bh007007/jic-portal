@@ -3,6 +3,8 @@
  * - 목록에는 제목만 내보낸다. 내용은 상세를 열어야 보이고, 열 때마다 접근 기록을 남긴다.
  * - 작성·수정·후속 조치 처리도 접근 기록에 남긴다. 기록은 고치거나 지우지 않는다(추가만).
  * - 처리자(actor)는 로컬에서는 브라우저에 입력한 직원 이름, 배포에서는 로그인한 직원이다.
+ * - 배포(Supabase)에서는 테이블을 직접 읽거나 쓰지 못하므로 stores.remote(DB 함수)로 열람·작성·수정·후속 조치를 한다.
+ *   그때 접근 기록과 캠퍼스 범위는 DB 함수가 처리한다(supabase/migrations/20261108100000_student_intranet.sql).
  */
 
 export interface CounselingNote {
@@ -38,9 +40,19 @@ export const ACTOR_MAX = 40;
 /** 같은 직원이 이 시간 안에 같은 기록을 다시 열면 열람을 한 번으로 센다. */
 export const VIEW_DEDUPE_MS = 10_000;
 
+/** 배포: DB 함수(counseling_open/create/update/followup)가 내용을 다루고 접근 기록을 남긴다. 실패는 오류 코드로 던진다. */
+export interface CounselingRemote {
+  /** 내용까지. 없거나 맡지 않은 캠퍼스면 null */
+  open(id: string): Promise<CounselingNote | null>;
+  create(v: { stId: string; campus: string; date: string; title: string; content: string; followUpDue: string | null }): Promise<string>;
+  update(id: string, v: { date: string; title: string; content: string; followUpDue: string | null }): Promise<void>;
+  followUp(id: string, done: boolean): Promise<void>;
+}
 export interface CounselingStores {
+  /** 배포에서는 all() 이 내용 없는 목록(맡은 캠퍼스만)이다. */
   counseling: { all(): Promise<CounselingNote[]>; put(x: CounselingNote): Promise<void> };
   audit: { all(): Promise<AuditLog[]>; put(x: AuditLog): Promise<void> };
+  remote?: CounselingRemote;
 }
 export interface CounselingCtx {
   stores: CounselingStores;
@@ -125,6 +137,12 @@ export type CounselingList = Awaited<ReturnType<typeof listCounseling>>;
 /** 상세: 내용과 이 기록의 접근 기록. 열 때마다 'view' 를 남긴다. */
 export async function openCounseling(ctx: CounselingCtx, id: string): Promise<Result> {
   if (!ctx.actor) return fail(400, 'actor_required');
+  if (ctx.stores.remote) {
+    const full = await ctx.stores.remote.open(id); // 열람 기록은 DB 함수가 남긴다
+    if (!full) return fail(404, 'not_found');
+    const trail = newestFirst((await ctx.stores.audit.all()).filter((l) => l.targetId === id));
+    return ok({ note: { ...summaryOf(ctx, full), content: full.content }, trail: trail.slice(0, 50), trailCount: trail.length });
+  }
   const note = (await ctx.stores.counseling.all()).find((n) => n.id === id);
   if (!note) return fail(404, 'not_found');
   const logs = await ctx.stores.audit.all();
@@ -165,6 +183,7 @@ export async function createCounseling(ctx: CounselingCtx, input: NoteInput): Pr
   if (!stId || !ctx.student(stId)) return fail(400, 'unknown_student');
   const v = validate(ctx, input);
   if ('error' in v) return fail(400, v.error);
+  if (ctx.stores.remote) return ok({ id: await ctx.stores.remote.create({ stId, campus: ctx.student(stId)!.campus, ...v }) }, 201);
   const now = ctx.now().toISOString();
   const note: CounselingNote = {
     id: ctx.newId(),
@@ -189,6 +208,10 @@ export async function updateCounseling(ctx: CounselingCtx, id: string, input: No
   if (!note) return fail(404, 'not_found');
   const v = validate(ctx, input);
   if ('error' in v) return fail(400, v.error);
+  if (ctx.stores.remote) {
+    await ctx.stores.remote.update(id, v); // 기한을 바꾸면 후속 조치를 다시 여는 것도 DB 함수가 한다
+    return ok({ id });
+  }
   // 기한을 바꾸면 후속 조치를 다시 열린 상태로 둔다.
   const reopen = v.followUpDue !== note.followUpDue;
   const next: CounselingNote = {
@@ -210,6 +233,10 @@ export async function setFollowUp(ctx: CounselingCtx, id: string, input: { done?
   if (!note) return fail(404, 'not_found');
   if (!note.followUpDue) return fail(409, 'no_followup');
   if (note.followUpDone === input.done) return ok({ id });
+  if (ctx.stores.remote) {
+    await ctx.stores.remote.followUp(id, input.done);
+    return ok({ id });
+  }
   const now = ctx.now().toISOString();
   const next: CounselingNote = input.done
     ? { ...note, followUpDone: true, followUpDoneAt: now, followUpDoneBy: ctx.actor }

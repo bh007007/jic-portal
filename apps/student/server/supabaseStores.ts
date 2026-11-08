@@ -8,7 +8,7 @@ import type { Departure, DepartureStore, Ride, RideStore } from './departures';
 import type { Absence, AbsenceStore, Overnight, OvernightStore } from './requests';
 import type { SupabaseConf } from './supabaseAuth';
 
-type Row = Record<string, unknown>;
+export type Row = Record<string, unknown>;
 
 /** Supabase 가 거절한 요청. message 는 짧은 코드만(화면·로그에 내용을 싣지 않는다). */
 export class StoreError extends Error {
@@ -24,23 +24,28 @@ export function restClient(conf: SupabaseConf, token: string, fetchFn: typeof fe
     if (prefer) headers.Prefer = prefer;
     const r = await fetchFn(`${base}/${path}`, { method, headers, body: body === undefined ? undefined : JSON.stringify(body) });
     if (!r.ok) {
-      // 저장 함수가 올린 오류(not_pending 등)는 그대로, 나머지는 상태 코드로
-      const text = await r.text();
-      const known = text.match(/"message"\s*:\s*"(not_pending|staff_only)"/)?.[1];
-      throw new StoreError(r.status, known ?? `store_${r.status}`);
+      // DB 함수가 올린 오류(raise exception 'not_pending' 등, PostgREST code P0001)는 그 코드로, 나머지는 상태 코드로
+      let code = `store_${r.status}`;
+      try {
+        const e = JSON.parse(await r.text()) as { code?: string; message?: string };
+        if (e.code === 'P0001' && e.message && /^[a-z_]+$/.test(e.message)) code = e.message;
+      } catch {
+        // 본문이 JSON 이 아니면 상태 코드만
+      }
+      throw new StoreError(r.status, code);
     }
     const text = await r.text();
     return (text ? JSON.parse(text) : null) as T;
   };
 }
-type Rest = ReturnType<typeof restClient>;
+export type Rest = ReturnType<typeof restClient>;
 
-const iso = (v: unknown) => (v ? new Date(String(v)).toISOString() : null);
-const hm = (v: unknown) => (v ? String(v).slice(0, 5) : null); // Postgres time 'HH:MM:SS' → 'HH:MM'
+export const iso = (v: unknown) => (v ? new Date(String(v)).toISOString() : null);
+export const hm = (v: unknown) => (v ? String(v).slice(0, 5) : null); // Postgres time 'HH:MM:SS' → 'HH:MM'
 const q = encodeURIComponent;
 
 // ── 결석·외박
-const toAbsence = (r: Row): Absence => ({
+export const toAbsence = (r: Row): Absence => ({
   id: String(r.id),
   stId: String(r.student_no),
   trId: String(r.enrollment_id),
@@ -55,7 +60,7 @@ const toAbsence = (r: Row): Absence => ({
   decidedBy: null, // 처리한 직원은 학생에게 보이지 않는다
   comment: (r.staff_comment as string | null) ?? null,
 });
-const toOvernight = (r: Row): Overnight => ({
+export const toOvernight = (r: Row): Overnight => ({
   id: String(r.id),
   stId: String(r.student_no),
   trId: String(r.enrollment_id),
@@ -118,7 +123,7 @@ export const overnightStore = (rest: Rest): OvernightStore =>
 
 // ── 귀국 항공편(학생이 씀)·배차(직원이 씀, 학생은 읽기만). id 는 `dep-${연수 번호}`
 const trOf = (id: string) => id.replace(/^dep-/, '');
-const toDeparture = (r: Row): Departure => ({
+export const toDeparture = (r: Row): Departure => ({
   id: `dep-${r.enrollment_id}`,
   stId: String(r.student_no),
   trId: String(r.enrollment_id),
@@ -131,7 +136,7 @@ const toDeparture = (r: Row): Departure => ({
   createdAt: iso(r.created_at)!,
   updatedAt: iso(r.updated_at)!,
 });
-const toRide = (r: Row): Ride => ({
+export const toRide = (r: Row): Ride => ({
   id: `dep-${r.enrollment_id}`,
   stId: String(r.student_no),
   trId: String(r.enrollment_id),
