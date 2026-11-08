@@ -39,6 +39,7 @@ jic-portal/
 │  └─ src/pages/            Dashboard, Students, StudentDetail, Arrivals, Dorm, Invoices, Deposits,
 │                           Points, Agencies, AgencyDetail, Agents, Codes, Batches, Login
 ├─ apps/partner/         ← 파트너 포털 (React + Vite, 데이터는 전부 Supabase) · docs/partner-portal.md
+├─ apps/student/         ← 학생 앱 (모바일, 로컬 전용) · docs/student-app.md
 ├─ functions/api/        ← 배포: Cloudflare Pages Function (Supabase → core)
 ├─ supabase/migrations/  ← Supabase 테이블·RLS SQL
 ├─ .github/workflows/    ← 빌드 확인(ci), DB 반영(supabase-migrate)
@@ -66,7 +67,8 @@ jic-portal/
 | 관리자 앱 회계: 인보이스(연수별 통화·납부 상태·입금 매칭 합계·포인트), 입금 매칭(미납·부분납 연수 입학일 순, 입금 원장), 포인트(재학생 잔액, 졸업 예정자 정산) | 동작 (11/8). 입금 원장은 `legacy_deposits`로 배포에도 연결(샘플 재업로드 후 보임) |
 | 관리자 앱 기초관리: 코스·기숙사(캠퍼스별 학생 수), 캠퍼스·배치(배치 일정·캠퍼스별 인원) | 동작 (11/8), 읽기 전용 |
 | 파트너 포털 1차 (`apps/partner`, 사이트맵 0.1~12.7): 공개 대시보드, 로그인·등록 신청·승인, 상담 6단계·학습계획서, 캠퍼스·코스, 견적·공실·등록 링크, 자료실, 공지·프로모션, 방문 신청, JIC 관리자 화면 | 배포 (11/8): https://jic-partner.bh007007.workers.dev (Cloudflare Workers, main 자동 배포). Supabase 테이블·권한 반영·시험 완료. `docs/partner-portal.md` |
-| 학생 앱, 인트라넷 | 디자인만 |
+| 학생 앱 1차 (`apps/student`): 홈, 결석 신청·취소, 신청 내역, 내 정보 (한국어·영어) | 동작 (11/8, 로컬 전용 `npm run student`). 배포는 학생 계정·정규화 스키마 이후. `docs/student-app.md` |
+| 인트라넷 | 디자인만 |
 | Supabase 테이블(`legacy_*` 원본 jsonb)·직원 로그인·Cloudflare Pages 배포 | 동작 중 (11/7): https://jic-portal-916.pages.dev , Supabase `jic-portal`(Singapore). 샘플 데이터만. 계정은 레오에게 요청. 설정 순서 `docs/setup-cloud.md` |
 
 ## 5. 실제 데이터로 실행하기 (권한 있는 사람만)
@@ -93,7 +95,7 @@ jic-portal/
 3. **Supabase 정규화 스키마**: 지금은 `legacy_*`(원본 레코드 jsonb)를 통째로 읽어 계산한다. `docs/plan.md`의 데이터 모델 기준으로 학생·연수(enrollments)·배치·기숙사 테이블을 만들고 `functions/api`를 조건 조회로 바꾼다. 실제 데이터를 올리기 전에 필수. 테스트 DB에는 샘플 데이터만.
 4. **역할별 권한**: 지금은 `staff_users`에 있으면 전부 읽기. 역할 9개(학생, 선생님, 체커, 스케줄러, 매니저, 오피스, 관리자, 가드, 에이전시 지점)로 RLS 세분화.
 5. **파트너 포털 마무리**: Cloudflare Workers(`jic-partner`, `apps/partner/wrangler.jsonc`) 배포, 추천 조건표 승인본 입력(관리자 > 추천 규칙), 캠퍼스·코스 내용과 링크 입력(관리자 > 콘텐츠·설정). 결정 대기(견적 미리 채우기, 방문 신청 담당, Agent Hub 관계)는 `docs/partner-portal.md`. 다음은 2차 My Students(지점 계정 `legacy_am_id` ↔ 연수 `tr_am_id`).
-6. **학생 앱**: 결석 신청부터. **인트라넷**: 패널티 승인, 가드 외출·귀가.
+6. **학생 앱**: 1차(결석 신청) 완료. 남은 것은 학생 계정·배포, 시간표(LMS 연결 후), `docs/student-app.md`의 확인 필요 사항. **인트라넷**: 패널티 승인, 가드 외출·귀가.
 7. **서버 작업**: 정기 동기화·알림 같은 예약 작업은 Cloudflare Workers(크론). 화면 배포와 빌드 확인은 이미 연결됨.
 
 ## 7. 결정이 필요한 것

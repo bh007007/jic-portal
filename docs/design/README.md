@@ -8,7 +8,7 @@ Claude 디자인 캔버스([JIC 포털 디자인](https://claude.ai/artifact/DwJ
 | Students.dc.html | 02 재학생 현황 | `apps/admin/src/pages/Students.tsx` |
 | StudentFile.dc.html | 03 학생 상세 | `apps/admin/src/pages/StudentDetail.tsx` |
 | Dorm.dc.html | 04 기숙사 배정 현황 (방·침대 보드) | `apps/admin/src/pages/Dorm.tsx` (타입별 현황만, 방·침대 데이터 없음) |
-| StudentPortal.dc.html | 05 학생 앱 홈 (모바일 390×844) | 미구현 |
+| StudentPortal.dc.html | 05 학생 앱 홈 (모바일 390×844) | `apps/student/src/pages/Home.tsx` (귀국 항공편 줄은 데이터 없음) |
 | PartnerHome.dc.html | P1 파트너 포털 홈 | 미구현 |
 | PartnerConsult.dc.html | P2 상담 · 추천 결과 | 미구현 |
 | IntranetPenalty.dc.html | I1 인트라넷 패널티 승인 | 미구현 |

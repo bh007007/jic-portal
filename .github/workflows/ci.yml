@@ -17,3 +17,4 @@ jobs:
       - run: npm ci
       - run: npm run admin:build
       - run: npm run partner:build
+      - run: npm run student:build

@@ -9,6 +9,8 @@
     "admin:build": "npm --workspace apps/admin run build",
     "partner": "npm --workspace apps/partner run dev",
     "partner:build": "npm --workspace apps/partner run build",
-    "typecheck": "npm --workspace apps/admin run typecheck && npm --workspace apps/partner run typecheck"
+    "student": "npm --workspace apps/student run dev",
+    "student:build": "npm --workspace apps/student run build",
+    "typecheck": "npm --workspace apps/admin run typecheck && npm --workspace apps/partner run typecheck && npm --workspace apps/student run typecheck"
   }
 }
