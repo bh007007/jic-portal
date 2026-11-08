@@ -104,7 +104,7 @@ jic-portal/
      - 그래서 디자인(04) 방·침대 배정판은 데이터를 옮겨 올 수 없다. 새 시스템에서 배정을 입력하는 기능으로 만든다.
      - 타입별 침대 수와 입실 인원이 맞지 않는 곳이 있어서(예: R2 (Bal) 침대 24개, 입실 32명) 공실은 계산해 보여 주지 않는다.
    - 인보이스 금액(PR #24, 회계 세션 담당): 인보이스 총액은 기존 추출본의 `sum_ic_price`에 있다(완납 594건 중 541건이 입금 매칭 합계 = 총액). 현지 청구·납부는 `sum_tc_price`·`sum_td_amount`다. 항목별 상세 금액은 업체 회계 화면(현지 인보이스 납부·Check Balance·Payment Report) 조사 스크립트 실행 뒤 추출한다.
-   - 다음: 연장 기록(`adm/train3/extend` → `extend_load`, `tt_*` 열)과 신입·연장·복귀·변경 탭(`freshman_load_*`). 받으면 '연장 현황'과 변경 이력 화면을 만든다.
+   - 다음: 연장 기록(`adm/train3/extend` → `extend_load`, `tt_*` 열)과 신입·연장·복귀·변경 탭(`freshman_load_*`). 추출 스크립트 `scripts/extract/portal-extract-extend.js`(11/9, 개인 열은 빼고 `tr_id`로 연수와 잇는다)를 레오님 브라우저에서 돌리면 '연장 현황'과 변경 이력 화면을 만든다.
 3. **Supabase 정규화 스키마**: 지금은 `legacy_*`(원본 레코드 jsonb)를 통째로 읽어 계산한다. `docs/plan.md`의 데이터 모델 기준으로 학생·연수(enrollments)·배치·기숙사 테이블을 만들고 `functions/api`를 조건 조회로 바꾼다. 실제 데이터를 올리기 전에 필수. 테스트 DB에는 샘플 데이터만.
 4. **역할별 권한**: 지금은 `staff_users`에 있으면 전부 읽기. 역할 9개(학생, 선생님, 체커, 스케줄러, 매니저, 오피스, 관리자, 가드, 에이전시 지점)로 RLS 세분화.
 5. **파트너 포털 마무리**: Cloudflare Workers(`jic-partner`, `apps/partner/wrangler.jsonc`) 배포, 추천 조건표 승인본 입력(관리자 > 추천 규칙), 캠퍼스·코스 내용과 링크 입력(관리자 > 콘텐츠·설정). 결정 대기(견적 미리 채우기, 방문 신청 담당, Agent Hub 관계)는 `docs/partner-portal.md`. 다음은 2차 My Students(지점 계정 `legacy_am_id` ↔ 연수 `tr_am_id`).

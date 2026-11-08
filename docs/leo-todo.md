@@ -36,6 +36,7 @@ PR이 CI를 통과하면 GitHub에서 **Merge pull request**를 누르거나 Cla
 | 4 | 직원 이름·담당 캠퍼스 | Supabase SQL Editor 또는 Claude에게 이름을 알려 준다 | 처리자 이름(`staff_users.name`)과 상담 기록 열람 범위(`staff_campuses`)에 쓴다 |
 | 5 | 에이전시 가입 허용 | Supabase → Authentication → Sign In / Providers → **Allow new users to sign up** 켜기 | 에이전시 포털 등록 신청 |
 | 6 | 학생 포털 로그인 시험 | https://jic-student.bh007007.workers.dev 에서 샘플 학생번호 + 생년월일 8자리로 로그인한다. 값은 `data-sample/tables/students.ndjson`의 `st_id`·`st_birthday`(가짜 데이터). 1번을 마친 뒤 한다 | 첫 로그인 → 비밀번호 변경 → 홈 |
+| 7-1 | 업체 포털 연장·변경 추출 | 업체 포털에 로그인한 브라우저의 Console에 `scripts/extract/portal-extract-extend.js`를 붙여 넣는다(2~5분, 읽기 전용). 받은 파일은 `data/raw/`로 옮긴다 | 관리자 포털 '연장 현황'·'변경 이력'(업체 마케팅 > 연장현황, 신입·연장·복귀·변경) |
 | 7 | (다른 세션이 못 하면) 업체 포털 LMS 구조 조사 | 업체 포털에 로그인한 브라우저의 Console에 `scripts/extract/portal-probe-lms.js`를 붙여 넣는다. 받은 파일은 `data/raw/`로 옮긴다 | 강사 포털의 시간표·출석을 업체 데이터로 채우려면 구조가 필요하다 |
 
 ## 결정할 것
