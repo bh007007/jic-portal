@@ -1,3 +1,4 @@
+import { BASE } from '../base';
 import { Link } from 'react-router-dom';
 import { useApi, type OutingList } from '../api';
 import { Loading, PageTitle, StudentLink, Tabs } from '../components/ui';
@@ -25,7 +26,7 @@ export default function Outings({ mode }: { mode: 'outings' | 'curfew' }) {
             <Link to="/settings" className="btn">
               통금·근무자 설정
             </Link>
-            <a href="/guard" target="_blank" rel="noreferrer" className="btn btn-primary">
+            <a href={BASE + 'guard'} target="_blank" rel="noreferrer" className="btn btn-primary">
               가드 태블릿 열기
             </a>
           </>

@@ -109,9 +109,9 @@ Cloudflare는 이미 Pages 프로젝트에 연결된 저장소로 Pages 프로�
 
 파트너 포털과 같은 Workers 방식이지만 정적 파일에 `/api` 서버 코드가 붙는다(`apps/student/wrangler.jsonc`, `apps/student/worker/index.ts`). Project name `jic-student`, Build command `npm run student:build`, Deploy command `npx wrangler deploy --config apps/student/wrangler.jsonc`. 빌드 변수 외에 실행 변수(`SUPABASE_URL`, `SUPABASE_ANON_KEY`, Secret `SUPABASE_SERVICE_ROLE_KEY`)가 필요하다. 순서와 확인 방법은 `docs/student-app.md` '배포'.
 
-### 인트라넷 (Cloudflare Workers)
+### 인트라넷 (위 Pages 프로젝트 안 `/intranet`)
 
-학생 앱과 같은 방식(정적 파일 + `/api`, `apps/intranet/wrangler.jsonc`). Project name `jic-intranet`, Build command `npm run intranet:build`, Deploy command `npx wrangler deploy --config apps/intranet/wrangler.jsonc`. 실행 변수는 `SUPABASE_URL`, `SUPABASE_ANON_KEY`, Secret `SUPABASE_SERVICE_ROLE_KEY`(가드 태블릿만 씀). 가드 공용 계정(출입구마다)은 Authentication에서 만든 뒤 `guard_accounts`에 잇는다. 순서는 `docs/intranet.md` '배포'.
+인트라넷은 따로 프로젝트를 만들지 않고 이 Pages 프로젝트 주소 아래 `/intranet/`에 함께 올린다(11/8 결정, 한 번 로그인으로 오간다). 위 2번 표의 Build command 를 **`npm run portal:build`** 로 바꾸고(관리자 앱 + 인트라넷), Variables and Secrets 에 **Secret** `SUPABASE_SERVICE_ROLE_KEY` 를 더한다(가드 태블릿만 씀). 서버 코드는 `functions/intranet/`. 가드 공용 계정(출입구마다)은 Authentication에서 만든 뒤 `guard_accounts`에 잇는다. 순서는 `docs/intranet.md` '배포'.
 
 ## 3. GitHub (선택)
 

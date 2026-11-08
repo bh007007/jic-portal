@@ -1,3 +1,4 @@
+import { BASE } from '../base';
 import { Link } from 'react-router-dom';
 import { useApi, type ReportList } from '../api';
 import { Loading, PageTitle, StudentLink } from '../components/ui';
@@ -17,7 +18,7 @@ export default function Reports() {
         title="가드 리포트"
         path="홈 > 학생 생활 > 가드 리포트"
         actions={
-          <a href="/guard" target="_blank" rel="noreferrer" className="btn">
+          <a href={BASE + 'guard'} target="_blank" rel="noreferrer" className="btn">
             가드 태블릿 열기
           </a>
         }
