@@ -165,7 +165,7 @@ $dict = New-Object System.Text.StringBuilder
 if ($isExtra) {
   [void]$dict.AppendLine("# 데이터 사전 — 추가 추출")
   [void]$dict.AppendLine("")
-  [void]$dict.AppendLine("``scripts/extract/portal-extract-extra.js``로 받은 표의 열 이름과, 값이 채워진 레코드 수다. 값은 담지 않는다. 기본 추출본은 ``docs/data-dictionary.md``.")
+  [void]$dict.AppendLine("추가 추출 스크립트(``scripts/extract/``)로 받은 표의 열 이름과, 값이 채워진 레코드 수다. 값은 담지 않는다. 기본 추출본은 ``docs/data-dictionary.md``.")
 } else {
   [void]$dict.AppendLine("# 데이터 사전 (업체 포털 추출본)")
   [void]$dict.AppendLine("")
@@ -198,13 +198,15 @@ foreach ($k in $counts.Keys) {
 [void]$dict.Append($sections.ToString())
 
 # 추가 추출: 화면마다 쓴 조회 주소, 검색 항목 이름, 결과. 다음 추출 때 검색 조건을 맞추는 데 쓴다(값·코드 조각은 extra_meta.json 에만).
-if ($isExtra -and $meta.discovery) {
+# 화면 정보(page·url)가 있는 항목이 하나도 없으면(예: 인보이스 항목 추출) 이 절은 쓰지 않는다.
+$screens = if ($meta.discovery) { @($meta.discovery.PSObject.Properties | Where-Object { $_.Value -is [pscustomobject] -and ([string]$_.Value.page -or [string]$_.Value.url) }) } else { @() }
+if ($isExtra -and $screens.Count) {
   [void]$dict.AppendLine("")
   [void]$dict.AppendLine("## 화면 구조")
   [void]$dict.AppendLine("")
   [void]$dict.AppendLine("| 항목 | 화면 | 조회 주소 | 결과 | 캠퍼스 항목 | 검색 항목 | 화면이 부르는 주소 |")
   [void]$dict.AppendLine("| --- | --- | --- | --- | --- | --- | --- |")
-  foreach ($p in $meta.discovery.PSObject.Properties) {
+  foreach ($p in $screens) {
     $d = $p.Value
     $result = if ($d.error) { "오류: $($d.error)" } elseif ($null -ne $d.rows) { "$($d.rows)건" } else { "-" }
     $fields = ($d.fields | ForEach-Object { $_.name }) -join ', '

@@ -7,6 +7,7 @@
 - `data-sample/`은 가짜 데이터다. 개발·테스트·스크린샷은 이것으로 한다. 재생성: `node scripts/make-sample-data.mjs`.
 - 데이터는 당분간 하드디스크에만 둔다(2026-11-07 결정). Supabase 적재는 보안 점검 이후, 테스트 DB에는 샘플만.
 - 업체 포털(jicportal.com)에서는 읽기 전용 `*_load` 조회 API만 호출한다. 구조와 주의점은 `docs/legacy-portal.md`.
+  - 예외(2026-11-08 레오 허용): 인보이스 편집 화면이 여는 조회 `adm/tuition2/payment_select/<tr_id>`와 화면 GET `payment_edit/<tr_id>`. `scripts/extract/portal-extract-invoice-items.js`만 쓰고, 주소 허용 목록 밖은 부르지 않는다.
 
 ## 코드
 - 관리자 앱: `apps/admin` (React 18 + Vite 5 + TypeScript, npm workspaces). 실행 `npm run admin` → http://127.0.0.1:5173, 검증 `npm run admin:build`.
@@ -16,8 +17,9 @@
 - 학생 앱: `apps/student` (모바일, 로컬 전용). 실행 `npm run student` → http://127.0.0.1:5176, 검증 `npm run student:build`. 학생·연수는 관리자 core의 `studentDetail`을 가져다 쓰고 학생에게 보일 항목만 고른다. 결석·외박 신청 규칙은 `server/requests.ts`, 생활 요청(업체 '요청사항')은 `server/lifeRequests.ts`, 학교 여행·액티비티(업체 'Outing > Travel')는 `server/trips.ts`, 귀국 항공편·공항 이동 배차는 `server/departures.ts`(모두 인트라넷과 같이 씀, 신청·요청·항공편·여행 참가는 학생이, 처리·배차·여행 등록은 직원이 씀). 문구는 6개 언어 `src/i18n/*.ts`(키 기준 `ko.ts`, jp·ch·tw·vi는 원어민 검토 전 초안). 학생 계정은 `npm run student:accounts`(서비스 키, 기본 샘플·미리보기), 로그인은 `src/auth.ts`(`.env.local`에 Supabase 주소가 있으면 학생 계정, 없으면 학생번호+생년월일 로컬). 배포는 Workers `apps/student/worker`(같은 core, 저장소만 Supabase), 시험 `supabase/tests/student_worker_api.mjs`. 설명 `docs/student-app.md`.
 - 인트라넷: `apps/intranet` (가드 태블릿 외출·귀가, 통금 확인, 패널티 승인·점수표, 결석·외박 신청·생활 요청 처리, 학교 여행, Student File, 상담 기록·접근 기록, 내부 공지, 가드 리포트, 귀국 일정, 로컬 전용). 상담 내용은 목록에 내보내지 않고 상세를 열 때마다 접근 기록을 남긴다. 실행 `npm run intranet` → http://127.0.0.1:5177, 검증 `npm run intranet:build`(core 시험 포함). 점수·경고 기준은 코드에 넣지 않고 점수표 화면에서 입력한다. 배포는 JIC 포털 Pages 프로젝트 안 `/intranet`(`npm run admin:build`가 같이 빌드, 서버 `functions/intranet` → `apps/intranet/worker`의 handleApi, 관리자 앱과 같은 로그인. 직원 로그인·가드 공용 계정은 가드 API만, 같은 core, 저장소는 Supabase·상담은 DB 함수), 시험 `supabase/tests/intranet_worker_api.mjs`. 설명 `docs/intranet.md`.
 - 연수(enrollment, 업체 `tr_`)와 학생(`st_`)은 다르다. 한 학생에 연수가 여러 건일 수 있다. 상태 분류(재학/입학 예정/졸업/취소)는 `core.ts`의 `statusOf`.
-- 추출본에 없는 것: 침대 배정(업체 포털에 기록 없음), 인보이스 항목별 상세 금액. 화면에 추정값을 넣지 않는다.
-- 인보이스 금액(2026-11-08 건수로 확인): 해외 총액 `sum_ic_price`, 입금 매칭 `sum_id_amount`, 현지 청구·납부 `sum_tc_price`·`sum_td_amount`(통화 열 없음, 페소로 보임). `sum_td_amount`는 해외 총액이 아니다. 미입금은 총액 − 입금 매칭을 미납·부분납에만 계산한다(`core.ts` invAll).
+- 추출본에 없는 것: 침대 배정(업체 포털에 기록 없음). 화면에 추정값을 넣지 않는다.
+- 인보이스 금액(2026-11-08 건수로 확인): 해외 총액 `sum_ic_price`, 입금 매칭 `sum_id_amount`, 현지 청구·납부 `sum_tc_price`·`sum_td_amount`(PHP). `sum_td_amount`는 해외 총액이 아니다. 미입금은 총액 − 입금 매칭을 미납·부분납에만 계산한다(`core.ts` invoiceAmounts).
+- 인보이스 항목(추가 추출, 열 목록 `docs/data-dictionary-invoice.md`): 학생 가격 `inv_invoice_cost_st`, 에이전시 공제 `inv_invoice_cost_ag`(커미션 등), 현지 비용·납부 `inv_etc`. 연수마다 최신 `ic_ver`만 쓰며 총액 = 학생 가격 − 공제(98% 일치). `inv_invoice_deposit`에는 받는 계좌 열이 있어 앱에서 읽지 않는다. 배포(Supabase)에는 아직 없다.
 - 디자인 원본: `docs/design/*.dc.html` (캔버스 형식, 텍스트로 읽어 참고). 스타일: Noto Sans KR 13px, 주색 #24427A, 로고 #D52B1E, 회색 검색 박스 + 표 위 진한 선. AI 느낌의 카드·배지·설명 문구는 쓰지 않는다.
 
 ## 환경
