@@ -19,6 +19,8 @@ export interface DataInput {
   deposits?: Raw[];
   /** 업체 포털 포인트 내역(point_history). type D = 충전, U = 사용(현지 비용 항목 ec_name), point = 페소. */
   pointHistory?: Raw[];
+  /** 업체 포털 방관리(rooms, room_bed_v2). 방 하나에 beds 배열. 2026-11-08 기준 Premium만 등록되어 있다. */
+  rooms?: Raw[];
 }
 
 /** 포인트 내역에서 화면에 쓰는 열. 원본 행에는 학생·에이전시 정보가 200여 열 붙어 있어 줄여서 싣는다. */
@@ -667,7 +669,8 @@ export function createDb(input: DataInput) {
   // ── 포인트: 재학생 잔액(view=balance), 졸업 예정자 정산(view=clear).
   const WITHIN = [7, 14, 28, 56];
   function points(q: URLSearchParams) {
-    const view = q.get('view') === 'clear' ? 'clear' : 'balance';
+    const v = q.get('view');
+    const view = v === 'clear' || v === 'leftover' ? v : 'balance';
     const within = WITHIN.includes(Number(q.get('within'))) ? Number(q.get('within')) : 14;
     const until = addDays(refDate, within);
     const clear = q.get('clear') || 'N';
@@ -675,7 +678,9 @@ export function createDb(input: DataInput) {
     const graduating = current.filter((r) => r.end <= until);
     const pending = graduating.filter((r) => !r.pointClear);
 
-    let list = view === 'clear' ? (clear === 'N' ? pending : graduating) : current;
+    // 잔액 남은 졸업생: 업체 포털은 현지 비용을 졸업 때 정산 기록한다. 충전이 사용보다 많으면 환불·정산 확인 대상이다.
+    const leftover = invAll.filter((r) => r.status === 'graduated' && r.pointBalance > 0);
+    let list = view === 'clear' ? (clear === 'N' ? pending : graduating) : view === 'leftover' ? leftover : current;
     const facets = { campuses: countBy(list, (r) => r.campus).map((c) => c.name), nations: countBy(list, nationOf).map((n) => n.name) };
     const campus = q.get('campus'), nation = q.get('nation'), has = q.get('has');
     if (campus) list = list.filter((r) => r.campus === campus);
@@ -685,7 +690,9 @@ export function createDb(input: DataInput) {
     list = [...byKeyword(list, q)].sort(
       view === 'clear'
         ? (a, b) => a.end.localeCompare(b.end) || a.name.localeCompare(b.name)
-        : (a, b) => b.pointBalance - a.pointBalance || a.end.localeCompare(b.end) || a.name.localeCompare(b.name),
+        : view === 'leftover'
+          ? (a, b) => b.end.localeCompare(a.end) || a.name.localeCompare(b.name)
+          : (a, b) => b.pointBalance - a.pointBalance || a.end.localeCompare(b.end) || a.name.localeCompare(b.name),
     );
     const totals = {
       withBalance: list.filter((r) => r.pointBalance > 0).length,
@@ -693,7 +700,7 @@ export function createDb(input: DataInput) {
       pointOut: list.reduce((s, r) => s + r.pointOut, 0),
       notCleared: list.filter((r) => !r.pointClear).length,
     };
-    return { refDate, view, within, until, tabCounts: { balance: current.length, clear: pending.length }, facets, totals, ...paginate<InvoiceRow>(list, q) };
+    return { refDate, view, within, until, tabCounts: { balance: current.length, clear: pending.length, leftover: leftover.length }, facets, totals, ...paginate<InvoiceRow>(list, q) };
   }
 
   // ── 기초관리: 코스·기숙사 목록. 연수의 courses·dorms 문자열과 기숙사 배정(do_name)을 캠퍼스별로 묶는다.
@@ -818,12 +825,58 @@ export function createDb(input: DataInput) {
     return { refDate, tab, tabCounts, campuses, campusStats, facets: { years }, people, ...paginate<BatchRow>(list, q) };
   }
 
+  // ── 방·침대 목록(업체 방관리). 업체 포털에는 침대 배정 기록이 없어(2026-11-08 입실자 295명 모두 침대 사용 0) 목록만 보여 준다.
+  // 타입별 침대 수와 입실 인원이 서로 맞지 않는 곳이 있어 공실은 계산하지 않는다(원칙 C8).
+  const roomRows = (input.rooms ?? []).map((r) => {
+    const beds = (Array.isArray(r.beds) ? r.beds : []) as Raw[];
+    return {
+      roomId: str(r.roo_id),
+      number: str(r.roo_num),
+      building: str(r.roo_building) || '-',
+      floor: str(r.roo_floor) || '-',
+      type: str(r.do_name) || '-',
+      campus: campusName(r.ca_code),
+      gender: ({ M: '남', F: '여', N: '공용' } as Record<string, string>)[str(r.roo_gender).toUpperCase()] ?? (str(r.roo_gender) || '-'),
+      max: num(r.roo_max),
+      beds: beds.length,
+      bedNumbers: beds.map((b) => str(b.bed_num)).filter(Boolean),
+      status: str(r.roo_status) || (yes(r.roo_use_yn) ? 'ACTIVE' : '-'),
+      start: str(r.roo_start_date).slice(0, 10),
+      end: str(r.roo_finish_date).slice(0, 10),
+      memo: str(r.roo_memo),
+    };
+  });
+  type RoomRow = (typeof roomRows)[number];
+
+  function rooms(q: URLSearchParams) {
+    const facets = {
+      buildings: countBy(roomRows, (r) => r.building).map((c) => c.name).sort(),
+      floors: [...new Set(roomRows.map((r) => r.floor))].sort(),
+      types: countBy(roomRows, (r) => r.type).map((c) => c.name).sort(),
+      campuses: countBy(roomRows, (r) => r.campus).map((c) => c.name),
+    };
+    let list: RoomRow[] = roomRows;
+    const building = q.get('building'), floor = q.get('floor'), type = q.get('type'), gender = q.get('gender');
+    const kw = (q.get('q') ?? '').trim().toLowerCase();
+    if (building) list = list.filter((r) => r.building === building);
+    if (floor) list = list.filter((r) => r.floor === floor);
+    if (type) list = list.filter((r) => r.type === type);
+    if (gender) list = list.filter((r) => r.gender === gender);
+    if (kw) list = list.filter((r) => `${r.number} ${r.memo}`.toLowerCase().includes(kw));
+    list = [...list].sort((a, b) => a.building.localeCompare(b.building) || a.floor.localeCompare(b.floor) || a.number.localeCompare(b.number, undefined, { numeric: true }));
+    const byType = countBy(list, (r) => r.type).map(({ name }) => {
+      const rs = list.filter((r) => r.type === name);
+      return { type: name, rooms: rs.length, beds: rs.reduce((s, r) => s + r.beds, 0) };
+    });
+    return { refDate, facets, totals: { rooms: list.length, beds: list.reduce((s, r) => s + r.beds, 0) }, byType, ...paginate<RoomRow>(list, q) };
+  }
+
   const source: 'sample' | 'extract' = meta.source === 'sample' ? 'sample' : 'extract';
 
   return {
     refDate,
     meta: () => ({ source, extractedAt: meta.extracted_at ?? null, refDate }),
-    summary: () => `${source === 'sample' ? '[샘플 데이터] ' : ''}학생 ${students.length} · 연수 ${enrollments.length} · 인보이스 ${invoices.length} · 입금 ${deposits.length} · 포인트 내역 ${input.pointHistory?.length ?? 0} · 기숙사 ${dorms.length} · 에이전시 ${agencies.length} · 담당자 ${agents.length}`,
+    summary: () => `${source === 'sample' ? '[샘플 데이터] ' : ''}학생 ${students.length} · 연수 ${enrollments.length} · 인보이스 ${invoices.length} · 입금 ${deposits.length} · 포인트 내역 ${input.pointHistory?.length ?? 0} · 방 ${input.rooms?.length ?? 0} · 기숙사 ${dorms.length} · 에이전시 ${agencies.length} · 담당자 ${agents.length}`,
     dashboard,
     listEnrollments,
     studentDetail,
@@ -838,6 +891,7 @@ export function createDb(input: DataInput) {
     points,
     listCodes,
     listBatches,
+    rooms,
   };
 }
 
@@ -858,6 +912,7 @@ export function handleApi(db: Db, pathname: string, params: URLSearchParams): { 
     if (p === '/unpaid') return { status: 200, body: db.listUnpaid(params) };
     if (p === '/deposits') return { status: 200, body: db.listDeposits(params) };
     if (p === '/points') return { status: 200, body: db.points(params) };
+    if (p === '/rooms') return { status: 200, body: db.rooms(params) };
     if (p === '/codes') return { status: 200, body: db.listCodes(params) };
     if (p === '/batches') return { status: 200, body: db.listBatches(params) };
     const m = p.match(/^\/students\/(\w+)$/);

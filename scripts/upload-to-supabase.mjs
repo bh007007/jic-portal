@@ -40,6 +40,7 @@ const PLAN = [
   ['legacy_agencies', 'agencies.ndjson', (r) => r.ag_id],
   ['legacy_agents', 'agents.ndjson', (r) => r.am_id],
   ['legacy_deposits', 'deposits.ndjson', (r) => r.dp_id],
+  ['legacy_rooms', 'rooms.ndjson', (r) => r.roo_id],
   // 포인트 내역은 고유 번호가 없어 연수·시각·구분·순번으로 만든다. 화면에 쓰는 열만 올린다(apps/admin/server/core.ts POINT_HISTORY_COLUMNS).
   ['legacy_point_history', 'point_history.ndjson', (r, i) => `${r.tr_id}-${r.dt}-${r.type}-${i}`,
     ['tr_id', 'type', 'dt', 'point', 'php', 'ec_name', 'nickname', 'memo', 'campus']],

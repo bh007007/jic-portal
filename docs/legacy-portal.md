@@ -87,14 +87,19 @@
 | agents | adm/agency/agent_load | 에이전시마다 `ag_id` |
 | memo_history | com/dialog/dlg_train_memo_load | 연수마다 `dlg_train_memo_tr_id`. 2026-11-07 기준 사용 기록 없음 |
 
-추가 추출(`portal-extract-extra.js`, 업체 포털에서 아직 실행 전). 주소는 화면 HTML에서 찾고, 못 찾으면 아래 주소를 쓴다.
+## 추가 조회 주소와 검색 항목 (2026-11-08 추가 추출로 확인)
 
-| 데이터셋 | 화면 → 조회 주소 | 조건 |
-| --- | --- | --- |
-| point_balance | adm/point/balance → balance_load | 화면 기본 조건. 날짜 항목을 비운 결과가 더 많으면 그쪽 |
-| point_history_all | adm/point/history → history_load | 날짜 항목을 모두 비움 (첫 추출은 2026-06까지만 있었음) |
-| rooms | adm/room/room_bed → room_bed_v2_load | 캠퍼스 선택이 있으면 캠퍼스마다 |
-| bed_board | adm/checkin/checkin_v3 → checkin_v3_student_rooms | 날짜 = 오늘, 캠퍼스마다. 페이지 번호 없는 주소라 응답 모양을 기록 |
+화면 스크립트는 대부분 `jAjaxForm(page_base_url + "<화면>_load/" + 페이지, "frm_search", …)` 형식이다. 검색 폼(`frm_search`) 전체를 보내므로 화면의 검색 항목 이름이 곧 조회 조건이고, 주소가 HTML에 통째로 드러나지 않는 경우가 많다. 아래 결과는 열 이름·건수로만 확인했다(값 없음, 열 목록은 `docs/data-dictionary-extra.md`).
+
+| 화면 | 조회 주소 | 검색 항목 | 확인한 것 |
+| --- | --- | --- | --- |
+| 회계 > Point(Students) > Balance (`adm/point/balance`) | `balance_load/<페이지>` | `s_branch`, `s_sd_departure`(배치), `s_name`, `s_st_country`, `s_balance`(plus·lower_2000·minus), `s_start_date`, `s_finish_date`, `s_current_campus`(11·12·14), `s_student_in_school`(체크박스), `s_per_page`(10~100), `s_order` | 화면이 잔액 = `total_deposit - total_usage`로 계산한다. 응답 열에 `last_deposit_date`, `stay_state`. 화면 기본 조건으로는 1건, 조건을 넓히면 연수 5,002건. 재학생 281건은 충전·잔액 0이고 잔액이 남은 15건은 모두 졸업생 |
+| 회계 > Point > History (`adm/point/history`) | `history_load/<페이지>` | `s_branch`, `s_campus`, `s_deposit_cost`, `s_ec_id`(기타 비용), `s_start_date`, `s_finish_date`, `s_term_btn`, `s_staff`, `s_st_country[]` | 날짜 항목을 모두 비워도 첫 추출과 같은 14,439건. 기록은 2024-09~2026-06. **업체 포털의 포인트 기록은 2026-06에 끝났다** |
+| 기초코드 > 방관리 > 방·침대 (`adm/room/room_bed`) | `room_bed_v2_load/<페이지>` | `s_campus`(11·12·14, 전체 없음), `s_dorm`, `s_status`(ACTIVE·UPCOMING·ENDED·ALL), `s_the_date`, `s_building`, `s_floor`, `s_gender`, `room_number`, `bed_number`, `s_per_page`(30~200) | 응답에 `summary`(방 수 등)가 붙는다. 방마다 `beds` 배열(`bed_id`, `bed_num`, `bed_gender`, `bed_start_date`, `bed_finish_date`, `bst_type` 등). 침대를 쓰는 학생은 들어 있지 않다. ACTIVE 기준으로 Premium 74개 방만 나왔다 |
+| 재학생 > 체크인 (`adm/checkin/checkin_v3`) | 목록 `checkin_v3_load/<페이지>` | `s_campus`(11·12·14), `s_filter`(N·P·F), `s_name`, `s_st_date_from`, `s_st_date_to`, `s_st_dorm` | 기본 추출의 `dorm_assignments`가 이 목록이다 |
+| 〃 '방 이력' 창 | `checkin_v3_student_rooms` (페이지 번호 없음) | `{ st_id }` 학생 하나 | 응답은 `{ code, list }`. 오늘 입실자 295명 모두 빈 목록이고 `cnt_bed_use`도 0이다 → **업체 포털에는 침대 배정 기록이 없다** (포털 기획 세션 확인) |
+| 회계 > 현지 인보이스 납부 (`adm/tuition2/payment`) | `payment_load/<페이지>` | `s_branch`, `s_sd_id`, `s_extend_yn`, `s_tr_state[]`, `s_invoice_balance`, `s_local_balance`, `s_term_key`, `s_start_date`, `s_finish_date`, `s_point_balance`, `s_collectible_yn`, `s_st_country[]`, `s_ag_country[]`, `s_current_student`, `s_tr_deposit_state`, `s_tr_ver`, `s_tr_pay_method`, `s_key`, `s_keyword`, `s_total_week`, `s_bk_id`, `s_trg`, `s_order` | 인보이스 상세 금액을 주는 주소는 아직 찾지 못했다 |
+| 기초코드 > 방관리 > 방 상태 (`adm/room/room_state`) | 확인 전 | `kind`, `s_campus`, `s_dorm`, `s_status`, `s_the_date`, `s_type`, `s_building`, `room_number` | - |
 
 ## 주의
 
