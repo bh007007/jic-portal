@@ -409,6 +409,53 @@ for (const e of enrollments) {
 }
 
 const write = (name, rows) => fs.writeFileSync(path.join(outDir, name + '.ndjson'), rows.map((r) => JSON.stringify(r)).join('\n') + '\n');
+
+// ── 연장·변경(portal-extract-extend.js 와 같은 표·열). 별도 시드(seed9)라 위 값은 그대로다.
+// 실제 추출본처럼 연장 기간(tt_*)은 원래 종료일(tr_finish_date) 뒤에 붙는다. 연수 열(tr_total_week·tr_return_date)은 바꾸지 않는다.
+// 학생 앱·인트라넷 시험이 쓰는 학생(30001·30095·30140)은 넣지 않는다.
+let seed9 = 29;
+const rand9 = () => ((seed9 = (seed9 * 1103515245 + 12345) % 2147483648) / 2147483648);
+const pick9 = (arr) => arr[Math.floor(rand9() * arr.length)];
+const TESTED = new Set(['30001', '30095', '30140']);
+const extend = [], changeCourse = [], changeDorm = [], changeComeback = [];
+let ttNo = 50000, chgNo = 650000;
+for (const e of enrollments) {
+  if (e.tr_state !== 'INVOICE' || TESTED.has(e.tr_st_id) || e.tr_start_date > SAMPLE_REF) continue;
+  const inv = invoices.find((i) => i.tr_id === e.tr_id);
+  const campus = CAMPUS[e.first_co_ca_code];
+  const course = stripW(e.courses), dorm = stripW(e.dorms);
+  const r = rand9();
+  if (r < 0.14) {
+    let start = day(e.tr_finish_date, 2); // 원래 종료(금) 다음 일요일부터
+    const times = rand9() < 0.2 ? 2 : 1;
+    for (let k = 0; k < times; k++) {
+      const w = pick9([2, 4, 4, 4, 8]);
+      const finish = day(start, w * 7 - 2);
+      const price = w * (WEEK_RATE[inv.tr_currency] ?? 280);
+      extend.push({
+        tr_id: e.tr_id, tt_id: String(++ttNo), tt_tr_id: e.tr_id, tt_ini_ver: '1', tt_start_date: start, tt_finish_date: finish, tt_week: String(w),
+        tt_memo: rand9() < 0.3 ? '샘플: 레벨 테스트 후 연장 희망' : null, tt_insert_dt: `${notAfter(day(start, -(7 + Math.floor(rand9() * 30))))} 14:00:00`,
+        sum_price: String(price), sum_amount: String(rand9() < 0.4 ? price : 0), tr_currency: inv.tr_currency,
+      });
+      start = day(finish, 2);
+    }
+  } else if (r < 0.24 && Number(e.tr_total_week) >= 8) {
+    const next = pick9(campus.courses.filter((c) => c !== course));
+    const date = day(e.tr_start_date, 28);
+    changeCourse.push({ tr_id: e.tr_id, ic_id: String(++chgNo), prev_chg_course: course, chg_course: next, chg_course_date: date, prev_chg_dorm: dorm, chg_dorm: dorm, chg_dorm_date: date, rqp_cnt: rand9() < 0.3 ? '1' : '0' });
+  } else if (r < 0.32 && !/^Stay Out/.test(dorm)) {
+    const next = pick9(campus.dorms.filter((d) => d !== dorm && !/^Stay Out/.test(d)));
+    const date = day(e.tr_start_date, 7 * (1 + Math.floor(rand9() * Math.max(1, Number(e.tr_total_week) - 1))));
+    changeDorm.push({ tr_id: e.tr_id, ic_id: String(++chgNo), prev_chg_course: course, chg_course: course, chg_course_date: date, prev_chg_dorm: dorm, chg_dorm: next, chg_dorm_date: date, rqp_cnt: rand9() < 0.4 ? '1' : '0' });
+  } else if (r < 0.36) {
+    changeComeback.push({ tr_id: e.tr_id, ic_id: String(++chgNo), prev_chg_course: null, chg_course: course, chg_course_date: e.tr_start_date, prev_chg_dorm: null, chg_dorm: dorm, chg_dorm_date: e.tr_start_date, rqp_cnt: '0' });
+  }
+}
+write('extend', extend);
+write('change_course', changeCourse);
+write('change_dorm', changeDorm);
+write('change_comeback', changeComeback);
+
 write('point_history', pointHistory);
 write('students', students);
 write('enrollments', enrollments);

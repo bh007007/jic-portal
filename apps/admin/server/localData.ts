@@ -6,7 +6,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import type { IncomingMessage, ServerResponse } from 'node:http';
 import type { Plugin } from 'vite';
-import { createDb, handleApi, INVOICE_ITEM_COLUMNS, LOCAL_COST_COLUMNS, POINT_HISTORY_COLUMNS, type Raw } from './core';
+import { CHANGE_COLUMNS, createDb, EXTENSION_COLUMNS, handleApi, INVOICE_ITEM_COLUMNS, LOCAL_COST_COLUMNS, POINT_HISTORY_COLUMNS, type Raw } from './core';
 
 const pick = (cols: string[]) => (r: Raw) => Object.fromEntries(cols.map((c) => [c, r[c] ?? null]));
 
@@ -36,6 +36,11 @@ export function loadDir(dataDir: string) {
     invoiceItems: readNdjson(path.join(dataDir, 'inv_invoice_cost_st.ndjson')).map(pick(INVOICE_ITEM_COLUMNS)),
     invoiceAgencyItems: readNdjson(path.join(dataDir, 'inv_invoice_cost_ag.ndjson')).map(pick(INVOICE_ITEM_COLUMNS)),
     localCosts: readNdjson(path.join(dataDir, 'inv_etc.ndjson')).map(pick(LOCAL_COST_COLUMNS)),
+    // 연장·변경(portal-extract-extend.js). 원본 행의 입금 은행명·연락처 같은 열은 싣지 않는다.
+    extensions: readNdjson(path.join(dataDir, 'extend.ndjson')).map(pick(EXTENSION_COLUMNS)),
+    courseChanges: readNdjson(path.join(dataDir, 'change_course.ndjson')).map(pick(CHANGE_COLUMNS)),
+    dormChanges: readNdjson(path.join(dataDir, 'change_dorm.ndjson')).map(pick(CHANGE_COLUMNS)),
+    comebacks: readNdjson(path.join(dataDir, 'change_comeback.ndjson')).map(pick(CHANGE_COLUMNS)),
   });
 }
 
