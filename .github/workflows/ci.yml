@@ -19,3 +19,7 @@ jobs:
       - run: npm run partner:build
       - run: npm run student:build
       - run: npm run intranet:build
+      # 학생 앱·인트라넷 DB 권한(RLS)과 학생 앱 배포 서버 시험: PGlite(Postgres) 위에 마이그레이션을 올려 확인한다(의존성에 넣지 않고 임시 설치).
+      - run: npm i --no-save @electric-sql/pglite@0.3
+      - run: node supabase/tests/student_intranet_rls.mjs
+      - run: node supabase/tests/student_worker_api.mjs

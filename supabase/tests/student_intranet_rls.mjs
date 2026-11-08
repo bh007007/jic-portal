@@ -1,4 +1,4 @@
-// 학생 앱·인트라넷 마이그레이션(20261108100000_student_intranet.sql)의 권한 시험.
+// 학생 앱·인트라넷 마이그레이션(20261108100000_student_intranet.sql, 20261108120000_student_request_ids.sql)의 권한 시험.
 // 실제 Postgres(PGlite, WebAssembly)에 Supabase 흉내(auth.uid, anon/authenticated/service_role)를 만들고
 // 마이그레이션을 두 번 실행한 뒤(여러 번 실행 가능 확인) 역할별로 읽기·쓰기를 시험한다. 데이터는 전부 가짜.
 //
@@ -30,6 +30,8 @@ await db.exec(`
 await db.exec(mig('20261107000000_legacy_tables.sql'));
 await db.exec(mig('20261108100000_student_intranet.sql'));
 await db.exec(mig('20261108100000_student_intranet.sql')); // 두 번째 실행
+await db.exec(mig('20261108120000_student_request_ids.sql'));
+await db.exec(mig('20261108120000_student_request_ids.sql'));
 ok('마이그레이션 2회 실행', true);
 
 // ── 가짜 사용자
@@ -80,6 +82,11 @@ const absA = await as(U.stA, async () => {
   const r = await one(`insert into absence_requests (student_no, enrollment_id, absence_date, periods, kind, reason)
                        values ('1001', 'tr1', '2026-11-10', '{1,2}', 'sick', '감기') returning id, status`);
   ok('학생 결석 등록 → 대기', r.status === 'pending');
+  const myId = 'a0000000-0000-4000-8000-000000000001';
+  const withId = await one(`insert into absence_requests (id, student_no, enrollment_id, absence_date, kind, reason)
+                            values ('${myId}', '1001', 'tr1', '2026-11-20', 'personal', '서버가 정한 번호') returning id`);
+  ok('서버가 정한 신청 번호로 등록', withId.id === myId);
+  await q(`select cancel_absence_request('${myId}')`);
   await denied('남의 학생번호로 결석', `insert into absence_requests (student_no, enrollment_id, absence_date, kind, reason) values ('1002', 'tr2', '2026-11-10', 'sick', 'x')`, RLS);
   await denied('남의 연수로 결석', `insert into absence_requests (student_no, enrollment_id, absence_date, kind, reason) values ('1001', 'tr2', '2026-11-10', 'sick', 'x')`, RLS);
   await denied('승인 상태로 등록', `insert into absence_requests (student_no, enrollment_id, absence_date, kind, reason, status) values ('1001', 'tr1', '2026-11-11', 'sick', 'x', 'approved')`, PERM);
@@ -95,13 +102,13 @@ const absB = await as(U.stB, async () => {
   return (await one(`insert into absence_requests (student_no, enrollment_id, absence_date, kind, reason) values ('1002', 'tr2', '2026-11-12', 'personal', '병원') returning id`)).id;
 });
 await as(U.stA, async () => {
-  ok('학생A는 자기 것만', (await count(`select count(*) n from absence_requests`)) === 1);
+  ok('학생A는 자기 것만', (await count(`select count(*) n from absence_requests`)) === 2);
   await q(`select cancel_absence_request('${absA}')`);
   ok('학생 취소', (await one(`select status from absence_requests where id = '${absA}'`)).status === 'cancelled');
   await denied('취소한 건 다시 취소', `select cancel_absence_request('${absA}')`, /not_pending/);
 });
 await as(U.staffC, async () => {
-  ok('직원은 모두 봄', (await count(`select count(*) n from absence_requests`)) === 2);
+  ok('직원은 모두 봄', (await count(`select count(*) n from absence_requests`)) === 3);
   const n = (await one(`select decide_absence_requests(array['${absA}'::uuid, '${absB}'::uuid], true, '확인') n`)).n;
   ok('대기 건만 처리', n === 1, `(처리 ${n})`);
   const b = await one(`select status, decided_by, staff_comment from absence_requests where id = '${absB}'`);

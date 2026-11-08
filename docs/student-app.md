@@ -1,6 +1,6 @@
 # 학생 앱 (`apps/student`)
 
-학생이 휴대폰으로 쓰는 화면이다. 디자인은 `docs/design/StudentPortal.dc.html`(05, 390×844)을 따른다. 1차는 **로컬 개발 서버 전용**이고, 배포는 아래 '배포 전에 필요한 것'을 마친 뒤에 한다.
+학생이 휴대폰으로 쓰는 화면이다. 디자인은 `docs/design/StudentPortal.dc.html`(05, 390×844)을 따른다. 로컬 개발 서버로 개발하고, 배포는 Cloudflare Workers 하나로 한다(아래 '배포', 서버 코드 준비 11/8, Cloudflare 설정 전).
 
 ## 실행
 
@@ -55,6 +55,9 @@ apps/student/
 ├─ server/departures.ts  귀국 항공편 (인트라넷 '귀국 일정'이 같이 씀)
 ├─ server/accounts.ts    학생 계정 규칙: 대상 학생, 가짜 이메일, 첫 비밀번호, 새 비밀번호 규칙 (스크립트와 화면이 같이 씀)
 ├─ server/supabaseAuth.ts  Supabase 토큰 → 학생 번호 (로컬 개발 서버, 배포 서버가 같이 씀)
+├─ server/supabaseData.ts  배포: 업체 원본에서 그 학생 행만 읽어 createDb (서비스 키)
+├─ server/supabaseStores.ts 배포: 신청·귀국 항공편·배차 저장소 (Supabase 테이블, 학생 토큰)
+├─ worker/index.ts       배포 서버 (Cloudflare Workers: 정적 파일 + /api), 설정 wrangler.jsonc
 ├─ server/core.test.ts   core 시험 (가짜 시계·메모리 저장소). 빌드할 때 함께 돈다
 ├─ server/i18n.test.ts   문구 시험 (6개 언어 키·자리 표시, 브라우저 언어)
 ├─ server/localData.ts   로컬: Vite 플러그인, 신청 파일 저장 (인트라넷도 같은 파일을 연다)
@@ -138,16 +141,46 @@ npm run student:accounts -- --reset 30095 --apply   # 비밀번호를 잊은 학
 
 이때 로그인만 Supabase이고 학생·연수 데이터와 신청 파일은 로컬 그대로다(테스트 계정과 맞추려고 데이터는 샘플로 고정). 샘플 학생의 생년월일은 `.env.local` 없이 실행했을 때 로그인 화면 아래 안내나 `data-sample/tables/students.ndjson`에서 본다.
 
-## 배포 전에 필요한 것
+## 배포 (Cloudflare Workers)
 
-테이블과 권한(RLS)은 `supabase/migrations/20261108100000_student_intranet.sql`(11/8, 인트라넷과 같은 파일)에 만들었다. 권한 시험은 `supabase/tests/student_intranet_rls.mjs`(실제 Postgres인 PGlite에서 역할별로 읽기·쓰기 확인, 실행 방법은 파일 맨 위).
+학생 앱은 **Workers 한 개**로 올린다(정적 파일 + `/api` 서버 코드, 설정 `apps/student/wrangler.jsonc`, 서버 `apps/student/worker/index.ts`). Cloudflare가 같은 저장소로 Pages 프로젝트를 하나 더 만들지 못하게 해서 파트너 포털과 같은 방식을 쓴다(`docs/setup-cloud.md`).
 
-1. **학생 계정**(11/8 결정): 학생번호 + 생년월일로 미리 만들고 첫 로그인 때 비밀번호를 바꾼다(V4).
-   - `student_users`가 Auth 사용자와 학생 번호를 잇는다(`must_change_password` 기본 참). 쓰기는 서비스 키만.
-   - 계정 생성 스크립트와 로그인·비밀번호 변경 화면은 11/8 완료(위 '학생 계정과 로그인'). 남은 것은 계정 생성 담당·시점(HANDOFF 7)과 졸업생 계정 정리 기준.
-2. **학생 정보 읽기**: 학생은 `legacy_*`(직원만 읽기)를 읽을 수 없고, 이 권한은 넓히지 않는다. 정규화 스키마(HANDOFF 6-3) 전까지는 학생 앱 서버(Workers)가 서비스 키로 그 학생 행만 읽어 `studentDetail`을 계산한다.
-3. **서버(Workers) 연결**: `server/core.ts`의 저장소(`RequestStore`, `DepartureStore`, `RideStore`)를 Supabase 구현으로 바꾼다. 쓰기는 학생 토큰으로 해서 RLS가 한 번 더 막게 한다. 신청 기간·중복 같은 규칙은 지금처럼 서버(`requests.ts`, `departures.ts`)가 확인하고, DB는 본인·본인 연수·대기 상태·출발일 같은 최소 조건만 막는다.
-4. **Cloudflare Pages 프로젝트**: 관리자 앱과 별도 프로젝트로 만든다(빌드 `npm run student:build`, 출력 `apps/student/dist`).
+- **로그인**: 화면이 Supabase 학생 계정 토큰을 보내고, 서버가 토큰으로 학생을 찾는다(`server/supabaseAuth.ts`). 첫 비밀번호를 안 바꿨으면 403.
+- **학생·연수**: 업체 원본(`legacy_*`)에서 그 학생 행만 서비스 키로 읽어 관리자 core의 `createDb`에 넣는다(`server/supabaseData.ts`: 메타, 학생, 연수, 기숙사 배정. 인보이스·입금·포인트·에이전시는 읽지 않음). `legacy_*`의 RLS(직원만)는 넓히지 않는다. 학생 번호는 토큰으로 확인한 값만 쓴다. 정규화 스키마(HANDOFF 6-3)로 옮기면 이 파일만 바꾼다.
+- **신청·귀국 항공편·배차**: Supabase 테이블을 학생 토큰으로 읽고 쓴다(`server/supabaseStores.ts`, RLS가 본인 행만 연다). 신청 등록·취소, 항공편 등록·수정, 배차 읽기만 한다. 신청 기간·중복 같은 규칙은 로컬과 같은 core(`requests.ts`, `departures.ts`)가 확인하고, DB는 본인·본인 연수·대기 상태·출발일 같은 최소 조건만 막는다.
+- 같은 Worker 안에서 토큰 결과는 30초, 학생 데이터는 60초 기억한다(학생별이라 섞이지 않음).
+
+### 설정 순서 (레오 PC의 Claude, 테스트 프로젝트는 샘플 데이터만)
+
+1. Supabase에 마이그레이션 `20261108100000_student_intranet.sql`, `20261108120000_student_request_ids.sql`을 적용한다.
+2. 샘플 업체 원본을 올린다(`scripts/upload-to-supabase.mjs`, 이미 올라가 있으면 건너뜀).
+3. 학생 계정을 만든다: `npm run student:accounts -- --apply`(위 '학생 계정과 로그인').
+4. **Workers & Pages → Create → Workers → Import a repository** → `jic-portal`
+
+   | 항목 | 값 |
+   | --- | --- |
+   | Project name | `jic-student` |
+   | Root directory | `/` (비워 둠) |
+   | Build command | `npm run student:build` |
+   | Deploy command | `npx wrangler deploy --config apps/student/wrangler.jsonc` |
+   | Build variables | `VITE_SUPABASE_URL`, `VITE_SUPABASE_ANON_KEY`(화면의 로그인), `NODE_VERSION=22` |
+
+5. 배포된 Worker의 **Settings → Variables and Secrets**에 실행 변수를 넣는다: `SUPABASE_URL`, `SUPABASE_ANON_KEY`(빌드 변수와 같은 값), **Secret**으로 `SUPABASE_SERVICE_ROLE_KEY`. `keep_vars`를 켜 두어 다시 배포해도 지워지지 않는다. 없으면 `/api`가 `500 server_config`를 돌려준다.
+6. 주소(`https://jic-student.<계정>.workers.dev`)에서 샘플 학생으로 로그인 → 비밀번호 변경 → 홈이 보이면 된다.
+
+서비스 키는 모든 권한을 가진 키다. 이 Worker에서는 업체 원본에서 그 학생 행을 읽는 데만 쓰고, 신청 쓰기는 학생 토큰으로 한다. 보안 점검 때 이 범위를 확인한다.
+
+### 배포 시험
+
+- `supabase/tests/student_worker_api.mjs`: 실제 마이그레이션을 올린 PGlite(`supabase/tests/pg-supabase.mjs`, Supabase Auth·REST 흉내)에 계정 생성 스크립트로 샘플 계정을 만들고, Worker를 묶어 학생 흐름 전체를 확인한다(35개). 비밀번호 변경 전 403, 결석·외박 등록·취소, 직원 승인을 학생이 봄, 항공편·배차·재확인, 다른 학생과 분리, 본문 검사.
+- CI가 권한 시험과 함께 돌린다(`.github/workflows/ci.yml`). 직접 돌리려면 `npm i --no-save @electric-sql/pglite@0.3` 후 `node supabase/tests/student_worker_api.mjs`.
+- 화면까지 보려면: `node supabase/tests/pg-supabase.mjs 54321`로 시험 서버를 띄우고, 계정을 만든 뒤(`SUPABASE_URL=http://127.0.0.1:54321`, `SUPABASE_SERVICE_ROLE_KEY=service-key`), `VITE_SUPABASE_URL=http://127.0.0.1:54321 VITE_SUPABASE_ANON_KEY=anon-key npm run student:build` → `npx wrangler dev --config apps/student/wrangler.jsonc --var SUPABASE_URL:http://127.0.0.1:54321 --var SUPABASE_ANON_KEY:anon-key --var SUPABASE_SERVICE_ROLE_KEY:service-key`. 11/8에 이 방식으로 로그인·비밀번호 변경·신청·귀국 항공편 화면을 확인했다.
+
+### 남은 것
+
+- 학생 계정 생성 담당·시점(HANDOFF 7), 졸업생 계정 정리 기준.
+- 실제 학생 데이터는 보안 점검 뒤에만 올린다(2026-11-07 결정). 그 전까지 배포 주소는 샘플 데이터 시험용이다.
+- 인트라넷 배포(직원·가드 계정, 같은 테이블을 직원 쪽에서 처리)는 별도 작업.
 
 ### 테이블과 권한
 
@@ -160,7 +193,7 @@ npm run student:accounts -- --reset 30095 --apply   # 비밀번호를 잊은 학
 | `student_users` | 자기 행 읽기 | 읽기 |
 
 - 코드와 열 이름: `stId` → `student_no`, `trId` → `enrollment_id`, `date` → `absence_date`, `from`/`until` → `leave_date`/`return_date`, `comment` → `staff_comment`, `submittedAt` → `created_at`. 처리자(`decidedBy`)는 DB에 사용자 id를 두고 화면에는 `staff_users.name`을 보여 준다.
-- 학생이 넣을 수 있는 열만 열어 두었다(상태·처리 열은 학생이 쓸 수 없다). 연수가 그 학생 것인지는 `enrollment_of_student()`가 `legacy_enrollments`의 `tr_st_id`로 확인한다(정규화 테이블로 옮기면 이 함수만 바꾼다).
+- 학생이 넣을 수 있는 열만 열어 두었다(상태·처리 열은 학생이 쓸 수 없다). 신청 번호(`id`)는 서버 core가 정해 화면에 돌려주므로 `20261108120000_student_request_ids.sql`에서 열었다. 연수가 그 학생 것인지는 `enrollment_of_student()`가 `legacy_enrollments`의 `tr_st_id`로 확인한다(정규화 테이블로 옮기면 이 함수만 바꾼다).
 
 ## 확인이 필요한 것
 

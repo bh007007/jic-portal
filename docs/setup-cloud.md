@@ -105,6 +105,10 @@ Cloudflare는 이미 Pages 프로젝트에 연결된 저장소로 Pages 프로�
 - Supabase **Authentication → URL Configuration → Redirect URLs**에 파트너 포털 주소(`https://jic-partner.….workers.dev/**`)와 `http://127.0.0.1:5175/**`를 추가한다. 이메일 인증과 비밀번호 재설정 링크가 이 주소로 돌아온다.
 - 등록 신청을 받으려면 **Allow new users to sign up**을 켠다(`docs/partner-portal.md` '계정 흐름').
 
+### 학생 앱 (Cloudflare Workers)
+
+파트너 포털과 같은 Workers 방식이지만 정적 파일에 `/api` 서버 코드가 붙는다(`apps/student/wrangler.jsonc`, `apps/student/worker/index.ts`). Project name `jic-student`, Build command `npm run student:build`, Deploy command `npx wrangler deploy --config apps/student/wrangler.jsonc`. 빌드 변수 외에 실행 변수(`SUPABASE_URL`, `SUPABASE_ANON_KEY`, Secret `SUPABASE_SERVICE_ROLE_KEY`)가 필요하다. 순서와 확인 방법은 `docs/student-app.md` '배포'.
+
 ## 3. GitHub (선택)
 
 - `.github/workflows/ci.yml`: PR과 `main`에서 빌드가 깨지지 않는지 확인한다. 설정할 것 없음.
