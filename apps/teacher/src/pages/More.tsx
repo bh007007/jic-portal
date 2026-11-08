@@ -3,9 +3,8 @@ import { useAuth } from '../auth';
 import { useT, type Key } from '../i18n';
 import { PageHead, Section } from '../ui';
 
-// 메뉴 검토표 'LMS' 시트 순서. 업체 시간표·출석 데이터가 필요한 메뉴는 연결 뒤 연다(원칙 V1·V6, C8).
+// 메뉴 검토표 'LMS' 시트 순서. 출석 체크는 11/9에 열었다. 나머지는 결정이나 출석 원본이 필요하다(원칙 V1·V6, C8).
 const PLANNED: [Key, Key][] = [
-  ['p_att', 'p_att_why'],
   ['p_attv', 'p_attv_why'],
   ['p_appr', 'p_appr_why'],
   ['p_unex', 'p_unex_why'],
@@ -22,6 +21,7 @@ export default function More() {
       <PageHead title={t('more')} />
       <Section title={t('classSection')}>
         <ul className="menu">
+          <li><Link to="/attendance">{t('attendanceMenu')}</Link></li>
           <li><Link to="/absences">{t('absencesMenu')}</Link></li>
         </ul>
       </Section>

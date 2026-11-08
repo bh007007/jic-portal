@@ -20,7 +20,7 @@ const ko = {
   // 홈
   hello: '{name}님',
   todayClass: '오늘 수업 · 출석',
-  todayClassNote: '업체 포털 수업 시간표를 연결한 뒤 열립니다. 지금은 업체 포털에서 출석을 입력합니다.',
+  noClassToday: '오늘 수업이 없습니다.', myClassesToday: '내 수업 {n}개', uncheckedN: '미체크 {n}명', openAttendance: '출석 체크',
   todayAbsences: '오늘 결석 신청', byDate: '날짜별 보기', noAbsenceToday: '오늘 결석 신청이 없습니다.',
   students: '학생', seeAll: '전체 보기', current: '재학', arriving30: '30일 안 입학',
   recentScores: '최근 입력한 성적', enterScores: '성적 입력', noScores: '아직 입력한 성적이 없습니다.',
@@ -54,8 +54,7 @@ const ko = {
   st_pending: '처리 전', st_approved: '인정', st_rejected: '반려',
   // 더보기
   more: '더보기', manage: '관리 (매니저·직원)', testTypes: '시험 종류 · CEFR 대응', staffList: '강사 목록',
-  classSection: '수업', absencesMenu: '결석 신청 (날짜별, 종류·처리 상태)', planned: '준비 중',
-  p_att: '출석 체크', p_att_why: '수업 중 휴대폰으로. 업체 수업 시간표 연결 뒤',
+  classSection: '수업', attendanceMenu: '출석 체크 (날짜·수업별)', absencesMenu: '결석 신청 (날짜별, 종류·처리 상태)', planned: '준비 중',
   p_attv: '출석 확인 · 사유별 합계', p_attv_why: '출석 원본이 생기면',
   p_appr: '결석 신청 승인', p_appr_why: '지금은 인트라넷 › 신청 처리에서 한다. 신청 보기는 위 결석 신청',
   p_unex: '무단결석 목록', p_unex_why: '출석 원본이 생기면. 패널티 승인은 인트라넷',
@@ -63,6 +62,16 @@ const ko = {
   p_rec: '녹음', p_rec_why: '보관 기간 결정 뒤',
   p_chg: '수업 변경 · 옵션 클래스', p_chg_why: '스케줄러용. 업체 시간표 연결 뒤',
   notReady: '준비 중인 화면입니다.', noPage: '없는 화면', attendance: '출석 체크',
+  // 출석
+  mineOnly: '내 수업만', noSessions: '이 날 수업이 없습니다.', noMine: '이 날 내 수업이 없습니다.',
+  att_AT: '출석', att_AB: '결석', att_TA: '지각', att_none: '미체크',
+  checkedOf: '{c}/{n} 체크', absentN: '결석 {n}', lateN: '지각 {n}', kind_1: '1:1', kind_G: '그룹', minutesN: '{n}분',
+  markAll: '남은 {n}명 모두 출석', lateMin: '지각 분', excused: '사유 인정', checkedBy: '{name} · {time}',
+  closed: '마감', closeDay: '{campus} 마감', reopenDay: '{campus} 마감 되돌리기', closedBy: '{campus} 마감 · {name} {time}',
+  confirmClose: '{day} {campus} 출석을 마감할까요? 마감하면 매니저가 되돌리기 전까지 고칠 수 없습니다.', confirmReopen: '{day} {campus} 마감을 되돌릴까요?',
+  closedNote: '마감된 날입니다. 고치려면 매니저가 마감을 되돌립니다.', futureNote: '수업 날짜가 되면 입력합니다.',
+  readOnlyNote: '이 수업의 강사·체커·매니저가 입력합니다.', noSession: '수업을 찾을 수 없습니다.', absenceReq: '결석 신청', backToList: '수업 목록',
+  prevDay: '전날', nextDay: '다음 날', holidayOn: '휴일: {name}',
   // 시험 종류
   testTypesSub: 'CEFR은 JIC 기준 추정 레벨. 대응 기준·시험 주기는 미결정',
   stopUse: '사용 중지', reuse: '다시 사용', stoppedNote: '사용 중지됨: 새 성적 입력에 나오지 않는다(기존 기록은 그대로).',
@@ -77,6 +86,7 @@ const ko = {
   e_login: '이메일 또는 비밀번호가 맞지 않습니다.', e_net: '서버에 연결하지 못했습니다. 잠시 후 다시 시도하세요.',
   e_value: '점수가 시험 종류의 범위·단위를 벗어났습니다.', e_section: '이 시험 종류에 없는 영역입니다.', e_date: '오늘 이후 날짜는 넣을 수 없습니다.',
   e_type: '쓰지 않는 시험 종류입니다.', e_rls: '권한이 없습니다.', e_dup: '이미 있는 항목입니다.', e_check: '입력 형식이 맞지 않습니다.',
+  e_closed: '마감된 날이라 고칠 수 없습니다.', e_future: '앞날은 입력할 수 없습니다.', e_manager: '매니저·직원만 바꿀 수 있습니다.',
 };
 export type Key = keyof typeof ko;
 
@@ -96,7 +106,7 @@ const en: Record<Key, string> = {
   loginNote: 'Same login system as the admin portal. Accounts are issued by the admin.',
   hello: 'Hi, {name}',
   todayClass: "Today's classes · Attendance",
-  todayClassNote: 'Opens after the class timetable is connected from the old portal. For now, enter attendance in the old portal.',
+  noClassToday: 'No classes today.', myClassesToday: 'My classes: {n}', uncheckedN: '{n} not checked', openAttendance: 'Attendance check',
   todayAbsences: "Today's absence requests", byDate: 'By date', noAbsenceToday: 'No absence requests today.',
   students: 'Students', seeAll: 'See all', current: 'Current', arriving30: 'Arriving in 30 days',
   recentScores: 'Recently entered scores', enterScores: 'Enter scores', noScores: 'No scores entered yet.',
@@ -125,8 +135,7 @@ const en: Record<Key, string> = {
   abs_sick: 'Sick', abs_official: 'Official', abs_personal: 'Personal',
   st_pending: 'Pending', st_approved: 'Excused', st_rejected: 'Rejected',
   more: 'More', manage: 'Manage (manager · staff)', testTypes: 'Test types · CEFR mapping', staffList: 'Teachers',
-  classSection: 'Classes', absencesMenu: 'Absence requests (by date, type and status)', planned: 'Coming later',
-  p_att: 'Attendance check', p_att_why: 'On your phone during class. After the timetable is connected',
+  classSection: 'Classes', attendanceMenu: 'Attendance check (by day and class)', absencesMenu: 'Absence requests (by date, type and status)', planned: 'Coming later',
   p_attv: 'Attendance view · totals by reason', p_attv_why: 'Once attendance records exist',
   p_appr: 'Approve absence requests', p_appr_why: 'Done in the intranet for now. View requests above',
   p_unex: 'Unexcused absences', p_unex_why: 'Once attendance records exist. Penalties are approved in the intranet',
@@ -134,6 +143,15 @@ const en: Record<Key, string> = {
   p_rec: 'Recordings', p_rec_why: 'After deciding the retention period',
   p_chg: 'Class changes · option classes', p_chg_why: 'For schedulers. After the timetable is connected',
   notReady: 'This screen is not ready yet.', noPage: 'Page not found', attendance: 'Attendance check',
+  mineOnly: 'My classes only', noSessions: 'No classes on this day.', noMine: 'You have no classes on this day.',
+  att_AT: 'Present', att_AB: 'Absent', att_TA: 'Late', att_none: 'Not checked',
+  checkedOf: '{c}/{n} checked', absentN: '{n} absent', lateN: '{n} late', kind_1: '1:1', kind_G: 'Group', minutesN: '{n} min',
+  markAll: 'Mark the other {n} present', lateMin: 'Minutes late', excused: 'Excused', checkedBy: '{name} · {time}',
+  closed: 'Closed', closeDay: 'Close {campus}', reopenDay: 'Reopen {campus}', closedBy: '{campus} closed · {name} {time}',
+  confirmClose: 'Close attendance for {campus} on {day}? It cannot be changed until a manager reopens it.', confirmReopen: 'Reopen {campus} on {day}?',
+  closedNote: 'This day is closed. A manager can reopen it.', futureNote: 'You can check attendance on the class day.',
+  readOnlyNote: "This class's teacher, checkers and managers enter attendance.", noSession: 'Class not found.', absenceReq: 'Absence request', backToList: 'Class list',
+  prevDay: 'Previous day', nextDay: 'Next day', holidayOn: 'Holiday: {name}',
   testTypesSub: 'CEFR is a JIC estimate. Mapping and test cycle are not decided yet',
   stopUse: 'Stop using', reuse: 'Use again', stoppedNote: 'Stopped: hidden from new score entry (existing records stay).',
   sections: 'Sections', orAbove: '{lv} from', addTestType: 'Add test type', codeEn: 'Code (English)', name: 'Name', scale: 'Scale',
@@ -145,6 +163,7 @@ const en: Record<Key, string> = {
   e_login: 'Wrong email or password.', e_net: 'Could not reach the server. Try again shortly.',
   e_value: 'The score is outside the range or step for this test type.', e_section: 'This test type has no such section.', e_date: 'Dates after today are not allowed.',
   e_type: 'This test type is not in use.', e_rls: 'You do not have permission.', e_dup: 'Already exists.', e_check: 'The input format is not valid.',
+  e_closed: 'This day is closed and cannot be changed.', e_future: 'Future days cannot be entered.', e_manager: 'Only managers and staff can change this.',
 };
 
 const DICT: Record<Lang, Record<Key, string>> = { ko, en };

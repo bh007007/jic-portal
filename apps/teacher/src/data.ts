@@ -133,3 +133,55 @@ export function cefrOf(maps: CefrMapping[], testType: string, value: number): st
   rows.sort((a, b) => Number(b.min_value) - Number(a.min_value));
   return rows[0]?.cefr ?? '';
 }
+
+// ── 출석 (supabase/migrations/20261109000000_attendance.sql). 단위는 업체 정규 출석과 같다: 수업 × 학생.
+export type AttResult = 'AT' | 'AB' | 'TA';
+export interface LmsSession {
+  id: string;
+  day: string;
+  start_time: string; // HH:MM:SS
+  minutes: number;
+  campus: string;
+  kind: '1' | 'G';
+  subject: string;
+  teacher_id: string | null;
+  teacher_name: string;
+  sub_teacher_name: string;
+  room: string;
+  students: number;
+  checked: number;
+  absent: number;
+  late: number;
+  mine: boolean;
+  closed: boolean;
+}
+export interface AttendanceRow {
+  session_id: string;
+  student_no: string;
+  enrollment_id: string;
+  result: AttResult | null;
+  late_min: number | null;
+  excused: boolean;
+  note: string;
+  checked_name: string;
+  checked_at: string | null;
+}
+export interface AttendanceClosing {
+  day: string;
+  campus: string;
+  closed_name: string;
+  closed_at: string;
+}
+export const loadSessions = (day: string, campus = '') => must<LmsSession[]>(supabase.rpc('lms_sessions', { p_day: day, p_campus: campus }));
+export const loadSessionDay = async (id: string) => (await must<{ day: string }[]>(supabase.from('class_sessions').select('day').eq('id', id)))[0]?.day ?? null;
+export const loadAttendance = (sessionId: string) => must<AttendanceRow[]>(supabase.from('attendance').select('*').eq('session_id', sessionId).order('student_no'));
+/** 한 학생 체크. 권한이 없으면 RLS가 0행으로 걸러 내므로 0행도 오류로 본다. */
+export async function markAttendance(sessionId: string, studentNo: string, patch: Partial<Pick<AttendanceRow, 'result' | 'late_min' | 'excused' | 'note'>>) {
+  const rows = await must<AttendanceRow[]>(supabase.from('attendance').update(patch).eq('session_id', sessionId).eq('student_no', studentNo).select());
+  if (!rows.length) throw new Error('row-level security');
+  return rows[0];
+}
+export const markAllPresent = (sessionId: string) => must<number>(supabase.rpc('attendance_mark_all', { p_session: sessionId }));
+export const loadClosings = (day: string) => must<AttendanceClosing[]>(supabase.from('attendance_closings').select('*').eq('day', day));
+export const closeDay = (day: string, campus: string) => must(supabase.from('attendance_closings').insert({ day, campus }));
+export const reopenDay = (day: string, campus: string) => must(supabase.from('attendance_closings').delete().eq('day', day).eq('campus', campus));

@@ -17,6 +17,9 @@ export function errText(e: unknown): string {
   if (/invalid_section/.test(m)) return tNow('e_section');
   if (/invalid_date/.test(m)) return tNow('e_date');
   if (/invalid_test_type/.test(m)) return tNow('e_type');
+  if (/attendance_closed/.test(m)) return tNow('e_closed');
+  if (/future_session|future_day/.test(m)) return tNow('e_future');
+  if (/manager_only/.test(m)) return tNow('e_manager');
   if (/row-level security|violates row-level/.test(m)) return tNow('e_rls');
   if (/duplicate key/.test(m)) return tNow('e_dup');
   if (/check constraint/.test(m)) return tNow('e_check');

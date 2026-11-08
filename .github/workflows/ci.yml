@@ -27,3 +27,4 @@ jobs:
       - run: node supabase/tests/intranet_worker_api.mjs
       - run: node supabase/tests/teacher_portal_rls.mjs
       - run: node supabase/tests/user_directory_rls.mjs
+      - run: node supabase/tests/attendance_rls.mjs
