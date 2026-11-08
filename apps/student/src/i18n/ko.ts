@@ -260,6 +260,12 @@ export const ko = {
   'err.outside_enrollment': '여행 날짜가 연수 기간 밖이라 신청할 수 없습니다.',
   'err.deadline_passed': '신청 마감이 지나 취소할 수 없습니다. 담당 직원에게 말해 주세요.',
   'err.not_applied': '취소할 신청이 없습니다.',
+  'qr.button': '출입 QR',
+  'qr.title': '출입 QR',
+  'qr.left': '{s}초 뒤 새 QR로 바뀝니다',
+  'qr.hint': '외출·귀가할 때 가드 태블릿 카메라에 비춰 주세요. 캡처한 QR은 쓸 수 없습니다.',
+  'err.qr_offline': 'QR을 받지 못했습니다. 인터넷 연결을 확인하세요.',
+  'err.keycard_unavailable': '지금은 출입 QR을 쓸 수 없습니다. 사무실에 문의하세요.',
 };
 
 export type MsgKey = keyof typeof ko;

@@ -261,4 +261,10 @@ export const en: Record<MsgKey, string> = {
   'err.outside_enrollment': 'The trip dates are outside your study period.',
   'err.deadline_passed': 'The sign-up deadline has passed, so you cannot cancel. Please talk to the staff in charge.',
   'err.not_applied': 'There is no sign-up to cancel.',
+  'qr.button': 'Entry QR',
+  'qr.title': 'Entry QR',
+  'qr.left': 'Changes in {s} seconds',
+  'qr.hint': 'Show this to the guard tablet camera when you go out or come back. Screenshots do not work.',
+  'err.qr_offline': 'Could not get the QR. Check your internet connection.',
+  'err.keycard_unavailable': 'Entry QR is not available right now. Please contact the office.',
 };

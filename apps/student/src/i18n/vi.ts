@@ -262,4 +262,10 @@ export const vi: Record<MsgKey, string> = {
   'err.outside_enrollment': 'Ngày đi nằm ngoài thời gian học nên không thể đăng ký.',
   'err.deadline_passed': 'Đã quá hạn đăng ký nên không thể hủy. Hãy báo với nhân viên phụ trách.',
   'err.not_applied': 'Không có đăng ký để hủy.',
+  'qr.button': 'Mã QR ra vào',
+  'qr.title': 'Mã QR ra vào',
+  'qr.left': 'Đổi mã mới sau {s} giây',
+  'qr.hint': 'Khi ra ngoài hoặc trở về, hãy đưa mã này trước camera máy tính bảng của bảo vệ. Ảnh chụp màn hình không dùng được.',
+  'err.qr_offline': 'Không lấy được mã QR. Hãy kiểm tra kết nối mạng.',
+  'err.keycard_unavailable': 'Hiện không dùng được mã QR ra vào. Hãy liên hệ văn phòng.',
 };

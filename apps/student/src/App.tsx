@@ -5,6 +5,7 @@ import { BottomNav, Header, Loading } from './components/Layout';
 import AbsenceNew from './pages/AbsenceNew';
 import Departure from './pages/Departure';
 import Home from './pages/Home';
+import KeycardPage from './pages/Keycard';
 import Login, { AuthShell } from './pages/Login';
 import LifeDetail from './pages/LifeDetail';
 import LifeNew from './pages/LifeNew';
@@ -41,6 +42,7 @@ export default function App() {
           <Route path="/requests/life/new" element={<LifeNew />} />
           <Route path="/requests/life/:id" element={<LifeDetail />} />
           <Route path="/requests/:id" element={<RequestDetail />} />
+          <Route path="/keycard" element={<KeycardPage />} />
           <Route path="/trips" element={<Trips />} />
           <Route path="/trips/:id" element={<TripDetail />} />
           <Route path="/me" element={<Profile />} />
