@@ -68,6 +68,24 @@ export function Pagination({ page, pages, onPage }: { page: number; pages: numbe
   );
 }
 
+/** 목록 도구줄의 페이지당 개수. */
+export function SizeSelect({ size, onChange }: { size: number; onChange: (size: string) => void }) {
+  return (
+    <select aria-label="페이지당 개수" value={String(size)} onChange={(e) => onChange(e.target.value)}>
+      <option value="20">20개씩</option>
+      <option value="50">50개씩</option>
+      <option value="100">100개씩</option>
+    </select>
+  );
+}
+
+/** 통화별 금액: "JPY 304,000 · USD 3,360" */
+export function currencyText(list: { currency: string; amount: number }[]) {
+  return list.length ? list.map((c) => `${c.currency} ${c.amount.toLocaleString('ko-KR')}`).join(' · ') : '-';
+}
+
+export const STATUS_LABEL: Record<string, string> = { current: '재학', upcoming: '입학 예정', graduated: '졸업', cancelled: '취소', other: '기타' };
+
 const PAY_CLASS: Record<string, string> = { 완납: 'text-blue', 부분납: 'text-amber', 미납: 'muted' };
 export function PayText({ pay }: { pay: string }) {
   return <span className={PAY_CLASS[pay] ?? ''}>{pay || '-'}</span>;

@@ -24,6 +24,7 @@ export function useSearchForm<K extends string>(keys: readonly K[], defaults: Pa
 
   return {
     params,
+    setParams,
     query,
     form,
     set: (k: K) => (e: { target: { value: string } }) => setForm((f) => ({ ...f, [k]: e.target.value })),

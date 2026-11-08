@@ -90,6 +90,7 @@ button, input, select { font: inherit; }
 .tbl td { padding: 9px 8px; border-bottom: 1px solid var(--line-3); }
 .tbl.center th, .tbl.center td { text-align: center; }
 .tbl td.left, .tbl th.left { text-align: left; }
+.tbl td.num, .tbl th.num { text-align: right; white-space: nowrap; }
 .tbl tfoot th, .tbl tfoot td { background: var(--head-bg); border-top: 0; }
 .tbl.big th { border-top-width: 2px; }
 .tbl tbody tr:hover td { background: #fafbfc; }
