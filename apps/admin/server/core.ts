@@ -27,11 +27,22 @@ export interface DataInput {
   invoiceAgencyItems?: Raw[];
   /** 현지 인보이스 비용·납부(inv_etc: tc_* 청구, td_* 납부, PHP). */
   localCosts?: Raw[];
+  /** 연장 기간(업체 마케팅 > 연장현황 extend_load, tt_*; portal-extract-extend.js). 배포에는 아직 없다. */
+  extensions?: Raw[];
+  /** 신입·연장·복귀·변경 화면의 코스 변경·기숙사 변경·복귀 탭(freshman_load_course / _dorm / _comeback). */
+  courseChanges?: Raw[];
+  dormChanges?: Raw[];
+  comebacks?: Raw[];
 }
 
 /** 인보이스 항목 표에서 읽는 열(직원 메모 ic_memo 는 읽지 않는다). localData 가 이 열만 골라 넘긴다. */
 export const INVOICE_ITEM_COLUMNS = ['_tr_id', 'ic_ver', 'ic_type', 'ic_type_name', 'ic_currency', 'ic_price', 'ic_week', 'ic_departure_date', 'ic_return_date', 'co_name', 'do_name', 'ic_use_yn', 'ic_cancel_yn'];
 export const LOCAL_COST_COLUMNS = ['_tr_id', 'tc_id', 'ec_type', 'tc_type_name', 'tc_currency', 'tc_price', 'rest_amount', 'td_id', 'td_currency', 'td_amount', 'td_deposit_dt'];
+
+/** 연장 기록에서 읽는 열. 원본 행에는 연수 열 전체와 입금 매칭 은행명(l_dp_bk_name) 등이 붙어 있어 이것만 싣는다. */
+export const EXTENSION_COLUMNS = ['tr_id', 'tt_id', 'tt_start_date', 'tt_finish_date', 'tt_week', 'tt_memo', 'tt_insert_dt', 'sum_price', 'sum_amount', 'tr_currency'];
+/** 코스·기숙사 변경, 복귀 탭에서 읽는 열(업체 화면의 New Course / New Dorm 칸과 이전 값, 변경 요청 건수). */
+export const CHANGE_COLUMNS = ['tr_id', 'ic_id', 'prev_chg_course', 'chg_course', 'chg_course_date', 'prev_chg_dorm', 'chg_dorm', 'chg_dorm_date', 'rqp_cnt'];
 
 /** 포인트 내역에서 화면에 쓰는 열. 원본 행에는 학생·에이전시 정보가 200여 열 붙어 있어 줄여서 싣는다. */
 export const POINT_HISTORY_COLUMNS = ['tr_id', 'type', 'dt', 'point', 'php', 'ec_name', 'nickname', 'memo', 'campus'];
@@ -149,10 +160,29 @@ export function createDb(input: DataInput) {
   const refDate: string = String(meta.extracted_at ?? new Date().toISOString()).slice(0, 10);
   const soonUntil = addDays(refDate, 14);
 
+  // 연장: 업체 포털은 연장해도 tr_finish_date(원래 종료일)를 바꾸지 않고 연장 기간(tt_*)을 따로 둔다.
+  // 추출본 확인(11/9): 연장 412건 중 402건이 tr_finish_date 뒤에 붙고(220건은 다음 날 시작), tr_total_week·tr_return_date 에는 연장분이 들어 있다.
+  // 그래서 종료일은 '원래 종료일과 마지막 연장 종료일 중 늦은 날'이다. 이걸 안 쓰면 연장 중인 재학생이 졸업으로 나온다.
+  const extByTr = new Map<string, Raw[]>();
+  for (const t of input.extensions ?? []) {
+    const k = str(t.tr_id);
+    if (!k || !str(t.tt_start_date)) continue;
+    const l = extByTr.get(k) ?? [];
+    l.push(t);
+    extByTr.set(k, l);
+  }
+  for (const l of extByTr.values()) l.sort((a, b) => str(a.tt_start_date).localeCompare(str(b.tt_start_date)));
+  const finishOf = (e: Raw) => {
+    const f = str(e.tr_finish_date).slice(0, 10);
+    const ext = extByTr.get(str(e.tr_id));
+    const last = ext ? ext.reduce((m, t) => (str(t.tt_finish_date).slice(0, 10) > m ? str(t.tt_finish_date).slice(0, 10) : m), '') : '';
+    return last > f ? last : f;
+  };
+
   const statusOf = (e: Raw): Status => {
     const state = String(e.tr_state_name ?? '');
     if (CANCELLED.test(state)) return 'cancelled';
-    const s = e.tr_start_date, f = e.tr_finish_date;
+    const s = e.tr_start_date, f = finishOf(e);
     if (!s || !f) return 'other';
     if (s > refDate) return 'upcoming';
     if (state === '퇴교') return 'other';
@@ -161,8 +191,9 @@ export function createDb(input: DataInput) {
 
   const toRow = (e: Raw) => {
     const status = statusOf(e);
+    const end = finishOf(e);
     const note =
-      status === 'current' && e.tr_finish_date <= soonUntil ? '졸업임박' :
+      status === 'current' && end <= soonUntil ? '졸업임박' :
       status === 'upcoming' && !e.tr_pick_type ? '픽업 미입력' : '';
     return {
       trId: String(e.tr_id),
@@ -174,7 +205,7 @@ export function createDb(input: DataInput) {
       course: String(e.courses || ''),
       dorm: String(e.dorms || ''),
       start: String(e.tr_start_date || ''),
-      end: String(e.tr_finish_date || ''),
+      end,
       weeks: num(e.tr_total_week),
       agency: String(e.ag_name || ''),
       branch: String(e.am_branch || ''),
@@ -396,6 +427,19 @@ export function createDb(input: DataInput) {
     return { refDate, tab, tabCounts, facets, ...paginate(list, q) };
   }
 
+  /** 연장 기간 한 건. 금액은 연장분 인보이스(학생 가격 − 에이전시 공제, 연수 통화), 입금은 그 연장에 매칭된 입금 합계. */
+  const extensionItem = (t: Raw) => ({
+    ttId: str(t.tt_id),
+    start: str(t.tt_start_date).slice(0, 10),
+    end: str(t.tt_finish_date).slice(0, 10),
+    weeks: num(t.tt_week),
+    registered: str(t.tt_insert_dt).slice(0, 10),
+    memo: str(t.tt_memo),
+    currency: str(t.tr_currency),
+    price: num(t.sum_price),
+    paid: num(t.sum_amount),
+  });
+
   function studentDetail(stId: string) {
     const s = studentById.get(stId);
     const ens = all.filter((x) => x.row.stId === stId).sort((a, b) => b.row.start.localeCompare(a.row.start));
@@ -435,6 +479,9 @@ export function createDb(input: DataInput) {
           memos: MEMO_FIELDS.filter(([k]) => raw[k]).map(([k, kind]) => ({ kind, text: String(raw[k]) })),
           points: pointItems(row.trId),
           invoiceDetail: invoiceBreakdown(row.trId),
+          // 연장 기록이 있으면 end 는 마지막 연장 종료일이고, 원래 종료일은 origEnd 로 따로 준다.
+          origEnd: str(raw.tr_finish_date).slice(0, 10),
+          extensions: (extByTr.get(row.trId) ?? []).map(extensionItem),
         };
       }),
     };
@@ -1251,6 +1298,114 @@ export function createDb(input: DataInput) {
     return { refDate, tab, tabCounts: { stopped: stopped.filter((r) => r.stateCode !== 'CANCEL').length, cancel: stateCounts.CANCEL }, stateCounts, facets, ...paginate<StopRow>(list, q) };
   }
 
+  // ── 학생관리 > 연장 현황: 업체 포털 마케팅 > 연장현황(extend_load). 연장 기간 한 건이 한 줄이다(한 연수에 여러 번 연장할 수 있다).
+  const extensionRows = [...extByTr.entries()].flatMap(([trId, list]) => {
+    const x = byTr.get(trId);
+    if (!x) return [];
+    return list.map((t, i) => {
+      const it = extensionItem(t);
+      return {
+        ...x.row,
+        ttId: it.ttId,
+        extStart: it.start,
+        extEnd: it.end,
+        extWeeks: it.weeks,
+        registered: it.registered,
+        memo: it.memo,
+        currency: it.currency,
+        price: it.price,
+        paid: it.paid,
+        order: i + 1,
+        count: list.length,
+        origEnd: str(x.raw.tr_finish_date).slice(0, 10),
+        phase: (it.start > refDate ? 'upcoming' : it.end < refDate ? 'done' : 'active') as 'upcoming' | 'active' | 'done',
+      };
+    });
+  });
+  type ExtensionRow = (typeof extensionRows)[number];
+
+  function extensions(q: URLSearchParams) {
+    const tab = (['active', 'upcoming', 'done'] as const).find((t) => t === q.get('tab')) ?? 'all';
+    let list = extensionRows.filter((r) => tab === 'all' || r.phase === tab);
+    const facets = {
+      years: [...new Set(list.map((r) => (r.registered || r.extStart).slice(0, 4)).filter(Boolean))].sort().reverse(),
+      nations: countBy(list, (r) => r.nation || '미상').map((c) => c.name),
+      campuses: countBy(list, (r) => r.campus).map((c) => c.name),
+    };
+    const year = q.get('year');
+    const nation = q.get('nation');
+    const campus = q.get('campus');
+    const kw = (q.get('q') ?? '').trim().toLowerCase();
+    const field = q.get('field') ?? 'name';
+    if (year) list = list.filter((r) => (r.registered || r.extStart).startsWith(year));
+    if (nation) list = list.filter((r) => r.nation === nation);
+    if (campus) list = list.filter((r) => r.campus === campus);
+    if (kw) list = list.filter((r) => (field === 'agency' ? `${r.agency} ${r.branch}` : field === 'memo' ? r.memo : field === 'no' ? r.stId : r.name).toLowerCase().includes(kw));
+    list = [...list].sort(
+      tab === 'upcoming' || tab === 'active'
+        ? (a, b) => a.extStart.localeCompare(b.extStart) || a.name.localeCompare(b.name)
+        : (a, b) => (b.registered || b.extStart).localeCompare(a.registered || a.extStart) || a.name.localeCompare(b.name),
+    );
+    const tabCounts = {
+      all: extensionRows.length,
+      active: extensionRows.filter((r) => r.phase === 'active').length,
+      upcoming: extensionRows.filter((r) => r.phase === 'upcoming').length,
+      done: extensionRows.filter((r) => r.phase === 'done').length,
+    };
+    const totals = { weeks: list.reduce((s, r) => s + r.extWeeks, 0), students: new Set(list.map((r) => r.stId)).size, priceByCurrency: sumByCurrency(list, (r) => r.currency, (r) => r.price), paidByCurrency: sumByCurrency(list, (r) => r.currency, (r) => r.paid) };
+    return { refDate, hasData: extensionRows.length > 0, tab, tabCounts, facets, totals, ...paginate<ExtensionRow>(list, q) };
+  }
+
+  // ── 학생관리 > 변경 이력: 업체 포털 재학생 > 신입·연장·복귀·변경의 코스 변경·기숙사 변경·복귀 탭.
+  // 업체 화면처럼 새 코스(chg_course)·새 기숙사(chg_dorm)와 그 날짜를 보여 주고, 이전 값(prev_chg_*)을 함께 둔다. 값은 업체 그대로다.
+  type ChangeKind = 'course' | 'dorm' | 'comeback';
+  const changeRow = (c: Raw, kind: ChangeKind) => {
+    const x = byTr.get(str(c.tr_id));
+    if (!x) return null;
+    const dorm = kind === 'dorm';
+    const list = (v: unknown) => str(v).split(/\s*,\s*/).filter(Boolean).join(', ');
+    return {
+      ...x.row,
+      key: `${kind}-${str(c.ic_id) || str(c.tr_id)}`,
+      kind,
+      date: str(dorm ? c.chg_dorm_date : c.chg_course_date).slice(0, 10),
+      prev: kind === 'comeback' ? '' : list(dorm ? c.prev_chg_dorm : c.prev_chg_course),
+      next: list(dorm ? c.chg_dorm : c.chg_course),
+      nextDorm: kind === 'comeback' ? list(c.chg_dorm) : '',
+      requests: num(c.rqp_cnt),
+      depart: departOf(x.raw),
+      ret: returnOf(x.raw),
+    };
+  };
+  type ChangeRow = NonNullable<ReturnType<typeof changeRow>>;
+  const changeLists: Record<ChangeKind, ChangeRow[]> = {
+    course: (input.courseChanges ?? []).map((c) => changeRow(c, 'course')).filter((r): r is ChangeRow => !!r),
+    dorm: (input.dormChanges ?? []).map((c) => changeRow(c, 'dorm')).filter((r): r is ChangeRow => !!r),
+    comeback: (input.comebacks ?? []).map((c) => changeRow(c, 'comeback')).filter((r): r is ChangeRow => !!r),
+  };
+
+  function changes(q: URLSearchParams) {
+    const tab: ChangeKind = q.get('tab') === 'dorm' ? 'dorm' : q.get('tab') === 'comeback' ? 'comeback' : 'course';
+    let list = changeLists[tab];
+    const facets = {
+      years: [...new Set(list.map((r) => r.date.slice(0, 4)).filter(Boolean))].sort().reverse(),
+      nations: countBy(list, (r) => r.nation || '미상').map((c) => c.name),
+      campuses: countBy(list, (r) => r.campus).map((c) => c.name),
+    };
+    const year = q.get('year');
+    const nation = q.get('nation');
+    const campus = q.get('campus');
+    const kw = (q.get('q') ?? '').trim().toLowerCase();
+    const field = q.get('field') ?? 'name';
+    if (year) list = list.filter((r) => r.date.startsWith(year));
+    if (nation) list = list.filter((r) => r.nation === nation);
+    if (campus) list = list.filter((r) => r.campus === campus);
+    if (kw) list = list.filter((r) => (field === 'agency' ? `${r.agency} ${r.branch}` : field === 'item' ? `${r.prev} ${r.next} ${r.nextDorm}` : field === 'no' ? r.stId : r.name).toLowerCase().includes(kw));
+    list = [...list].sort((a, b) => b.date.localeCompare(a.date) || a.name.localeCompare(b.name));
+    const tabCounts = { course: changeLists.course.length, dorm: changeLists.dorm.length, comeback: changeLists.comeback.length };
+    return { refDate, hasData: tabCounts.course + tabCounts.dorm + tabCounts.comeback > 0, tab, tabCounts, facets, ...paginate<ChangeRow>(list, q) };
+  }
+
   // ── 학생관리 > 체크 메모: 업체 포털 Checking Memo. 에이전시·마케팅·아카데미 메모가 있는 연수. 읽기 전용(메모 수정은 새 시스템 이관 뒤).
   const memoRows = all
     .filter((x) => str(x.raw.tr_ag_memo) || str(x.raw.tr_br_memo) || str(x.raw.tr_br_memo_en))
@@ -1305,7 +1460,7 @@ export function createDb(input: DataInput) {
   return {
     refDate,
     meta: () => ({ source, extractedAt: meta.extracted_at ?? null, refDate }),
-    summary: () => `${source === 'sample' ? '[샘플 데이터] ' : ''}학생 ${students.length} · 연수 ${enrollments.length} · 인보이스 ${invoices.length} · 입금 ${deposits.length} · 포인트 내역 ${input.pointHistory?.length ?? 0} · 방 ${input.rooms?.length ?? 0} · 기숙사 ${dorms.length} · 에이전시 ${agencies.length} · 담당자 ${agents.length}`,
+    summary: () => `${source === 'sample' ? '[샘플 데이터] ' : ''}학생 ${students.length} · 연수 ${enrollments.length} · 인보이스 ${invoices.length} · 입금 ${deposits.length} · 포인트 내역 ${input.pointHistory?.length ?? 0} · 방 ${input.rooms?.length ?? 0} · 연장 ${input.extensions?.length ?? 0} · 기숙사 ${dorms.length} · 에이전시 ${agencies.length} · 담당자 ${agents.length}`,
     dashboard,
     listEnrollments,
     studentDetail,
@@ -1324,6 +1479,8 @@ export function createDb(input: DataInput) {
     studentCalendar,
     registrations,
     cancellations,
+    extensions,
+    changes,
     checkingMemos,
   };
 }
@@ -1351,6 +1508,8 @@ export function handleApi(db: Db, pathname: string, params: URLSearchParams): { 
     if (p === '/stats/calendar') return { status: 200, body: db.studentCalendar(params) };
     if (p === '/stats/registrations') return { status: 200, body: db.registrations(params) };
     if (p === '/cancellations') return { status: 200, body: db.cancellations(params) };
+    if (p === '/extensions') return { status: 200, body: db.extensions(params) };
+    if (p === '/changes') return { status: 200, body: db.changes(params) };
     if (p === '/memos') return { status: 200, body: db.checkingMemos(params) };
     const m = p.match(/^\/students\/(\w+)$/);
     if (m) {

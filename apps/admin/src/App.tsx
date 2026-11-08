@@ -21,6 +21,8 @@ import Batches from './pages/Batches';
 import StudentCalendar from './pages/StudentCalendar';
 import Registrations from './pages/Registrations';
 import Cancellations from './pages/Cancellations';
+import Extensions from './pages/Extensions';
+import Changes from './pages/Changes';
 import Memos from './pages/Memos';
 import Users from './pages/Users';
 import Holidays from './pages/Holidays';
@@ -63,6 +65,8 @@ export default function App() {
         <Route path="/stats/calendar" element={<StudentCalendar />} />
         <Route path="/stats/registrations" element={<Registrations />} />
         <Route path="/cancellations" element={<Cancellations />} />
+        <Route path="/extensions" element={<Extensions />} />
+        <Route path="/changes" element={<Changes />} />
         <Route path="/memos" element={<Memos />} />
         <Route path="/users" element={<Users />} />
         <Route path="/holidays" element={<Holidays />} />
