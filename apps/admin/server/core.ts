@@ -180,6 +180,19 @@ export function createDb(input: DataInput) {
   const all = enrollments.map((raw) => ({ raw, row: toRow(raw) }));
   const byTr = new Map(all.map((x) => [x.row.trId, x]));
   const invoiceByTr = new Map(invoices.map((i) => [String(i.tr_id), i]));
+  /** 인보이스 금액(설명은 아래 '회계' 절). 인보이스 목록·미납 목록·학생 상세가 같이 쓴다. */
+  const invoiceAmounts = (inv: Raw | undefined, pay: string) => {
+    const total = num(inv?.sum_ic_price);
+    const paid = num(inv?.sum_id_amount);
+    return {
+      total,
+      paid,
+      // 미납·부분납만. 입금 매칭이 음수(환불)인 행이 있어 총액을 넘지 않게 한다.
+      remaining: pay !== '완납' && total > paid ? Math.min(total, total - paid) : 0,
+      localBilled: num(inv?.sum_tc_price),
+      localPaid: num(inv?.sum_td_amount),
+    };
+  };
   const dormByTr = new Map(dorms.map((d) => [String(d.tr_id), d]));
   const studentById = new Map(students.map((s) => [String(s.st_id), s]));
 
@@ -332,8 +345,6 @@ export function createDb(input: DataInput) {
       enrollments: ens.map(({ raw, row }) => {
         const inv = invoiceByTr.get(row.trId);
         const dorm = dormByTr.get(row.trId);
-        // sum_id_amount = 입금 매칭(id_amount) 합계. 인보이스 총액은 추출본에 없어 넣지 않는다.
-        const paid = num(inv?.sum_id_amount);
         const { pointIn: pIn, pointOut: pOut } = pointsOf(row.trId, inv);
         return {
           ...row,
@@ -341,7 +352,7 @@ export function createDb(input: DataInput) {
           pickPlace: String(raw.tr_pick_place || ''),
           roomClear: yes(raw.tr_room_clear_yn),
           pointClear: yes(raw.tr_point_clear_yn),
-          invoice: inv ? { currency: String(inv.tr_currency || ''), paid, pointIn: pIn, pointOut: pOut, pointBalance: pIn - pOut } : null,
+          invoice: inv ? { currency: String(inv.tr_currency || ''), ...invoiceAmounts(inv, row.pay), pointIn: pIn, pointOut: pOut, pointBalance: pIn - pOut } : null,
           dormStay: dorm ? { type: String(dorm.do_name || ''), campus: String(dorm.ca_name || campusName(dorm.ca_code)), from: String(dorm.ic_departure_date || ''), to: String(dorm.ic_return_date || ''), weeks: num(dorm.ic_week) } : null,
           memos: MEMO_FIELDS.filter(([k]) => raw[k]).map(([k, kind]) => ({ kind, text: String(raw[k]) })),
           points: pointItems(row.trId),
@@ -556,19 +567,12 @@ export function createDb(input: DataInput) {
   const invAll = all.map(({ raw, row }) => {
     const inv = invoiceByTr.get(row.trId);
     const { pointIn, pointOut } = pointsOf(row.trId, inv);
-    const total = num(inv?.sum_ic_price);
-    const paid = num(inv?.sum_id_amount);
     return {
       ...row,
       agId: agencyIdOf(raw),
       currency: str(inv?.tr_currency || raw.tr_currency),
       hasInvoice: !!inv,
-      total,
-      paid,
-      // 입금 매칭이 음수(환불)인 행이 있어 총액을 넘지 않게 한다.
-      remaining: row.pay !== '완납' && total > paid ? Math.min(total, total - paid) : 0,
-      localBilled: num(inv?.sum_tc_price),
-      localPaid: num(inv?.sum_td_amount),
+      ...invoiceAmounts(inv, row.pay),
       pointIn,
       pointOut,
       pointBalance: pointIn - pointOut,
