@@ -304,7 +304,7 @@ function GuardScreen({ view, campus, onCampus, reload }: { view: GuardView; camp
                         </td>
                         <td>{hm(r.outAt)}</td>
                         <td className={r.breach ? 'text-amber' : ''}>{duration(r.minutes)}</td>
-                        <td className="right small">{r.overnightUntil ? `외박 허용 ~${md(r.overnightUntil)}` : r.breach ? '통금 지남' : ''}</td>
+                        <td className="right small">{r.overnightUntil ? `외박 허용 ~${md(r.overnightUntil)}${r.overnightTrip ? ' (학교 여행)' : ''}` : r.breach ? '통금 지남' : ''}</td>
                       </tr>
                     ))
                   )}

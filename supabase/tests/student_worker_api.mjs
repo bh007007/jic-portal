@@ -1,6 +1,7 @@
 // 학생 앱 배포 서버(apps/student/worker)의 /api 시험. 실제 마이그레이션을 올린 PGlite(pg-supabase.mjs)에
 // 계정 생성 스크립트(npm run student:accounts)로 샘플 학생 계정을 만들고, Worker 를 묶어 학생 흐름 전체를 돌린다:
-// 첫 비밀번호 변경 전 403 → 결석·외박 등록·취소 → 직원 승인을 학생이 봄 → 귀국 항공편 → 직원 배차 → 재확인 → 다른 학생과 분리.
+// 첫 비밀번호 변경 전 403 → 결석·외박 등록·취소 → 직원 승인을 학생이 봄 → 귀국 항공편 → 직원 배차 → 재확인 → 생활 요청
+// → 다른 학생과 분리 → 학교 여행 참가 신청·취소(정원·명단 제외).
 //
 // 실행(저장소 루트, 의존성에 추가하지 않고 임시로 설치):
 //   npm i --no-save @electric-sql/pglite@0.3
@@ -173,6 +174,57 @@ x = await api('GET', '/api/life-requests', tB);
 ok('학생B는 A의 생활 요청을 못 봄', x.status === 200 && !x.body.rows.some((r) => r.id === lifeA), x.body.rows);
 x = await api('POST', `/api/life-requests/${lifeA}/cancel`, tB, {});
 ok('학생B가 A의 생활 요청 취소 불가', x.status === 404, x);
+
+// ── 학교 여행: 직원이 올린 여행에 학생이 신청·취소(DB 함수), 정원, 명단 제외 사유를 학생이 봄
+const manila = (await sql(`select (now() at time zone 'Asia/Manila')::date::text d`))[0].d;
+const dplus = (n) => new Date(Date.parse(manila) + n * 864e5).toISOString().slice(0, 10);
+// 여행 날짜(내일~모레)가 연수 기간에 들어가는 계정 학생(가능하면 A). 샘플 연수가 끝나 없으면 샘플 데이터를 다시 만든다.
+const fit = await sql(
+  `select su.student_no, e.data->>'first_co_ca_code' ca from public.student_users su join public.legacy_enrollments e on e.data->>'tr_st_id' = su.student_no
+    where left(e.data->>'tr_start_date', 10) <= $1 and left(e.data->>'tr_finish_date', 10) >= $2 and coalesce(e.data->>'tr_state_name', '') !~ '캔슬|거절|취소|연기|홀드|요청'
+    order by (su.student_no = $3) desc, su.student_no`,
+  [dplus(1), dplus(2), A],
+);
+ok('여행 날짜에 재학하는 계정 학생이 있음', fit.length >= 2, fit.length);
+const S = fit[0].student_no;
+const tS = S === A ? tA : S === Bno ? tB : await firstLogin(S);
+const S2 = fit.find((f) => f.student_no !== S).student_no;
+const tS2 = S2 === A ? tA : S2 === Bno ? tB : await firstLogin(S2);
+const otherCampus = String(fit[0].ca).toUpperCase() === 'PREMIUM' ? 'Challenger' : 'Premium';
+const mkTrip = async (title, campus, start, end, capacity) =>
+  (await sql(`insert into public.trips (campus, title, place, start_date, end_date, deadline, capacity, cost) values ($1, $2, 'La Union', $3, $4, $5, $6, 1800) returning id`, [campus, title, start, end, manila, capacity], { role: 'authenticated', sub: staff }))[0].id;
+const trip1 = await mkTrip('라 우니온 1박', '', dplus(1), dplus(2), 1);
+const tripOther = await mkTrip('다른 캠퍼스', otherCampus, dplus(1), dplus(2), 5);
+x = await api('GET', '/api/trips', tS);
+const row1 = x.body.rows?.find((t) => t.id === trip1);
+ok('여행 목록: 전체 캠퍼스 여행, 다른 캠퍼스는 안 보임, 올린 직원 안 보임', x.status === 200 && row1 && !x.body.rows.some((t) => t.id === tripOther) && !('createdBy' in row1), x.body);
+ok('여행 행: 1박, 남은 1, 신청 가능', row1?.nights === 1 && row1.left === 1 && row1.canApply === true && row1.cost === 1800, row1);
+x = await api('POST', `/api/trips/${trip1}/signup`, tS, {});
+ok('참가 신청 201(DB 함수), 남은 0', x.status === 201 && x.body.mine?.status === 'applied' && x.body.left === 0 && x.body.canCancel === true, x);
+const su1 = x.body.mine?.id;
+let tdb = await sql(`select t.seats_taken, s.id::text sid, s.student_no from public.trips t join public.trip_signups s on s.trip_id = t.id where t.id = $1`, [trip1]);
+ok('DB: 신청 1(번호 = 서버가 정한 값), 신청 수 1', tdb.length === 1 && tdb[0].seats_taken === 1 && tdb[0].sid === su1 && tdb[0].student_no === S, tdb);
+x = await api('POST', `/api/trips/${trip1}/signup`, tS, {});
+ok('같은 여행 두 번 409', x.status === 409 && x.body.error === 'already_applied', x);
+x = await api('GET', `/api/trips/${trip1}`, tS2);
+ok('다른 학생: 정원이 차서 신청 불가, 남의 신청은 안 보임', x.status === 200 && x.body.why === 'trip_full' && x.body.mine === null, x.body);
+x = await api('POST', `/api/trips/${trip1}/signup`, tS2, {});
+ok('정원 초과 409', x.status === 409 && x.body.error === 'trip_full', x);
+x = await api('POST', `/api/trips/${tripOther}/signup`, tS, {});
+ok('다른 캠퍼스 여행 404', x.status === 404, x);
+x = await api('POST', `/api/trips/${trip1}/cancel`, tS, {});
+ok('신청 취소(DB 함수), 자리 돌아옴', x.status === 200 && x.body.mine?.status === 'cancelled' && x.body.left === 1, x);
+x = await api('POST', `/api/trips/${trip1}/signup`, tS2, {});
+ok('자리가 나면 다른 학생 신청', x.status === 201, x);
+const su2 = x.body.mine?.id;
+await sql(`select public.trip_remove_signup($1, '보호자 동의서 미제출')`, [su2], { role: 'authenticated', sub: staff });
+x = await api('GET', `/api/trips/${trip1}`, tS2);
+ok('명단 제외: 학생이 사유를 봄, 처리자는 안 보임, 다시 신청 가능', x.body.mine?.status === 'removed' && x.body.mine.reason === '보호자 동의서 미제출' && !('handledBy' in x.body.mine) && x.body.canApply === true, x.body);
+tdb = await sql(`select seats_taken from public.trips where id = $1`, [trip1]);
+ok('DB: 신청 수 0', tdb[0].seats_taken === 0, tdb);
+await sql(`update public.trips set status = 'cancelled' where id = $1`, [trip1], { role: 'authenticated', sub: staff });
+x = await api('GET', '/api/trips', tS2);
+ok('신청했던 여행이 취소되면 목록에 취소로 남음', x.body.rows?.find((t) => t.id === trip1)?.status === 'cancelled', x.body.rows);
 
 // ── 본문 검사
 x = await api('POST', '/api/absences', tA, 'x'.repeat(17 * 1024));

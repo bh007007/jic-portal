@@ -23,13 +23,14 @@ const MENU: { group?: string; items: { to: string; label: string; badge?: Badge 
       { to: '/photos', label: '사진 관리' },
     ],
   },
-  // 외박은 논아카데믹 신청의 첫 종류다. 여행·기타 신청이 생기면 같은 묶음에 더한다.
+  // 논아카데믹 신청: 외박·여행, 생활 요청, 학교 여행(직원이 올리고 학생이 참가 신청)
   {
     group: '신청 처리',
     items: [
       { to: '/requests/absences', label: '결석 신청', badge: 'pendingAbsences' },
       { to: '/requests/overnights', label: '외박·여행 신청', badge: 'pendingOvernights' },
       { to: '/requests/life', label: '생활 요청', badge: 'lifePending' },
+      { to: '/trips', label: '학교 여행' },
     ],
   },
   { group: '직원', items: [{ to: '/staff', label: '직원·부서' }, { to: '/staff-review', label: 'Staff 평가' }, { to: '/audit', label: '접근 기록' }] },

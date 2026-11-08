@@ -1,8 +1,9 @@
 import { Link } from 'react-router-dom';
-import { useApi, type AbsenceList, type Profile } from '../api';
+import { useApi, type AbsenceList, type Profile, type TripList } from '../api';
 import { AbsenceRow } from '../components/absence';
 import { IconCalendar, IconForm, IconList, IconUser } from '../components/icons';
 import { LoadError, Loading, Section } from '../components/Layout';
+import { TripRowLink } from '../components/trips';
 import { md, ymd } from '../format';
 import { useI18n } from '../i18n';
 
@@ -10,6 +11,7 @@ export default function Home() {
   const { t } = useI18n();
   const me = useApi<Profile>('/api/me');
   const abs = useApi<AbsenceList>('/api/absences');
+  const trips = useApi<TripList>('/api/trips');
 
   if (me.error) return <LoadError onRetry={me.reload} />;
   if (!me.data) return <Loading />;
@@ -77,6 +79,25 @@ export default function Home() {
           abs.data.rows.slice(0, 3).map((a) => <AbsenceRow key={a.id} a={a} />)
         )}
       </Section>
+
+      {trips.data && trips.data.rows.some((r) => r.end >= trips.data!.today && r.status !== 'cancelled') && (
+        <Section
+          labelId="trip-h"
+          title={t('trip.title')}
+          action={
+            <Link to="/trips" className="more">
+              {t('home.viewAll')}
+            </Link>
+          }
+        >
+          {trips.data.rows
+            .filter((r) => r.end >= trips.data!.today && r.status !== 'cancelled')
+            .slice(0, 3)
+            .map((r) => (
+              <TripRowLink key={r.id} r={r} today={trips.data!.today} />
+            ))}
+        </Section>
+      )}
 
       {checkout && (
         <Section

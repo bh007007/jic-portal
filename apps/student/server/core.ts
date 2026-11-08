@@ -34,11 +34,13 @@ import {
   type LifeRequest,
   type LifeRequestStore,
 } from './lifeRequests';
+import { cancelSignup, seatsLeft, signUp, studentCampuses, tripNights, visibleTo, type Trip, type TripSignup, type TripStore } from './trips';
 
 export { ABSENCE_KINDS, PERIOD_COUNT, REASON_MAX } from './requests';
 export type { Departure, DepartureStore, Ride, RideState, RideStore } from './departures';
 export type { Absence, AbsenceInput, AbsenceKind, AbsenceStore, Overnight, OvernightInput, OvernightStore, RequestStatus } from './requests';
 export type { LifeCategory, LifeInput, LifeRequest, LifeRequestStore, LifeStatus } from './lifeRequests';
+export type { SignupStatus, Trip, TripSignup, TripStatus, TripStore } from './trips';
 
 export interface StudentCtx {
   db: Db;
@@ -48,6 +50,8 @@ export interface StudentCtx {
   rides: RideStore;
   /** 생활 요청(server/lifeRequests.ts, 인트라넷과 같이 씀) */
   life: LifeRequestStore;
+  /** 학교 여행·액티비티와 참가 신청(server/trips.ts, 인트라넷과 같이 씀) */
+  trips: TripStore;
   /** 로그인한 학생 번호. 없으면 null. */
   stId: string | null;
   /** 학생번호 + 생년월일 로그인(/api/login)을 열지. 로컬 개발 서버에서만 true. */
@@ -192,6 +196,59 @@ async function cancelLife(ctx: StudentCtx, stId: string, id: string): Promise<Re
   return out.ok ? ok(forStudent(out.value)) : fail(out.status, out.error);
 }
 
+// ── 학교 여행·액티비티: 내 캠퍼스(또는 전체)의 다가오는 여행과, 내가 신청했던 여행(지난 것·취소된 것 포함)
+/** 여행 하나를 학생 화면용으로: 올린 직원·명단에서 뺀 직원은 내보내지 않는다. canApply·why 는 신청 규칙(signUp)을 그대로 돌려 본다. */
+function tripForStudent(ctx: StudentCtx, stId: string, t: Trip, mine: TripSignup[], today: string) {
+  // 같은 여행에 여러 번 신청했으면(취소·제외 뒤 다시 신청) 지금 신청, 없으면 가장 나중 것
+  const here = mine.filter((s) => s.tripId === t.id).sort((a, b) => a.createdAt.localeCompare(b.createdAt));
+  const own = here.find((s) => s.status === 'applied') ?? here[here.length - 1] ?? null;
+  const trial = signUp({ db: ctx.db, stId, now: ctx.now, newId: () => '', today }, t, mine);
+  const cancel = own ? cancelSignup(own, t, stId, ctx.now(), today) : null;
+  const { createdBy: _by, ...rest } = t;
+  return {
+    ...rest,
+    nights: tripNights(t),
+    left: seatsLeft(t),
+    mine: own ? { id: own.id, status: own.status, createdAt: own.createdAt, updatedAt: own.updatedAt, reason: own.reason } : null,
+    canApply: trial.ok,
+    why: trial.ok ? null : trial.error,
+    canCancel: !!cancel?.ok,
+  };
+}
+export type TripRow = ReturnType<typeof tripForStudent>;
+
+async function tripRows(ctx: StudentCtx, stId: string) {
+  const today = localToday(ctx.now());
+  const campuses = studentCampuses(ctx.db, stId);
+  const [trips, mine] = await Promise.all([ctx.trips.listTrips(), ctx.trips.signupsByStudent(stId)]);
+  const signed = new Set(mine.map((s) => s.tripId));
+  const rows = trips
+    .filter((t) => signed.has(t.id) || (visibleTo(t, campuses) && t.status !== 'cancelled' && t.end >= today))
+    .sort((a, b) => a.start.localeCompare(b.start) || a.title.localeCompare(b.title))
+    .map((t) => tripForStudent(ctx, stId, t, mine, today));
+  return { today, rows };
+}
+export type TripList = Awaited<ReturnType<typeof tripRows>>;
+export type TripDetail = TripRow & { today: string };
+
+async function tripSignUp(ctx: StudentCtx, stId: string, id: string): Promise<Result> {
+  const today = localToday(ctx.now());
+  const out = signUp({ db: ctx.db, stId, now: ctx.now, newId: ctx.newId, today }, await ctx.trips.getTrip(id), await ctx.trips.signupsByStudent(stId));
+  if (!out.ok) return fail(out.status, out.error);
+  await ctx.trips.putSignup(out.value);
+  const row = (await tripRows(ctx, stId)).rows.find((r) => r.id === id);
+  return ok(row, 201);
+}
+
+async function tripCancel(ctx: StudentCtx, stId: string, id: string): Promise<Result> {
+  const today = localToday(ctx.now());
+  const mine = (await ctx.trips.signupsByStudent(stId)).find((s) => s.tripId === id && s.status === 'applied') ?? null;
+  const out = cancelSignup(mine, await ctx.trips.getTrip(id), stId, ctx.now(), today);
+  if (!out.ok) return fail(out.status, out.error);
+  await ctx.trips.putSignup(out.value);
+  return ok((await tripRows(ctx, stId)).rows.find((r) => r.id === id));
+}
+
 async function cancelIn<T extends Absence | Overnight>(store: { get(id: string): Promise<T | null>; put(x: T): Promise<void> }, stId: string, id: string, now: Date): Promise<Result> {
   const out = cancelRequest(await store.get(id), stId, now);
   if (out.ok) await store.put(out.value);
@@ -246,6 +303,15 @@ export async function handleStudentApi(ctx: StudentCtx, method: string, pathname
     if (p === '/life-requests' && method === 'POST') return await createLife(ctx, stId, input);
     const lc = p.match(/^\/life-requests\/([\w-]+)\/cancel$/);
     if (lc && method === 'POST') return await cancelLife(ctx, stId, lc[1]);
+    if (p === '/trips' && method === 'GET') return ok(await tripRows(ctx, stId));
+    const tr = p.match(/^\/trips\/([\w-]+)(?:\/(signup|cancel))?$/);
+    if (tr && !tr[2] && method === 'GET') {
+      const list = await tripRows(ctx, stId);
+      const row = list.rows.find((r) => r.id === tr[1]);
+      return row ? ok({ ...row, today: list.today }) : fail(404, 'not_found');
+    }
+    if (tr && tr[2] === 'signup' && method === 'POST') return await tripSignUp(ctx, stId, tr[1]);
+    if (tr && tr[2] === 'cancel' && method === 'POST') return await tripCancel(ctx, stId, tr[1]);
     const m = p.match(/^\/(absences|overnights)\/([\w-]+)\/cancel$/);
     if (m && method === 'POST') {
       return m[1] === 'absences' ? await cancelIn(ctx.store, stId, m[2], ctx.now()) : await cancelIn(ctx.overnights, stId, m[2], ctx.now());
@@ -253,6 +319,8 @@ export async function handleStudentApi(ctx: StudentCtx, method: string, pathname
 
     return fail(404, 'not_found');
   } catch (e) {
-    return fail(500, (e as Error).message);
+    // 배포 저장소의 오류(StoreError: DB 함수가 거절한 코드)는 그 상태 코드로(예: 동시에 신청해 자리가 찬 경우 409 trip_full)
+    const status = (e as { status?: unknown }).status;
+    return fail(typeof status === 'number' && status >= 400 && status < 600 ? status : 500, (e as Error).message);
   }
 }

@@ -25,6 +25,23 @@ import { handleLifeRequest, LIFE_CATEGORIES, LIFE_REPLY_MAX, type LifeRequestSto
 import { PENALTY_KIND_OF, REPORT_KINDS, REPORT_LABEL, REPORT_NOTE_MAX, type IncidentReport, type ReportKind } from './reports';
 import { createNotice, listNotices, noticeSummary, openNotice, updateNotice, type Notice, type NoticeCtx, type NoticeRead } from './notices';
 import { COMMENT_MAX, decideRequest, nightsBetween, overnightFor, type Absence, type Overnight, type RequestStatus, type RequestStore } from '../../student/server/requests';
+import {
+  isAccepting,
+  REMOVE_REASON_MAX,
+  removeSignup,
+  saveTrip,
+  setTripStatus,
+  TRIP_CAPACITY_MAX,
+  TRIP_DESC_MAX,
+  TRIP_MEETING_MAX,
+  TRIP_NIGHTS_MAX,
+  TRIP_PLACE_MAX,
+  TRIP_TITLE_MAX,
+  tripNights,
+  tripPermits,
+  type Trip,
+  type TripStore,
+} from '../../student/server/trips';
 
 // ── 시간
 const TZ_OFFSET_MS = 8 * 3600e3;
@@ -139,6 +156,8 @@ export interface Stores {
   reports: Repo<IncidentReport>;
   /** 학생 앱과 같이 쓰는 생활 요청(학생이 내고 직원이 처리, 학생 앱 server/lifeRequests.ts) */
   lifeRequests: LifeRequestStore;
+  /** 학교 여행·액티비티(직원이 올림)와 참가 신청(학생이 냄, 학생 앱 server/trips.ts) */
+  trips: TripStore;
   /** 학생 앱과 같이 쓰는 귀국 항공편과, 직원이 쓰는 공항 이동 배차 */
   departures: DepartureStore;
   rides: RideStore;
@@ -209,6 +228,15 @@ function outingTimes(o: Outing) {
   return { outMs, inMs, night };
 }
 
+/**
+ * 통금 확인·가드 태블릿이 보는 외박 허용: 승인된 외박·여행 신청과, 1박 이상 학교 여행의 참가 신청(trips.ts tripPermits).
+ * 신청 처리 목록·Student File 의 외박 신청 목록은 이것 대신 신청 저장소(overnights)만 본다.
+ */
+async function permitsOf(ctx: IntranetCtx): Promise<Overnight[]> {
+  const [overnights, trips, signups] = await Promise.all([ctx.stores.overnights.listAll(), ctx.stores.trips.listTrips(), ctx.stores.trips.listSignups()]);
+  return [...overnights, ...tripPermits(trips, signups)];
+}
+
 /** 통금 위반이면 근거 문장, 아니면 null. 외출 중이면 지금 시각으로 판단한다. 승인된 외박이 있는 밤은 위반이 아니다. */
 function curfewBreach(o: Outing, curfew: string, now: number, overnights: Overnight[]): string | null {
   const { outMs, inMs, night } = outingTimes(o);
@@ -228,7 +256,7 @@ function curfewBreach(o: Outing, curfew: string, now: number, overnights: Overni
 async function syncCurfewPenalties(ctx: IntranetCtx) {
   const { curfew } = await loadSettings(ctx);
   const now = ctx.now().getTime();
-  const [outings, penalties, overnights] = await Promise.all([ctx.stores.outings.all(), ctx.stores.penalties.all(), ctx.stores.overnights.listAll()]);
+  const [outings, penalties, overnights] = await Promise.all([ctx.stores.outings.all(), ctx.stores.penalties.all(), permitsOf(ctx)]);
   const bySource = new Map(penalties.filter((p) => p.source === 'outing').map((p) => [p.sourceId, p]));
   for (const o of outings) {
     const basis = curfewBreach(o, curfew, now, overnights);
@@ -281,6 +309,7 @@ function outingRow(ctx: IntranetCtx, o: Outing, curfew: string, now: number, ove
     minutes: outMs !== null ? minutesBetween(outMs, inMs ?? now) : null,
     breach: curfewBreach(o, curfew, now, overnights),
     overnightUntil: permit?.until ?? null, // 승인된 외박의 복귀일
+    overnightTrip: permit?.tripId ? permit.reason : null, // 학교 여행 참가로 허용된 외박이면 여행 이름
   };
 }
 export type OutingRow = ReturnType<typeof outingRow>;
@@ -292,7 +321,7 @@ async function guardView(ctx: IntranetCtx, q: URLSearchParams) {
   const guardCampus = ctx.session?.role === 'guard' ? (ctx.session.campus ?? '') : null;
   const campuses = guardCampus !== null ? [guardCampus] : [...new Set([...currentIndex(ctx.db).values()].map((s) => s.campus))].filter((c) => c && c !== '-').sort();
   const campus = guardCampus ?? q.get('campus') ?? '';
-  const overnights = await ctx.stores.overnights.listAll();
+  const overnights = await permitsOf(ctx);
   const outings = (await ctx.stores.outings.all()).filter((o) => !campus || o.campus === campus);
   const rows = outings.map((o) => outingRow(ctx, o, settings.curfew, now, overnights));
   const tonight = nightOf(now);
@@ -331,7 +360,7 @@ async function guardScan(ctx: IntranetCtx, input: Record<string, unknown>): Prom
   await ctx.stores.outings.put(rec);
   // 통금 위반 후보 정리는 직원 일이다(직원 화면을 열 때도 정리한다). 배포의 가드 계정은 후보를 쓸 권한이 없어 건너뛴다.
   if (mode === 'in' && ctx.session?.role !== 'guard') await syncCurfewPenalties(ctx);
-  return ok({ mode, row: outingRow(ctx, rec, settings.curfew, ctx.now().getTime(), await ctx.stores.overnights.listAll()) }, mode === 'out' || !open ? 201 : 200);
+  return ok({ mode, row: outingRow(ctx, rec, settings.curfew, ctx.now().getTime(), await permitsOf(ctx)) }, mode === 'out' || !open ? 201 : 200);
 }
 
 /**
@@ -478,7 +507,7 @@ async function listOutings(ctx: IntranetCtx, q: URLSearchParams) {
   const campus = q.get('campus') || '';
   const kw = (q.get('q') ?? '').trim().toLowerCase();
 
-  const overnights = await ctx.stores.overnights.listAll();
+  const overnights = await permitsOf(ctx);
   const all = (await ctx.stores.outings.all()).map((o) => outingRow(ctx, o, settings.curfew, now, overnights));
   const scoped = all.filter((r) => (!campus || r.campus === campus) && (!kw || r.stId.includes(kw) || r.name.toLowerCase().includes(kw)));
   const ofNight = scoped.filter((r) => r.night === night);
@@ -695,6 +724,68 @@ async function handleLifeRequestRoute(ctx: IntranetCtx, id: string, input: Recor
   return ok(out.value);
 }
 
+// ── 학교 여행·액티비티(업체 'Outing > Travel'): 직원이 올리고 학생이 앱에서 참가 신청한다(학생 앱 server/trips.ts)
+const tripCampuses = (ctx: IntranetCtx) => [...new Set([...currentIndex(ctx.db).values()].map((s) => s.campus))].filter((c) => c && c !== '-').sort();
+const TRIP_LIMITS = { title: TRIP_TITLE_MAX, place: TRIP_PLACE_MAX, meeting: TRIP_MEETING_MAX, description: TRIP_DESC_MAX, capacity: TRIP_CAPACITY_MAX, nights: TRIP_NIGHTS_MAX, reason: REMOVE_REASON_MAX };
+const tripRow = (t: Trip, today: string) => ({ ...t, nights: tripNights(t), accepting: isAccepting(t, today) });
+
+async function listTrips(ctx: IntranetCtx, q: URLSearchParams) {
+  const today = localDate(ctx.now().getTime());
+  const tab = q.get('tab') === 'past' ? 'past' : 'upcoming';
+  const campus = q.get('campus') || '';
+  const kw = (q.get('q') ?? '').trim().toLowerCase();
+  const all = await ctx.stores.trips.listTrips();
+  const past = (t: Trip) => t.end < today;
+  const counts = { upcoming: all.filter((t) => !past(t)).length, past: all.filter(past).length };
+  const rows = all
+    .filter((t) => past(t) === (tab === 'past') && (!campus || t.campus === campus || t.campus === ''))
+    .filter((t) => !kw || t.title.toLowerCase().includes(kw) || t.place.toLowerCase().includes(kw))
+    // 다가오는 여행은 가까운 순, 지난 여행은 최근 순
+    .sort((a, b) => (tab === 'past' ? b.start.localeCompare(a.start) : a.start.localeCompare(b.start)) || a.title.localeCompare(b.title))
+    .map((t) => tripRow(t, today));
+  return { today, tab, counts, campuses: tripCampuses(ctx), limits: TRIP_LIMITS, rows };
+}
+export type TripList = Awaited<ReturnType<typeof listTrips>>;
+
+async function tripDetail(ctx: IntranetCtx, id: string) {
+  const t = await ctx.stores.trips.getTrip(id);
+  if (!t) return null;
+  const today = localDate(ctx.now().getTime());
+  const signups = (await ctx.stores.trips.listSignups(id))
+    .map((x) => ({ ...x, ...requestRow(ctx, x) }))
+    // 참가 신청을 먼저(신청 순), 취소·제외는 뒤에
+    .sort((a, b) => Number(b.status === 'applied') - Number(a.status === 'applied') || a.createdAt.localeCompare(b.createdAt));
+  return { today, trip: tripRow(t, today), campuses: tripCampuses(ctx), limits: TRIP_LIMITS, signups };
+}
+export type TripDetail = NonNullable<Awaited<ReturnType<typeof tripDetail>>>;
+
+async function saveTripRoute(ctx: IntranetCtx, id: string | null, input: Record<string, unknown>): Promise<Result> {
+  const cur = id ? await ctx.stores.trips.getTrip(id) : null;
+  if (id && !cur) return fail(404, 'not_found');
+  const out = saveTrip({ now: ctx.now, newId: ctx.newId, today: localDate(ctx.now().getTime()), actor: ctx.actor ?? null, campuses: tripCampuses(ctx) }, cur, input);
+  if (!out.ok) return fail(out.status, out.error);
+  await ctx.stores.trips.putTrip(out.value);
+  // 날짜를 바꾸면 외박 허용 밤이 달라진다
+  if (cur && (cur.start !== out.value.start || cur.end !== out.value.end)) await syncCurfewPenalties(ctx);
+  return ok(out.value, out.status);
+}
+
+async function tripStatusRoute(ctx: IntranetCtx, id: string, input: Record<string, unknown>): Promise<Result> {
+  const out = setTripStatus(await ctx.stores.trips.getTrip(id), input.status, ctx.now());
+  if (!out.ok) return fail(out.status, out.error);
+  await ctx.stores.trips.putTrip(out.value);
+  if (out.value.status === 'cancelled') await syncCurfewPenalties(ctx); // 취소한 여행은 외박 허용이 아니다
+  return ok(out.value);
+}
+
+async function removeSignupRoute(ctx: IntranetCtx, id: string, input: Record<string, unknown>): Promise<Result> {
+  const out = removeSignup(await ctx.stores.trips.getSignup(id), input, ctx.actor ?? null, ctx.now());
+  if (!out.ok) return fail(out.status, out.error);
+  await ctx.stores.trips.putSignup(out.value);
+  await syncCurfewPenalties(ctx); // 명단에서 빠지면 그 밤의 외박 허용도 빠진다
+  return ok(out.value);
+}
+
 async function decideRequests(ctx: IntranetCtx, kind: RequestKind, input: Record<string, unknown>): Promise<Result> {
   const ids = Array.isArray(input.ids) ? input.ids.map(String) : [];
   if (input.approve !== true && input.approve !== false) return fail(400, 'invalid_decision');
@@ -724,15 +815,18 @@ const RECENT_NIGHTS = 30;
 
 async function lifeData(ctx: IntranetCtx) {
   await syncCurfewPenalties(ctx);
-  const [settings, rules, outings, penalties, absences, overnights] = await Promise.all([
+  const [settings, rules, outings, penalties, absences, overnights, trips, signups] = await Promise.all([
     loadSettings(ctx),
     loadRules(ctx),
     ctx.stores.outings.all(),
     ctx.stores.penalties.all(),
     ctx.stores.absences.listAll(),
     ctx.stores.overnights.listAll(),
+    ctx.stores.trips.listTrips(),
+    ctx.stores.trips.listSignups(),
   ]);
-  return { settings, rules, outings, penalties, absences, overnights };
+  // permits: 통금 판정용(학교 여행 포함), overnights: 학생이 낸 외박·여행 신청
+  return { settings, rules, outings, penalties, absences, overnights, trips, signups, permits: [...overnights, ...tripPermits(trips, signups)] };
 }
 const approvedScore = (list: Penalty[]) => list.filter((p) => p.status === 'approved').reduce((sum, p) => sum + (p.score ?? 0), 0);
 
@@ -762,7 +856,7 @@ async function studentFiles(ctx: IntranetCtx, q: URLSearchParams) {
       const ps = pen.get(r.stId) ?? [];
       const os = outs.get(r.stId) ?? [];
       const total = approvedScore(ps);
-      const breaches = os.filter((o) => outingTimes(o).night >= since && curfewBreach(o, life.settings.curfew, now, life.overnights)).length;
+      const breaches = os.filter((o) => outingTimes(o).night >= since && curfewBreach(o, life.settings.curfew, now, life.permits)).length;
       return {
         stId: r.stId,
         name: r.name,
@@ -775,7 +869,7 @@ async function studentFiles(ctx: IntranetCtx, q: URLSearchParams) {
         pendingPenalties: ps.filter((p) => p.status === 'pending').length,
         pendingRequests: [...(abs.get(r.stId) ?? []), ...(ovs.get(r.stId) ?? [])].filter((x) => x.status === 'pending').length,
         outNow: os.some((o) => o.inAt === null),
-        overnightTonight: !!overnightFor(life.overnights, r.stId, tonight),
+        overnightTonight: !!overnightFor(life.permits, r.stId, tonight),
       };
     });
   const sorters: Record<string, (a: (typeof rows)[number], b: (typeof rows)[number]) => number> = {
@@ -807,7 +901,7 @@ async function studentFile(ctx: IntranetCtx, stId: string) {
   const total = approvedScore(life.penalties.filter((p) => p.stId === stId));
   const outings = life.outings
     .filter((o) => o.stId === stId)
-    .map((o) => outingRow(ctx, o, life.settings.curfew, now, life.overnights))
+    .map((o) => outingRow(ctx, o, life.settings.curfew, now, life.permits))
     .sort((a, b) => (b.outAt ?? b.inAt ?? '').localeCompare(a.outAt ?? a.inAt ?? ''));
   return {
     refDate: d.refDate,
@@ -838,6 +932,13 @@ async function studentFile(ctx: IntranetCtx, stId: string) {
       .map((o) => ({ ...o, nights: nightsBetween(o.from, o.until) })),
     counseling: await counselingOf(counselingCtx(ctx), stId),
     lifeRequests: (await ctx.stores.lifeRequests.listByStudent(stId)).sort((a, b) => b.submittedAt.localeCompare(a.submittedAt)),
+    trips: life.signups
+      .filter((x) => x.stId === stId)
+      .flatMap((x) => {
+        const t = life.trips.find((tr) => tr.id === x.tripId);
+        return t ? [{ ...x, trip: { id: t.id, title: t.title, place: t.place, start: t.start, end: t.end, status: t.status, nights: tripNights(t) } }] : [];
+      })
+      .sort((a, b) => b.trip.start.localeCompare(a.trip.start) || b.createdAt.localeCompare(a.createdAt)),
     departure: main ? ((await ctx.stores.departures.get(`dep-${main.trId}`)) as Departure | null) : null,
   };
 }
@@ -874,22 +975,27 @@ async function summary(ctx: IntranetCtx) {
   const settings = await loadSettings(ctx);
   const now = ctx.now().getTime();
   const night = nightOf(now);
-  const [outings, penalties, absences, overnights] = await Promise.all([
+  const [outings, penalties, absences, overnights, permits, trips] = await Promise.all([
     ctx.stores.outings.all(),
     ctx.stores.penalties.all(),
     ctx.stores.absences.listAll(),
     ctx.stores.overnights.listAll(),
+    permitsOf(ctx),
+    ctx.stores.trips.listTrips(),
   ]);
+  const today = localDate(now);
   return {
     night,
     curfew: settings.curfew,
     outNow: outings.filter((o) => o.inAt === null).length,
-    breachTonight: outings.filter((o) => outingTimes(o).night === night && curfewBreach(o, settings.curfew, now, overnights)).length,
-    overnightTonight: overnights.filter((o) => overnightFor([o], o.stId, night)).length,
+    breachTonight: outings.filter((o) => outingTimes(o).night === night && curfewBreach(o, settings.curfew, now, permits)).length,
+    overnightTonight: permits.filter((o) => overnightFor([o], o.stId, night)).length,
     pending: penalties.filter((p) => p.status === 'pending').length,
     pendingAbsences: absences.filter((a) => a.status === 'pending').length,
     pendingOvernights: overnights.filter((o) => o.status === 'pending').length,
     lifePending: (await ctx.stores.lifeRequests.listAll()).filter((r) => r.status === 'received').length,
+    tripsUpcoming: trips.filter((t) => t.status !== 'cancelled' && t.end >= today).length,
+    tripsAccepting: trips.filter((t) => isAccepting(t, today)).length,
     current: currentIndex(ctx.db).size,
     ...(await followUpCounts(counselingCtx(ctx))),
     ...(await noticeSummary(noticeCtx(ctx))),
@@ -958,6 +1064,10 @@ export async function handleIntranetApi(ctx: IntranetCtx, method: string, pathna
         return await decideRequests(ctx, 'overnights', input);
       case 'GET /requests/life':
         return ok(await listLifeRequests(ctx, q));
+      case 'GET /trips':
+        return ok(await listTrips(ctx, q));
+      case 'POST /trips':
+        return await saveTripRoute(ctx, null, input);
       case 'GET /settings':
         return ok(await loadSettings(ctx));
       case 'PUT /settings': {
@@ -967,6 +1077,15 @@ export async function handleIntranetApi(ctx: IntranetCtx, method: string, pathna
         return ok(s);
       }
     }
+    const ts = p.match(/^\/trips\/signups\/([\w-]+)\/remove$/);
+    if (ts && method === 'POST') return await removeSignupRoute(ctx, ts[1], input);
+    const tr = p.match(/^\/trips\/([\w-]+)(\/status)?$/);
+    if (tr && !tr[2] && method === 'GET') {
+      const d = await tripDetail(ctx, tr[1]);
+      return d ? ok(d) : fail(404, 'not_found');
+    }
+    if (tr && !tr[2] && method === 'PUT') return await saveTripRoute(ctx, tr[1], input);
+    if (tr && tr[2] && method === 'POST') return await tripStatusRoute(ctx, tr[1], input);
     const lr = p.match(/^\/requests\/life\/([\w-]+)\/handle$/);
     if (lr && method === 'POST') return await handleLifeRequestRoute(ctx, lr[1], input);
     const rd = p.match(/^\/departures\/([\w-]+)\/ride$/);

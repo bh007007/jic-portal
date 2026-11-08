@@ -5,9 +5,9 @@
  */
 import { useCallback, useEffect, useState } from 'react';
 import { authHeaders, authMode, onSessionChange, signOut } from './auth';
-import type { DepartureList, GuardView, LifeRequestList, OutingList, OutingRow, PenaltyList, PenaltyRules, ReportList, RequestList, Settings, StudentFile, StudentFileList, Summary } from '../server/core';
+import type { DepartureList, GuardView, LifeRequestList, OutingList, OutingRow, PenaltyList, PenaltyRules, ReportList, RequestList, Settings, StudentFile, StudentFileList, Summary, TripDetail, TripList } from '../server/core';
 
-export type { DepartureList, GuardView, LifeRequestList, OutingList, OutingRow, PenaltyList, PenaltyRules, ReportList, RequestList, Settings, StudentFile, StudentFileList, Summary };
+export type { DepartureList, GuardView, LifeRequestList, OutingList, OutingRow, PenaltyList, PenaltyRules, ReportList, RequestList, Settings, StudentFile, StudentFileList, Summary, TripDetail, TripList };
 export type PenaltyRow = PenaltyList['rows'][number];
 export type { AuditList, CounselingDetail, CounselingList } from '../server/counseling';
 export type { NoticeDetail, NoticeList } from '../server/notices';
@@ -180,6 +180,23 @@ const MESSAGES: Record<string, string> = {
   invalid_contact: '연락처를 확인하세요.',
   invalid_companion: '같이 가는 학생번호를 확인하세요.',
   // 배포(Supabase)
+  title_required: '제목을 입력하세요.',
+  title_too_long: '제목은 100자까지 쓸 수 있습니다.',
+  place_required: '장소를 입력하세요.',
+  place_too_long: '장소는 100자까지 쓸 수 있습니다.',
+  meeting_too_long: '집합 안내는 100자까지 쓸 수 있습니다.',
+  description_too_long: '안내는 1000자까지 쓸 수 있습니다.',
+  end_before_start: '돌아오는 날은 출발일과 같거나 뒤여야 합니다.',
+  trip_too_long: '여행 기간은 14박까지입니다.',
+  start_in_past: '출발일은 오늘 이후여야 합니다.',
+  invalid_deadline: '신청 마감일을 확인하세요.',
+  deadline_after_start: '신청 마감일은 출발일과 같거나 앞이어야 합니다.',
+  invalid_capacity: '정원은 1~500명입니다.',
+  capacity_below_signups: '정원을 이미 신청한 학생 수보다 줄일 수 없습니다. 먼저 명단을 정리하세요.',
+  invalid_cost: '비용은 0 이상의 숫자(PHP)로 적어 주세요.',
+  trip_cancelled: '취소한 여행입니다. 바꿀 수 없습니다.',
+  same_status: '이미 그 상태입니다.',
+  not_applied: '참가 신청 상태가 아닙니다(학생 취소·명단 제외).',
   campus_not_allowed: '맡은 캠퍼스의 학생만 상담 기록을 쓸 수 있습니다. 관리자에게 담당 캠퍼스 등록을 요청하세요.',
   staff_only: '직원이나 가드 계정으로 등록되지 않았습니다.',
   guard_forbidden: '가드 계정으로는 가드 태블릿만 쓸 수 있습니다.',

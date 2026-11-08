@@ -16,43 +16,67 @@ import { handleStudentApi } from './core';
 import type { Departure, Ride } from './departures';
 import type { LifeRequest } from './lifeRequests';
 import type { Absence, Overnight, RequestStore } from './requests';
+import { withTaken, type Trip, type TripSignup, type TripStore } from './trips';
 import { tokenCache, type SupabaseConf } from './supabaseAuth';
+
+function readRows<T>(file: string): T[] {
+  if (!fs.existsSync(file)) return [];
+  return fs
+    .readFileSync(file, 'utf8')
+    .split('\n')
+    .filter((l) => l.trim())
+    .map((l) => JSON.parse(l) as T);
+}
+function writeRows<T>(file: string, rows: T[]) {
+  fs.mkdirSync(path.dirname(file), { recursive: true });
+  const tmp = file + '.tmp';
+  fs.writeFileSync(tmp, rows.map((r) => JSON.stringify(r)).join('\n') + '\n', 'utf8');
+  fs.renameSync(tmp, file);
+}
+function putRow<T extends { id: string }>(file: string, x: T) {
+  const rows = readRows<T>(file);
+  const i = rows.findIndex((r) => r.id === x.id);
+  if (i >= 0) rows[i] = x;
+  else rows.push(x);
+  writeRows(file, rows);
+}
 
 /**
  * 신청 파일 하나(결석 또는 외박). 인트라넷 개발 서버도 같은 파일을 열어 승인·반려한다.
  * 손으로 승인·반려를 바꿔 볼 수 있도록 읽을 때마다 파일을 다시 읽는다(건수가 적은 로컬 전용).
  */
 export function fileStore<T extends { id: string; stId: string }>(file: string): RequestStore<T> {
-  const readAll = (): T[] => {
-    if (!fs.existsSync(file)) return [];
-    return fs
-      .readFileSync(file, 'utf8')
-      .split('\n')
-      .filter((l) => l.trim())
-      .map((l) => JSON.parse(l) as T);
-  };
-  const writeAll = (rows: T[]) => {
-    fs.mkdirSync(path.dirname(file), { recursive: true });
-    const tmp = file + '.tmp';
-    fs.writeFileSync(tmp, rows.map((r) => JSON.stringify(r)).join('\n') + '\n', 'utf8');
-    fs.renameSync(tmp, file);
-  };
   return {
     async listAll() {
-      return readAll();
+      return readRows<T>(file);
     },
     async listByStudent(stId) {
-      return readAll().filter((r) => r.stId === stId);
+      return readRows<T>(file).filter((r) => r.stId === stId);
     },
     async get(id) {
-      return readAll().find((r) => r.id === id) ?? null;
+      return readRows<T>(file).find((r) => r.id === id) ?? null;
     },
     async put(x) {
-      const rows = readAll();
-      const i = rows.findIndex((r) => r.id === x.id);
-      if (i >= 0) rows[i] = x;
-      else rows.push(x);
-      writeAll(rows);
+      putRow(file, x);
+    },
+  };
+}
+
+/** 학교 여행과 참가 신청 파일(학생 앱·인트라넷이 같이 씀). 참가 신청 수(taken)는 저장하지 않고 읽을 때 센다. */
+export function tripFileStore(tripsFile: string, signupsFile: string): TripStore {
+  const trips = () => withTaken(readRows<Trip>(tripsFile), readRows<TripSignup>(signupsFile));
+  return {
+    listTrips: async () => trips(),
+    getTrip: async (id) => trips().find((t) => t.id === id) ?? null,
+    async putTrip(t) {
+      const { taken: _taken, ...row } = t;
+      putRow(tripsFile, row);
+    },
+    listSignups: async (tripId) => readRows<TripSignup>(signupsFile).filter((s) => !tripId || s.tripId === tripId),
+    signupsByStudent: async (stId) => readRows<TripSignup>(signupsFile).filter((s) => s.stId === stId),
+    getSignup: async (id) => readRows<TripSignup>(signupsFile).find((s) => s.id === id) ?? null,
+    async putSignup(s) {
+      putRow(signupsFile, s);
     },
   };
 }
@@ -65,6 +89,8 @@ export function requestFiles(storeDir: string, source: string) {
     departures: path.join(storeDir, `departures-${source}.ndjson`),
     rides: path.join(storeDir, `rides-${source}.ndjson`),
     life: path.join(storeDir, `life-requests-${source}.ndjson`),
+    trips: path.join(storeDir, `trips-${source}.ndjson`),
+    tripSignups: path.join(storeDir, `trip-signups-${source}.ndjson`),
   };
 }
 
@@ -110,6 +136,7 @@ export function studentLocalPlugin(dataDir: string, storeDir: string, supabase?:
       const departures = fileStore<Departure>(files.departures);
       const rides = fileStore<Ride>(files.rides);
       const life = fileStore<LifeRequest>(files.life);
+      const trips = tripFileStore(files.trips, files.tripSignups);
       const tokens = supabase ? tokenCache(supabase) : null;
       server.config.logger.info(`[student-local] ${db.summary()} · 기준일 ${db.refDate} · 신청 파일 ${storeDir}${supabase ? ` · 로그인 Supabase(${supabase.url})` : ''}`);
 
@@ -149,7 +176,7 @@ export function studentLocalPlugin(dataDir: string, storeDir: string, supabase?:
           stId = typeof header === 'string' && /^\d+$/.test(header) ? header : null;
         }
         const { status, body: out } = await handleStudentApi(
-          { db, store, overnights, departures, rides, life, stId, mustChangePassword, localLogin: !tokens, now: () => new Date(), newId: () => crypto.randomUUID() },
+          { db, store, overnights, departures, rides, life, trips, stId, mustChangePassword, localLogin: !tokens, now: () => new Date(), newId: () => crypto.randomUUID() },
           method,
           url.pathname,
           body,

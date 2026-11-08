@@ -113,7 +113,7 @@ export default function Outings({ mode }: { mode: 'outings' | 'curfew' }) {
                         {r.outBy || '-'} / {r.inBy || '-'}
                       </td>
                       <td className="left">
-                        {r.breach ? <span className="text-red">{r.breach}</span> : r.overnightUntil ? <span className="text-blue">외박 허용 ~{md(r.overnightUntil)}</span> : <span className="muted">-</span>}
+                        {r.breach ? <span className="text-red">{r.breach}</span> : r.overnightUntil ? <span className="text-blue" title={r.overnightTrip ?? undefined}>외박 허용 ~{md(r.overnightUntil)}{r.overnightTrip && ' (학교 여행)'}</span> : <span className="muted">-</span>}
                       </td>
                     </tr>
                   ))

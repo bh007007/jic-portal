@@ -3,6 +3,7 @@ import { useApi, type StudentFile } from '../api';
 import { Loading, PageTitle } from '../components/ui';
 import { duration, md, mdhm } from '../format';
 import { LIFE_CATEGORY, LIFE_STATUS, LIFE_STATUS_CLASS } from '../lifeLabels';
+import { SIGNUP_STATUS, SIGNUP_STATUS_CLASS, TRIP_STATUS, tripDates } from '../tripLabels';
 import { FollowUp } from './Counseling';
 
 // 학생 한 명의 생활 기록. 기본 정보·연수·회계·메모는 관리자 앱 학생 상세에 있다.
@@ -232,7 +233,7 @@ export default function StudentFileDetail() {
                     <td>{duration(o.minutes)}</td>
                     <td>{o.campus}</td>
                     <td className="left">
-                      {o.breach ? <span className="text-red">{o.breach}</span> : o.overnightUntil ? <span className="text-blue">외박 허용 ~{md(o.overnightUntil)}</span> : <span className="muted">-</span>}
+                      {o.breach ? <span className="text-red">{o.breach}</span> : o.overnightUntil ? <span className="text-blue" title={o.overnightTrip ?? undefined}>외박 허용 ~{md(o.overnightUntil)}{o.overnightTrip && ' (학교 여행)'}</span> : <span className="muted">-</span>}
                     </td>
                   </tr>
                 ))
@@ -366,6 +367,54 @@ export default function StudentFileDetail() {
                     <td className="left">
                       {r.reply ?? '-'}
                       {r.handledBy && <div className="muted small">{r.handledBy}</div>}
+                    </td>
+                  </tr>
+                ))
+              )}
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <section className="panel">
+        <div className="panel-head">
+          <h2>
+            학교 여행 <small>({data.trips.length}건)</small>
+          </h2>
+          <Link to="/trips" className="more">
+            학교 여행 &gt;
+          </Link>
+        </div>
+        <div className="panel-body">
+          <table className="tbl center">
+            <thead>
+              <tr>
+                <th>일정</th>
+                <th className="left">여행</th>
+                <th>신청</th>
+                <th>상태</th>
+                <th className="left">제외 사유</th>
+              </tr>
+            </thead>
+            <tbody>
+              {data.trips.length === 0 ? (
+                <tr className="empty">
+                  <td colSpan={5}>신청한 여행이 없습니다.</td>
+                </tr>
+              ) : (
+                data.trips.map((x) => (
+                  <tr key={x.id}>
+                    <td className="nowrap">{tripDates(x.trip)}</td>
+                    <td className="left">
+                      <Link to={`/trips/${x.trip.id}`}>{x.trip.title}</Link>
+                      <span className="muted small"> · {x.trip.place}</span>
+                      {x.trip.status === 'cancelled' && <span className="text-red small"> ({TRIP_STATUS.cancelled})</span>}
+                    </td>
+                    <td className="nowrap">{mdhm(x.createdAt)}</td>
+                    <td className={SIGNUP_STATUS_CLASS[x.status]}>{SIGNUP_STATUS[x.status]}</td>
+                    <td className="left">
+                      {x.reason ?? '-'}
+                      {x.handledBy && <div className="muted small">{x.handledBy}</div>}
                     </td>
                   </tr>
                 ))

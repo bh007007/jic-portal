@@ -9,7 +9,8 @@ import type { Departure, DepartureStore, Ride, RideStore } from '../../student/s
 import { isOpen, type LifeRequestStore } from '../../student/server/lifeRequests';
 import type { Absence, Overnight, RequestStore } from '../../student/server/requests';
 import type { SupabaseConf } from '../../student/server/supabaseAuth';
-import { hm, iso, restClient, StoreError, toAbsence, toDeparture, toLife, toOvernight, toRide, type Rest, type Row } from '../../student/server/supabaseStores';
+import { hm, iso, restClient, StoreError, toAbsence, toDeparture, toLife, toOvernight, toRide, toSignup, toTrip, tripReads, type Rest, type Row } from '../../student/server/supabaseStores';
+import type { TripStore } from '../../student/server/trips';
 import type { AuditLog, CounselingNote, CounselingRemote } from './counseling';
 import type { DocRepo, Outing, Penalty, PenaltyRules, Repo, Settings, Stores } from './core';
 import type { Notice, NoticeRead } from './notices';
@@ -345,6 +346,47 @@ function lifeRequestStore(rest: Rest, names: Names): LifeRequestStore {
   };
 }
 
+// ── 학교 여행: 직원이 올리고 고친다(넣을 수 있는 열만, 올린 직원 이름은 DB 기본값). 명단에서 빼기는 trip_remove_signup 함수로.
+// 가드도 이 저장소로 읽는다(RLS: 여행과 참가 신청(applied)만, 외박 허용 판정용).
+function tripStore(rest: Rest, names: Names): TripStore {
+  // 명단에서 뺀 직원 이름은 그런 행에서만 찾는다(가드 계정은 직원 이름 목록을 부르지 않게).
+  const reads = tripReads(rest, async (r) => ({ ...toSignup(r), handledBy: r.handled_by ? await names(r.handled_by) : null }));
+  return {
+    ...reads,
+    async putTrip(t) {
+      const fields = {
+        campus: t.campus,
+        title: t.title,
+        place: t.place,
+        meeting: t.meeting,
+        description: t.description,
+        start_date: t.start,
+        end_date: t.end,
+        deadline: t.deadline,
+        capacity: t.capacity,
+        cost: t.cost,
+      };
+      const cur = await reads.getTrip(t.id);
+      if (!cur) {
+        await rest('POST', 'trips', { id: t.id, ...fields }, 'return=minimal');
+        return;
+      }
+      // 취소한 여행은 RLS 가 0건으로 막는다(core 도 먼저 확인한다).
+      const rows = await rest('PATCH', `trips?id=eq.${q(t.id)}`, { ...fields, status: t.status, updated_at: t.updatedAt }, 'return=representation');
+      if (!rows.length) throw new StoreError(409, 'trip_cancelled');
+    },
+    async putSignup(x) {
+      const cur = await reads.getSignup(x.id);
+      if (cur?.status === 'applied' && x.status === 'removed') {
+        await rest('POST', 'rpc/trip_remove_signup', { p_id: x.id, p_reason: x.reason }, 'return=minimal');
+        return;
+      }
+      throw new StoreError(409, 'unsupported_update');
+    },
+  };
+}
+export { toTrip };
+
 /** 로그인한 직원(userId = 토큰의 사용자 id)의 토큰으로 core 의 Stores 를 만든다. 가드도 같은 저장소를 쓰고 RLS 가 출입구 범위를 막는다. */
 export function supabaseStores(conf: SupabaseConf, token: string, userId: string, fetchFn: typeof fetch = fetch): Stores {
   const rest = restClient(conf, token, fetchFn);
@@ -362,6 +404,7 @@ export function supabaseStores(conf: SupabaseConf, token: string, userId: string
     departures: departureStore(rest),
     rides: rideStore(rest, names, userId),
     lifeRequests: lifeRequestStore(rest, names),
+    trips: tripStore(rest, names),
   };
 }
 export type { Departure };

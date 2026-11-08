@@ -7,6 +7,7 @@ import { loadDir } from '../../admin/server/localData';
 import type { Departure, Ride } from '../../student/server/departures';
 import { newLifeRequest, type LifeRequest } from '../../student/server/lifeRequests';
 import type { Absence, Overnight, RequestStore } from '../../student/server/requests';
+import { memoryTripStore, signUp } from '../../student/server/trips';
 import { handleIntranetApi, type Stores } from './core';
 
 function memRepo<T extends { id: string }>() {
@@ -68,6 +69,7 @@ const stores: Stores = {
   departures: memReq<Departure>(),
   rides: memReq<Ride>(),
   lifeRequests: memReq<LifeRequest>(),
+  trips: memoryTripStore(),
 };
 let clock = Date.parse('2026-11-05T19:02:00+08:00');
 let n = 0;
@@ -476,6 +478,76 @@ expect('여행 정보가 목록에', t1.destination === 'Boracay' && t1.accommod
 expect('동행: 이름과 신청 여부(같은 기간에 신청한 학생만 표시)', t1.companionInfo.length === 2 && t1.companionInfo[0].requested === true && t1.companionInfo[0].name === S2.name && t1.companionInfo[1].stId === S3 && t1.companionInfo[1].requested === false, t1.companionInfo);
 const old = tl.overnights.find((o: any) => !o.destination);
 expect('여행 정보가 없는 예전 신청도 목록에(동행 없음)', !old || old.companionInfo.length === 0, old);
+
+// ── 학교 여행·액티비티(학생 앱 trips.ts): 직원이 올리고, 학생이 신청하면 1박 이상은 외박 허용
+at('2026-11-08T10:00:00');
+actor = '오피스 김';
+const tripBody = { campus, title: '보라카이 1박', place: 'Boracay', meeting: '토 07:00 정문', description: '왕복 밴, 숙소 포함', start: '2026-11-14', end: '2026-11-15', deadline: '2026-11-12', capacity: 2, cost: 2500 };
+r = await call('POST', '/trips', { ...tripBody, title: ' ' });
+expect('여행 등록: 제목 필수 400', r.status === 400 && (r.body as any).error === 'title_required', r);
+r = await call('POST', '/trips', { ...tripBody, campus: 'Busan' });
+expect('여행 등록: 없는 캠퍼스 400', (r.body as any).error === 'invalid_campus', r);
+r = await call('POST', '/trips', tripBody);
+const tripId = (r.body as any).id as string;
+expect('여행 등록 201: 신청 받는 중, 올린 직원', r.status === 201 && (r.body as any).status === 'open' && (r.body as any).createdBy === '오피스 김' && (r.body as any).taken === 0, r);
+let trl = (await call('GET', '/trips')).body as any;
+expect('여행 목록: 다가오는 1건, 1박, 신청 받는 중', trl.counts.upcoming === 1 && trl.rows[0].nights === 1 && trl.rows[0].accepting === true && trl.campuses.includes(campus), trl);
+const taken = new Set([A, B, C, D, E, S1.stId, S2.stId, S3]);
+const fits = [...new Set(cur.filter((x) => x.campus === campus && x.start <= '2026-11-14' && x.end >= '2026-11-15' && !taken.has(x.stId)).map((x) => x.stId))];
+const [F, G] = fits;
+const signOf = async (stId: string) => {
+  const out = signUp({ db, stId, now: () => new Date(clock), newId: () => 'S' + ++n, today: '2026-11-08' }, await stores.trips.getTrip(tripId), await stores.trips.signupsByStudent(stId));
+  if (!out.ok) throw new Error(out.error);
+  await stores.trips.putSignup(out.value);
+  return out.value;
+};
+const sF = await signOf(F);
+await signOf(G);
+let td = (await call('GET', `/trips/${tripId}`)).body as any;
+expect('여행 상세: 명단 2명(이름·캠퍼스), 신청 2', td.trip.taken === 2 && td.signups.length === 2 && td.signups.every((x: any) => x.name && x.campus === campus && x.status === 'applied'), td);
+r = await call('PUT', `/trips/${tripId}`, { ...tripBody, capacity: 1 });
+expect('정원을 신청 수보다 줄이면 409', r.status === 409 && (r.body as any).error === 'capacity_below_signups', r);
+r = await call('PUT', `/trips/${tripId}`, { ...tripBody, title: '보라카이 1박 (밴)', capacity: 3 });
+expect('여행 수정 200', r.status === 200 && (r.body as any).title === '보라카이 1박 (밴)' && (r.body as any).capacity === 3, r);
+r = await call('POST', `/trips/${tripId}/status`, { status: 'closed' });
+expect('신청 마감', r.status === 200 && (r.body as any).status === 'closed', r);
+expect('마감하면 신청 받는 중 아님', ((await call('GET', '/trips')).body as any).rows[0].accepting === false);
+r = await call('POST', `/trips/${tripId}/status`, { status: 'closed' });
+expect('같은 상태 409', r.status === 409 && (r.body as any).error === 'same_status', r);
+await call('POST', `/trips/${tripId}/status`, { status: 'open' });
+// F 가 여행 첫날 밤 외출하고 돌아오지 않음 → 여행 참가라 통금 위반 아님
+at('2026-11-14T20:00:00'); await call('PUT', '/settings', { curfew: '23:00', guards: [] });
+r = await call('POST', '/guard/scan', { code: F, mode: 'out', campus });
+expect('여행 참가자 외출 201', r.status === 201, [r, F, G, fits.length]);
+at('2026-11-15T01:00:00');
+let fRow = ((await call('GET', '/outings', null, 'date=2026-11-14')).body as any).rows.find((x: any) => x.stId === F);
+expect('여행 밤: 위반 아님, 외박 허용(복귀일)·여행 이름', fRow.breach === null && fRow.overnightUntil === '2026-11-15' && fRow.overnightTrip === '보라카이 1박 (밴)', fRow);
+const gvT = (await call("GET", "/guard", null, "campus=" + campus)).body as any;
+expect('가드 화면: 오늘 밤 외박 허용에 여행 참가자 포함', gvT.overnightTonight >= 2, gvT.overnightTonight);
+const smT = (await call('GET', '/summary')).body as any;
+expect('홈 요약: 다가오는 여행 1, 오늘 밤 외박 허용 2 이상', smT.tripsUpcoming === 1 && smT.overnightTonight >= 2, smT);
+r = await call('POST', `/trips/signups/${sF.id}/remove`, { reason: '' });
+expect('명단 제외는 사유 필수 400', r.status === 400 && (r.body as any).error === 'reason_required', r);
+r = await call('POST', `/trips/signups/${sF.id}/remove`, { reason: '출발 전 연락 없음' });
+expect('명단 제외 200, 처리자', r.status === 200 && (r.body as any).status === 'removed' && (r.body as any).handledBy === '오피스 김', r);
+r = await call('POST', `/trips/signups/${sF.id}/remove`, { reason: 'x' });
+expect('이미 빠진 신청 409', r.status === 409 && (r.body as any).error === 'not_applied', r);
+pl = (await call('GET', '/penalties')).body as any;
+expect('명단에서 빠지면 그 밤 통금 위반 후보가 생김', pl.rows.some((x: any) => x.stId === F && x.date === '2026-11-14'), pl.rows.map((x: any) => [x.stId, x.date]));
+const sfT = (await call('GET', `/students/${F}`)).body as any;
+expect('Student File 에 학교 여행(제외 사유)', sfT.trips.length === 1 && sfT.trips[0].status === 'removed' && sfT.trips[0].reason === '출발 전 연락 없음' && sfT.trips[0].trip.title === '보라카이 1박 (밴)', sfT.trips);
+const before = ((await call('GET', '/summary')).body as any).overnightTonight;
+r = await call('POST', `/trips/${tripId}/status`, { status: 'cancelled' });
+expect('여행 취소', r.status === 200 && (r.body as any).status === 'cancelled', r);
+expect('취소하면 참가자 외박 허용이 빠짐', ((await call('GET', '/summary')).body as any).overnightTonight === before - 1);
+r = await call('PUT', `/trips/${tripId}`, tripBody);
+expect('취소한 여행은 수정 409', r.status === 409 && (r.body as any).error === 'trip_cancelled', r);
+r = await call('POST', `/trips/${tripId}/status`, { status: 'open' });
+expect('취소한 여행은 되돌리지 않음 409', r.status === 409 && (r.body as any).error === 'trip_cancelled', r);
+expect('없는 여행 404', (await call('GET', '/trips/nope')).status === 404);
+at('2026-11-20T10:00:00');
+trl = (await call('GET', '/trips', null, 'tab=past')).body as any;
+expect('지난 여행 탭', trl.tab === 'past' && trl.counts.past === 1 && trl.rows.length === 1, trl.counts);
 
 console.log(fails ? `\n${fails}건 실패` : '\n모두 통과');
 if (fails) process.exit(1);

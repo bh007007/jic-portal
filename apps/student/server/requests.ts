@@ -44,6 +44,7 @@ export interface Overnight extends RequestBase {
   accommodation?: string; // 숙소(선택)
   contact?: string; // 여행 중 비상 연락처
   companions?: string[]; // 같이 가는 학생 번호
+  tripId?: string; // 학교 여행 참가로 생긴 외박 허용(trips.ts tripPermits). 신청 저장소에는 없다
 }
 
 export interface RequestStore<T extends { id: string; stId: string }> {

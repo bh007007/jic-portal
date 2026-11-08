@@ -15,6 +15,8 @@ import Profile from './pages/Profile';
 import RequestDetail from './pages/RequestDetail';
 import Requests from './pages/Requests';
 import Timetable from './pages/Timetable';
+import TripDetail from './pages/TripDetail';
+import Trips from './pages/Trips';
 
 export default function App() {
   const auth = useAuth();
@@ -39,6 +41,8 @@ export default function App() {
           <Route path="/requests/life/new" element={<LifeNew />} />
           <Route path="/requests/life/:id" element={<LifeDetail />} />
           <Route path="/requests/:id" element={<RequestDetail />} />
+          <Route path="/trips" element={<Trips />} />
+          <Route path="/trips/:id" element={<TripDetail />} />
           <Route path="/me" element={<Profile />} />
           <Route path="/departure" element={<Departure />} />
           {authMode === 'supabase' && <Route path="/password" element={<Password />} />}

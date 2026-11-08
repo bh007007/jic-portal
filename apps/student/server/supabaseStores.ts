@@ -7,6 +7,7 @@
 import type { Departure, DepartureStore, Ride, RideStore } from './departures';
 import type { LifeRequest, LifeRequestStore } from './lifeRequests';
 import type { Absence, AbsenceStore, Overnight, OvernightStore } from './requests';
+import type { Trip, TripSignup, TripStore } from './trips';
 import type { SupabaseConf } from './supabaseAuth';
 
 export type Row = Record<string, unknown>;
@@ -226,8 +227,82 @@ export function lifeStore(rest: Rest): LifeRequestStore {
   };
 }
 
+// ── 학교 여행(trips)·참가 신청(trip_signups). 학생은 여행을 읽고, 신청·취소는 DB 함수로 한다
+// (정원·마감·연수 기간을 DB 가 잠금 안에서 한 번 더 확인하고, 참가 신청 수 seats_taken 도 함수가 맞춘다).
+export const toTrip = (r: Row): Trip => ({
+  id: String(r.id),
+  campus: String(r.campus ?? ''),
+  title: String(r.title),
+  place: String(r.place),
+  meeting: String(r.meeting ?? ''),
+  description: String(r.description ?? ''),
+  start: String(r.start_date),
+  end: String(r.end_date),
+  deadline: String(r.deadline),
+  capacity: Number(r.capacity),
+  cost: Number(r.cost ?? 0),
+  status: r.status as Trip['status'],
+  createdAt: iso(r.created_at)!,
+  updatedAt: iso(r.updated_at)!,
+  createdBy: (r.created_by_name as string | null) || null,
+  taken: Number(r.seats_taken ?? 0),
+});
+export const toSignup = (r: Row): TripSignup => ({
+  id: String(r.id),
+  tripId: String(r.trip_id),
+  stId: String(r.student_no),
+  trId: String(r.enrollment_id),
+  status: r.status as TripSignup['status'],
+  createdAt: iso(r.created_at)!,
+  updatedAt: iso(r.updated_at)!,
+  reason: (r.removed_reason as string | null) ?? null,
+  handledAt: iso(r.handled_at),
+  handledBy: null, // 명단에서 뺀 직원은 학생에게 보이지 않는다
+});
+export const isUuid = (id: string) => /^[0-9a-f-]{36}$/i.test(id);
+
+/** 여행·참가 신청 읽기(학생·직원·가드 공통, 범위는 RLS) */
+export function tripReads(rest: Rest, toS: (r: Row) => TripSignup | Promise<TripSignup> = toSignup) {
+  const getTrip = async (id: string) => (isUuid(id) ? ((await rest('GET', `trips?select=*&id=eq.${q(id)}`)).map(toTrip)[0] ?? null) : null);
+  const getSignup = async (id: string) => {
+    if (!isUuid(id)) return null;
+    const rows = await rest('GET', `trip_signups?select=*&id=eq.${q(id)}`);
+    return rows[0] ? await toS(rows[0]) : null;
+  };
+  return {
+    listTrips: async () => (await rest('GET', 'trips?select=*&order=start_date')).map(toTrip),
+    getTrip,
+    listSignups: async (tripId?: string) =>
+      Promise.all((await rest('GET', `trip_signups?select=*${tripId ? `&trip_id=eq.${q(tripId)}` : ''}&order=created_at`)).map(toS)),
+    signupsByStudent: async (stId: string) => Promise.all((await rest('GET', `trip_signups?select=*&student_no=eq.${q(stId)}&order=created_at`)).map(toS)),
+    getSignup,
+  };
+}
+
+export function tripStore(rest: Rest): TripStore {
+  const reads = tripReads(rest);
+  return {
+    ...reads,
+    async putTrip() {
+      throw new StoreError(403, 'read_only');
+    },
+    async putSignup(x) {
+      const cur = await reads.getSignup(x.id);
+      if (!cur && x.status === 'applied') {
+        await rest('POST', 'rpc/trip_sign_up', { p_trip: x.tripId, p_enrollment: x.trId, p_id: x.id });
+        return;
+      }
+      if (cur?.status === 'applied' && x.status === 'cancelled') {
+        await rest('POST', 'rpc/trip_cancel_signup', { p_id: x.id }, 'return=minimal');
+        return;
+      }
+      throw new StoreError(409, 'unsupported_update');
+    },
+  };
+}
+
 /** 학생 토큰으로 저장소를 만든다. */
 export function supabaseStores(conf: SupabaseConf, token: string, fetchFn: typeof fetch = fetch) {
   const rest = restClient(conf, token, fetchFn);
-  return { store: absenceStore(rest), overnights: overnightStore(rest), departures: departureStore(rest), rides: rideStore(rest), life: lifeStore(rest) };
+  return { store: absenceStore(rest), overnights: overnightStore(rest), departures: departureStore(rest), rides: rideStore(rest), life: lifeStore(rest), trips: tripStore(rest) };
 }

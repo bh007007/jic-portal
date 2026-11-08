@@ -15,14 +15,16 @@ npm run student
 
 | 경로 | 화면 | 데이터 |
 | --- | --- | --- |
-| `/` | 홈: 학생증, 바로가기, 결석 신청 내역(최근 3건), 졸업 전 확인 | 학생·연수(재학 중 → 입학 예정 → 최근 순), 방 정리·포인트 정리 여부 |
-| `/requests` | 신청: 결석·외박 신청·생활 요청 버튼, 결석·외박 신청과 생활 요청 내역 | 결석·외박 신청, 생활 요청 |
+| `/` | 홈: 학생증, 바로가기, 결석 신청 내역(최근 3건), 학교 여행(다가오는 것 3건, 있을 때만), 졸업 전 확인 | 학생·연수(재학 중 → 입학 예정 → 최근 순), 방 정리·포인트 정리 여부 |
+| `/requests` | 신청: 결석·외박 신청·생활 요청·학교 여행 버튼, 결석·외박 신청과 생활 요청 내역 | 결석·외박 신청, 생활 요청 |
 | `/requests/absence/new` | 결석 신청: 날짜, 종류(병결·공결·개인 사유), 교시(종일 또는 1~8), 사유(500자) | |
 | `/requests/:id` | 결석 신청 상세(담당자 메모 포함), 대기 중이면 취소 | |
 | `/requests/overnight/new` | 외박·여행 신청: 출발일, 복귀일(박 수 표시), 행선지, 숙소(선택), 비상 연락처, 같이 가는 학생(학생번호, 선택), 사유(일정, 500자) | |
 | `/requests/overnight/:id` | 외박·여행 신청 상세(여행 정보, 담당자 메모), 대기 중이면 취소 | |
 | `/requests/life/new` | 생활 요청: 종류(시설 수리·방 변경·ID 카드 재발급·서류 발급·기타), 내용(위치와 필요한 것, 500자) | |
 | `/requests/life/:id` | 생활 요청 상세(상태·담당자 답변), 접수 상태면 취소 | |
+| `/trips` | 학교 여행·액티비티: 다가오는 여행(내 캠퍼스·전체 캠퍼스, 상태: 신청 가능·신청함·정원 마감·신청 마감·명단 제외·여행 취소)과 내가 신청했던 지난 여행 | 학교 여행(직원이 올림), 내 참가 신청 |
+| `/trips/:id` | 여행 상세: 일정·장소·집합·비용·신청 마감·자리·안내, 내 신청(명단에서 빠졌으면 사유), 참가 신청·신청 취소 | |
 | `/me` | 내 정보: 학생 정보(이메일·연락처는 가림), 연수(귀국 항공편 포함), 연수 이력, 로그아웃 | |
 | `/departure` | 귀국 항공편: 출발일, 출발 시각, 항공편명, 공항(마닐라·클락·기타), 공항 이동 차량 요청, 메모 | 귀국 항공편(학생 입력) |
 | `/timetable` | 시간표: 준비 중(추출본에 없음, LMS 연결 후) | |
@@ -32,11 +34,22 @@ npm run student
 
 ## 외박·여행 신청
 
-업체 포털의 'Outing > Travel'(기획안 'Travel → 여행 신청과 외박 허용')에 맞춰 외박 신청에 여행 정보를 더했다(11/8). 승인하면 지금처럼 그 밤들이 인트라넷 통금 확인에서 빠지고 가드 태블릿에 '외박 허용'으로 보인다. 학교가 여는 여행·액티비티 참가 신청은 따로 만든다(다음 작업).
+업체 포털의 'Outing > Travel'(기획안 'Travel → 여행 신청과 외박 허용')에 맞춰 외박 신청에 여행 정보를 더했다(11/8). 승인하면 지금처럼 그 밤들이 인트라넷 통금 확인에서 빠지고 가드 태블릿에 '외박 허용'으로 보인다. 학교가 여는 여행·액티비티는 아래 '학교 여행·액티비티'.
 
 - 행선지(100자)와 비상 연락처(숫자와 + - ( ), 6~30자)는 필수, 숙소(100자)는 선택이다.
 - 같이 가는 학생은 학생번호로 적는다(쉼표·공백 구분, 10명까지, 본인 번호와 중복은 뺀다, 없는 번호면 거절). 각자 자기 신청을 내야 외박이 허용된다. 인트라넷은 같이 가는 학생이 같은 기간에 신청했는지 보여 준다.
 - 11/8 전에 낸 신청에는 여행 정보가 없다(빈 값으로 보인다).
+
+## 학교 여행·액티비티
+
+업체 포털 'Outing > Travel'의 두 번째 쓰임(업체 표 `tra` 여행 / `trt` 신청자)이다(11/8 결정: 개인 여행 신고와 학교 여행 둘 다). 직원이 인트라넷 '학교 여행'에서 여행을 올리고, 학생이 앱에서 참가 신청한다. 규칙은 `server/trips.ts` 한 곳(인트라넷과 같이 씀).
+
+- 보이는 여행: 재학 중·입학 예정 연수의 캠퍼스 여행과 전체 캠퍼스 여행 중 돌아오는 날이 오늘 이후이고 취소되지 않은 것. 내가 신청했던 여행은 지나거나 취소되어도 남는다.
+- 신청: 신청 받는 중이고, 신청 마감일(필리핀 날짜, 그날까지) 전이고, 자리가 있고, 여행 날짜(출발일~돌아오는 날)가 모두 들어가는 연수가 있을 때. 같은 여행에는 한 번만(취소·제외 뒤 다시 신청은 된다). 신청은 그 연수에 붙는다.
+- 취소: 신청 마감일까지만. 그 뒤에는 담당 직원에게 말한다(직원이 명단에서 뺀다).
+- **1박 이상 여행은 참가 신청이 외박 허용이다**: 출발일 밤부터 돌아오는 날 전날 밤까지 인트라넷 통금 확인에서 빠지고 가드 태블릿에 '외박 허용 (학교 여행)'으로 보인다. 따로 외박 신청을 내지 않는다. 학생이 취소하거나, 직원이 명단에서 빼거나, 여행을 취소하면 바로 빠진다.
+- 직원이 명단에서 빼면 사유가 학생 상세에 보인다. 올린 직원·뺀 직원 이름은 학생에게 내보내지 않는다.
+- 비용은 PHP로 보이기만 한다. 납부는 지금처럼 오피스에서 받는다(포인트 결제 연결은 하지 않았다).
 
 ## 생활 요청
 
@@ -103,6 +116,10 @@ apps/student/
 | `GET /api/life-requests` | 내 생활 요청(최근 순), 종류 목록, 요청 가능 여부(재학·입학 예정 연수) |
 | `POST /api/life-requests` | 생활 요청 `{ category, content }` |
 | `POST /api/life-requests/:id/cancel` | 접수 상태인 내 생활 요청 취소 |
+| `GET /api/trips` | 학교 여행(내 캠퍼스·전체, 다가오는 것 + 내가 신청했던 것), 줄마다 박 수·남은 자리·내 신청·신청 가능 여부(`canApply`, 안 되면 `why`)·취소 가능 여부, 오늘 날짜 |
+| `GET /api/trips/:id` | 여행 하나(같은 모양 + 오늘 날짜) |
+| `POST /api/trips/:id/signup` | 참가 신청 |
+| `POST /api/trips/:id/cancel` | 내 참가 신청 취소(마감일까지) |
 | `GET /api/departure` | 이번 연수의 귀국 항공편, 출발일 범위, 공항 목록, 공항 이동 배차 상태 |
 | `PUT /api/departure` | 귀국 항공편 등록·수정 `{ date, time, flight, airport, needsRide, note }` |
 
@@ -174,7 +191,7 @@ npm run student:accounts -- --reset 30095 --apply   # 비밀번호를 잊은 학
 
 ### 설정 순서 (레오 PC의 Claude, 테스트 프로젝트는 샘플 데이터만)
 
-1. Supabase에 마이그레이션 `20261108100000_student_intranet.sql`, `20261108120000_student_request_ids.sql`, `20261108140000_nonacademic_requests.sql`(생활 요청), `20261108150000_overnight_travel.sql`(외박·여행 정보)을 차례로 적용한다.
+1. Supabase에 마이그레이션 `20261108100000_student_intranet.sql`, `20261108120000_student_request_ids.sql`, `20261108140000_nonacademic_requests.sql`(생활 요청), `20261108150000_overnight_travel.sql`(외박·여행 정보), `20261108160000_school_trips.sql`(학교 여행)을 차례로 적용한다.
 2. 샘플 업체 원본을 올린다(`scripts/upload-to-supabase.mjs`, 이미 올라가 있으면 건너뜀).
 3. 학생 계정을 만든다: `npm run student:accounts -- --apply`(위 '학생 계정과 로그인').
 4. **Workers & Pages → Create → Workers → Import a repository** → `jic-portal`
@@ -194,7 +211,7 @@ npm run student:accounts -- --reset 30095 --apply   # 비밀번호를 잊은 학
 
 ### 배포 시험
 
-- `supabase/tests/student_worker_api.mjs`: 실제 마이그레이션을 올린 PGlite(`supabase/tests/pg-supabase.mjs`, Supabase Auth·REST 흉내)에 계정 생성 스크립트로 샘플 계정을 만들고, Worker를 묶어 학생 흐름 전체를 확인한다(35개). 비밀번호 변경 전 403, 결석·외박 등록·취소, 직원 승인을 학생이 봄, 항공편·배차·재확인, 다른 학생과 분리, 본문 검사.
+- `supabase/tests/student_worker_api.mjs`: 실제 마이그레이션을 올린 PGlite(`supabase/tests/pg-supabase.mjs`, Supabase Auth·REST 흉내)에 계정 생성 스크립트로 샘플 계정을 만들고, Worker를 묶어 학생 흐름 전체를 확인한다. 비밀번호 변경 전 403, 결석·외박 등록·취소, 직원 승인을 학생이 봄, 항공편·배차·재확인, 생활 요청, 다른 학생과 분리, 학교 여행 신청·취소·정원·명단 제외, 본문 검사.
 - CI가 권한 시험과 함께 돌린다(`.github/workflows/ci.yml`). 직접 돌리려면 `npm i --no-save @electric-sql/pglite@0.3` 후 `node supabase/tests/student_worker_api.mjs`.
 - 화면까지 보려면: `node supabase/tests/pg-supabase.mjs 54321`로 시험 서버를 띄우고, 계정을 만든 뒤(`SUPABASE_URL=http://127.0.0.1:54321`, `SUPABASE_SERVICE_ROLE_KEY=service-key`), `VITE_SUPABASE_URL=http://127.0.0.1:54321 VITE_SUPABASE_ANON_KEY=anon-key npm run student:build` → `npx wrangler dev --config apps/student/wrangler.jsonc --var SUPABASE_URL:http://127.0.0.1:54321 --var SUPABASE_ANON_KEY:anon-key --var SUPABASE_SERVICE_ROLE_KEY:service-key`. 11/8에 이 방식으로 로그인·비밀번호 변경·신청·귀국 항공편 화면을 확인했다.
 
@@ -213,6 +230,8 @@ npm run student:accounts -- --reset 30095 --apply   # 비밀번호를 잊은 학
 | `departure_flights` | 자기 연수로 등록·수정, 출발일이 지나면 못 고침, 학생 번호·연수 번호는 못 바꿈 | 읽기 |
 | `airport_rides` | 자기 것 읽기 | 등록·수정(처리자는 본인으로만) |
 | `nonacademic_requests` | 자기 것 읽기, 자기 연수로 접수 상태 등록(열린 요청 5건까지), 취소는 `cancel_nonacademic_request(id)` | 모두 읽기, 처리·답변은 `handle_nonacademic_request(id, 상태, 답변)` |
+| `trips` | 읽기(화면은 자기 캠퍼스·전체만) | 읽기, 넣을 수 있는 열만 등록·수정(출발일은 오늘 이후, 취소한 여행은 못 고침), 올린 직원 이름은 DB 기본값 |
+| `trip_signups` | 자기 것 읽기, 신청은 `trip_sign_up(여행, 연수)`(여행 행을 잠가 정원을 넘지 않음, 마감·연수 기간·캠퍼스 확인), 취소는 `trip_cancel_signup(id)`(마감일까지) | 모두 읽기, 명단 제외는 `trip_remove_signup(id, 사유)`. 가드는 참가 신청(applied)만 읽음(외박 허용 판정) |
 | `student_users` | 자기 행 읽기 | 읽기 |
 
 - 코드와 열 이름: `stId` → `student_no`, `trId` → `enrollment_id`, `date` → `absence_date`, `from`/`until` → `leave_date`/`return_date`, `comment` → `staff_comment`, `submittedAt` → `created_at`. 처리자(`decidedBy`)는 DB에 사용자 id를 두고 화면에는 `staff_users.name`을 보여 준다.
@@ -226,4 +245,5 @@ npm run student:accounts -- --reset 30095 --apply   # 비밀번호를 잊은 학
 - 결석 승인 담당: 지금은 인트라넷 '신청 처리'. LMS(교사)로 옮길지.
 - 학생 사진: 업체 포털의 `photo_url`은 업체 서버 주소라 쓰지 않았다. 사진 이관 방식 결정 후 붙인다.
 - 귀국 항공편: 출발일 범위(지금 연수 종료 30일 안, 임시), 공항 목록, 배차 확정을 학생에게 따로 알릴지(지금은 앱을 열어야 보인다).
+- 학교 여행: 비용 납부를 포인트로 받을지, 대기자(정원이 찼을 때 순번)를 둘지, 보호자 동의서가 필요한 여행을 표시할지. 지금은 정원까지 먼저 신청한 순, 납부는 오피스.
 - 외박: 며칠 전까지 신청해야 하는지, 최대 박 수, 보호자 동의·연락처가 필요한지. 지금은 연수 기간 안이면 받는다.
