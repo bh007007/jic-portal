@@ -288,7 +288,7 @@ export default function StudentFileDetail() {
         <section className="panel">
           <div className="panel-head">
             <h2>
-              외박 신청 <small>({data.overnights.length}건)</small>
+              외박·여행 신청 <small>({data.overnights.length}건)</small>
             </h2>
           </div>
           <div className="panel-body">
@@ -314,7 +314,9 @@ export default function StudentFileDetail() {
                       </td>
                       <td>{o.nights}</td>
                       <td className="left">
+                        {o.destination && <strong>{o.destination} </strong>}
                         {o.reason}
+                        {!!o.companions?.length && <div className="muted small">동행: {o.companions.join(', ')}</div>}
                         {o.comment && <div className="muted small">메모: {o.comment}</div>}
                       </td>
                       <td>

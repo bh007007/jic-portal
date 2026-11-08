@@ -26,7 +26,11 @@ const COLUMNS: Column<InvoiceRow>[] = [
   ['지점', (r) => r.branch],
   ['통화', (r) => r.currency],
   ['납부 상태', (r) => r.pay],
+  ['인보이스 총액', (r) => r.total],
   ['입금 매칭 합계', (r) => r.paid],
+  ['미입금', (r) => r.remaining],
+  ['현지 청구', (r) => r.localBilled],
+  ['현지 납부', (r) => r.localPaid],
   ['포인트 충전', (r) => r.pointIn],
   ['포인트 사용', (r) => r.pointOut],
   ['포인트 잔액', (r) => r.pointBalance],
@@ -117,7 +121,12 @@ export default function Invoices() {
               <span className="muted">
                 {' · '}
                 {data.totals.byPay.map((p) => `${p.name} ${fmt(p.count)}`).join(' · ')}
-                {' · '}입금 매칭 합계 {currencyText(data.totals.paidByCurrency)}
+              </span>
+              <span className="muted" style={{ display: 'block', marginTop: 2, fontSize: 12 }}>
+                인보이스 총액 {currencyText(data.totals.totalByCurrency)}
+                {' · '}입금 매칭 {currencyText(data.totals.paidByCurrency)}
+                {' · '}
+                <span className={data.totals.remainingByCurrency.length ? 'text-red' : ''}>미입금 {currencyText(data.totals.remainingByCurrency)}</span>
               </span>
             </span>
             <span className="toolbar-right">
@@ -127,7 +136,7 @@ export default function Invoices() {
           </div>
 
           <div className="grid-box">
-            <table className="tbl center big" style={{ minWidth: 1360 }}>
+            <table className="tbl center big" style={{ minWidth: 1520 }}>
               <thead>
                 <tr>
                   <th style={{ width: 52 }}>No</th>
@@ -141,7 +150,9 @@ export default function Invoices() {
                   <th className="left">에이전시</th>
                   <th>통화</th>
                   <th>납부</th>
+                  <th className="num">인보이스 총액</th>
                   <th className="num">입금 매칭 합계</th>
+                  <th className="num">미입금</th>
                   <th className="num">포인트 충전</th>
                   <th className="num">포인트 사용</th>
                   <th className="num">포인트 잔액</th>
@@ -149,7 +160,7 @@ export default function Invoices() {
               </thead>
               <tbody>
                 {data.rows.length === 0 && (
-                  <tr className="empty"><td colSpan={15}>조건에 맞는 연수가 없습니다.</td></tr>
+                  <tr className="empty"><td colSpan={17}>조건에 맞는 연수가 없습니다.</td></tr>
                 )}
                 {data.rows.map((r, i) => (
                   <tr key={r.trId}>
@@ -164,7 +175,9 @@ export default function Invoices() {
                     <td className="left">{r.agency}{r.branch ? ` (${r.branch})` : ''}</td>
                     <td>{r.currency || '-'}</td>
                     <td className="nowrap"><PayText pay={r.pay} /></td>
+                    <td className={'num' + (r.total ? '' : ' muted')}>{r.hasInvoice ? fmt(r.total) : '-'}</td>
                     <td className={'num' + (r.paid ? '' : ' muted')}>{r.hasInvoice ? fmt(r.paid) : '-'}</td>
+                    <td className={'num' + (r.remaining ? ' text-red' : ' muted')}>{r.hasInvoice ? fmt(r.remaining) : '-'}</td>
                     <td className={'num' + (r.pointIn ? '' : ' muted')}>{r.hasInvoice ? fmt(r.pointIn) : '-'}</td>
                     <td className={'num' + (r.pointOut ? '' : ' muted')}>{r.hasInvoice ? fmt(r.pointOut) : '-'}</td>
                     <td className={'num' + (r.pointBalance ? ' strong' : ' muted')}>{r.hasInvoice ? fmt(r.pointBalance) : '-'}</td>

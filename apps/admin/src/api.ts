@@ -74,7 +74,17 @@ export interface StudentDetail {
     pickPlace: string;
     roomClear: boolean;
     pointClear: boolean;
-    invoice: { currency: string; paid: number; pointIn: number; pointOut: number; pointBalance: number } | null;
+    invoice: {
+      currency: string;
+      total: number;
+      paid: number;
+      remaining: number;
+      localBilled: number;
+      localPaid: number;
+      pointIn: number;
+      pointOut: number;
+      pointBalance: number;
+    } | null;
     dormStay: { type: string; campus: string; from: string; to: string; weeks: number } | null;
     memos: { kind: string; text: string }[];
     /** 업체 포인트 내역(충전·현지 비용 사용). 원장이 없는 환경에서는 빈 배열 */
@@ -212,12 +222,19 @@ export interface CurrencyAmount {
   amount: number;
 }
 
-/** 연수 한 건의 회계 요약. 인보이스 총액은 추출본에 없어 넣지 않는다. */
+/** 연수 한 건의 회계 요약. 금액은 연수 통화(currency), 현지 인보이스(local*)는 페소로 보인다. */
 export interface InvoiceRow extends EnrollmentRow {
   agId: string;
   currency: string;
   hasInvoice: boolean;
+  /** 해외 인보이스 총액(sum_ic_price) */
+  total: number;
+  /** 입금 매칭 합계(sum_id_amount) */
   paid: number;
+  /** 총액 − 입금 매칭, 미납·부분납만(완납은 0) */
+  remaining: number;
+  localBilled: number;
+  localPaid: number;
   pointIn: number;
   pointOut: number;
   pointBalance: number;
@@ -230,7 +247,7 @@ export interface InvoiceList extends Paged<InvoiceRow> {
   tab: string;
   tabCounts: StatusCounts;
   facets: { campuses: string[]; nations: string[]; currencies: string[]; agencies: AgencyOption[] };
-  totals: { byPay: NameCount[]; paidByCurrency: CurrencyAmount[] };
+  totals: { byPay: NameCount[]; totalByCurrency: CurrencyAmount[]; paidByCurrency: CurrencyAmount[]; remainingByCurrency: CurrencyAmount[] };
 }
 
 export interface UnpaidList extends Paged<InvoiceRow> {
@@ -238,7 +255,7 @@ export interface UnpaidList extends Paged<InvoiceRow> {
   scopeCounts: StatusCounts;
   views: { unpaid: number; ledger: number };
   facets: { campuses: string[]; currencies: string[]; agencies: AgencyOption[] };
-  totals: { byPay: NameCount[]; overdue: number; paidByCurrency: CurrencyAmount[] };
+  totals: { byPay: NameCount[]; overdue: number; paidByCurrency: CurrencyAmount[]; remainingByCurrency: CurrencyAmount[] };
 }
 
 export interface DepositRow {

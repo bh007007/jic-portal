@@ -39,7 +39,7 @@ export default function Home() {
           </span>
         </Link>
         <Link to="/requests/overnights">
-          <span className="label">외박 신청 대기 · 오늘 밤 외박</span>
+          <span className="label">외박·여행 신청 대기 · 오늘 밤 외박</span>
           <span className="value">
             {data.pendingOvernights}
             <small>건 · {data.overnightTonight}명</small>

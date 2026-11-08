@@ -120,7 +120,17 @@ export default function StudentDetail() {
                   <tr><th>구분</th><th className="left">항목</th><th>금액</th><th>상태</th></tr>
                 </thead>
                 <tbody>
-                  <tr><td>학비</td><td className="left">입금 매칭 합계</td><td className="num strong">{latest.invoice.currency} {fmt(latest.invoice.paid)}</td><td><PayText pay={latest.pay} /></td></tr>
+                  <tr>
+                    <td rowSpan={3}>학비</td>
+                    <td className="left">인보이스 총액</td>
+                    <td className="num">{latest.invoice.currency} {fmt(latest.invoice.total)}</td>
+                    <td rowSpan={3}><PayText pay={latest.pay} /></td>
+                  </tr>
+                  <tr><td className="left">입금 매칭 합계</td><td className="num strong">{latest.invoice.currency} {fmt(latest.invoice.paid)}</td></tr>
+                  <tr>
+                    <td className="left">미입금</td>
+                    <td className={'num' + (latest.invoice.remaining ? ' text-red' : ' muted')}>{latest.invoice.currency} {fmt(latest.invoice.remaining)}</td>
+                  </tr>
                   <tr>
                     <td>포인트</td>
                     <td className="left">충전 {fmt(latest.invoice.pointIn)} / 사용 {fmt(latest.invoice.pointOut)}</td>

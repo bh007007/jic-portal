@@ -40,6 +40,7 @@ const now = new Date('2026-11-08T02:00:00Z');
 const stId = '30095'; // 샘플: 재학 2026-07-26 ~ 2026-11-13
 const ctx = (who: string | null = stId) => ({ db, store, overnights, departures, rides, life, stId: who, localLogin: true, now: () => now, newId: () => 'r' + ++n });
 const call = (m: string, p: string, body: unknown = null, who: string | null = stId) => handleStudentApi(ctx(who), m, p, body);
+const TRIP = { destination: 'Manila', contact: '+63 917 123 4567' };
 let fails = 0;
 const expect = (label: string, cond: boolean, extra?: unknown) => {
   if (!cond) fails++;
@@ -61,21 +62,31 @@ r = await call('GET', '/absences', null, null);
 expect('로그인 없이 401', r.status === 401, r);
 
 // 외박
-r = await call('POST', '/overnights', { from: '2026-11-08', until: '2026-11-10', reason: '마닐라 친척 집' });
+r = await call('POST', '/overnights', { from: '2026-11-08', until: '2026-11-10', reason: '마닐라 친척 집', ...TRIP, accommodation: ' 친척 집 ', companions: '30140, 30140 30095' });
 expect('외박 신청 201', r.status === 201, r);
+expect('여행 정보 저장: 행선지·숙소·연락처, 동행은 중복·본인 제외', (r.body as any).destination === 'Manila' && (r.body as any).accommodation === '친척 집' && (r.body as any).contact === '+63 917 123 4567' && JSON.stringify((r.body as any).companions) === '["30140"]', r.body);
 const ovId = (r.body as Overnight).id;
-r = await call('POST', '/overnights', { from: '2026-11-09', until: '2026-11-11', reason: 'x' });
+r = await call('POST', '/overnights', { from: '2026-11-09', until: '2026-11-11', reason: 'x', ...TRIP });
 expect('밤이 겹치는 외박 409', r.status === 409 && err(r) === 'duplicate', r);
-r = await call('POST', '/overnights', { from: '2026-11-10', until: '2026-11-11', reason: '복귀일 밤부터는 안 겹침' });
+r = await call('POST', '/overnights', { from: '2026-11-10', until: '2026-11-11', reason: '복귀일 밤부터는 안 겹침', ...TRIP });
 expect('복귀일 밤부터는 겹치지 않음 201', r.status === 201, r);
-r = await call('POST', '/overnights', { from: '2026-11-12', until: '2026-11-12', reason: 'x' });
+r = await call('POST', '/overnights', { from: '2026-11-12', until: '2026-11-12', reason: 'x', ...TRIP });
 expect('복귀일이 출발일과 같으면 400', err(r) === 'invalid_range', r);
-r = await call('POST', '/overnights', { from: '2026-11-13', until: '2026-11-15', reason: 'x' });
+r = await call('POST', '/overnights', { from: '2026-11-13', until: '2026-11-15', reason: 'x', ...TRIP });
 expect('마지막 밤(11/14)이 연수 종료(11/13) 뒤면 400', err(r) === 'date_out_of_range', r);
-r = await call('POST', '/overnights', { from: '2026-11-12', until: '2026-11-14', reason: '마지막 밤 11/13' });
+r = await call('POST', '/overnights', { from: '2026-11-12', until: '2026-11-14', reason: '마지막 밤 11/13', ...TRIP });
 expect('마지막 밤이 연수 종료일이면 201', r.status === 201, r);
-r = await call('POST', '/overnights', { from: '2026-11-11', until: '2026-11-12', reason: '' });
+r = await call('POST', '/overnights', { from: '2026-11-11', until: '2026-11-12', reason: '', ...TRIP });
 expect('사유 없음 400', err(r) === 'reason_required', r);
+// 여행 정보(업체 'Outing > Travel')
+const bad = (body: object) => call('POST', '/overnights', { from: '2026-11-11', until: '2026-11-12', reason: '주말 여행', ...TRIP, ...body });
+expect('행선지 필수', err(await bad({ destination: '  ' })) === 'destination_required');
+expect('행선지 100자', err(await bad({ destination: 'x'.repeat(101) })) === 'destination_too_long');
+expect('숙소 100자', err(await bad({ accommodation: 'x'.repeat(101) })) === 'accommodation_too_long');
+expect('연락처 필수', err(await bad({ contact: '' })) === 'contact_required');
+expect('연락처 형식', err(await bad({ contact: 'call me' })) === 'invalid_contact' && err(await bad({ contact: '12345' })) === 'invalid_contact');
+expect('없는 동행 학생', err(await bad({ companions: '99999999' })) === 'invalid_companion');
+expect('동행 10명까지', err(await bad({ companions: Array.from({ length: 11 }, (_, i) => String(30001 + i)).join(',') })) === 'too_many_companions');
 r = await call('GET', '/overnights');
 const ol = r.body as { rows: (Overnight & { nights: number })[] };
 expect('외박 목록 3건, 2박 계산', ol.rows.length === 3 && ol.rows.find((o) => o.id === ovId)?.nights === 2, ol.rows);

@@ -1,5 +1,5 @@
 // 학생 앱·인트라넷 마이그레이션(20261108100000_student_intranet.sql, 20261108120000_student_request_ids.sql,
-// 20261108140000_nonacademic_requests.sql)의 권한 시험.
+// 20261108140000_nonacademic_requests.sql, 20261108150000_overnight_travel.sql)의 권한 시험.
 // 실제 Postgres(PGlite, WebAssembly)에 Supabase 흉내(auth.uid, anon/authenticated/service_role)를 만들고
 // 마이그레이션을 두 번 실행한 뒤(여러 번 실행 가능 확인) 역할별로 읽기·쓰기를 시험한다. 데이터는 전부 가짜.
 //
@@ -35,6 +35,8 @@ await db.exec(mig('20261108120000_student_request_ids.sql'));
 await db.exec(mig('20261108120000_student_request_ids.sql'));
 await db.exec(mig('20261108140000_nonacademic_requests.sql'));
 await db.exec(mig('20261108140000_nonacademic_requests.sql'));
+await db.exec(mig('20261108150000_overnight_travel.sql'));
+await db.exec(mig('20261108150000_overnight_travel.sql'));
 ok('마이그레이션 2회 실행', true);
 
 // ── 가짜 사용자
@@ -124,6 +126,10 @@ await as(U.staffC, async () => {
 await as(U.stA, async () => {
   const r = await one(`insert into overnight_permissions (student_no, enrollment_id, leave_date, return_date, reason) values ('1001', 'tr1', '2026-11-14', '2026-11-16', '여행') returning id`);
   await denied('귀가일이 출발일 이전', `insert into overnight_permissions (student_no, enrollment_id, leave_date, return_date, reason) values ('1001', 'tr1', '2026-11-14', '2026-11-14', 'x')`, CHECK);
+  const tr = await one(`insert into overnight_permissions (student_no, enrollment_id, leave_date, return_date, reason, destination, accommodation, contact, companions)
+                       values ('1001', 'tr1', '2026-11-21', '2026-11-23', '주말 여행', 'Boracay', 'Sea Breeze Inn', '+63 917 000 0000', '{1002}') returning destination, companions`);
+  ok('학생이 여행 정보와 함께 외박 등록', tr.destination === 'Boracay' && tr.companions.join() === '1002', tr);
+  await denied('동행 11명', `insert into overnight_permissions (student_no, enrollment_id, leave_date, return_date, reason, companions) values ('1001', 'tr1', '2026-11-24', '2026-11-25', 'x', '{1,2,3,4,5,6,7,8,9,10,11}')`, CHECK);
   await denied('남의 연수로 외박', `insert into overnight_permissions (student_no, enrollment_id, leave_date, return_date, reason) values ('1001', 'tr2', '2026-11-14', '2026-11-15', 'x')`, RLS);
   await denied('학생이 외박 승인', `select decide_overnight_permissions(array['${r.id}'::uuid], true)`, /staff_only/);
   await as(U.staffC, async () => ok('직원 외박 반려', (await one(`select decide_overnight_permissions(array['${r.id}'::uuid], false, '기간 확인') n`)).n === 1));

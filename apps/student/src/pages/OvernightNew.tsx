@@ -33,6 +33,10 @@ function OvernightForm({ list, onDone }: { list: OvernightList; onDone: (id: str
   const [from, setFrom] = useState('');
   const [until, setUntil] = useState('');
   const [reason, setReason] = useState('');
+  const [destination, setDestination] = useState('');
+  const [accommodation, setAccommodation] = useState('');
+  const [contact, setContact] = useState('');
+  const [companions, setCompanions] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const n = from && until && until > from ? nights(from, until) : 0;
@@ -42,7 +46,7 @@ function OvernightForm({ list, onDone }: { list: OvernightList; onDone: (id: str
     setBusy(true);
     setError(null);
     try {
-      const rec = await createOvernight({ from, until, reason });
+      const rec = await createOvernight({ from, until, reason, destination, accommodation, contact, companions });
       onDone(rec.id);
     } catch (err) {
       const code = (err as ApiError).code;
@@ -64,6 +68,22 @@ function OvernightForm({ list, onDone }: { list: OvernightList; onDone: (id: str
           {t('form.window', { from: ymd(min), to: ymd(max) })}
           {n > 0 && ` · ${t('ov.nights', { n })}`}
         </span>
+      </div>
+      <div className="form-field">
+        <label htmlFor="ov-dest">{t('ov.destination')}</label>
+        <input id="ov-dest" type="text" required maxLength={100} placeholder={t('ov.destinationPh')} value={destination} onChange={(e) => setDestination(e.target.value)} />
+      </div>
+      <div className="form-field">
+        <label htmlFor="ov-stay">{t('ov.accommodation')}</label>
+        <input id="ov-stay" type="text" maxLength={100} placeholder={t('ov.accommodationPh')} value={accommodation} onChange={(e) => setAccommodation(e.target.value)} />
+      </div>
+      <div className="form-field">
+        <label htmlFor="ov-contact">{t('ov.contact')}</label>
+        <input id="ov-contact" type="tel" required maxLength={30} placeholder={t('ov.contactPh')} value={contact} onChange={(e) => setContact(e.target.value)} />
+      </div>
+      <div className="form-field">
+        <label htmlFor="ov-with">{t('ov.companions')}</label>
+        <input id="ov-with" type="text" inputMode="numeric" placeholder={t('ov.companionsPh')} value={companions} onChange={(e) => setCompanions(e.target.value)} />
       </div>
       <div className="form-field">
         <label htmlFor="ov-reason">{t('form.reason')}</label>

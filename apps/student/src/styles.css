@@ -188,7 +188,7 @@ a.list-row:hover { color: var(--ink); background: #fafbfc; }
 .form-hint.block { display: block; margin-top: 2px; }
 .check-row { display: flex; align-items: flex-start; gap: 10px; font-size: 14px; font-weight: 500; }
 .check-row input { width: 22px; height: 22px; margin: 0; flex: 0 0 auto; }
-.form-field input[type='time'], .form-field input[type='text'] { width: 100%; min-height: 44px; padding: 8px 10px; border: 1px solid #c5cad2; border-radius: 4px; background: #fff; font-size: 16px; }
+.form-field input[type='time'], .form-field input[type='text'], .form-field input[type='tel'] { width: 100%; min-height: 44px; padding: 8px 10px; border: 1px solid #c5cad2; border-radius: 4px; background: #fff; font-size: 16px; }
 .form-group { margin: 0; padding: 0; border: 0; min-width: 0; display: flex; flex-direction: column; gap: 18px; }
 .form-group:disabled { opacity: 0.7; }
 .sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
