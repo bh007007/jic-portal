@@ -1,11 +1,55 @@
 # JIC 포털 개발 인수인계 (썸머 매니저용)
 
-업체 포털(jicportal.com)을 대체할 JIC 자체 통합 시스템이다. 지금은 **관리자 화면(대시보드·학생·기숙사·회계·에이전시·기초관리·통계)** 이 동작하고, 나머지 화면은 디자인까지 되어 있다. 이 폴더를 Claude Code로 열면 Claude가 `CLAUDE.md`를 읽고 맥락을 이어받는다.
+업체 포털(jicportal.com)을 대체할 JIC 자체 통합 시스템이다. 구조는 **관리자(인트라넷 포함)·학생·에이전시·강사(LMS) 4개 포털과 Supabase DB 하나**다(`docs/architecture.md`, 11/8). 첫 화면 https://jic-portal-916.pages.dev 에서 포털을 고른다(관리자 포털은 `/admin/`). 지금은 **관리자 화면(대시보드·학생·기숙사·회계·에이전시·기초관리·통계)** 이 동작하고, 나머지 화면은 디자인까지 되어 있다. 이 폴더를 Claude Code로 열면 Claude가 `CLAUDE.md`를 읽고 맥락을 이어받는다.
+
+## 0. 함께 일하기 (주소·계정·공동 개발)
+
+### 주소
+
+| 무엇 | 주소 |
+| --- | --- |
+| 운영 | https://jic-portal-916.pages.dev : 포털 선택 첫 화면, 관리자 포털 `/admin/`, 인트라넷 `/intranet/`, 강사 포털 `/teacher/`(Pages 빌드 명령에 `teacher:portal`을 붙인 뒤) |
+| PR 미리 보기 | `https://<브랜치 이름의 / 를 - 로>.jic-portal-916.pages.dev`. Cloudflare가 브랜치마다 자동으로 만든다(예: `feat/roles` → https://feat-roles.jic-portal-916.pages.dev). PR 화면의 'Cloudflare Pages' 검사에도 링크가 붙는다 |
+| 학생 포털 | https://jic-student.bh007007.workers.dev |
+| 에이전시 포털 | https://jic-partner.bh007007.workers.dev |
+
+### 계정 (레오가 만든다)
+
+1. Supabase → Authentication → Users → **Add user**: 이메일·비밀번호, Auto Confirm.
+2. SQL Editor에서 직원으로 등록한다.
+
+   ```sql
+   insert into public.staff_users (user_id, name) values ('<사용자 id>', '<이름>') on conflict do nothing;
+   ```
+
+3. 역할은 비워 두면 관리자다(모든 화면, 사용자·권한 포함). 보기만 할 사람이면 관리자 포털 → 기초관리 → 사용자·권한에서 '오피스'를 준다(`docs/roles.md`).
+
+- 한 계정으로 관리자 포털·인트라넷·강사 포털을 오간다. 학생·에이전시 포털은 계정이 따로다.
+- Supabase에는 가짜 샘플 데이터만 있다. 실제 데이터는 보안 점검 뒤에 올린다.
+
+### 공동 개발 흐름
+
+1. 레오가 GitHub `bh007007/jic-portal` → Settings → Collaborators에서 **Write** 권한으로 초대한다.
+2. `git clone https://github.com/bh007007/jic-portal.git` 뒤 1장대로 `npm install`, `npm run admin`(샘플 데이터).
+3. Claude Code로 폴더를 열고 브랜치를 만들어 작업한다 → 커밋 → PR.
+4. PR을 올리면 CI(빌드·권한 시험)와 Cloudflare 미리 보기가 자동으로 돈다. 미리 보기 주소를 서로 열어 보고 PR 댓글로 의견을 나눈다.
+5. 머지는 레오가 한다. 머지하면 운영 주소에 자동으로 배포된다.
+6. Supabase 마이그레이션 적용과 Cloudflare 설정은 계정이 있는 레오 PC에서 한다(`docs/leo-todo.md`).
+
+여러 Claude 세션이 같은 저장소에서 일한다. 담당이 겹치지 않게 `docs/collab.md` 담당 표에 썸머 매니저 줄을 더한다.
+
+### 넘기지 않는 것
+
+- `data/`의 실제 추출본(Git 제외, 레오 PC에만 있다)
+- Supabase secret(service_role) 키
+- 업체 포털 비밀번호
+
+샘플 데이터와 자기 계정만으로 모든 화면을 개발할 수 있다.
 
 ## 1. 처음 실행하기 (10분)
 
 1. Node.js 20 이상 설치: https://nodejs.org (LTS) 또는 PowerShell에서 `winget install OpenJS.NodeJS.LTS`
-2. 압축을 원하는 폴더에 푼다 (예: `C:\Users\<이름>\jic-portal`).
+2. GitHub에서 받거나(0장 '공동 개발 흐름' 2번) 압축을 원하는 폴더에 푼다 (예: `C:\Users\<이름>\jic-portal`).
 3. 그 폴더에서 터미널을 열고 실행:
 
    ```powershell
@@ -102,8 +146,11 @@ jic-portal/
    - **침대 배정**: 업체 포털에 기록이 없다. 오늘 입실자 295명(체크인 화면 `checkin_v3_load`) 모두 침대 사용이 0이고, 학생별 방 조회(`checkin_v3_student_rooms`)도 모두 비어 있다.
      - 그래서 디자인(04) 방·침대 배정판은 데이터를 옮겨 올 수 없다. 새 시스템에서 배정을 입력하는 기능으로 만든다.
      - 타입별 침대 수와 입실 인원이 맞지 않는 곳이 있어서(예: R2 (Bal) 침대 24개, 입실 32명) 공실은 계산해 보여 주지 않는다.
-   - 인보이스 금액(PR #24, 회계 세션 담당): 인보이스 총액은 기존 추출본의 `sum_ic_price`에 있다(완납 594건 중 541건이 입금 매칭 합계 = 총액). 현지 청구·납부는 `sum_tc_price`·`sum_td_amount`다. 항목별 상세 금액은 업체 회계 화면(현지 인보이스 납부·Check Balance·Payment Report) 조사 스크립트 실행 뒤 추출한다.
-   - 다음: 연장 기록(`adm/train3/extend` → `extend_load`, `tt_*` 열)과 신입·연장·복귀·변경 탭(`freshman_load_*`). 받으면 '연장 현황'과 변경 이력 화면을 만든다.
+   - 인보이스 금액(PR #24, 회계 세션 담당): 인보이스 총액은 기존 추출본의 `sum_ic_price`에 있다(완납 594건 중 541건이 입금 매칭 합계 = 총액). 현지 청구·납부는 `sum_tc_price`·`sum_td_amount`다.
+     - 항목별 금액(PR #38, 11/8 추출): 업체 '현지 인보이스 납부'의 `payment_select`로 연수 2,286건을 받았다(`scripts/extract/portal-extract-invoice-items.js`, 열은 `docs/data-dictionary-invoice.md`).
+     - 학생 가격(`inv_invoice_cost_st`) − 에이전시 공제(`inv_invoice_cost_ag`) = 해외 총액 `sum_ic_price`가 98% 맞는다. 현지 비용 항목(`inv_etc`, PHP) 합계 = `sum_tc_price`는 99% 맞는다. 학생 상세 '인보이스 항목' 표로 붙였다(로컬 전용, 배포·Supabase는 아직).
+     - 받는 계좌 열이 있는 `inv_invoice_deposit`은 앱에서 읽지 않는다. 남은 것: 배포용 Supabase 테이블, Check Balance·Payment Report 화면 조사.
+   - 연장·변경 추출 완료(11/9, 회계 세션): 연장 기록(`extend_load`, `tt_*`) 412건, 신입·연장·복귀·변경 탭(`freshman_load_*`). 관리자 포털 '연장 현황'·'변경 이력'은 `feat/admin-extend`(PR 대기). 업체는 연장해도 `tr_finish_date`를 그대로 두므로 종료일은 마지막 연장 종료일로 계산한다(core `finishOf`, 재학 281 → 295명). 남은 일: 배포용 `legacy_extend`(tt_* 열만) 업로드와 `functions/api` 읽기, 강사 포털 `lms_students()` 종료일.
 3. **Supabase 정규화 스키마**: 지금은 `legacy_*`(원본 레코드 jsonb)를 통째로 읽어 계산한다. `docs/plan.md`의 데이터 모델 기준으로 학생·연수(enrollments)·배치·기숙사 테이블을 만들고 `functions/api`를 조건 조회로 바꾼다. 실제 데이터를 올리기 전에 필수. 테스트 DB에는 샘플 데이터만.
 4. **역할별 권한**: 지금은 `staff_users`에 있으면 전부 읽기. 역할 9개(학생, 선생님, 체커, 스케줄러, 매니저, 오피스, 관리자, 가드, 에이전시 지점)로 RLS 세분화.
 5. **파트너 포털 마무리**: Cloudflare Workers(`jic-partner`, `apps/partner/wrangler.jsonc`) 배포, 추천 조건표 승인본 입력(관리자 > 추천 규칙), 캠퍼스·코스 내용과 링크 입력(관리자 > 콘텐츠·설정). 결정 대기(견적 미리 채우기, 방문 신청 담당, Agent Hub 관계)는 `docs/partner-portal.md`. 다음은 2차 My Students(지점 계정 `legacy_am_id` ↔ 연수 `tr_am_id`).
