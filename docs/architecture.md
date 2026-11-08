@@ -26,7 +26,7 @@ JIC 포털은 사용자 종류로 나눈 **4개 포털**과 **하나의 DB**로 
 
 - 관리자 포털·인트라넷·강사 포털은 Cloudflare Pages 프로젝트 `jic-portal` 하나의 주소 아래에 둔다.
   - 같은 주소라 직원은 한 번 로그인으로 오간다(원칙 C6, Supabase 로그인 저장 키 공유).
-  - 빌드는 `npm run portal:build`(관리자 앱 + 인트라넷 `/intranet`)이다.
+  - 빌드는 `npm run admin:build`이다(관리자 앱 + 인트라넷 `/intranet`, PR #36). `portal:build`도 같은 명령이다. Cloudflare Pages 빌드 명령은 11/8에 `npm run portal:build`로 바꿔 두었고, 결과는 같다.
 - 학생·에이전시 포털은 Cloudflare Workers(`jic-student`, `jic-partner`)이다. Pages 프로젝트는 같은 저장소로 하나만 만들 수 있다.
 - 회사 도메인을 연결하면 `admin.` · `student.` · `agency.` · `teacher.` 처럼 한 도메인 아래로 모으고, 첫 화면의 `VITE_STUDENT_URL`·`VITE_PARTNER_URL`·`VITE_TEACHER_URL`만 바꾼다.
 - 관리자 포털은 11/8부터 `/admin/` 아래다. 예전 주소(`/students` 등)는 `/admin/…`로 넘어간다.
