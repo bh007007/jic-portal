@@ -56,6 +56,30 @@ export default function OvernightDetail() {
                   {day(o.until)} <span className="muted">({t('ov.nights', { n: o.nights })})</span>
                 </td>
               </tr>
+              {o.destination && (
+                <tr>
+                  <th>{t('ov.destination')}</th>
+                  <td>{o.destination}</td>
+                </tr>
+              )}
+              {o.accommodation && (
+                <tr>
+                  <th>{t('ov.accommodation')}</th>
+                  <td>{o.accommodation}</td>
+                </tr>
+              )}
+              {o.contact && (
+                <tr>
+                  <th>{t('ov.contact')}</th>
+                  <td>{o.contact}</td>
+                </tr>
+              )}
+              {!!o.companions?.length && (
+                <tr>
+                  <th>{t('ov.companions')}</th>
+                  <td>{o.companions.join(', ')}</td>
+                </tr>
+              )}
               <tr>
                 <th>{t('detail.reason')}</th>
                 <td className="pre">{o.reason}</td>

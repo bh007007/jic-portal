@@ -652,7 +652,15 @@ async function listRequests(ctx: IntranetCtx, kind: RequestKind, q: URLSearchPar
       .sort(order((a) => a.date));
     return { kind, tab, counts, campuses: [...new Set(all.map((a) => a.campus))].sort(), commentMax: COMMENT_MAX, absences: rows, overnights: [] };
   }
-  const all = (await ctx.stores.overnights.listAll()).map((o) => ({ ...o, ...requestRow(ctx, o), nights: nightsBetween(o.from, o.until) }));
+  const list = await ctx.stores.overnights.listAll();
+  // 같이 가는 학생: 이름과, 그 학생도 같은 기간에 외박·여행 신청(대기·승인)을 냈는지(혼자만 신청한 동행을 직원이 바로 보게)
+  const companionsOf = (o: Overnight) =>
+    (o.companions ?? []).map((c) => ({
+      stId: c,
+      name: studentRef(ctx.db, c).name,
+      requested: list.some((x) => x.stId === c && (x.status === 'pending' || x.status === 'approved') && x.from < o.until && o.from < x.until),
+    }));
+  const all = list.map((o) => ({ ...o, ...requestRow(ctx, o), nights: nightsBetween(o.from, o.until), companionInfo: companionsOf(o) }));
   for (const o of all) counts[o.status]++;
   // 기간 검색은 외박 기간이 조회 범위와 겹치는 건
   const rows = all.filter((o) => match(o) && (!from || o.until > from) && (!to || o.from <= to)).sort(order((o) => o.from));

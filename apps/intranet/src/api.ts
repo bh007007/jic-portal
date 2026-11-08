@@ -175,6 +175,10 @@ const MESSAGES: Record<string, string> = {
   reply_too_long: '답변은 500자까지 쓸 수 있습니다.',
   already_closed: '이미 끝난 요청입니다(완료·반려·학생 취소).',
   already_in_progress: '이미 처리 중인 요청입니다.',
+  destination_required: '행선지를 입력하세요.',
+  contact_required: '비상 연락처를 입력하세요.',
+  invalid_contact: '연락처를 확인하세요.',
+  invalid_companion: '같이 가는 학생번호를 확인하세요.',
   // 배포(Supabase)
   campus_not_allowed: '맡은 캠퍼스의 학생만 상담 기록을 쓸 수 있습니다. 관리자에게 담당 캠퍼스 등록을 요청하세요.',
   staff_only: '직원이나 가드 계정으로 등록되지 않았습니다.',

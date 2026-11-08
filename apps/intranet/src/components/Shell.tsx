@@ -28,7 +28,7 @@ const MENU: { group?: string; items: { to: string; label: string; badge?: Badge 
     group: '신청 처리',
     items: [
       { to: '/requests/absences', label: '결석 신청', badge: 'pendingAbsences' },
-      { to: '/requests/overnights', label: '외박 신청', badge: 'pendingOvernights' },
+      { to: '/requests/overnights', label: '외박·여행 신청', badge: 'pendingOvernights' },
       { to: '/requests/life', label: '생활 요청', badge: 'lifePending' },
     ],
   },
