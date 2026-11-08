@@ -104,7 +104,7 @@ jic-portal/
 3. **Supabase 정규화 스키마**: 지금은 `legacy_*`(원본 레코드 jsonb)를 통째로 읽어 계산한다. `docs/plan.md`의 데이터 모델 기준으로 학생·연수(enrollments)·배치·기숙사 테이블을 만들고 `functions/api`를 조건 조회로 바꾼다. 실제 데이터를 올리기 전에 필수. 테스트 DB에는 샘플 데이터만.
 4. **역할별 권한**: 지금은 `staff_users`에 있으면 전부 읽기. 역할 9개(학생, 선생님, 체커, 스케줄러, 매니저, 오피스, 관리자, 가드, 에이전시 지점)로 RLS 세분화.
 5. **파트너 포털 마무리**: Cloudflare Workers(`jic-partner`, `apps/partner/wrangler.jsonc`) 배포, 추천 조건표 승인본 입력(관리자 > 추천 규칙), 캠퍼스·코스 내용과 링크 입력(관리자 > 콘텐츠·설정). 결정 대기(견적 미리 채우기, 방문 신청 담당, Agent Hub 관계)는 `docs/partner-portal.md`. 다음은 2차 My Students(지점 계정 `legacy_am_id` ↔ 연수 `tr_am_id`).
-6. **학생 앱**: 1차(결석 신청) 완료. 테이블·권한 마이그레이션 완료(11/8, 시험 `supabase/tests/student_intranet_rls.mjs`). 남은 것은 학생 계정 생성 스크립트·로그인 화면·Workers 연결·배포, 시간표(LMS 연결 후), `docs/student-app.md`의 확인 필요 사항. **인트라넷**: 1차 완료(신청 처리·외박 허용·가드 리포트 포함). 남은 것은 가드 공용 계정·`staff_campuses` 입력, Workers 연결과 배포, 무단결석(LMS 출석) 후보, `docs/intranet.md`의 확인 필요 사항.
+6. **학생 앱**: 1차(결석 신청) 완료. 테이블·권한 마이그레이션 완료(11/8, 시험 `supabase/tests/student_intranet_rls.mjs`). 학생 계정 생성 스크립트(`npm run student:accounts`)와 Supabase 로그인·첫 비밀번호 변경 화면 완료(11/8). 남은 것은 Workers 연결(저장소를 Supabase로)·배포, 시간표(LMS 연결 후), `docs/student-app.md`의 확인 필요 사항. **인트라넷**: 1차 완료(신청 처리·외박 허용·가드 리포트 포함). 남은 것은 가드 공용 계정·`staff_campuses` 입력, Workers 연결과 배포, 무단결석(LMS 출석) 후보, `docs/intranet.md`의 확인 필요 사항.
 7. **서버 작업**: 정기 동기화·알림 같은 예약 작업은 Cloudflare Workers(크론). 화면 배포와 빌드 확인은 이미 연결됨.
 
 ## 7. 결정이 필요한 것
