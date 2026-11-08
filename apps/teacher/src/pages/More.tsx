@@ -1,42 +1,44 @@
 import { Link } from 'react-router-dom';
 import { useAuth } from '../auth';
+import { useT, type Key } from '../i18n';
 import { PageHead, Section } from '../ui';
 
 // 메뉴 검토표 'LMS' 시트 순서. 업체 시간표·출석 데이터가 필요한 메뉴는 연결 뒤 연다(원칙 V1·V6, C8).
-const PLANNED: [string, string][] = [
-  ['출석 체크', '수업 중 휴대폰으로(원칙 L7). 업체 수업 시간표 연결 뒤'],
-  ['출석 확인 · 사유별 합계', '출석 원본이 생기면'],
-  ['결석 신청 승인', '지금은 인트라넷 › 신청 처리에서 한다(원칙 L4). 신청 보기는 아래 결석 신청'],
-  ['무단결석 목록', '출석 원본이 생기면. 패널티 승인은 인트라넷'],
-  ['그로스 리포트 · Daily Recall · IELTS 기록', '스피킹 리포트 사이트 연결 방식 결정 뒤(원칙 L10)'],
-  ['녹음', '보관 기간 결정 뒤(원칙 L9)'],
-  ['수업 변경 · 옵션 클래스', '스케줄러용. 업체 시간표 연결 뒤(원칙 L6)'],
+const PLANNED: [Key, Key][] = [
+  ['p_att', 'p_att_why'],
+  ['p_attv', 'p_attv_why'],
+  ['p_appr', 'p_appr_why'],
+  ['p_unex', 'p_unex_why'],
+  ['p_rep', 'p_rep_why'],
+  ['p_rec', 'p_rec_why'],
+  ['p_chg', 'p_chg_why'],
 ];
 
 export default function More() {
   const { me } = useAuth();
+  const { t } = useT();
   return (
     <>
-      <PageHead title="더보기" />
+      <PageHead title={t('more')} />
+      <Section title={t('classSection')}>
+        <ul className="menu">
+          <li><Link to="/absences">{t('absencesMenu')}</Link></li>
+        </ul>
+      </Section>
       {me?.isManager && (
-        <Section title="관리 (매니저·직원)">
+        <Section title={t('manage')}>
           <ul className="menu">
-            <li><Link to="/tests">시험 종류 · CEFR 대응</Link></li>
-            <li><Link to="/staff">강사 목록</Link></li>
+            <li><Link to="/tests">{t('testTypes')}</Link></li>
+            <li><Link to="/staff">{t('staffList')}</Link></li>
           </ul>
         </Section>
       )}
-      <Section title="수업">
-        <ul className="menu">
-          <li><Link to="/absences">결석 신청 (날짜별, 종류·처리 상태)</Link></li>
-        </ul>
-      </Section>
-      <Section title="준비 중">
+      <Section title={t('planned')}>
         <ul className="planned">
           {PLANNED.map(([name, why]) => (
             <li key={name}>
-              <strong>{name}</strong>
-              <span className="muted small">{why}</span>
+              <strong>{t(name)}</strong>
+              <span className="muted small">{t(why)}</span>
             </li>
           ))}
         </ul>

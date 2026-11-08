@@ -1,6 +1,7 @@
 import { Link, useParams } from 'react-router-dom';
 import { useAuth } from '../auth';
 import { cefrOf, loadCefr, loadResults, loadStudents, loadTestTypes, type TestResult } from '../data';
+import { useT } from '../i18n';
 import ScoreForm from '../ScoreForm';
 import ScoreChart from '../ScoreChart';
 import { supabase } from '../supabase';
@@ -10,6 +11,7 @@ import { Loading, PageHead, Section, fmtDate, useLoad, useSave } from '../ui';
 export default function StudentDetail() {
   const { no = '' } = useParams();
   const { me } = useAuth();
+  const { t } = useT();
   const students = useLoad(() => loadStudents(), []);
   const types = useLoad(() => loadTestTypes(), []);
   const cefr = useLoad(() => loadCefr(), []);
@@ -20,14 +22,15 @@ export default function StudentDetail() {
   const s = mine[0];
   if (students.loading || types.loading) return <Loading />;
   if (students.error) return <Loading error={students.error} />;
-  if (!s) return <div className="state">재학·입학 예정 학생이 아닙니다. <Link to="/students">학생 목록</Link></div>;
+  if (!s) return <div className="state">{t('notCurrent')} <Link to="/students">{t('studentList')}</Link></div>;
 
-  const typeName = (c: string) => types.data?.find((t) => t.code === c)?.name ?? c;
+  const typeOf = (c: string) => types.data?.find((x) => x.code === c);
+  const typeName = (c: string) => typeOf(c)?.name ?? c;
   const byType = new Map<string, TestResult[]>();
   for (const r of results.data ?? []) byType.set(r.test_type, [...(byType.get(r.test_type) ?? []), r]);
 
   const remove = async (r: TestResult) => {
-    if (!window.confirm(`${typeName(r.test_type)} ${r.section || '총점'} ${r.value} (${r.test_date}) 기록을 지울까요?`)) return;
+    if (!window.confirm(t('confirmDeleteScore', { name: typeName(r.test_type), section: r.section || t('total'), value: r.value, date: r.test_date }))) return;
     if (await del.run(async () => {
       const { error } = await supabase.from('test_results').delete().eq('id', r.id);
       if (error) throw error;
@@ -36,56 +39,57 @@ export default function StudentDetail() {
 
   return (
     <>
-      <PageHead title={s.name} sub={`${s.student_no} · ${s.nation}${s.gender ? ' · ' + s.gender : ''}`} right={<Link to="/students" className="btn btn-xs">목록</Link>} />
-      <Section title="연수">
+      <PageHead title={s.name} sub={`${s.student_no} · ${s.nation}${s.gender ? ' · ' + s.gender : ''}`} right={<Link to="/students" className="btn btn-xs">{t('list')}</Link>} />
+      <Section title={t('enrollment')}>
         <dl className="kv">
-          <dt>캠퍼스</dt><dd>{s.campus || '-'}</dd>
-          <dt>코스</dt><dd>{s.course || '-'}</dd>
-          <dt>기숙사</dt><dd>{s.dorm || '-'}</dd>
-          <dt>기간</dt><dd>{fmtDate(s.start_date)} ~ {fmtDate(s.end_date)}</dd>
-          <dt>배치</dt><dd>{s.batch || '-'}</dd>
+          <dt>{t('campus')}</dt><dd>{s.campus || '-'}</dd>
+          <dt>{t('course')}</dt><dd>{s.course || '-'}</dd>
+          <dt>{t('dorm')}</dt><dd>{s.dorm || '-'}</dd>
+          <dt>{t('period')}</dt><dd>{fmtDate(s.start_date)} ~ {fmtDate(s.end_date)}</dd>
+          <dt>{t('batch')}</dt><dd>{s.batch || '-'}</dd>
         </dl>
       </Section>
 
-      <Section title="성적 입력">
+      <Section title={t('enterScores')}>
         <ScoreForm student={s} types={types.data ?? []} onSaved={results.reload} />
       </Section>
 
-      <Section title="성적 기록" extra={<span className="muted small">CEFR은 JIC 기준 추정 레벨</span>}>
+      <Section title={t('scoreRecords')} extra={<span className="muted small">{t('cefrNote')}</span>}>
         {results.loading ? (
-          <p className="muted">불러오는 중…</p>
+          <p className="muted">{t('loading')}</p>
         ) : byType.size === 0 ? (
-          <p className="muted">기록이 없습니다.</p>
+          <p className="muted">{t('noRecords')}</p>
         ) : (
-          [...byType].map(([code, rows]) => (
-            <div key={code} className="result-block">
-              <h3>{typeName(code)}</h3>
-              {types.data?.find((t) => t.code === code) && (
-                <ScoreChart type={types.data.find((t) => t.code === code)!} results={rows} maps={cefr.data ?? []} />
-              )}
-              <table className="tbl">
-                <thead>
-                  <tr><th>날짜</th><th>영역</th><th className="num">점수</th><th>CEFR</th><th>입력</th><th /></tr>
-                </thead>
-                <tbody>
-                  {rows.map((r) => (
-                    <tr key={r.id}>
-                      <td className="nowrap">{fmtDate(r.test_date)}</td>
-                      <td>{r.section || '총점'}</td>
-                      <td className="num strong">{r.value}</td>
-                      <td>{(!r.section && cefrOf(cefr.data ?? [], r.test_type, Number(r.value))) || <span className="muted">-</span>}</td>
-                      <td className="small muted">{r.teacher_name}{r.note ? ` · ${r.note}` : ''}</td>
-                      <td>
-                        {(r.teacher_id === me?.session.user.id || me?.isManager) && (
-                          <button type="button" className="link-btn" onClick={() => remove(r)} disabled={del.busy}>삭제</button>
-                        )}
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          ))
+          [...byType].map(([code, rows]) => {
+            const type = typeOf(code);
+            return (
+              <div key={code} className="result-block">
+                <h3>{typeName(code)}</h3>
+                {type && <ScoreChart type={type} results={rows} maps={cefr.data ?? []} />}
+                <table className="tbl">
+                  <thead>
+                    <tr><th>{t('date')}</th><th>{t('section')}</th><th className="num">{t('score')}</th><th>CEFR</th><th>{t('by')}</th><th /></tr>
+                  </thead>
+                  <tbody>
+                    {rows.map((r) => (
+                      <tr key={r.id}>
+                        <td className="nowrap">{fmtDate(r.test_date)}</td>
+                        <td>{r.section || t('total')}</td>
+                        <td className="num strong">{r.value}</td>
+                        <td>{(!r.section && cefrOf(cefr.data ?? [], r.test_type, Number(r.value))) || <span className="muted">-</span>}</td>
+                        <td className="small muted">{r.teacher_name}{r.note ? ` · ${r.note}` : ''}</td>
+                        <td>
+                          {(r.teacher_id === me?.session.user.id || me?.isManager) && (
+                            <button type="button" className="link-btn" onClick={() => remove(r)} disabled={del.busy}>{t('delete')}</button>
+                          )}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            );
+          })
         )}
         {del.error && <p className="err">{del.error}</p>}
       </Section>

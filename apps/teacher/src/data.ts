@@ -85,18 +85,13 @@ export interface LmsAbsence {
   kind: 'sick' | 'official' | 'personal';
   status: 'pending' | 'approved' | 'rejected';
 }
-export const ABSENCE_KIND: Record<string, string> = { sick: '병결', official: '공결', personal: '개인' };
-export const ABSENCE_STATUS: Record<string, string> = { pending: '처리 전', approved: '인정', rejected: '반려' };
-export const periodText = (p: number[]) => (p.length ? `${p.join('·')}교시` : '종일');
 export const loadAbsences = (from?: string, to?: string) =>
   must<LmsAbsence[]>(supabase.rpc('lms_absences', { ...(from ? { p_from: from } : {}), ...(to ? { p_to: to } : {}) }));
 
-export const CEFR_LEVELS =['Pre-A1', 'A1', 'A2', 'B1', 'B2', 'C1', 'C2'] as const;
-export const SCALE_LABEL: Record<TestType['scale'], string> = { band: '밴드', score: '점수', level: '레벨', percent: '퍼센트' };
-export const MATERIAL_KINDS: [string, string][] = [
-  ['book', '교재'], ['worksheet', '워크시트'], ['slides', '슬라이드'], ['audio', '음성'], ['video', '영상'], ['test', '시험지'], ['answer', '정답지'], ['other', '기타'],
-];
-export const kindLabel = (k: string) => MATERIAL_KINDS.find(([v]) => v === k)?.[1] ?? k;
+export const CEFR_LEVELS = ['Pre-A1', 'A1', 'A2', 'B1', 'B2', 'C1', 'C2'] as const;
+export const SCALES: TestType['scale'][] = ['band', 'score', 'level', 'percent'];
+// 화면 이름은 i18n 의 kind_*·scale_*·abs_*·st_* 키
+export const MATERIAL_KINDS = ['book', 'worksheet', 'slides', 'audio', 'video', 'test', 'answer', 'other'] as const;
 
 export const loadStudents = (on?: string) => must<LmsStudent[]>(supabase.rpc('lms_students', on ? { p_on: on } : {}));
 export const loadTestTypes = () => must<TestType[]>(supabase.from('test_types').select('*').order('sort').order('code'));

@@ -1,11 +1,13 @@
 import { useMemo, useState } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
 import { loadStudents } from '../data';
+import { useT } from '../i18n';
 import { manilaToday } from '../supabase';
 import { Loading, PageHead, fmtDate, useLoad } from '../ui';
 
 /** 재학·30일 안 입학 학생. 업체 원본에서 화면에 쓰는 열만 함수(lms_students)로 받는다. */
 export default function Students() {
+  const { t } = useT();
   const [params, setParams] = useSearchParams();
   const campus = params.get('campus') ?? '';
   const tab = params.get('tab') === 'arriving' ? 'arriving' : 'current';
@@ -31,22 +33,22 @@ export default function Students() {
 
   return (
     <>
-      <PageHead title="학생" sub={data ? `${list.length}명` : undefined} />
+      <PageHead title={t('students')} sub={data ? t('people', { n: list.length }) : undefined} />
       <div className="seg" role="tablist">
-        <button type="button" role="tab" aria-selected={tab === 'current'} onClick={() => set({ tab: '' })}>재학</button>
-        <button type="button" role="tab" aria-selected={tab === 'arriving'} onClick={() => set({ tab: 'arriving' })}>30일 안 입학</button>
+        <button type="button" role="tab" aria-selected={tab === 'current'} onClick={() => set({ tab: '' })}>{t('current')}</button>
+        <button type="button" role="tab" aria-selected={tab === 'arriving'} onClick={() => set({ tab: 'arriving' })}>{t('arriving30')}</button>
       </div>
       <div className="filters">
-        <input type="search" placeholder="이름·학생번호·국적·코스" value={kw} onChange={(e) => setKw(e.target.value)} aria-label="검색" />
-        <select value={campus} onChange={(e) => set({ campus: e.target.value })} aria-label="캠퍼스">
-          <option value="">전체 캠퍼스</option>
+        <input type="search" placeholder={t('searchStudent')} value={kw} onChange={(e) => setKw(e.target.value)} aria-label={t('searchStudent')} />
+        <select value={campus} onChange={(e) => set({ campus: e.target.value })} aria-label={t('campus')}>
+          <option value="">{t('allCampuses')}</option>
           {campuses.map((c) => <option key={c}>{c}</option>)}
         </select>
       </div>
       {loading || error ? (
         <Loading error={error} />
       ) : list.length === 0 ? (
-        <div className="state">조건에 맞는 학생이 없습니다.</div>
+        <div className="state">{t('noStudent')}</div>
       ) : (
         <ul className="cards">
           {list.map((s) => (

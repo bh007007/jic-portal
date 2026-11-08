@@ -1,11 +1,13 @@
 import { useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { loadRecentResults, loadStudents, loadTestTypes } from '../data';
+import { useT } from '../i18n';
 import ScoreForm from '../ScoreForm';
 import { Loading, PageHead, Section, fmtDate, useLoad } from '../ui';
 
 /** 성적 입력: 학생을 찾아 고른 뒤 바로 입력(휴대폰 기준). 아래에 최근 입력 30건. */
 export default function Scores() {
+  const { t } = useT();
   const students = useLoad(() => loadStudents(), []);
   const types = useLoad(() => loadTestTypes(), []);
   const recent = useLoad(() => loadRecentResults(30), []);
@@ -25,16 +27,16 @@ export default function Scores() {
 
   return (
     <>
-      <PageHead title="성적 입력" />
-      <Section title="학생 고르기">
+      <PageHead title={t('enterScores')} />
+      <Section title={t('pickStudent')}>
         {chosen ? (
           <div className="picked">
             <span><strong>{chosen.name}</strong> <span className="muted small">{chosen.student_no} · {chosen.campus} · {chosen.course}</span></span>
-            <button type="button" className="btn btn-xs" onClick={() => { setPick(''); setKw(''); }}>바꾸기</button>
+            <button type="button" className="btn btn-xs" onClick={() => { setPick(''); setKw(''); }}>{t('change')}</button>
           </div>
         ) : (
           <>
-            <input type="search" className="full" placeholder="이름 또는 학생번호" value={kw} onChange={(e) => setKw(e.target.value)} aria-label="학생 검색" />
+            <input type="search" className="full" placeholder={t('searchNameNo')} value={kw} onChange={(e) => setKw(e.target.value)} aria-label={t('searchNameNo')} />
             <ul className="pick-list">
               {matches.map((s) => (
                 <li key={s.enrollment_id}>
@@ -43,21 +45,21 @@ export default function Scores() {
                   </button>
                 </li>
               ))}
-              {kw.trim() && matches.length === 0 && <li className="muted small">맞는 학생이 없습니다.</li>}
+              {kw.trim() && matches.length === 0 && <li className="muted small">{t('noMatch')}</li>}
             </ul>
           </>
         )}
       </Section>
 
       {chosen && (
-        <Section title="점수">
+        <Section title={t('points')}>
           <ScoreForm student={chosen} types={types.data ?? []} onSaved={recent.reload} />
         </Section>
       )}
 
-      <Section title="최근 입력 30건">
+      <Section title={t('recent30')}>
         {(recent.data ?? []).length === 0 ? (
-          <p className="muted">아직 입력한 성적이 없습니다.</p>
+          <p className="muted">{t('noScores')}</p>
         ) : (
           <ul className="rows">
             {(recent.data ?? []).map((r) => (

@@ -1,7 +1,9 @@
 import { useState, type FormEvent } from 'react';
+import { useT } from '../i18n';
 import { errText, supabase } from '../supabase';
 
 export default function Login() {
+  const { t, lang, setLang } = useT();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [busy, setBusy] = useState(false);
@@ -19,21 +21,24 @@ export default function Login() {
   return (
     <div className="login">
       <form className="login-box" onSubmit={submit}>
-        <div className="brand">
-          <span className="brand-mark">JIC</span>
-          <span className="brand-name">강사 포털</span>
+        <div className="login-head">
+          <div className="brand">
+            <span className="brand-mark">JIC</span>
+            <span className="brand-name">{t('appName')}</span>
+          </div>
+          <button type="button" className="btn btn-xs" onClick={() => setLang(lang === 'ko' ? 'en' : 'ko')} aria-label="Language">{lang === 'ko' ? 'EN' : '한국어'}</button>
         </div>
         <label>
-          이메일
+          {t('email')}
           <input type="email" autoComplete="username" value={email} onChange={(e) => setEmail(e.target.value)} required />
         </label>
         <label>
-          비밀번호
+          {t('password')}
           <input type="password" autoComplete="current-password" value={password} onChange={(e) => setPassword(e.target.value)} required />
         </label>
         {error && <p className="err" role="alert">{error}</p>}
-        <button type="submit" className="btn btn-primary btn-lg" disabled={busy}>{busy ? '확인 중…' : '로그인'}</button>
-        <p className="muted small">관리자 포털과 같은 계정입니다. 계정은 관리자가 발급합니다.</p>
+        <button type="submit" className="btn btn-primary btn-lg" disabled={busy}>{busy ? t('checking') : t('login')}</button>
+        <p className="muted small">{t('loginNote')}</p>
       </form>
     </div>
   );
