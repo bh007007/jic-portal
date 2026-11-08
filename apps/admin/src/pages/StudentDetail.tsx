@@ -1,3 +1,4 @@
+import { Fragment } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import { fmt, useApi, type InvoiceDetail, type InvoiceItem, type StudentDetail as Detail } from '../api';
 import { Loading, PageTitle, Panel, PayText } from '../components/ui';
@@ -81,17 +82,31 @@ export default function StudentDetail() {
           </thead>
           <tbody>
             {data.enrollments.map((e, i) => (
-              <tr key={e.trId}>
-                <td>{data.enrollments.length - i}</td>
-                <td>{e.batch || '-'}</td>
-                <td>{e.start} ~ {e.end} ({e.weeks}주)</td>
-                <td>{e.campus}</td>
-                <td className="left">{e.course}</td>
-                <td className="left">{e.dorm}</td>
-                <td>{PICK_LABEL[e.pickType] ?? (e.pickType || '-')}{e.pickPlace ? ` / ${e.pickPlace}` : ''}</td>
-                <td><PayText pay={e.pay} /></td>
-                <td className={e.status === 'current' ? 'strong' : 'muted'} style={e.status === 'current' ? { color: 'var(--primary)' } : undefined}>{e.state}</td>
-              </tr>
+              <Fragment key={e.trId}>
+                <tr>
+                  <td>{data.enrollments.length - i}</td>
+                  <td>{e.batch || '-'}</td>
+                  <td>
+                    {e.start} ~ {e.end} ({e.weeks}주)
+                    {e.extensions.length > 0 && <div className="muted" style={{ fontSize: 12 }}>원래 종료 {e.origEnd} · 연장 {e.extensions.length}회</div>}
+                  </td>
+                  <td>{e.campus}</td>
+                  <td className="left">{e.course}</td>
+                  <td className="left">{e.dorm}</td>
+                  <td>{PICK_LABEL[e.pickType] ?? (e.pickType || '-')}{e.pickPlace ? ` / ${e.pickPlace}` : ''}</td>
+                  <td><PayText pay={e.pay} /></td>
+                  <td className={e.status === 'current' ? 'strong' : 'muted'} style={e.status === 'current' ? { color: 'var(--primary)' } : undefined}>{e.state}</td>
+                </tr>
+                {e.extensions.map((x, k) => (
+                  <tr key={x.ttId} style={{ fontSize: 12 }}>
+                    <td />
+                    <td className="muted">연장 {k + 1}</td>
+                    <td>{x.start} ~ {x.end} ({x.weeks}주)</td>
+                    <td colSpan={4} className="left muted">등록 {x.registered || '-'}{x.memo ? ` · ${x.memo}` : ''}</td>
+                    <td colSpan={2} className="num">{x.price ? `${x.currency} ${fmt(x.price)}` : '-'}{x.paid ? ` (입금 ${fmt(x.paid)})` : ''}</td>
+                  </tr>
+                ))}
+              </Fragment>
             ))}
           </tbody>
         </table>

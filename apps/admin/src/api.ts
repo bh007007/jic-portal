@@ -91,7 +91,65 @@ export interface StudentDetail {
     points: { dt: string; kind: string; item: string; amount: number; staff: string; memo: string }[];
     /** 인보이스 항목(최신 버전). 항목 추출본이 없는 환경(배포)에서는 null */
     invoiceDetail: InvoiceDetail | null;
+    /** 업체 연수의 원래 종료일. 연장하면 end 는 마지막 연장 종료일이 된다 */
+    origEnd: string;
+    /** 연장 기간(업체 연장현황). 연장 추출본이 없는 환경(배포)에서는 빈 배열 */
+    extensions: ExtensionItem[];
   })[];
+}
+
+export interface ExtensionItem {
+  ttId: string;
+  start: string;
+  end: string;
+  weeks: number;
+  registered: string;
+  memo: string;
+  currency: string;
+  price: number;
+  paid: number;
+}
+
+export interface ExtensionRow extends EnrollmentRow {
+  ttId: string;
+  extStart: string;
+  extEnd: string;
+  extWeeks: number;
+  registered: string;
+  memo: string;
+  currency: string;
+  price: number;
+  paid: number;
+  /** 같은 연수의 몇 번째 연장인지, 전체 몇 번인지 */
+  order: number;
+  count: number;
+  origEnd: string;
+  phase: 'active' | 'upcoming' | 'done';
+}
+export interface ExtensionList extends Paged<ExtensionRow> {
+  hasData: boolean;
+  tab: 'all' | 'active' | 'upcoming' | 'done';
+  tabCounts: { all: number; active: number; upcoming: number; done: number };
+  facets: { years: string[]; nations: string[]; campuses: string[] };
+  totals: { weeks: number; students: number; priceByCurrency: { currency: string; amount: number }[]; paidByCurrency: { currency: string; amount: number }[] };
+}
+
+export interface ChangeRow extends EnrollmentRow {
+  key: string;
+  kind: 'course' | 'dorm' | 'comeback';
+  date: string;
+  prev: string;
+  next: string;
+  nextDorm: string;
+  requests: number;
+  depart: string;
+  ret: string;
+}
+export interface ChangeList extends Paged<ChangeRow> {
+  hasData: boolean;
+  tab: 'course' | 'dorm' | 'comeback';
+  tabCounts: { course: number; dorm: number; comeback: number };
+  facets: { years: string[]; nations: string[]; campuses: string[] };
 }
 
 export interface InvoiceItem {
