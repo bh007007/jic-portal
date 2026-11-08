@@ -82,9 +82,9 @@ powershell -ExecutionPolicy Bypass -File scripts/split-export.ps1
 
 `data/tables/*.csv`는 엑셀에서 바로 열린다(UTF-8 BOM). `docs/data-dictionary.md`는 열 이름과 건수만 다시 만든다.
 
-### 추가 추출 (포인트 잔액, 방·침대)
+### 추가 추출 (방·침대, 학생별 배정)
 
-전체 추출에 없는 것만 받는 짧은 스크립트다(3~5분). 같은 방법으로 [scripts/extract/portal-extract-extra.js](scripts/extract/portal-extract-extra.js)를 콘솔에서 실행하고, 받은 `jic_portal_extra_YYYY-MM-DD.json.gz`를 `data/raw/`에 두고 `split-export.ps1`을 실행한다. 기존 표와 `meta.json`(기준일)은 그대로 두고 표만 더하며, 열 목록과 화면 구조는 `docs/data-dictionary-extra.md`에 쓴다. 콘솔에 '일부 단계가 비었습니다'가 나오면 파일은 그대로 두고 Claude에게 알린다(`data/tables/extra_meta.json`에 화면 구조가 남아 있어 다음 수정에 쓴다).
+전체 추출에 없는 것만 받는 짧은 스크립트다(5~8분). 받을 항목은 스크립트 위쪽 `STEPS`에서 고른다(기본: 방·침대 목록, 학생별 배정). 같은 방법으로 [scripts/extract/portal-extract-extra.js](scripts/extract/portal-extract-extra.js)를 콘솔에서 실행하고, 받은 `jic_portal_extra_YYYY-MM-DD.json.gz`를 `data/raw/`에 두고 `split-export.ps1`을 실행한다. 기존 표와 `meta.json`(기준일)은 그대로 두고 표만 더하며, 열 목록과 화면 구조는 `docs/data-dictionary-extra.md`에 쓴다. 콘솔에 '일부 단계가 비었습니다'가 나오면 파일은 그대로 두고 Claude에게 알린다(`data/tables/extra_meta.json`에 화면 구조가 남아 있어 다음 수정에 쓴다).
 
 ## 데이터 원칙
 

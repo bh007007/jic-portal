@@ -87,14 +87,14 @@
 | agents | adm/agency/agent_load | 에이전시마다 `ag_id` |
 | memo_history | com/dialog/dlg_train_memo_load | 연수마다 `dlg_train_memo_tr_id`. 2026-11-07 기준 사용 기록 없음 |
 
-추가 추출(`portal-extract-extra.js`, 업체 포털에서 아직 실행 전). 주소는 화면 HTML에서 찾고, 못 찾으면 아래 주소를 쓴다.
+추가 추출(`portal-extract-extra.js`). 주소는 화면 HTML에서 찾고, 못 찾으면 아래 주소를 쓴다. 화면 스크립트는 `page_base_url + "…_load/"` 형식이라 주소가 HTML에 통째로 드러나지 않는 경우가 많다.
 
-| 데이터셋 | 화면 → 조회 주소 | 조건 |
-| --- | --- | --- |
-| point_balance | adm/point/balance → balance_load | 화면 기본 조건. 날짜 항목을 비운 결과가 더 많으면 그쪽 |
-| point_history_all | adm/point/history → history_load | 날짜 항목을 모두 비움 (첫 추출은 2026-06까지만 있었음) |
-| rooms | adm/room/room_bed → room_bed_v2_load | 캠퍼스 선택이 있으면 캠퍼스마다 |
-| bed_board | adm/checkin/checkin_v3 → checkin_v3_student_rooms | 날짜 = 오늘, 캠퍼스마다. 페이지 번호 없는 주소라 응답 모양을 기록 |
+| 데이터셋 | 화면 → 조회 주소 | 조건 | 2026-11-08 1차 결과 |
+| --- | --- | --- | --- |
+| rooms | adm/room/room_bed → room_bed_v2_load | `s_campus` 11·12·14, `s_status` ACTIVE·UPCOMING·ENDED·ALL(2차부터 ALL), 응답에 `summary`(방 수 등) | ACTIVE로 Premium 74개 방만. 방마다 `beds` 배열(침대 번호·상태, 사용자 없음) |
+| bed_assignments | adm/checkin/checkin_v3 → checkin_v3_student_rooms | 학생 하나: `{ st_id }`. 체크인 화면의 '방 이력' 창. 학생 목록은 checkin_v3_load(오늘~60일) | 1차는 캠퍼스로 물어 0건 → 2차에서 학생마다 |
+| point_balance | adm/point/balance → balance_load | `s_balance`(plus·lower_2000·minus), `s_student_in_school`, `s_current_campus`. 화면이 잔액 = `total_deposit - total_usage`로 계산 | 1건(졸업생, 잔액 0) |
+| point_history_all | adm/point/history → history_load | 날짜 항목 모두 비움 | 첫 추출과 같은 14,439건. 2026-06 이후 기록 없음 |
 
 ## 주의
 
