@@ -14,6 +14,7 @@ const MENU: { group?: string; items: { to: string; label: string; badge?: Badge 
     group: '학생 생활',
     items: [
       { to: '/student-file', label: 'Student File' },
+      { to: '/accounts', label: '학생 계정' },
       { to: '/counseling', label: '상담 기록', badge: 'followUpDue' },
       { to: '/penalties', label: '패널티 승인', badge: 'pending' },
       { to: '/penalty-rules', label: '패널티 점수표' },

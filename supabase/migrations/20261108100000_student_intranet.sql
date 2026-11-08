@@ -54,7 +54,7 @@ returns text language sql stable security definer set search_path = public as $$
 $$;
 -- 필리핀 오늘 날짜
 create or replace function public.manila_today()
-returns date language sql stable as $$
+returns date language sql stable set search_path = public as $$
   select (now() at time zone 'Asia/Manila')::date;
 $$;
 -- 그 연수가 그 학생 것인지(업체 원본 legacy_enrollments: id = tr_id, data.tr_st_id = 학생번호).
@@ -65,7 +65,7 @@ returns boolean language sql stable security definer set search_path = public as
 $$;
 -- 가드 태블릿 시각은 지금 기준 앞뒤 몇 분만 받는다(통금 판정 근거라 나중 시각으로 고쳐 쓰지 못하게).
 create or replace function public.near_now(p_at timestamptz)
-returns boolean language sql stable as $$
+returns boolean language sql stable set search_path = public as $$
   select p_at is null or p_at between now() - interval '10 minutes' and now() + interval '2 minutes';
 $$;
 -- 학생이 첫 로그인 때 비밀번호를 바꾼 뒤 부른다.

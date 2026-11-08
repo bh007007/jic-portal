@@ -17,6 +17,7 @@ import type { Departure, Ride } from './departures';
 import type { LifeRequest } from './lifeRequests';
 import type { Absence, Overnight, RequestStore } from './requests';
 import { withTaken, type Trip, type TripSignup, type TripStore } from './trips';
+import type { KeycardSecret } from './keycard';
 import { tokenCache, type SupabaseConf } from './supabaseAuth';
 
 function readRows<T>(file: string): T[] {
@@ -81,6 +82,20 @@ export function tripFileStore(tripsFile: string, signupsFile: string): TripStore
   };
 }
 
+/**
+ * 카드키 QR 비밀 값(로컬): 처음 쓸 때 만들어 파일로 둔다. 학생 앱(만들기)과 인트라넷(확인)이 같은 파일을 읽는다.
+ * 배포는 Supabase keycard_secret(keycard.ts serviceKeycardSecret).
+ */
+export function localKeycardSecret(file: string): KeycardSecret {
+  return async () => {
+    if (!fs.existsSync(file)) {
+      fs.mkdirSync(path.dirname(file), { recursive: true });
+      fs.writeFileSync(file, crypto.randomBytes(32).toString('hex') + '\n', { encoding: 'utf8', mode: 0o600 });
+    }
+    return fs.readFileSync(file, 'utf8').trim();
+  };
+}
+
 /** 학생 앱·인트라넷이 같이 쓰는 신청 파일 위치. source 는 'sample' 또는 'extract'. */
 export function requestFiles(storeDir: string, source: string) {
   return {
@@ -91,6 +106,7 @@ export function requestFiles(storeDir: string, source: string) {
     life: path.join(storeDir, `life-requests-${source}.ndjson`),
     trips: path.join(storeDir, `trips-${source}.ndjson`),
     tripSignups: path.join(storeDir, `trip-signups-${source}.ndjson`),
+    keycardSecret: path.join(storeDir, 'keycard-secret.txt'),
   };
 }
 
@@ -137,6 +153,7 @@ export function studentLocalPlugin(dataDir: string, storeDir: string, supabase?:
       const rides = fileStore<Ride>(files.rides);
       const life = fileStore<LifeRequest>(files.life);
       const trips = tripFileStore(files.trips, files.tripSignups);
+      const keycardSecret = localKeycardSecret(files.keycardSecret);
       const tokens = supabase ? tokenCache(supabase) : null;
       server.config.logger.info(`[student-local] ${db.summary()} · 기준일 ${db.refDate} · 신청 파일 ${storeDir}${supabase ? ` · 로그인 Supabase(${supabase.url})` : ''}`);
 
@@ -176,7 +193,7 @@ export function studentLocalPlugin(dataDir: string, storeDir: string, supabase?:
           stId = typeof header === 'string' && /^\d+$/.test(header) ? header : null;
         }
         const { status, body: out } = await handleStudentApi(
-          { db, store, overnights, departures, rides, life, trips, stId, mustChangePassword, localLogin: !tokens, now: () => new Date(), newId: () => crypto.randomUUID() },
+          { db, store, overnights, departures, rides, life, trips, keycardSecret, stId, mustChangePassword, localLogin: !tokens, now: () => new Date(), newId: () => crypto.randomUUID() },
           method,
           url.pathname,
           body,

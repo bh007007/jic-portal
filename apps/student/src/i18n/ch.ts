@@ -262,4 +262,10 @@ export const ch: Record<MsgKey, string> = {
   'err.outside_enrollment': '旅行日期不在研修期间内，无法报名。',
   'err.deadline_passed': '已过报名截止日，无法取消。请告诉负责的工作人员。',
   'err.not_applied': '没有可取消的报名。',
+  'qr.button': '出入二维码',
+  'qr.title': '出入二维码',
+  'qr.left': '{s}秒后换成新的二维码',
+  'qr.hint': '外出或返回时，请对准门卫平板的摄像头。截图的二维码无法使用。',
+  'err.qr_offline': '未能获取二维码，请检查网络连接。',
+  'err.keycard_unavailable': '现在无法使用出入二维码，请联系办公室。',
 };

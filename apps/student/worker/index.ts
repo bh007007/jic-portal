@@ -3,6 +3,7 @@
  * - 로그인: Supabase 학생 계정 토큰(Authorization)으로 학생을 확인한다(server/supabaseAuth.ts). 첫 비밀번호를 안 바꿨으면 403.
  * - 학생·연수: 업체 원본에서 그 학생 행만 서비스 키로 읽는다(server/supabaseData.ts).
  * - 신청·귀국 항공편·배차: Supabase 테이블을 학생 토큰으로 읽고 쓴다(server/supabaseStores.ts, RLS).
+ * - 출입 QR: 서명 비밀 값(keycard_secret)을 서비스 키로 읽어 메모리에 둔다(server/keycard.ts).
  * - 계산은 로컬 개발 서버와 같은 core(server/core.ts)라서 화면은 같은 응답을 받는다.
  * 키는 Workers 변수에서 읽는다. 코드에 키를 넣지 않는다.
  */
@@ -10,6 +11,7 @@ import { handleStudentApi } from '../server/core';
 import { dbCache } from '../server/supabaseData';
 import { tokenCache } from '../server/supabaseAuth';
 import { supabaseStores } from '../server/supabaseStores';
+import { serviceKeycardSecret, type KeycardSecret } from '../server/keycard';
 
 export interface Env {
   /** 정적 파일(apps/student/dist) */
@@ -17,7 +19,7 @@ export interface Env {
   SUPABASE_URL?: string;
   /** anon(publishable) 키: 학생 토큰과 함께 쓴다 */
   SUPABASE_ANON_KEY?: string;
-  /** 서비스 키(비밀 변수): 업체 원본에서 그 학생 행만 읽는 데만 쓴다 */
+  /** 서비스 키(비밀 변수): 업체 원본에서 그 학생 행과 출입 QR 서명 비밀 값만 읽는다 */
   SUPABASE_SERVICE_ROLE_KEY?: string;
 }
 
@@ -27,7 +29,7 @@ const json = (status: number, body: unknown) =>
   new Response(JSON.stringify(body), { status, headers: { 'Content-Type': 'application/json; charset=utf-8', 'Cache-Control': 'no-store' } });
 
 // 같은 Worker 인스턴스 안에서 잠깐 기억한다(토큰 30초, 학생 데이터 60초).
-let caches: { key: string; tokens: ReturnType<typeof tokenCache>; data: ReturnType<typeof dbCache> } | null = null;
+let caches: { key: string; tokens: ReturnType<typeof tokenCache>; data: ReturnType<typeof dbCache>; keycard: KeycardSecret } | null = null;
 function cachesFor(env: Required<Omit<Env, 'ASSETS'>>, fetchFn: typeof fetch) {
   const key = `${env.SUPABASE_URL}|${env.SUPABASE_ANON_KEY}`;
   if (!caches || caches.key !== key) {
@@ -35,6 +37,7 @@ function cachesFor(env: Required<Omit<Env, 'ASSETS'>>, fetchFn: typeof fetch) {
       key,
       tokens: tokenCache({ url: env.SUPABASE_URL, key: env.SUPABASE_ANON_KEY }, 30_000, fetchFn),
       data: dbCache({ url: env.SUPABASE_URL, serviceKey: env.SUPABASE_SERVICE_ROLE_KEY }, 60_000, fetchFn),
+      keycard: serviceKeycardSecret(env.SUPABASE_URL, env.SUPABASE_SERVICE_ROLE_KEY, fetchFn),
     };
   }
   return caches;
@@ -56,7 +59,7 @@ export async function handleApi(req: Request, env: Env, fetchFn: typeof fetch = 
     return json(500, { error: 'server_config' }); // Workers 변수 SUPABASE_URL·SUPABASE_ANON_KEY·SUPABASE_SERVICE_ROLE_KEY
   }
   const conf = { url: env.SUPABASE_URL, key: env.SUPABASE_ANON_KEY };
-  const { tokens, data } = cachesFor(env as Required<Omit<Env, 'ASSETS'>>, fetchFn);
+  const { tokens, data, keycard } = cachesFor(env as Required<Omit<Env, 'ASSETS'>>, fetchFn);
   const body = await readBody(req);
   if (!body.ok) return json(body.status, { error: body.error });
 
@@ -71,6 +74,7 @@ export async function handleApi(req: Request, env: Env, fetchFn: typeof fetch = 
       {
         db,
         ...stores,
+        keycardSecret: keycard,
         stId: session?.stId ?? null,
         mustChangePassword: session?.mustChangePassword ?? false,
         localLogin: false,
