@@ -105,19 +105,21 @@ const toOuting = (r: Row): Outing => ({
   outBy: String(r.out_by ?? ''),
   inAt: iso(r.in_at),
   inBy: String(r.in_by ?? ''),
+  outVia: (r.out_via as Outing['outVia']) ?? null,
+  inVia: (r.in_via as Outing['inVia']) ?? null,
 });
 function outingStore(rest: Rest): Repo<Outing> {
   return {
     all: async () => (await rest('GET', 'outings?select=*&order=created_at.asc')).map(toOuting),
     async put(x) {
-      // 새 기록은 넣고, 있던 기록은 귀가만 찍는다(가드 권한도 in_at, in_by 만)
+      // 새 기록은 넣고, 있던 기록은 귀가만 찍는다(가드 권한도 in_at, in_by, in_via 만)
       await upsert(
         rest,
         'outings',
         'id',
         x.id,
-        { id: x.id, student_no: x.stId, enrollment_id: x.trId, campus: x.campus, out_at: x.outAt, out_by: x.outBy, in_at: x.inAt, in_by: x.inBy },
-        { in_at: x.inAt, in_by: x.inBy },
+        { id: x.id, student_no: x.stId, enrollment_id: x.trId, campus: x.campus, out_at: x.outAt, out_by: x.outBy, in_at: x.inAt, in_by: x.inBy, out_via: x.outVia ?? null, in_via: x.inVia ?? null },
+        { in_at: x.inAt, in_by: x.inBy, in_via: x.inVia ?? null },
       );
     },
     remove: readOnly,

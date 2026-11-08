@@ -4,13 +4,14 @@
  *   가드 태블릿 API 만 쓴다. 가드의 캠퍼스는 계정의 출입구로 고정한다(RLS 도 같은 범위만 허용).
  * - 학생·연수: 직원은 직원 토큰으로, 가드는 서비스 키로 업체 원본을 읽는다(server/supabaseData.ts).
  * - 저장소: Supabase 테이블을 로그인한 계정의 토큰으로(server/supabaseStores.ts, RLS·DB 함수).
- *   가드 화면의 승인된 외박만 서비스 키로 읽는다(사유 없이).
+ *   가드 화면의 승인된 외박과 출입 QR 서명 비밀 값(keycard_secret)만 서비스 키로 읽는다(사유 없이).
  * - 계산은 로컬 개발 서버와 같은 core(server/core.ts).
  * 키는 Workers 변수에서 읽고 코드에 넣지 않는다. 서비스 키는 가드 요청에서만 쓴다.
  */
 import { handleIntranetApi } from '../server/core';
 import { accountCaches, serviceHeaders, userHeaders } from '../server/supabaseData';
 import { approvedOvernights, supabaseStores } from '../server/supabaseStores';
+import { serviceKeycardSecret, type KeycardSecret } from '../../student/server/keycard';
 
 export interface Env {
   ASSETS: { fetch(req: Request): Promise<Response> };
@@ -28,6 +29,7 @@ const json = (status: number, body: unknown) =>
   new Response(JSON.stringify(body), { status, headers: { 'Content-Type': 'application/json; charset=utf-8', 'Cache-Control': 'no-store' } });
 
 let caches: { key: string; c: ReturnType<typeof accountCaches> } | null = null;
+let keycard: { key: string; fn: KeycardSecret } | null = null;
 
 export async function handleApi(req: Request, env: Env, fetchFn: typeof fetch = fetch): Promise<Response> {
   if (!env.SUPABASE_URL || !env.SUPABASE_ANON_KEY) return json(500, { error: 'server_config' }); // Workers 변수 SUPABASE_URL·SUPABASE_ANON_KEY
@@ -62,12 +64,15 @@ export async function handleApi(req: Request, env: Env, fetchFn: typeof fetch = 
       url.searchParams.set('campus', account.campus);
       if (body && typeof body === 'object') (body as Record<string, unknown>).campus = account.campus;
       const db = await caches.c.db(serviceHeaders(env.SUPABASE_SERVICE_ROLE_KEY));
+      const kkey = `${conf.url}|${env.SUPABASE_SERVICE_ROLE_KEY}`;
+      if (!keycard || keycard.key !== kkey) keycard = { key: kkey, fn: serviceKeycardSecret(conf.url, env.SUPABASE_SERVICE_ROLE_KEY, fetchFn) };
       const { status, body: out } = await handleIntranetApi(
         {
           ...base,
           db,
           stores: { ...stores, overnights: approvedOvernights(conf.url, env.SUPABASE_SERVICE_ROLE_KEY, fetchFn) },
           actor: account.label,
+          keycardSecret: keycard.fn,
           session: { role: 'guard', campus: account.campus },
         },
         req.method,

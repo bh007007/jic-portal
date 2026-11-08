@@ -181,6 +181,9 @@ const MESSAGES: Record<string, string> = {
   invalid_contact: '연락처를 확인하세요.',
   invalid_companion: '같이 가는 학생번호를 확인하세요.',
   // 배포(Supabase)
+  invalid_qr: '올바른 카드키 QR이 아닙니다. 학생 앱의 출입 QR을 다시 비춰 주세요.',
+  qr_expired: '시간이 지난 QR입니다. 학생 앱에서 새 QR을 비춰 주세요(캡처한 QR은 쓸 수 없습니다).',
+  qr_unavailable: '지금은 카드키 QR을 확인할 수 없습니다. 학생번호로 입력하세요.',
   title_required: '제목을 입력하세요.',
   title_too_long: '제목은 100자까지 쓸 수 있습니다.',
   place_required: '장소를 입력하세요.',

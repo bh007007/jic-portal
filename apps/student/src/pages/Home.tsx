@@ -41,6 +41,12 @@ export default function Home() {
         </div>
       </section>
 
+      <div className="pad">
+        <Link to="/keycard" className="btn btn-primary btn-block">
+          {t('qr.button')}
+        </Link>
+      </div>
+
       <nav className="shortcuts" aria-label={t('short.label')}>
         <Link to="/timetable">
           <IconCalendar />

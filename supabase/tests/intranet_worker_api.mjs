@@ -22,6 +22,8 @@ const sb = await startPgSupabase();
 const out = `${REPO}node_modules/.cache/intranet-worker.mjs`;
 await build({ entryPoints: [`${REPO}apps/intranet/worker/index.ts`], bundle: true, platform: 'node', format: 'esm', outfile: out, logLevel: 'warning' });
 const { handleApi, default: worker } = await import(pathToFileURL(out).href);
+await build({ entryPoints: [`${REPO}apps/student/server/keycard.ts`], bundle: true, platform: 'node', format: 'esm', outfile: `${REPO}node_modules/.cache/keycard-test.mjs`, logLevel: 'warning' });
+const { keycardCode } = await import(pathToFileURL(`${REPO}node_modules/.cache/keycard-test.mjs`).href);
 
 const env = { ASSETS: { fetch: async () => new Response('asset') }, SUPABASE_URL: sb.url, SUPABASE_ANON_KEY: 'anon-key', SUPABASE_SERVICE_ROLE_KEY: 'service-key' };
 const api = async (method, path, token, body) => {
@@ -273,6 +275,18 @@ ok('다른 출입구 가드: 캠퍼스 Premium, Challenger 외출 안 보임', x
 x = await api('POST', '/api/guard/scan', tGP, { code: sC3, mode: 'in', guard: '근무자1' });
 const p3 = await sb.sql(`select campus, in_at from public.outings where student_no = $1 order by created_at`, [sC3]);
 ok('다른 출입구에서 귀가를 찍으면 그 출입구의 새 기록(원래 외출 기록은 그대로)', x.status === 201 && p3.length === 2 && p3[0].campus === 'Challenger' && p3[0].in_at === null && p3[1].campus === 'Premium', p3);
+
+// ── 카드키 QR: 학생 앱과 같은 비밀 값(DB, 서비스 키)으로 만든 QR 을 가드가 읽는다
+const kSecret = (await sb.sql(`select secret from public.keycard_secret where id = 1`))[0].secret;
+const sQ = others.find((s) => s !== sC2 && s !== sC3);
+x = await api('POST', '/api/guard/scan', tG, { code: (await keycardCode(kSecret, sQ, Date.now())).code, mode: 'out', guard: '근무자1' });
+ok('가드: 카드키 QR 로 외출 201(찍은 방법 qr)', x.status === 201 && x.body.row?.stId === sQ && x.body.row.outVia === 'qr', x);
+const qdb = await sb.sql(`select out_via from public.outings where student_no = $1`, [sQ]);
+ok('DB: out_via = qr', qdb.length === 1 && qdb[0].out_via === 'qr', qdb);
+x = await api('POST', '/api/guard/scan', tG, { code: (await keycardCode('z'.repeat(64), sQ, Date.now())).code, mode: 'in', guard: '근무자1' });
+ok('가드: 서명이 틀린 QR 400 invalid_qr', x.status === 400 && x.body.error === 'invalid_qr', x);
+x = await api('POST', '/api/guard/scan', tG, { code: sQ, mode: 'in', guard: '근무자1' });
+ok('가드: 번호 입력 귀가(in_via number)', x.status === 200 && x.body.row.inVia === 'number', x);
 
 // ── 학교 여행: 직원 등록·수정 → 학생 신청(함수) → 가드 화면 외박 허용 → 명단 제외(함수) → 취소
 const tplus = (n) => plus(manila, n);
