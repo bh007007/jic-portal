@@ -1,6 +1,6 @@
 # JIC 포털
 
-업체 포털(jicportal.com)을 대체할 JIC 자체 통합 시스템이다. 학생 포털, 파트너 포털, 인트라넷, LMS가 하나의 공용 DB를 쓴다.
+업체 포털(jicportal.com)을 대체할 JIC 자체 통합 시스템이다. **관리자 포털(인트라넷 포함)·학생 포털·에이전시 포털·강사 포털(LMS)** 4개가 하나의 공용 DB(Supabase)를 쓴다. 구조는 [docs/architecture.md](docs/architecture.md).
 
 - 기획안: [docs/plan.md](docs/plan.md) (원본은 [Claude 문서](https://claude.ai/artifact/9JTCwocjZJFqPjdDjvZEg2))
 - 기존 업체 포털 구조와 조회 API: [docs/legacy-portal.md](docs/legacy-portal.md)
@@ -16,6 +16,7 @@ portal/
 ├─ apps/partner/          파트너 포털 (React + Vite + Supabase) · docs/partner-portal.md
 ├─ apps/student/          학생 앱 (모바일, 로컬 전용)
 ├─ apps/intranet/         인트라넷 (가드 태블릿·통금·패널티, 로컬 전용)
+├─ apps/teacher/          강사 포털 LMS (휴대폰 기준, 한국어·영어, Supabase) · docs/teacher-portal.md
 ├─ functions/api/         배포용 /api 서버 (Cloudflare Pages Function → Supabase)
 ├─ supabase/migrations/   Supabase 테이블·권한 SQL
 ├─ .github/workflows/     빌드 확인, DB 반영
@@ -69,6 +70,17 @@ npm run intranet
 ```
 
 http://127.0.0.1:5177 (가드 태블릿은 `/guard`). 자세한 내용은 [docs/intranet.md](docs/intranet.md).
+
+## 강사 포털 실행 (로컬)
+
+`apps/teacher`는 강사·체커·스케줄러·매니저용 강사 포털(LMS)이다. 학생 목록, 성적 입력·추이, 수업 자료실, 결석 신청 보기, 시험 종류·CEFR, 강사 목록이 있고, 데이터는 전부 Supabase(RLS)에 있다.
+
+```powershell
+copy apps\teacher\.env.example apps\teacher\.env.local
+npm run teacher
+```
+
+http://127.0.0.1:5178. 가짜 Supabase로 보려면 `node supabase/tests/pg-supabase.mjs 54321` 뒤에 `VITE_SUPABASE_URL=http://127.0.0.1:54321`, `VITE_SUPABASE_ANON_KEY=anon-key`로 실행한다. 자세한 내용은 [docs/teacher-portal.md](docs/teacher-portal.md).
 
 ## 데이터 다시 추출하기
 

@@ -15,6 +15,9 @@
     "intranet": "npm --workspace apps/intranet run dev",
     "intranet:build": "npm --workspace apps/intranet run build",
     "portal:build": "npm run admin:build",
+    "teacher": "npm --workspace apps/teacher run dev",
+    "teacher:build": "npm --workspace apps/teacher run build",
+    "teacher:portal": "npm --workspace apps/teacher run build:portal",
     "typecheck": "npm --workspace apps/admin run typecheck && npm --workspace apps/partner run typecheck && npm --workspace apps/student run typecheck && npm --workspace apps/intranet run typecheck"
   }
 }
