@@ -1,10 +1,10 @@
 import type { ReactNode } from 'react';
 import { Link, NavLink, useNavigate } from 'react-router-dom';
-import { useI18n } from '../i18n';
+import { LANGS, useI18n, type Lang } from '../i18n';
 import { IconBack, IconForm, IconHome, IconUser } from './icons';
 
 export function Header({ sample }: { sample: boolean }) {
-  const { t, nextLang } = useI18n();
+  const { t } = useI18n();
   return (
     <header className="app-header">
       <Link to="/" className="app-brand">
@@ -12,10 +12,22 @@ export function Header({ sample }: { sample: boolean }) {
         <span className="app-brand-name">{t('app.name')}</span>
         {sample && <span className="sample-tag">{t('data.sample')}</span>}
       </Link>
-      <button type="button" className="lang-btn" aria-label={t('lang.change')} onClick={nextLang}>
-        {t('lang.label')}
-      </button>
+      <LangSelect />
     </header>
+  );
+}
+
+/** 언어 고르기: 휴대폰 기본 선택 목록을 쓴다. 이름은 각 언어로 보인다. */
+export function LangSelect() {
+  const { t, lang, setLang } = useI18n();
+  return (
+    <select className="lang-select" aria-label={t('lang.change')} value={lang} onChange={(e) => setLang(e.target.value as Lang)}>
+      {LANGS.map((l) => (
+        <option key={l.code} value={l.code} lang={l.html}>
+          {l.name}
+        </option>
+      ))}
+    </select>
   );
 }
 
