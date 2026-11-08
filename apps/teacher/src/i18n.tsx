@@ -48,7 +48,7 @@ const ko = {
   kind_book: '교재', kind_worksheet: '워크시트', kind_slides: '슬라이드', kind_audio: '음성', kind_video: '영상', kind_test: '시험지', kind_answer: '정답지', kind_other: '기타',
   // 결석
   absences: '결석 신청', absencesSub: '학생 포털에서 낸 신청 · 승인은 인트라넷', today: '오늘', tomorrow: '내일', days7: '7일',
-  noAbsence: '이 기간에 결석 신청이 없습니다.', allDay: '종일', periodsLabel: '{p}교시',
+  noAbsence: '이 기간에 결석 신청이 없습니다.', allDay: '종일', periodsLabel: '{p}교시', absencesNear: '결석 신청 (지난 3주 ~ 다음 1주)',
   abs_sick: '병결', abs_official: '공결', abs_personal: '개인',
   st_pending: '처리 전', st_approved: '인정', st_rejected: '반려',
   // 더보기
@@ -119,7 +119,7 @@ const en: Record<Key, string> = {
   confirmDeleteMaterial: "Remove '{title}' from the index? (The Drive file stays.)",
   kind_book: 'Book', kind_worksheet: 'Worksheet', kind_slides: 'Slides', kind_audio: 'Audio', kind_video: 'Video', kind_test: 'Test paper', kind_answer: 'Answer key', kind_other: 'Other',
   absences: 'Absence requests', absencesSub: 'Sent from the student portal · approved in the intranet', today: 'Today', tomorrow: 'Tomorrow', days7: '7 days',
-  noAbsence: 'No absence requests in this period.', allDay: 'All day', periodsLabel: 'Period {p}',
+  noAbsence: 'No absence requests in this period.', allDay: 'All day', periodsLabel: 'Period {p}', absencesNear: 'Absence requests (last 3 weeks – next week)',
   abs_sick: 'Sick', abs_official: 'Official', abs_personal: 'Personal',
   st_pending: 'Pending', st_approved: 'Excused', st_rejected: 'Rejected',
   more: 'More', manage: 'Manage (manager · staff)', testTypes: 'Test types · CEFR mapping', staffList: 'Teachers',
