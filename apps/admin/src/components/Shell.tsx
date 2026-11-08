@@ -22,7 +22,7 @@ const MENU: { group?: string; items: { to: string; label: string }[] }[] = [
   { group: '기숙사', items: [{ to: '/dorm', label: '배정 현황' }, { to: '/rooms', label: '방·침대 관리' }] },
   { group: '회계', items: [{ to: '/invoices', label: '인보이스' }, { to: '/deposits', label: '입금 매칭' }, { to: '/points', label: '포인트' }] },
   { group: '에이전시', items: [{ to: '/agencies', label: '에이전시 목록' }, { to: '/agents', label: '담당자 계정' }] },
-  { group: '기초관리', items: [{ to: '/codes', label: '코스·기숙사' }, { to: '/batches', label: '캠퍼스·배치' }, { to: '/users', label: '사용자·권한' }] },
+  { group: '기초관리', items: [{ to: '/codes', label: '코스·기숙사' }, { to: '/batches', label: '캠퍼스·배치' }, { to: '/holidays', label: '휴일' }, { to: '/users', label: '사용자·권한' }] },
 ];
 
 // 인트라넷: 배포에서는 같은 주소 아래 /intranet/(npm run portal:build, 같은 로그인), 로컬 개발은 인트라넷 개발 서버

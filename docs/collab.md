@@ -35,6 +35,7 @@
 - 학생 앱·인트라넷이 더한 권한 함수: `is_student()`·`current_student_no()`(학생), `is_guard()`·`current_guard_campus()`(가드 공용 계정), `staff_has_campus(캠퍼스)`(직원이 맡은 캠퍼스, `staff_campuses`). `20261108100000_student_intranet.sql`. 직원끼리 이름을 보는 `staff_directory()`(`20261108130000_intranet_deploy.sql`, `staff_users` RLS 는 그대로).
 - 강사 포털(LMS)이 더한 권한 함수: `has_role(역할[])`, `is_lms_user()`(강사·체커·스케줄러·매니저 또는 직원), `is_lms_manager()`(매니저 또는 직원), `my_roles()`, `current_lms_name()`, 강사용 학생 목록 `lms_students(날짜)`(`legacy_*` 권한은 그대로), 강사용 결석 신청 보기 `lms_absences(시작, 끝)`(사유 글 제외, `20261108220000_lms_absences.sql`). 역할 표 `user_roles`(기획안 이름). `20261108200000_teacher_portal.sql`. 성적 `test_results`는 학생 본인도 읽는다(학생 포털에서 쓸 수 있음).
 - 관리자 포털 '사용자·권한' 화면: `user_directory(학생 포함 여부)`(직원만, 로그인 계정과 사용자 종류별 표를 한 줄로). `20261108210000_user_directory.sql`.
+- 휴일 `holidays`(업체 기초코드관리 > 휴일): 관리자 포털 직원만 쓰고 로그인한 모든 포털이 읽는다. 캠퍼스 `''` = 모든 캠퍼스. 출석·달력에서 쉬는 날을 볼 때 이 표를 쓴다. `20261108230000_holidays.sql`.
 - 권한 시험은 `supabase/tests/*.mjs`에 둔다. PGlite(Postgres WebAssembly)에 Supabase 흉내를 만들어 역할별로 읽기·쓰기를 확인한다(의존성에 넣지 않고 `npm i --no-save`로 임시 설치). CI가 함께 돌리므로 `legacy_tables`처럼 시험이 쓰는 마이그레이션을 바꾸면 결과를 확인한다. `pg-supabase.mjs`는 Supabase Auth·REST를 흉내 내는 시험 서버다.
 - `legacy_*`(업체 원본)는 직원만 읽는다. 다른 앱을 위해 이 RLS를 넓히지 않는다. 필요하면 security definer 함수나 그 앱용 테이블을 만든다.
 - `auth.users`에는 `on_partner_signup` 트리거가 있다. 메타데이터 `portal='partner'`일 때만 동작한다. 다른 앱은 다른 `portal` 값을 쓴다.

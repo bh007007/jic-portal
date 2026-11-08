@@ -31,6 +31,8 @@ await db.exec(`
 for (const f of ['20261107000000_legacy_tables.sql', '20261107010000_partner_portal.sql', '20261108100000_student_intranet.sql', '20261108200000_teacher_portal.sql']) await db.exec(mig(f));
 await db.exec(mig('20261108210000_user_directory.sql'));
 await db.exec(mig('20261108210000_user_directory.sql')); // 두 번째 실행
+await db.exec(mig('20261108230000_holidays.sql'));
+await db.exec(mig('20261108230000_holidays.sql'));
 ok('마이그레이션 2회 실행', true);
 
 const U = {
@@ -90,6 +92,21 @@ await as(U.teacher, async () => {
 });
 await as(U.agent, async () => ok('에이전시는 계정 목록 0', (await q(`select * from user_directory()`)).length === 0));
 await as(null, async () => denied('익명 계정 목록', `select * from user_directory()`, /permission denied/));
+
+// ── 휴일(20261108230000_holidays.sql): 직원만 쓰고, 로그인한 모든 포털이 읽는다
+await as(U.staff, async () => {
+  ok('직원 휴일 등록(전체 캠퍼스)', (await db.query(`insert into holidays (day, name) values ('2026-12-25', 'Christmas Day')`)).affectedRows === 1);
+  ok('직원 휴일 등록(캠퍼스별)', (await db.query(`insert into holidays (day, campus, name, kind) values ('2026-12-26', 'Premium', '학원 휴일', 'school')`)).affectedRows === 1);
+  await denied('같은 날 같은 캠퍼스 중복', `insert into holidays (day, name) values ('2026-12-25', 'x')`, /duplicate key/);
+});
+await as(U.teacher, async () => {
+  ok('강사는 휴일을 읽음', (await q(`select * from holidays`)).length === 2);
+  await denied('강사는 휴일을 못 씀', `insert into holidays (day, name) values ('2027-01-01', 'New Year')`, /row-level security/);
+});
+await as(U.student, async () => ok('학생도 휴일을 읽음', (await q(`select * from holidays`)).length === 2));
+await as(U.agent, async () => ok('에이전시도 휴일을 읽음', (await q(`select * from holidays`)).length === 2));
+await as(U.teacher, async () => ok('강사는 휴일을 못 지움(0행)', (await db.query(`delete from holidays`)).affectedRows === 0));
+await as(null, async () => denied('익명 휴일', `select * from holidays`, /permission denied/));
 
 console.log(`통과 ${pass}, 실패 ${fails.length}`);
 for (const f of fails) console.log('  실패:', f);
