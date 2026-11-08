@@ -11,7 +11,7 @@ import fs from 'node:fs';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 
 const REPO = fileURLToPath(new URL('../../', import.meta.url));
-const MIGRATIONS = ['20261107000000_legacy_tables.sql', '20261107020000_legacy_deposits.sql', '20261108000000_legacy_point_history.sql', '20261108010000_legacy_rooms.sql', '20261108100000_student_intranet.sql', '20261108120000_student_request_ids.sql', '20261108130000_intranet_deploy.sql', '20261108140000_nonacademic_requests.sql', '20261108150000_overnight_travel.sql', '20261108160000_school_trips.sql'];
+const MIGRATIONS = ['20261107000000_legacy_tables.sql', '20261107020000_legacy_deposits.sql', '20261108000000_legacy_point_history.sql', '20261108010000_legacy_rooms.sql', '20261108100000_student_intranet.sql', '20261108120000_student_request_ids.sql', '20261108130000_intranet_deploy.sql', '20261108140000_nonacademic_requests.sql', '20261108150000_overnight_travel.sql', '20261108160000_school_trips.sql', '20261108200000_teacher_portal.sql'];
 
 export async function startPgSupabase({ port = 0 } = {}) {
   const { PGlite } = await import(process.env.PGLITE ? pathToFileURL(process.env.PGLITE).href : '@electric-sql/pglite');
@@ -139,9 +139,11 @@ export async function startPgSupabase({ port = 0 } = {}) {
       await db.query(`delete from ${table}${where(params, values)}`, values);
       return { status: 204, body: undefined };
     }
-    const cols = Object.keys(body).map(ident);
+    // 여러 행 넣기(배열 본문)는 첫 행의 열 이름으로 json_populate_recordset 을 쓴다(강사 포털 성적 입력).
+    const cols = Object.keys(Array.isArray(body) ? body[0] ?? {} : body).map(ident);
     if (req.method === 'POST') {
-      await db.query(`insert into ${table} (${cols.join(', ')}) select ${cols.join(', ')} from json_populate_record(null::${table}, $1::json)`, [JSON.stringify(body)]);
+      const fn = Array.isArray(body) ? 'json_populate_recordset' : 'json_populate_record';
+      await db.query(`insert into ${table} (${cols.join(', ')}) select ${cols.join(', ')} from ${fn}(null::${table}, $1::json)`, [JSON.stringify(body)]);
       return { status: 201, body: undefined };
     }
     if (req.method === 'PATCH') {

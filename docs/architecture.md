@@ -8,7 +8,7 @@ JIC 포털은 사용자 종류로 나눈 **4개 포털**과 **하나의 DB**로 
 | 1. **관리자 포털** (인트라넷 포함) | 직원·관리자, 가드(태블릿) | `/admin/`, 인트라넷 `/intranet/`, 가드 태블릿 `/intranet/guard` | `apps/admin`, `apps/intranet`, `functions/` | `staff_users`, `guard_accounts` | 동작 |
 | 2. **학생 포털** | 재학생·입학 예정 학생 | https://jic-student.bh007007.workers.dev | `apps/student` | `student_users` | 배포(11/8) |
 | 3. **에이전시 포털** | 유학원·에이전시 지점 | https://jic-partner.bh007007.workers.dev | `apps/partner`(코드 이름 partner) | `agency_members` | 배포(11/8) |
-| 4. **강사 포털 (LMS)** | 강사·체커·스케줄러·매니저 | `/teacher/` 예정 | `apps/teacher` 예정 | 예정 | 준비 중 |
+| 4. **강사 포털 (LMS)** | 강사·체커·스케줄러·매니저 | `/teacher/` | `apps/teacher` (`docs/teacher-portal.md`) | `user_roles`(teacher·checker·scheduler·manager), 직원 | 1차(11/8): 학생·성적·자료실·시험 종류·강사 목록. 출석은 업체 시간표 연결 뒤 |
 
 ## DB 하나
 
@@ -19,7 +19,7 @@ JIC 포털은 사용자 종류로 나눈 **4개 포털**과 **하나의 DB**로 
   - 학생 `student_users` / `is_student()`. 학생번호@students.jic.internal, 첫 로그인 때 비밀번호를 바꾼다.
   - 에이전시 `agency_members` / `is_partner()`. 가입 신청 뒤 관리자가 승인한다.
   - 가드 `guard_accounts` / `is_guard()`. 출입구마다 공용 계정이다.
-  - 강사는 예정이다.
+  - 강사 포털 `user_roles`(teacher·checker·scheduler·manager) / `is_lms_user()`·`is_lms_manager()`. 기획안의 역할 표이고, 나중에 다른 사용자 종류도 여기로 모을 수 있다(결정 대기, `docs/leo-todo.md`).
 - 업체 포털 원본은 아직 `legacy_*`(jsonb 그대로)이다. 정규화 스키마(HANDOFF 6-3)로 옮겨야 "한 DB"가 완성된다. 에이전시 포털의 `campuses`·`courses`도 그때 관리자 쪽 기준 데이터와 합친다.
 
 ## 주소와 로그인

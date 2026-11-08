@@ -40,6 +40,6 @@ export const PORTALS: Portal[] = [
     key: 'teacher',
     name: '강사 포털',
     users: '강사 · 체커 · 스케줄러 (LMS)',
-    url: import.meta.env.VITE_TEACHER_URL ?? null,
+    url: import.meta.env.VITE_TEACHER_URL ?? (dev ? 'http://127.0.0.1:5178' : '/teacher/'),
   },
 ];
