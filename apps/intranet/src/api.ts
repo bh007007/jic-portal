@@ -172,7 +172,8 @@ const MESSAGES: Record<string, string> = {
   departure_passed: '출발일이 지난 항공편입니다.',
   // 배포(Supabase)
   campus_not_allowed: '맡은 캠퍼스의 학생만 상담 기록을 쓸 수 있습니다. 관리자에게 담당 캠퍼스 등록을 요청하세요.',
-  staff_only: '직원 계정으로 등록되지 않았습니다.',
+  staff_only: '직원이나 가드 계정으로 등록되지 않았습니다.',
+  guard_forbidden: '가드 계정으로는 가드 태블릿만 쓸 수 있습니다.',
   unauthorized: '로그인이 필요합니다.',
 };
 export const errorText = (code: string) =>

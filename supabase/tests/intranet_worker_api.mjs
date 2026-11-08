@@ -1,6 +1,7 @@
 // 인트라넷 배포 서버(apps/intranet/worker)의 /api 시험. 실제 마이그레이션을 올린 PGlite(pg-supabase.mjs)에서
 // 직원 두 명(Challenger·Premium 담당)으로: 설정·점수표 → 통금 위반 후보·승인 → 결석·외박 처리 → 배차 → 공지·읽음
-// → 상담 기록(같은 캠퍼스만, 내용은 함수로, 접근 기록) → Student File. 학생·가드 쓰기는 그 역할로 SQL 을 실행한다.
+// → 상담 기록(같은 캠퍼스만, 내용은 함수로, 접근 기록) → Student File, 그리고 가드 공용 계정(출입구 고정, 가드 API 만,
+// 재학생 명단·승인된 외박은 서비스 키로 사유 없이). 학생 쓰기는 학생 역할로 SQL 을 실행한다.
 //
 // 실행(저장소 루트, 의존성에 추가하지 않고 임시로 설치):
 //   npm i --no-save @electric-sql/pglite@0.3
@@ -21,7 +22,7 @@ const out = `${REPO}node_modules/.cache/intranet-worker.mjs`;
 await build({ entryPoints: [`${REPO}apps/intranet/worker/index.ts`], bundle: true, platform: 'node', format: 'esm', outfile: out, logLevel: 'warning' });
 const { handleApi, default: worker } = await import(pathToFileURL(out).href);
 
-const env = { ASSETS: { fetch: async () => new Response('asset') }, SUPABASE_URL: sb.url, SUPABASE_ANON_KEY: 'anon-key' };
+const env = { ASSETS: { fetch: async () => new Response('asset') }, SUPABASE_URL: sb.url, SUPABASE_ANON_KEY: 'anon-key', SUPABASE_SERVICE_ROLE_KEY: 'service-key' };
 const api = async (method, path, token, body) => {
   const headers = token ? { Authorization: `Bearer ${token}` } : {};
   if (body !== undefined) headers['Content-Type'] = 'application/json';
@@ -57,10 +58,11 @@ r = await worker.fetch(new Request('https://intranet.example/penalties'), env);
 ok('/api 밖은 정적 파일', (await r.text()) === 'asset');
 let x = await api('GET', '/api/meta');
 ok('로그인 없이 401', x.status === 401, x);
-x = await api('GET', '/api/meta', tG);
-ok('직원이 아닌 계정(가드) 403 staff_only', x.status === 403 && x.body.error === 'staff_only', x);
+await sb.addUser({ id: '00000000-0000-4000-8000-0000000000e1', email: 'nobody@example.com', password: 'nobodypass1' });
+x = await api('GET', '/api/meta', await login('nobody@example.com', 'nobodypass1'));
+ok('직원·가드가 아닌 계정 403 staff_only', x.status === 403 && x.body.error === 'staff_only', x);
 x = await api('GET', '/api/meta', tC);
-ok('직원 meta: 샘플, 처리자 = staff_users.name', x.status === 200 && x.body.source === 'sample' && x.body.actor === '직원C', x);
+ok('직원 meta: 샘플, 처리자 = staff_users.name, role staff', x.status === 200 && x.body.source === 'sample' && x.body.actor === '직원C' && x.body.role === 'staff', x);
 x = await api('GET', '/api/summary', tC);
 ok('홈 요약', x.status === 200, x);
 
@@ -194,6 +196,61 @@ x = await api('POST', '/api/notices', tC, 'x'.repeat(33 * 1024));
 ok('큰 본문 413', x.status === 413, x);
 x = await api('POST', '/api/notices', tC, '{bad');
 ok('잘못된 JSON 400', x.status === 400 && x.body.error === 'invalid_json', x);
+
+// ── 가드 태블릿: 출입구(Challenger) 공용 계정
+x = await api('GET', '/api/meta', tG);
+ok('가드 meta: role guard, 출입구 Challenger', x.status === 200 && x.body.role === 'guard' && x.body.campus === 'Challenger', x);
+for (const [m, path] of [['GET', '/api/students'], ['GET', '/api/penalties'], ['GET', '/api/counseling'], ['GET', '/api/settings'], ['PUT', '/api/settings']]) {
+  x = await api(m, path, tG, m === 'PUT' ? { curfew: '01:00', guards: [] } : undefined);
+  ok(`가드는 ${m} ${path} 403`, x.status === 403 && x.body.error === 'guard_forbidden', x);
+}
+x = await handleApi(new Request('https://intranet.example/api/guard', { headers: { Authorization: `Bearer ${tG}` } }), { ...env, SUPABASE_SERVICE_ROLE_KEY: undefined });
+ok('서비스 키가 없으면 가드 요청만 500', x.status === 500 && (await api('GET', '/api/meta', tC)).status === 200);
+const others = rows.filter((s) => s.campus === 'Challenger' && s.stId !== sC).map((s) => s.stId);
+const [sC2, sC3] = others;
+const manila = (await sb.sql(`select (now() at time zone 'Asia/Manila')::date::text d`))[0].d;
+const plus = (d, n) => new Date(Date.parse(d) + n * 864e5).toISOString().slice(0, 10);
+// 승인된 외박(어제~모레, 언제 돌려도 오늘 밤을 덮음): 직원이 승인한 상태로 넣는다. 사유·메모는 가드에게 보이면 안 된다
+await sb.sql(`insert into public.overnight_permissions (student_no, enrollment_id, leave_date, return_date, reason, status, staff_comment) values ($1, $2, $3, $4, '비밀 사유', 'approved', '비밀 메모')`, [sC3, await trOf(sC3), plus(manila, -1), plus(manila, 2)]);
+x = await api('GET', '/api/guard?campus=Premium', tG);
+ok('가드 화면: 캠퍼스는 계정 출입구로 고정, 근무자 목록', x.status === 200 && x.body.campus === 'Challenger' && x.body.campuses.join() === 'Challenger' && x.body.guards.join() === '근무자1,근무자2', x.body);
+ok('오늘 밤 외박 허용 수(서비스 키로 읽은 승인 외박)', x.body.overnightTonight >= 1, x.body.overnightTonight);
+x = await api('POST', '/api/guard/scan', tG, { code: sC2, mode: 'out', campus: 'Premium', guard: '근무자1' });
+ok('외출 기록 201, 출입구는 계정 캠퍼스', x.status === 201 && x.body.row?.campus === 'Challenger', x);
+let odb = await sb.sql(`select campus, out_by, in_at, recorded_by::text from public.outings where student_no = $1`, [sC2]);
+ok('DB: 외출(기록한 계정 = 가드)', odb.length === 1 && odb[0].campus === 'Challenger' && odb[0].out_by === '근무자1' && odb[0].in_at === null && odb[0].recorded_by === U.guard, odb);
+x = await api('POST', '/api/guard/scan', tG, { code: sC2, mode: 'out', guard: '근무자1' });
+ok('이미 외출 중이면 409 already_out', x.status === 409 && x.body.error === 'already_out', x);
+x = await api('POST', '/api/guard/scan', tG, { code: sC2, mode: 'in', guard: '근무자2' });
+ok('귀가 200(같은 기록)', x.status === 200 && x.body.row?.inAt, x);
+odb = await sb.sql(`select in_by, in_at from public.outings where student_no = $1`, [sC2]);
+ok('DB: 귀가 찍힘', odb.length === 1 && odb[0].in_by === '근무자2' && odb[0].in_at, odb);
+x = await api('POST', '/api/guard/scan', tG, { code: sC2, mode: 'in', guard: '' });
+ok('근무자를 안 고르면 400', x.status === 400 && x.body.error === 'guard_required', x);
+x = await api('POST', '/api/guard/scan', tG, { code: '99999999', mode: 'out', guard: '근무자1' });
+ok('재학생이 아니면 404 not_current', x.status === 404 && x.body.error === 'not_current', x);
+x = await api('POST', '/api/guard/scan', tG, { code: sC3, mode: 'out', guard: '근무자1' });
+ok('승인된 외박 학생: 복귀일 표시, 사유·메모는 안 보임', x.status === 201 && x.body.row?.overnightUntil === plus(manila, 2) && !JSON.stringify(x.body).includes('비밀'), x.body);
+x = await api('GET', '/api/guard', tG);
+ok('가드 화면 외출 중 목록', (x.body.out ?? []).some((o) => o.stId === sC3) && !JSON.stringify(x.body).includes('비밀'), x.body.out);
+x = await api('POST', '/api/guard/report', tG, { code: sC2, campus: 'Premium', guard: '근무자1', kind: 'violence', note: '다툼' });
+ok('가드 리포트 등록', x.status === 201 || x.status === 200, x);
+const rdb2 = await sb.sql(`select campus, recorded_by::text from public.incident_reports where student_no = $1`, [sC2]);
+ok('DB: 리포트 출입구·기록 계정', rdb2.length === 1 && rdb2[0].campus === 'Challenger' && rdb2[0].recorded_by === U.guard, rdb2);
+x = await api('GET', '/api/penalties?tab=pending', tC);
+const gp = (x.body.rows ?? []).find((p) => p.stId === sC2 && p.source === 'guard');
+ok('직원 패널티 목록에 가드 리포트 후보(대기)', gp && gp.status === 'pending' && gp.campus === 'Challenger', x.body.rows?.filter?.((p) => p.source === 'guard'));
+x = await api('GET', '/api/outings', tC);
+ok('직원 외출·귀가 목록에 가드 기록', x.status === 200 && JSON.stringify(x.body).includes(sC2), x.status);
+// Premium 출입구 가드는 Challenger 기록을 못 본다
+await sb.addUser({ id: '00000000-0000-4000-8000-0000000000d2', email: 'gate-p@guard.example', password: 'guardpass1' });
+await sb.sql(`insert into public.guard_accounts values ('00000000-0000-4000-8000-0000000000d2', 'Premium', 'Premium 정문')`);
+const tGP = await login('gate-p@guard.example', 'guardpass1');
+x = await api('GET', '/api/guard', tGP);
+ok('다른 출입구 가드: 캠퍼스 Premium, Challenger 외출 안 보임', x.body.campus === 'Premium' && !(x.body.out ?? []).some((o) => o.stId === sC3) && !(x.body.recent ?? []).some((o) => o.stId === sC2), x.body);
+x = await api('POST', '/api/guard/scan', tGP, { code: sC3, mode: 'in', guard: '근무자1' });
+const p3 = await sb.sql(`select campus, in_at from public.outings where student_no = $1 order by created_at`, [sC3]);
+ok('다른 출입구에서 귀가를 찍으면 그 출입구의 새 기록(원래 외출 기록은 그대로)', x.status === 201 && p3.length === 2 && p3[0].campus === 'Challenger' && p3[0].in_at === null && p3[1].campus === 'Premium', p3);
 
 await sb.close();
 console.log(fails ? `${fails}건 실패` : '모두 통과');
