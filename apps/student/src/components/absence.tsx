@@ -74,7 +74,11 @@ export function OvernightRowLink({ o }: { o: OvernightRow }) {
       <span className="list-main">
         <span className="list-title">
           {md(o.from)} ({weekday(dayOfWeek(o.from))}) ~ {md(o.until)} ({weekday(dayOfWeek(o.until))})
-          <span className="list-extra"> · {t('ov.nights', { n: o.nights })}</span>
+          <span className="list-extra">
+            {' '}
+            · {t('ov.nights', { n: o.nights })}
+            {o.destination ? ` · ${o.destination}` : ''}
+          </span>
         </span>
         <span className="list-sub">{t('abs.submitted', { t: mdhm(o.submittedAt) })}</span>
       </span>

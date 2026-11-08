@@ -74,6 +74,10 @@ export const toOvernight = (r: Row): Overnight => ({
   decidedAt: iso(r.decided_at),
   decidedBy: null,
   comment: (r.staff_comment as string | null) ?? null,
+  destination: String(r.destination ?? ''),
+  accommodation: String(r.accommodation ?? ''),
+  contact: String(r.contact ?? ''),
+  companions: ((r.companions as string[] | null) ?? []).map(String),
 });
 
 function requestStore<T extends Absence | Overnight>(rest: Rest, table: string, cancelFn: string, toItem: (r: Row) => T, toInsert: (x: T) => Row) {
@@ -120,6 +124,10 @@ export const overnightStore = (rest: Rest): OvernightStore =>
     leave_date: x.from,
     return_date: x.until,
     reason: x.reason,
+    destination: x.destination ?? '',
+    accommodation: x.accommodation ?? '',
+    contact: x.contact ?? '',
+    companions: x.companions ?? [],
   }));
 
 // ── 귀국 항공편(학생이 씀)·배차(직원이 씀, 학생은 읽기만). id 는 `dep-${연수 번호}`

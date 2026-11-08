@@ -465,5 +465,17 @@ expect('로컬은 이름 없이도 처리(처리자 없음), 답변은 그대로
 const sfL = (await call('GET', `/students/${S1.stId}`)).body as any;
 expect('Student File 에 생활 요청', sfL.lifeRequests.length === 1 && sfL.lifeRequests[0].status === 'done', sfL.lifeRequests);
 
+// ── 외박·여행 신청: 같이 가는 학생과 그 학생의 신청 여부
+const S3 = ((await call('GET', '/students', null, 'size=100')).body as any).rows.find((x: any) => x.stId !== S1.stId && x.stId !== S2.stId).stId as string;
+const base = { reason: '주말 여행', status: 'pending' as const, submittedAt: '2026-11-05T01:00:00Z', updatedAt: '2026-11-05T01:00:00Z', decidedAt: null, decidedBy: null, comment: null };
+await stores.overnights.put({ ...base, id: 'T1', stId: S1.stId, trId: S1.trId, from: '2026-11-14', until: '2026-11-16', destination: 'Boracay', accommodation: 'Sea Breeze Inn', contact: '+63 917 000 0000', companions: [S2.stId, S3] });
+await stores.overnights.put({ ...base, id: 'T2', stId: S2.stId, trId: S2.trId, from: '2026-11-15', until: '2026-11-16', destination: 'Boracay', contact: '+63 917 000 0001', companions: [S1.stId] });
+const tl = (await call('GET', '/requests/overnights', null, 'tab=pending')).body as any;
+const t1 = tl.overnights.find((o: any) => o.id === 'T1');
+expect('여행 정보가 목록에', t1.destination === 'Boracay' && t1.accommodation === 'Sea Breeze Inn' && t1.contact === '+63 917 000 0000', t1);
+expect('동행: 이름과 신청 여부(같은 기간에 신청한 학생만 표시)', t1.companionInfo.length === 2 && t1.companionInfo[0].requested === true && t1.companionInfo[0].name === S2.name && t1.companionInfo[1].stId === S3 && t1.companionInfo[1].requested === false, t1.companionInfo);
+const old = tl.overnights.find((o: any) => !o.destination);
+expect('여행 정보가 없는 예전 신청도 목록에(동행 없음)', !old || old.companionInfo.length === 0, old);
+
 console.log(fails ? `\n${fails}건 실패` : '\n모두 통과');
 if (fails) process.exit(1);

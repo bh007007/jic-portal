@@ -32,10 +32,18 @@ export interface Absence extends RequestBase {
   periods: number[]; // 빈 배열 = 종일
   kind: AbsenceKind;
 }
-/** 외박: 출발일 밤부터 복귀일 전날 밤까지 기숙사에서 자지 않는다. 그 밤들은 통금 판정에서 빠진다. */
+/**
+ * 외박·여행: 출발일 밤부터 복귀일 전날 밤까지 기숙사에서 자지 않는다. 그 밤들은 통금 판정에서 빠진다.
+ * 업체 'Outing > Travel'(기획안 'Travel → 여행 신청과 외박 허용')에 맞춰 여행 정보를 함께 받는다.
+ * 여행 정보는 11/8 에 더해서 그전 기록에는 없을 수 있다(없으면 빈 값으로 본다).
+ */
 export interface Overnight extends RequestBase {
   from: string; // 출발일(첫 밤)
   until: string; // 복귀일
+  destination?: string; // 행선지(도시·지역)
+  accommodation?: string; // 숙소(선택)
+  contact?: string; // 여행 중 비상 연락처
+  companions?: string[]; // 같이 가는 학생 번호
 }
 
 export interface RequestStore<T extends { id: string; stId: string }> {
@@ -114,14 +122,41 @@ export interface OvernightInput {
   from?: unknown;
   until?: unknown;
   reason?: unknown;
+  destination?: unknown;
+  accommodation?: unknown;
+  contact?: unknown;
+  /** 학생번호 배열 또는 쉼표·공백으로 나눈 글 */
+  companions?: unknown;
 }
 
-/** 외박 신청 확인. 출발일~마지막 밤이 한 연수 기간 안, 대기·승인 상태인 다른 외박과 밤이 겹치면 거절. */
+export const DESTINATION_MAX = 100;
+export const ACCOMMODATION_MAX = 100;
+export const CONTACT_MAX = 30;
+export const COMPANION_MAX = 10;
+
+/** 같이 가는 학생 번호: 숫자만, 중복·자기 번호 제외 */
+export function parseCompanions(v: unknown, self: string): string[] {
+  const text = Array.isArray(v) ? v.map(String).join(' ') : typeof v === 'string' ? v : '';
+  return [...new Set(text.match(/\d+/g) ?? [])].filter((n) => n !== self);
+}
+
+/** 외박·여행 신청 확인. 출발일~마지막 밤이 한 연수 기간 안, 대기·승인 상태인 다른 외박과 밤이 겹치면 거절. */
 export function newOvernight(ctx: NewCtx, mine: Overnight[], input: OvernightInput): Outcome<Overnight> {
   const { from, until } = input;
   const reason = cleanReason(input.reason);
+  const destination = cleanReason(input.destination);
+  const accommodation = cleanReason(input.accommodation);
+  const contact = cleanReason(input.contact);
+  const companions = parseCompanions(input.companions, ctx.stId);
   if (!isDate(from) || !isDate(until)) return fail(400, 'invalid_date');
   if (until <= from) return fail(400, 'invalid_range');
+  if (!destination) return fail(400, 'destination_required');
+  if (destination.length > DESTINATION_MAX) return fail(400, 'destination_too_long');
+  if (accommodation.length > ACCOMMODATION_MAX) return fail(400, 'accommodation_too_long');
+  if (!contact) return fail(400, 'contact_required');
+  if (contact.length > CONTACT_MAX || !/^[0-9+()\-\s]{6,}$/.test(contact)) return fail(400, 'invalid_contact');
+  if (companions.length > COMPANION_MAX) return fail(400, 'too_many_companions');
+  if (companions.some((n) => !ctx.db.studentDetail(n))) return fail(400, 'invalid_companion');
   if (!reason) return fail(400, 'reason_required');
   if (reason.length > REASON_MAX) return fail(400, 'reason_too_long');
 
@@ -130,7 +165,7 @@ export function newOvernight(ctx: NewCtx, mine: Overnight[], input: OvernightInp
   if (!win) return fail(400, 'date_out_of_range');
   if (mine.some((o) => live(o.status) && o.from < until && from < o.until)) return fail(409, 'duplicate');
 
-  return done({ ...base(ctx, win.trId, reason), from, until }, 201);
+  return done({ ...base(ctx, win.trId, reason), from, until, destination, accommodation, contact, companions }, 201);
 }
 
 /** 학생 취소: 대기 중인 자기 신청만. */

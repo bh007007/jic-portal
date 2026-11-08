@@ -110,10 +110,12 @@ x = await api('GET', '/api/absences', tA);
 ok('신청 목록: 최신순 2건', x.status === 200 && x.body.rows.length === 2 && x.body.rows[0].id === abs2, x.body.rows?.map((y) => y.id));
 
 // ── 외박
-x = await api('POST', '/api/overnights', tA, { from: '2026-11-11', until: '2026-11-12', reason: '여행' });
-ok('외박 등록', x.status === 201 && x.body.from === '2026-11-11' && x.body.until === '2026-11-12', x);
+x = await api('POST', '/api/overnights', tA, { from: '2026-11-11', until: '2026-11-12', reason: '여행', destination: 'Baguio', contact: '+63 917 555 0000' });
+ok('외박 등록(여행 정보 저장)', x.status === 201 && x.body.from === '2026-11-11' && x.body.until === '2026-11-12' && x.body.destination === 'Baguio', x);
+const odb = await sql(`select destination, contact from public.overnight_permissions where id = $1`, [x.body.id]);
+ok('DB: 행선지·연락처', odb[0]?.destination === 'Baguio' && odb[0].contact === '+63 917 555 0000', odb);
 const ov = x.body.id;
-x = await api('POST', '/api/overnights', tA, { from: '2026-11-11', until: '2026-11-13', reason: '겹침' });
+x = await api('POST', '/api/overnights', tA, { from: '2026-11-11', until: '2026-11-13', reason: '겹침', destination: 'Baguio', contact: '+63 917 555 0000' });
 ok('겹치는 외박 409', x.status === 409 && x.body.error === 'duplicate', x);
 const ol = await api('GET', '/api/overnights', tA);
 ok('외박 목록에 박 수', ol.body.rows.find((y) => y.id === ov)?.nights === 1, ol.body.rows);

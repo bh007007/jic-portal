@@ -34,7 +34,7 @@ http://127.0.0.1:5177 을 연다. 가드 태블릿은 http://127.0.0.1:5177/guar
 | `/penalty-rules` | 패널티 점수표 | 위반별 점수·승인 권한, 경고 단계(1~3단계) 기준 점수 |
 | `/settings` | 통금·근무자 설정 | 통금 시각, 가드 태블릿 근무자 목록 |
 | `/requests/absences` | 결석 신청 처리 | 학생 앱에서 낸 결석 신청. 대기·승인·반려·학생 취소 탭, 결석일·캠퍼스·종류·학생 검색, 처리 메모(학생에게 보임)와 함께 승인·반려 |
-| `/requests/overnights` | 외박 신청 처리 | 학생 앱에서 낸 외박 신청. 같은 방식. 승인하면 그 밤들이 통금 확인에서 빠진다 |
+| `/requests/overnights` | 외박·여행 신청 처리 | 학생 앱에서 낸 외박·여행 신청. 같은 방식. 행선지·숙소·비상 연락처와 같이 가는 학생(이름, 그 학생도 같은 기간에 신청했는지)을 함께 본다. 승인하면 그 밤들이 통금 확인에서 빠진다 |
 | `/requests/life` | 생활 요청 처리 | 학생 앱에서 낸 생활 요청(시설 수리·방 변경·ID 카드 재발급·서류 발급·기타). 접수·처리 중·완료·반려·학생 취소 탭, 종류·캠퍼스·이름·내용 검색, 줄마다 답변(학생에게 보임)과 함께 처리 중·완료·반려 |
 
 메뉴의 나머지(전자결재, 양식·자료실, 사진 관리, 직원·부서, Staff 평가)는 '준비 중'이다. 패널티·외출·신청 표의 학생 이름은 Student File 로 이어진다. 디자인의 '논아카데믹 신청'은 '외박 신청'으로 시작했고, 여행 등 다른 종류가 생기면 같은 묶음에 더한다.
@@ -182,7 +182,7 @@ apps/intranet/
 
 ### 설정 순서 (레오 PC의 Claude)
 
-1. Supabase에 마이그레이션 `20261108100000_student_intranet.sql`, `20261108120000_student_request_ids.sql`, `20261108130000_intranet_deploy.sql`, `20261108140000_nonacademic_requests.sql`(생활 요청)을 차례로 적용한다.
+1. Supabase에 마이그레이션 `20261108100000_student_intranet.sql`, `20261108120000_student_request_ids.sql`, `20261108130000_intranet_deploy.sql`, `20261108140000_nonacademic_requests.sql`(생활 요청), `20261108150000_overnight_travel.sql`(외박·여행 정보)을 차례로 적용한다.
 2. 직원 계정은 관리자 앱과 같다(`staff_users`, `docs/setup-cloud.md` 1-4). 이름(`staff_users.name`)을 넣어 둔다(처리자·접근 기록에 남는다). 상담 기록을 볼 직원은 `staff_campuses`에 맡은 캠퍼스를 넣는다(예: `insert into staff_campuses values ('<user_id>', 'Challenger')`).
 3. **Workers & Pages → Create → Workers → Import a repository** → `jic-portal`
 

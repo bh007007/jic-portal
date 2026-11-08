@@ -4,7 +4,8 @@ import { Loading, PageTitle, StudentLink, Tabs } from '../components/ui';
 import { md, mdhm } from '../format';
 import { useSearchForm } from '../useSearchForm';
 
-// 학생 앱에서 낸 결석·외박 신청을 승인·반려한다. 처리 메모는 학생 앱 신청 상세에 그대로 보인다.
+// 학생 앱에서 낸 결석·외박(여행) 신청을 승인·반려한다. 처리 메모는 학생 앱 신청 상세에 그대로 보인다.
+// 외박·여행은 행선지·숙소·비상 연락처·같이 가는 학생(그 학생도 같은 기간에 신청했는지)을 함께 본다.
 type Kind = 'absences' | 'overnights';
 const KEYS = ['from', 'to', 'campus', 'kind', 'q'] as const;
 const KIND_LABEL: Record<string, string> = { sick: '병결', official: '공결', personal: '개인 사유' };
@@ -21,7 +22,7 @@ export default function Requests({ kind }: { kind: Kind }) {
   const [comment, setComment] = useState('');
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
-  const title = kind === 'absences' ? '결석 신청' : '외박 신청';
+  const title = kind === 'absences' ? '결석 신청' : '외박·여행 신청';
   const pending = tab === 'pending';
   const rows: { id: string }[] = (kind === 'absences' ? data?.absences : data?.overnights) ?? [];
   const allChecked = rows.length > 0 && rows.every((r) => selected.has(r.id));
@@ -193,7 +194,7 @@ export default function Requests({ kind }: { kind: Kind }) {
                       <th>박</th>
                     </>
                   )}
-                  <th className="left">사유</th>
+                  <th className="left">{kind === 'absences' ? '사유' : '행선지 · 사유 · 동행'}</th>
                   <th>제출</th>
                   {!pending && <th>상태</th>}
                   <th className={pending ? '' : 'left'}>{pending ? '처리' : '처리 시각 · 메모'}</th>
@@ -233,7 +234,28 @@ export default function Requests({ kind }: { kind: Kind }) {
                       </td>
                       <td>{r.campus}</td>
                       <td>{r.nights}</td>
-                      <td className="left memo-text">{r.reason}</td>
+                      <td className="left memo-text">
+                        {r.destination && (
+                          <div>
+                            <strong>{r.destination}</strong>
+                            {r.accommodation && <span className="muted"> · {r.accommodation}</span>}
+                          </div>
+                        )}
+                        {r.reason}
+                        {r.contact && <div className="muted small">연락처 {r.contact}</div>}
+                        {r.companionInfo.length > 0 && (
+                          <div className="small">
+                            동행{' '}
+                            {r.companionInfo.map((c, i) => (
+                              <span key={c.stId}>
+                                {i > 0 && ', '}
+                                <StudentLink stId={c.stId} name={c.name} />
+                                <span className={c.requested ? 'muted' : 'text-red'}>{c.requested ? '(신청함)' : '(신청 없음)'}</span>
+                              </span>
+                            ))}
+                          </div>
+                        )}
+                      </td>
                       <td className="nowrap">{mdhm(r.submittedAt)}</td>
                       {!pending && <td>{STATUS_LABEL[r.status]}</td>}
                       {actions(r)}
