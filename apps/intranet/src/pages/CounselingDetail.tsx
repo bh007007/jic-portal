@@ -5,7 +5,7 @@ import { Loading, PageTitle, StudentLink } from '../components/ui';
 import { mdhm, ymdhm } from '../format';
 import { FollowUp } from './Counseling';
 
-export const ACTION_LABEL: Record<string, string> = { view: '열람', create: '작성', update: '수정', followup_done: '후속 조치 완료', followup_reopen: '후속 조치 되돌림', account_create: '학생 계정 만들기', password_reset: '비밀번호 초기화' };
+export const ACTION_LABEL: Record<string, string> = { view: '열람', create: '작성', update: '수정', followup_done: '후속 조치 완료', followup_reopen: '후속 조치 되돌림', account_create: '학생 계정 만들기', password_reset: '비밀번호 초기화', guard_create: '가드 계정 만들기', guard_password: '가드 비밀번호 변경', guard_delete: '가드 계정 지우기' };
 
 /** 상세를 열 때마다 서버가 접근 기록('열람')을 남긴다. */
 export default function CounselingDetail() {

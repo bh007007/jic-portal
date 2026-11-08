@@ -1,5 +1,5 @@
 // 학생 앱·인트라넷 마이그레이션(20261108100000_student_intranet.sql, 20261108120000_student_request_ids.sql,
-// 20261108140000_nonacademic_requests.sql, 20261108150000_overnight_travel.sql, 20261108160000_school_trips.sql, 20261108170000_keycard_qr.sql, 20261108180000_student_account_admin.sql)의 권한 시험.
+// 20261108140000_nonacademic_requests.sql, 20261108150000_overnight_travel.sql, 20261108160000_school_trips.sql, 20261108170000_keycard_qr.sql, 20261108180000_student_account_admin.sql, 20261108190000_guard_account_admin.sql)의 권한 시험.
 // 실제 Postgres(PGlite, WebAssembly)에 Supabase 흉내(auth.uid, anon/authenticated/service_role)를 만들고
 // 마이그레이션을 두 번 실행한 뒤(여러 번 실행 가능 확인) 역할별로 읽기·쓰기를 시험한다. 데이터는 전부 가짜.
 //
@@ -43,6 +43,9 @@ await db.exec(mig('20261108170000_keycard_qr.sql'));
 await db.exec(mig('20261108170000_keycard_qr.sql'));
 await db.exec(mig('20261108180000_student_account_admin.sql'));
 await db.exec(mig('20261108180000_student_account_admin.sql'));
+await db.exec(mig('20261108190000_guard_account_admin.sql'));
+await db.exec(mig('20261108190000_guard_account_admin.sql'));
+await db.exec(mig('20261108180000_student_account_admin.sql')); // 앞 파일을 다시 실행해도 가드 종류가 지워지지 않는지
 ok('마이그레이션 2회 실행', true);
 
 // ── 가짜 사용자
@@ -432,6 +435,17 @@ await as(U.guardC, async () => denied('가드는 계정 접근 기록 함수 못
 await as(null, async () => denied('익명은 계정 접근 기록 함수 못 씀', `select student_account_audit('account_create', '1001', 'Challenger')`, PERM));
 const sp = await q(`select proname, proconfig from pg_proc where proname in ('manila_today', 'near_now')`);
 ok('manila_today·near_now search_path 고정(보안 점검)', sp.length === 2 && sp.every((r) => (r.proconfig ?? []).some((c) => c.startsWith('search_path='))), JSON.stringify(sp));
+
+// ── 가드 계정 관리: 만들기·비밀번호·지우기 접근 기록은 직원만(학생번호 없음, 대상 = 출입구 이름)
+await as(U.staffC, async () => {
+  await q(`select guard_account_audit('guard_create', 'Challenger 정문', 'Challenger')`);
+  const a = await one(`select actor_id::text, target, target_id, student_no from audit_logs where action = 'guard_create'`);
+  ok('직원: 가드 계정 접근 기록(대상 = 출입구, 학생번호 없음)', a?.actor_id === U.staffC && a.target === 'guard_account' && a.target_id === 'Challenger 정문' && a.student_no === '', JSON.stringify(a));
+  await denied('가드 종류만', `select guard_account_audit('password_reset', 'x', 'Challenger')`, /invalid_action/);
+  await denied('출입구 이름 필수', `select guard_account_audit('guard_delete', '  ', 'Challenger')`, /invalid_label/);
+});
+await as(U.guardC, async () => denied('가드는 가드 계정 접근 기록 함수 못 씀', `select guard_account_audit('guard_create', 'x', 'Challenger')`, /staff_only/));
+await as(U.stA, async () => denied('학생은 가드 계정 접근 기록 함수 못 씀', `select guard_account_audit('guard_create', 'x', 'Challenger')`, /staff_only/));
 
 // ── 익명, 서비스 키
 await as(null, async () => {
