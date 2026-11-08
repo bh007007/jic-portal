@@ -32,6 +32,9 @@ const read = (name) => {
   const f = path.join(dir, name);
   return fs.existsSync(f) ? fs.readFileSync(f, 'utf8').split('\n').filter((l) => l.trim()).map((l) => JSON.parse(l)) : [];
 };
+// 연장·변경 표에 올릴 열: apps/admin/server/core.ts 의 EXTENSION_COLUMNS·CHANGE_COLUMNS 와 같게 둔다(바꾸면 함께 바꾼다).
+const EXTENSION_COLUMNS = ['tr_id', 'tt_id', 'tt_start_date', 'tt_finish_date', 'tt_week', 'tt_memo', 'tt_insert_dt', 'sum_price', 'sum_amount', 'tr_currency'];
+const CHANGE_COLUMNS = ['tr_id', 'ic_id', 'prev_chg_course', 'chg_course', 'chg_course_date', 'prev_chg_dorm', 'chg_dorm', 'chg_dorm_date', 'rqp_cnt'];
 const PLAN = [
   ['legacy_students', 'students.ndjson', (r) => r.st_id],
   ['legacy_enrollments', 'enrollments.ndjson', (r) => r.tr_id],
@@ -44,6 +47,12 @@ const PLAN = [
   // 포인트 내역은 고유 번호가 없어 연수·시각·구분·순번으로 만든다. 화면에 쓰는 열만 올린다(apps/admin/server/core.ts POINT_HISTORY_COLUMNS).
   ['legacy_point_history', 'point_history.ndjson', (r, i) => `${r.tr_id}-${r.dt}-${r.type}-${i}`,
     ['tr_id', 'type', 'dt', 'point', 'php', 'ec_name', 'nickname', 'memo', 'campus']],
+  // 연장·변경(20261109030000_legacy_extend.sql). 화면에 쓰는 열만 올린다(core.ts EXTENSION_COLUMNS·CHANGE_COLUMNS, 입금 은행명·연락처는 빼고).
+  // 표가 아직 없으면(마이그레이션 적용 전) 건너뛴다.
+  ['legacy_extensions', 'extend.ndjson', (r) => r.tt_id, EXTENSION_COLUMNS, { optional: true }],
+  ['legacy_course_changes', 'change_course.ndjson', (r) => r.ic_id, CHANGE_COLUMNS, { optional: true }],
+  ['legacy_dorm_changes', 'change_dorm.ndjson', (r) => r.ic_id, CHANGE_COLUMNS, { optional: true }],
+  ['legacy_comebacks', 'change_comeback.ndjson', (r) => r.ic_id, CHANGE_COLUMNS, { optional: true }],
 ];
 // 예전 형식 service_role 키(eyJ…)는 Authorization 에도 넣고, 새 형식(sb_secret_…)은 apikey 헤더만 쓴다.
 const headers = { apikey: key, 'Content-Type': 'application/json', ...(key.startsWith('eyJ') ? { Authorization: `Bearer ${key}` } : {}) };
@@ -53,7 +62,15 @@ async function call(method, table, query, body, extra = {}) {
   if (!r.ok) throw new Error(`${table} ${method} ${r.status}: ${await r.text()}`);
 }
 
-async function upload(table, rows) {
+async function upload(table, rows, { optional = false } = {}) {
+  if (optional) {
+    try {
+      await call('GET', table, '?select=id&limit=1');
+    } catch (e) {
+      if (/ 404: |PGRST205|does not exist/.test(String(e.message))) return console.log(`${table}: 표 없음(마이그레이션 적용 전), 건너뜀`);
+      throw e;
+    }
+  }
   if (opt('--replace')) await call('DELETE', table, '?id=not.is.null');
   for (let i = 0; i < rows.length; i += 500) {
     await call('POST', table, '', rows.slice(i, i + 500), { Prefer: 'resolution=merge-duplicates,return=minimal' });
@@ -62,7 +79,7 @@ async function upload(table, rows) {
 }
 
 console.log('업로드 대상 폴더:', path.relative(root, dir));
-for (const [table, file, idOf, cols] of PLAN) {
+for (const [table, file, idOf, cols, how] of PLAN) {
   const byId = new Map();
   read(file).forEach((r, i) => {
     const id = idOf(r, i);
@@ -72,7 +89,7 @@ for (const [table, file, idOf, cols] of PLAN) {
     const data = Object.fromEntries(entries.filter(([k]) => !/^bk_|_acct_(bank|num|owner)$/.test(k)));
     byId.set(String(id), { id: String(id), data });
   });
-  await upload(table, [...byId.values()]);
+  await upload(table, [...byId.values()], how);
 }
 const metaFile = path.join(dir, 'meta.json');
 if (fs.existsSync(metaFile)) await upload('legacy_meta', [{ id: 'current', data: JSON.parse(fs.readFileSync(metaFile, 'utf8')) }]);
