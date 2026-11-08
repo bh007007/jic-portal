@@ -48,6 +48,7 @@ PR이 CI를 통과하면 GitHub에서 **Merge pull request**를 누르거나 Cla
 | 6 | 학생 포털 로그인 시험 | https://jic-student.bh007007.workers.dev 에서 샘플 학생번호 + 생년월일 8자리로 로그인한다. 값은 `data-sample/tables/students.ndjson`의 `st_id`·`st_birthday`(가짜 데이터). 1번을 마친 뒤 한다 | 첫 로그인 → 비밀번호 변경 → 홈 |
 | 7-1 | 업체 포털 연장·변경 추출 | 업체 포털에 로그인한 브라우저의 Console에 `scripts/extract/portal-extract-extend.js`를 붙여 넣는다(2~5분, 읽기 전용). 받은 파일은 `data/raw/`로 옮긴다 | 관리자 포털 '연장 현황'·'변경 이력'(업체 마케팅 > 연장현황, 신입·연장·복귀·변경) |
 | 7 | 업체 포털 출석 추출 | 업체 포털(jicportal.com)에 관리자로 로그인한 브라우저의 Console에 `scripts/extract/portal-extract-attendance.js`를 붙여 넣는다(지난 90일, 5~15분, 읽기 전용, 비밀번호·급여·계좌·메모 열은 받지 않음). 받은 파일은 `data/raw/`로 옮긴다 | 강사 포털 출석을 업체 기록으로 이어 가려면(교사·교실·출석·마감). LMS 구조 조사는 11/9 회계 세션이 마쳤다 |
+| 8 | 썸머 매니저 공동 개발 준비 | ① Supabase에 계정 만들기 + `staff_users` 등록, ② GitHub `bh007007/jic-portal` → Settings → Collaborators에서 Write로 초대. 순서·SQL은 `HANDOFF.md` 0장 | 썸머 매니저가 미리 보기 주소를 열어 보고, 브랜치·PR로 같이 개발한다. 실제 데이터·secret 키는 넘기지 않는다 |
 
 ## 결정할 것
 
