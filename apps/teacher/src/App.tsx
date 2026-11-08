@@ -14,6 +14,8 @@ import More from './pages/More';
 import TestTypes from './pages/TestTypes';
 import Staff from './pages/Staff';
 import Absences from './pages/Absences';
+import Attendance from './pages/Attendance';
+import AttendanceSession from './pages/AttendanceSession';
 import NotReady from './pages/NotReady';
 
 export default function App() {
@@ -44,7 +46,8 @@ export default function App() {
         <Route path="/tests" element={me.isManager ? <TestTypes /> : <Navigate to="/more" replace />} />
         <Route path="/staff" element={me.isManager ? <Staff /> : <Navigate to="/more" replace />} />
         <Route path="/absences" element={<Absences />} />
-        <Route path="/attendance" element={<NotReady title={t('attendance')} />} />
+        <Route path="/attendance" element={<Attendance />} />
+        <Route path="/attendance/:id" element={<AttendanceSession />} />
         <Route path="*" element={<NotReady title={t('noPage')} />} />
       </Routes>
     </Layout>

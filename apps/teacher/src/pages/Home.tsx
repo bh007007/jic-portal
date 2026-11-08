@@ -1,6 +1,6 @@
 import { Link } from 'react-router-dom';
 import { useAuth } from '../auth';
-import { loadAbsences, loadHolidays, loadRecentResults, loadStudents } from '../data';
+import { loadAbsences, loadHolidays, loadRecentResults, loadSessions, loadStudents } from '../data';
 import { useT } from '../i18n';
 import { manilaToday } from '../supabase';
 import { AbsenceRow, PageHead, Section, fmtDate, useLoad } from '../ui';
@@ -14,6 +14,10 @@ export default function Home() {
   const absences = useLoad(() => loadAbsences(), []);
   const in14 = new Date(Date.parse(today) + 14 * 864e5).toISOString().slice(0, 10);
   const holidays = useLoad(() => loadHolidays(today, in14), []);
+  const sessions = useLoad(() => loadSessions(today), []);
+  const mine = (sessions.data ?? []).filter((s) => s.mine);
+  const shown = mine.length ? mine : (sessions.data ?? []);
+  const unchecked = shown.reduce((a, s) => a + (s.closed ? 0 : s.students - s.checked), 0);
   const current = (students.data ?? []).filter((s) => s.start_date <= today);
   const arriving = (students.data ?? []).filter((s) => s.start_date > today);
   const nameOf = new Map((students.data ?? []).map((s) => [s.student_no, s.name]));
@@ -39,8 +43,30 @@ export default function Home() {
         </Section>
       )}
 
-      <Section title={t('todayClass')}>
-        <p className="muted">{t('todayClassNote')}</p>
+      <Section title={t('todayClass')} extra={<Link to="/attendance" className="more">{t('openAttendance')}</Link>}>
+        {sessions.loading ? (
+          <p className="muted">{t('loading')}</p>
+        ) : sessions.error ? (
+          <p className="err">{sessions.error}</p>
+        ) : shown.length === 0 ? (
+          <p className="muted">{t('noClassToday')}</p>
+        ) : (
+          <>
+            <p className={unchecked ? 'warn' : 'muted'}>
+              {[mine.length ? t('myClassesToday', { n: mine.length }) : t('people', { n: shown.reduce((a, s) => a + s.students, 0) }), unchecked ? t('uncheckedN', { n: unchecked }) : ''].filter(Boolean).join(' · ')}
+            </p>
+            {mine.length > 0 && (
+              <ul className="rows">
+                {mine.map((s) => (
+                  <li key={s.id}>
+                    <Link to={`/attendance/${s.id}`}>{s.start_time.slice(0, 5)} · {s.room || s.campus}</Link>
+                    <span className={s.closed ? 'muted' : s.checked < s.students ? 'warn' : 'ok'}>{s.closed ? t('closed') : t('checkedOf', { c: s.checked, n: s.students })}</span>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </>
+        )}
       </Section>
 
       <Section title={t('todayAbsences')} extra={<Link to="/absences" className="more">{t('byDate')}</Link>}>

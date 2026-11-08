@@ -49,7 +49,7 @@ button, input, select { font: inherit; }
 .sec-head { display: flex; align-items: baseline; justify-content: space-between; gap: 8px; }
 .sec-head h2 { margin: 0; font-size: 14px; font-weight: 700; }
 .sec p { margin: 0; }
-.more { font-size: 12px; text-decoration: none; }
+.more { font-size: 12px; text-decoration: none; white-space: nowrap; }
 
 /* 버튼·입력 */
 .btn { display: inline-flex; align-items: center; justify-content: center; height: 32px; padding: 0 12px; border: 1px solid #c5cad2; border-radius: 3px; background: #fff; color: #333; font-size: 13px; text-decoration: none; cursor: pointer; white-space: nowrap; }
@@ -140,3 +140,23 @@ input.bad { border-color: var(--red); background: #fdf1f1; }
   .row2, .row3 { grid-template-columns: 1fr; }
   .filters { grid-template-columns: 1fr; }
 }
+
+/* 출석 체크 */
+.day-nav { display: grid; grid-template-columns: 40px minmax(0, 1fr) 40px auto; gap: 6px; margin-bottom: 8px; }
+.day-nav .btn { height: 38px; padding: 0 8px; font-size: 16px; }
+label.check { display: flex; align-items: center; gap: 6px; font-size: 13px; color: var(--ink-2); white-space: nowrap; }
+label.check input { width: 18px; height: 18px; margin: 0; }
+.close-bar { display: flex; flex-direction: column; gap: 6px; margin-top: 10px; padding: 8px 12px; background: #fff; border: 1px solid var(--line); }
+.close-bar > div { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+.att { list-style: none; margin: 0; padding: 0; }
+.att li { display: flex; flex-direction: column; gap: 6px; padding: 10px 0; border-top: 1px solid var(--line-3); }
+.att li:first-child { border-top: 0; }
+.att-who { display: flex; flex-direction: column; gap: 1px; min-width: 0; }
+.att-ctl { display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: center; gap: 6px 8px; }
+.att-ctl .seg { grid-column: 1 / -1; }
+.att-ctl input[type='number'] { width: 100%; }
+.att-seg button { height: 40px; }
+.att-seg button:disabled { cursor: default; }
+.att-seg button.att-AB[aria-selected='true'] { background: var(--red); }
+.att-seg button.att-TA[aria-selected='true'] { background: #9a5b00; }
+.holiday { margin: 0 0 6px; color: var(--red); font-size: 12px; }
