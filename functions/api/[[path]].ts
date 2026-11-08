@@ -61,6 +61,16 @@ async function readAll(c: Conf, table: string): Promise<Raw[]> {
   return out;
 }
 
+// 나중에 더한 표(연장·변경, 20261109030000_legacy_extend.sql)는 마이그레이션 전에도 나머지 화면이 동작하도록 표가 없으면 빈 목록으로 본다.
+async function readOptional(c: Conf, table: string): Promise<Raw[]> {
+  try {
+    return await readAll(c, table);
+  } catch (e) {
+    if (e instanceof HttpError && /Supabase 404|PGRST205|does not exist/.test(e.message)) return [];
+    throw e;
+  }
+}
+
 // 화면을 옮길 때마다 전체를 다시 읽지 않도록 같은 토큰의 결과를 1분간 보관한다(토큰별이라 사용자끼리 섞이지 않음).
 const cache = new Map<string, { at: number; db: Db }>();
 
@@ -72,7 +82,7 @@ async function loadDb(c: Conf): Promise<Db> {
   const staff = await rest<boolean>(c, 'rpc/is_staff', { method: 'POST', body: '{}' });
   if (staff !== true) throw new HttpError(403, '직원 계정으로 등록되지 않았습니다. 관리자에게 등록을 요청하세요.');
 
-  const [metaRows, enrollments, students, invoices, dorms, agencies, agents, deposits, pointHistory, rooms] = await Promise.all([
+  const [metaRows, enrollments, students, invoices, dorms, agencies, agents, deposits, pointHistory, rooms, extensions, courseChanges, dormChanges, comebacks] = await Promise.all([
     rest<{ data: Raw }[]>(c, 'legacy_meta?select=data&id=eq.current'),
     readAll(c, 'legacy_enrollments'),
     readAll(c, 'legacy_students'),
@@ -83,6 +93,10 @@ async function loadDb(c: Conf): Promise<Db> {
     readAll(c, 'legacy_deposits'),
     readAll(c, 'legacy_point_history'),
     readAll(c, 'legacy_rooms'),
+    readOptional(c, 'legacy_extensions'),
+    readOptional(c, 'legacy_course_changes'),
+    readOptional(c, 'legacy_dorm_changes'),
+    readOptional(c, 'legacy_comebacks'),
   ]);
   const db = createDb({
     meta: metaRows[0]?.data ?? { counts: {}, extracted_at: null },
@@ -95,6 +109,10 @@ async function loadDb(c: Conf): Promise<Db> {
     deposits,
     pointHistory,
     rooms,
+    extensions,
+    courseChanges,
+    dormChanges,
+    comebacks,
   });
 
   for (const [k, v] of cache) if (now - v.at >= TTL) cache.delete(k);

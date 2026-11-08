@@ -29,3 +29,4 @@ jobs:
       - run: node supabase/tests/user_directory_rls.mjs
       - run: node supabase/tests/attendance_rls.mjs
       - run: node supabase/tests/roles_rls.mjs
+      - run: node supabase/tests/legacy_extend_rls.mjs
