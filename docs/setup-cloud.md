@@ -109,6 +109,14 @@ Cloudflare는 이미 Pages 프로젝트에 연결된 저장소로 Pages 프로�
 
 파트너 포털과 같은 Workers 방식이지만 정적 파일에 `/api` 서버 코드가 붙는다(`apps/student/wrangler.jsonc`, `apps/student/worker/index.ts`). Project name `jic-student`, Build command `npm run student:build`, Deploy command `npx wrangler deploy --config apps/student/wrangler.jsonc`. 빌드 변수 외에 실행 변수(`SUPABASE_URL`, `SUPABASE_ANON_KEY`, Secret `SUPABASE_SERVICE_ROLE_KEY`)가 필요하다. 순서와 확인 방법은 `docs/student-app.md` '배포'.
 
+### 강사 포털 LMS (위 Pages 프로젝트 안 `/teacher`)
+
+- 따로 프로젝트를 만들지 않는다. 같은 주소라 직원은 한 번 로그인으로 오간다(원칙 C6).
+- Pages 빌드 명령 끝에 강사 포털 빌드를 붙인다: `npm run portal:build && npm run teacher:portal --if-present`. 출력은 `apps/admin/dist/teacher`다.
+- 서버 코드는 없고 `functions/teacher/[[path]].ts`가 화면 주소만 강사 포털 `index.html`로 보낸다. 데이터는 Supabase RLS다.
+- 변수는 관리자 앱과 같은 `VITE_SUPABASE_URL`·`VITE_SUPABASE_ANON_KEY`를 쓴다.
+- 마이그레이션은 `20261108200000_teacher_portal.sql`, `20261108220000_lms_absences.sql`이다. 순서는 `docs/teacher-portal.md`.
+
 ### 인트라넷 (위 Pages 프로젝트 안 `/intranet`)
 
 인트라넷은 따로 프로젝트를 만들지 않고 이 Pages 프로젝트 주소 아래 `/intranet/`에 함께 올린다(11/8 결정, 한 번 로그인으로 오간다). 위 2번 표의 Build command(`npm run admin:build`)가 인트라넷까지 빌드하므로 빌드 설정은 그대로 두고, Variables and Secrets 에 **Secret** `SUPABASE_SERVICE_ROLE_KEY` 만 더한다(가드 태블릿만 씀. 없어도 직원 화면은 동작). 서버 코드는 `functions/intranet/`. 가드 공용 계정(출입구마다)은 Authentication에서 만든 뒤 `guard_accounts`에 잇는다. 순서는 `docs/intranet.md` '배포'.
