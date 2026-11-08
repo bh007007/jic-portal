@@ -21,7 +21,7 @@
 - **`data-sample/`**: `scripts/make-sample-data.mjs`로만 바꾼다. 새 필드는 별도 시드로 만들어 기존 학생·연수 값이 바뀌지 않게 한다.
 - **학생 신청 공용 모듈**: 결석·외박 신청의 모양과 규칙은 `apps/student/server/requests.ts`, 생활 요청은 `apps/student/server/lifeRequests.ts`, 학교 여행은 `apps/student/server/trips.ts` 한 곳이다. 인트라넷이 승인·반려에 같이 쓰고, 로컬에서는 같은 파일(`.local-db/student`)을 연다. LMS가 결석 승인을 맡게 되면 같은 모듈을 쓴다.
 - **학생 앱·인트라넷의 관리자 core 의존**: `apps/student`와 `apps/intranet`은 `apps/admin/server/core.ts`의 `createDb`·`studentDetail`과 `server/localData.ts`의 `loadDir`을 가져다 쓴다. 이 응답 모양을 바꾸면 `npm run student:build`도 확인한다(CI가 함께 빌드한다).
-- **인트라넷은 포털 주소 아래(`/intranet`)**: Pages 빌드는 `npm run portal:build`(관리자 앱 빌드 뒤 인트라넷을 `apps/admin/dist/intranet`에 넣음). 관리자 앱의 출력 폴더나 `/intranet` 경로를 바꾸면 인트라넷 담당에게 알린다. 로그인 저장 키는 두 앱 모두 Supabase 기본값(같은 주소라 한 번 로그인).
+- **인트라넷은 포털 주소 아래(`/intranet`)**: 루트 `admin:build`가 관리자 앱 빌드 뒤 인트라넷을 `apps/admin/dist/intranet`에 넣는다(11/8, Cloudflare 빌드 설정을 바꾸지 않으려고 인트라넷 담당이 이 줄에 더함). 관리자 앱의 출력 폴더나 `/intranet` 경로를 바꾸면 인트라넷 담당에게 알린다. 로그인 저장 키는 두 앱 모두 Supabase 기본값(같은 주소라 한 번 로그인).
 - **개발 서버 포트**: 관리자 5173(샘플 데이터 실행 5174), 파트너 5175, 학생 5176, 인트라넷 5177. 새 앱은 5178부터.
 
 ## 데이터베이스 규칙
