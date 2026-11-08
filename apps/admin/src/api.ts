@@ -184,6 +184,123 @@ export interface Arrivals {
   rows: ArrivalRow[];
 }
 
+export interface StatusCounts {
+  current: number;
+  upcoming: number;
+  graduated: number;
+  all: number;
+}
+
+export interface AgencyOption {
+  id: string;
+  name: string;
+  count: number;
+}
+
+export interface CurrencyAmount {
+  currency: string;
+  amount: number;
+}
+
+/** 연수 한 건의 회계 요약. 인보이스 총액은 추출본에 없어 넣지 않는다. */
+export interface InvoiceRow extends EnrollmentRow {
+  agId: string;
+  currency: string;
+  hasInvoice: boolean;
+  paid: number;
+  pointIn: number;
+  pointOut: number;
+  pointBalance: number;
+  dueDate: string;
+  pointClear: boolean;
+  roomClear: boolean;
+}
+
+export interface InvoiceList extends Paged<InvoiceRow> {
+  tab: string;
+  tabCounts: StatusCounts;
+  facets: { campuses: string[]; nations: string[]; currencies: string[]; agencies: AgencyOption[] };
+  totals: { byPay: NameCount[]; paidByCurrency: CurrencyAmount[] };
+}
+
+export interface UnpaidList extends Paged<InvoiceRow> {
+  scope: string;
+  scopeCounts: StatusCounts;
+  views: { unpaid: number; ledger: number };
+  facets: { campuses: string[]; currencies: string[]; agencies: AgencyOption[] };
+  totals: { byPay: NameCount[]; overdue: number; paidByCurrency: CurrencyAmount[] };
+}
+
+export interface DepositRow {
+  dpId: string;
+  date: string;
+  name: string;
+  agency: string;
+  currency: string;
+  amount: number;
+  fee: number;
+  total: number;
+  matches: number;
+  matched: number;
+  matchedCurrency: string;
+  balance: number;
+  confirmed: boolean;
+  memo: string;
+}
+
+export interface DepositList extends Paged<DepositRow> {
+  available: boolean;
+  views: { unpaid: number; ledger: number };
+  facets: { currencies: string[] };
+  totals: { none: number; open: number; done: number; amountByCurrency: CurrencyAmount[] };
+}
+
+export interface PointList extends Paged<InvoiceRow> {
+  view: 'balance' | 'clear';
+  within: number;
+  until: string;
+  tabCounts: { balance: number; clear: number };
+  facets: { campuses: string[]; nations: string[] };
+  totals: { withBalance: number; pointIn: number; pointOut: number; notCleared: number };
+}
+
+export interface CodeRow {
+  campus: string;
+  name: string;
+  current: number;
+  upcoming: number;
+  students: number;
+  assigned: number;
+  staying: number;
+  lastStart: string;
+}
+
+export interface CodeList extends Paged<CodeRow> {
+  kind: 'course' | 'dorm';
+  tabCounts: { course: number; dorm: number };
+  facets: { campuses: string[] };
+}
+
+export interface BatchRow {
+  batch: string;
+  date: string;
+  start: string;
+  total: number;
+  cancelled: number;
+  byCampus: Record<string, number>;
+  upcoming: boolean;
+  linkable: boolean;
+}
+
+export interface BatchList extends Paged<BatchRow> {
+  tab: string;
+  tabCounts: { upcoming: number; past: number; all: number };
+  campuses: string[];
+  campusStats: { name: string; current: number; upcoming: number; total: number; nextBatch: string }[];
+  facets: { years: string[] };
+  people: number;
+}
+
 export function useApi<T>(url: string | null) {
   const [state, setState] = useState<{ data: T | null; error: string | null; loading: boolean }>({ data: null, error: null, loading: !!url });
 

@@ -15,6 +15,8 @@ export interface DataInput {
   dorms: Raw[];
   agencies: Raw[];
   agents: Raw[];
+  /** 업체 포털 입금액 매칭 원장(deposits). 배포 환경(Supabase)에는 아직 없어 비어 있을 수 있다. */
+  deposits?: Raw[];
 }
 
 const CANCELLED = /캔슬|거절|취소|연기|홀드|요청/;
@@ -62,6 +64,11 @@ function paginate<T>(list: T[], q: URLSearchParams) {
 const PICK_TYPES: Record<string, string> = { BESA: 'BESA 그룹', INDIVIDUAL: '개별 픽업', NO_PICKUP: '개인 이동' };
 const pickLabel = (v: unknown) => PICK_TYPES[str(v).toUpperCase()] ?? (str(v) || '미입력');
 
+// 연수의 courses·dorms 는 "이름(4w), 이름(8w)" 형식. 기숙사 이름 끝의 "(P)" 같은 한 글자 괄호는 캠퍼스 표시다.
+const stripWeeks = (s: string) => s.replace(/\(\d+\s*w\)\s*$/i, '').trim();
+const splitItems = (v: unknown) => [...new Set(str(v).split(/\s*,\s*/).map(stripWeeks).filter(Boolean))];
+const nameKey = (s: string) => s.replace(/(\s*\([A-Z]\))+\s*$/, '').replace(/\s+/g, '').toLowerCase();
+
 function maskEmail(v: unknown) {
   const s = String(v ?? '').trim();
   if (!s.includes('@')) return '';
@@ -88,6 +95,7 @@ const MEMO_FIELDS: [string, string][] = [
 
 export function createDb(input: DataInput) {
   const { meta, enrollments, students, invoices, dorms, agencies, agents } = input;
+  const deposits = (input.deposits ?? []).filter((d) => str(d.dp_use_yn).toUpperCase() !== 'N');
 
   const refDate: string = String(meta.extracted_at ?? new Date().toISOString()).slice(0, 10);
   const soonUntil = addDays(refDate, 14);
@@ -137,6 +145,15 @@ export function createDb(input: DataInput) {
   const studentById = new Map(students.map((s) => [String(s.st_id), s]));
 
   const memoText = (e: Raw) => MEMO_FIELDS.map(([k]) => e[k]).filter(Boolean).join(' ');
+
+  // 상태 탭별 기본 정렬: 재학은 졸업일, 입학 예정은 입학일 빠른 순, 졸업·전체는 최근 순.
+  type Dated = { start: string; end: string; name: string };
+  const TAB_SORT: Record<string, (a: Dated, b: Dated) => number> = {
+    current: (a, b) => a.end.localeCompare(b.end) || a.name.localeCompare(b.name),
+    upcoming: (a, b) => a.start.localeCompare(b.start) || a.name.localeCompare(b.name),
+    graduated: (a, b) => b.end.localeCompare(a.end),
+    all: (a, b) => b.start.localeCompare(a.start),
+  };
 
   function dashboard() {
     const cur = all.filter((x) => x.row.status === 'current');
@@ -216,13 +233,7 @@ export function createDb(input: DataInput) {
       });
     }
 
-    const sorters: Record<string, (a: Row, b: Row) => number> = {
-      current: (a, b) => a.end.localeCompare(b.end) || a.name.localeCompare(b.name),
-      upcoming: (a, b) => a.start.localeCompare(b.start) || a.name.localeCompare(b.name),
-      graduated: (a, b) => b.end.localeCompare(a.end),
-      all: (a, b) => b.start.localeCompare(a.start),
-    };
-    list = [...list].sort(sorters[tab] ?? sorters.all);
+    list = [...list].sort(TAB_SORT[tab] ?? TAB_SORT.all);
     return { refDate, tab, tabCounts, facets, ...paginate(list, q) };
   }
 
@@ -466,12 +477,320 @@ export function createDb(input: DataInput) {
     };
   }
 
+  // ── 회계: 연수별 인보이스 요약.
+  // sum_id_amount = 입금 매칭 합계, sum_pd_point/sum_pu_point = 포인트 충전/사용.
+  // 인보이스 총액은 추출본에 없다(sum_td_amount 는 총액이 아님). 총액·미수금은 만들지 않는다.
+  const PAY_NAMES = ['미납', '부분납', '완납'];
+  const nationOf = (r: { nation: string }) => r.nation || '미상';
+  const invAll = all.map(({ raw, row }) => {
+    const inv = invoiceByTr.get(row.trId);
+    const pointIn = num(inv?.sum_pd_point);
+    const pointOut = num(inv?.sum_pu_point);
+    return {
+      ...row,
+      agId: agencyIdOf(raw),
+      currency: str(inv?.tr_currency || raw.tr_currency),
+      hasInvoice: !!inv,
+      paid: num(inv?.sum_id_amount),
+      pointIn,
+      pointOut,
+      pointBalance: pointIn - pointOut,
+      dueDate: str(raw.tr_deposit_due_date).slice(0, 10),
+      pointClear: yes(raw.tr_point_clear_yn),
+      roomClear: yes(raw.tr_room_clear_yn),
+    };
+  });
+  type InvoiceRow = (typeof invAll)[number];
+
+  const statusCounts = (list: { status: Status }[]) => ({
+    current: list.filter((r) => r.status === 'current').length,
+    upcoming: list.filter((r) => r.status === 'upcoming').length,
+    graduated: list.filter((r) => r.status === 'graduated').length,
+    all: list.length,
+  });
+
+  const agencyFacet = (list: InvoiceRow[]) => {
+    const m = new Map<string, { id: string; name: string; count: number }>();
+    for (const r of list) {
+      if (!r.agId) continue;
+      const a = m.get(r.agId) ?? { id: r.agId, name: r.agency || r.agId, count: 0 };
+      a.count++;
+      m.set(r.agId, a);
+    }
+    return [...m.values()].sort((a, b) => a.name.localeCompare(b.name, 'ko'));
+  };
+
+  const sumByCurrency = <T>(list: T[], currencyOf: (t: T) => string, amountOf: (t: T) => number) => {
+    const m = new Map<string, number>();
+    for (const t of list) {
+      const v = amountOf(t);
+      if (!v) continue;
+      const c = currencyOf(t) || '-';
+      m.set(c, (m.get(c) ?? 0) + v);
+    }
+    return [...m.entries()].map(([currency, amount]) => ({ currency, amount })).sort((a, b) => a.currency.localeCompare(b.currency));
+  };
+
+  /** 이름·학생번호 검색(field=name|no). */
+  const byKeyword = <T extends { name: string; stId: string }>(list: T[], q: URLSearchParams) => {
+    const kw = (q.get('q') ?? '').trim().toLowerCase();
+    if (!kw) return list;
+    const field = q.get('field') ?? 'name';
+    return list.filter((r) => (field === 'no' ? r.stId : r.name).toLowerCase().includes(kw));
+  };
+
+  function listInvoices(q: URLSearchParams) {
+    const tab = q.get('tab') || 'current';
+    let list = tab === 'all' ? invAll : invAll.filter((r) => r.status === tab);
+    const facets = {
+      campuses: countBy(list, (r) => r.campus).map((c) => c.name),
+      nations: countBy(list, nationOf).map((n) => n.name),
+      currencies: countBy(list.filter((r) => r.currency), (r) => r.currency).map((c) => c.name),
+      agencies: agencyFacet(list),
+    };
+    const campus = q.get('campus'), nation = q.get('nation'), pay = q.get('pay'), currency = q.get('currency'), agency = q.get('agency');
+    if (campus) list = list.filter((r) => r.campus === campus);
+    if (nation) list = list.filter((r) => nationOf(r) === nation);
+    if (pay) list = list.filter((r) => r.pay === pay);
+    if (currency) list = list.filter((r) => r.currency === currency);
+    if (agency) list = list.filter((r) => r.agId === agency);
+    list = [...byKeyword(list, q)].sort(TAB_SORT[tab] ?? TAB_SORT.all);
+    const totals = {
+      byPay: PAY_NAMES.map((name) => ({ name, count: list.filter((r) => r.pay === name).length })),
+      paidByCurrency: sumByCurrency(list, (r) => r.currency, (r) => r.paid),
+    };
+    return { refDate, tab, tabCounts: statusCounts(invAll), facets, totals, ...paginate<InvoiceRow>(list, q) };
+  }
+
+  /** 미납·부분납 연수. 입학일 기준 정렬(sort=asc|desc). 취소된 연수는 뺀다. */
+  const unpaidAll = invAll.filter((r) => r.status !== 'cancelled' && (r.pay === '미납' || r.pay === '부분납'));
+  function listUnpaid(q: URLSearchParams) {
+    const scope = q.get('scope') || 'upcoming';
+    let list = scope === 'all' ? unpaidAll : unpaidAll.filter((r) => r.status === scope);
+    const facets = {
+      campuses: countBy(list, (r) => r.campus).map((c) => c.name),
+      currencies: countBy(list.filter((r) => r.currency), (r) => r.currency).map((c) => c.name),
+      agencies: agencyFacet(list),
+    };
+    const campus = q.get('campus'), pay = q.get('pay'), currency = q.get('currency'), agency = q.get('agency');
+    if (campus) list = list.filter((r) => r.campus === campus);
+    if (pay) list = list.filter((r) => r.pay === pay);
+    if (currency) list = list.filter((r) => r.currency === currency);
+    if (agency) list = list.filter((r) => r.agId === agency);
+    const dir = q.get('sort') === 'desc' ? -1 : 1;
+    list = [...byKeyword(list, q)].sort((a, b) => dir * a.start.localeCompare(b.start) || a.name.localeCompare(b.name));
+    const totals = {
+      byPay: PAY_NAMES.slice(0, 2).map((name) => ({ name, count: list.filter((r) => r.pay === name).length })),
+      overdue: list.filter((r) => r.dueDate && r.dueDate < refDate).length,
+      paidByCurrency: sumByCurrency(list, (r) => r.currency, (r) => r.paid),
+    };
+    return { refDate, scope, scopeCounts: statusCounts(unpaidAll), views: viewCounts(), facets, totals, ...paginate<InvoiceRow>(list, q) };
+  }
+
+  // ── 입금 원장(업체 포털 입금액 매칭). 받는 계좌(bk_*) 정보는 내보내지 않는다.
+  const depositAll = deposits
+    .map((d) => ({
+      dpId: str(d.dp_id),
+      date: str(d.dp_deposit_dt).slice(0, 10),
+      name: str(d.dp_name),
+      agency: str(d.match_ag_name),
+      currency: str(d.dp_currency),
+      amount: num(d.dp_amount),
+      fee: num(d.dp_fee),
+      total: num(d.dp_amount_total),
+      matches: num(d.cnt),
+      matched: num(d.sum_id_amount),
+      matchedCurrency: str(d.id_currency),
+      balance: num(d.balance),
+      confirmed: yes(d.dp_confirm_yn),
+      memo: str(d.dp_memo),
+    }))
+    .sort((a, b) => b.date.localeCompare(a.date) || b.dpId.localeCompare(a.dpId, undefined, { numeric: true }));
+  type DepositRow = (typeof depositAll)[number];
+  const matchState = (d: DepositRow) => (d.matches === 0 ? 'none' : d.balance !== 0 ? 'open' : 'done');
+
+  function listDeposits(q: URLSearchParams) {
+    let list = depositAll;
+    const facets = { currencies: countBy(list.filter((d) => d.currency), (d) => d.currency).map((c) => c.name) };
+    const from = q.get('from'), to = q.get('to'), currency = q.get('currency'), match = q.get('match'), confirm = q.get('confirm');
+    const kw = (q.get('q') ?? '').trim().toLowerCase();
+    if (from) list = list.filter((d) => d.date >= from);
+    if (to) list = list.filter((d) => d.date <= to);
+    if (currency) list = list.filter((d) => d.currency === currency);
+    if (match) list = list.filter((d) => matchState(d) === match);
+    if (confirm) list = list.filter((d) => d.confirmed === (confirm === 'Y'));
+    if (kw) list = list.filter((d) => (q.get('field') === 'agency' ? d.agency : d.name).toLowerCase().includes(kw));
+    const totals = {
+      none: list.filter((d) => matchState(d) === 'none').length,
+      open: list.filter((d) => matchState(d) === 'open').length,
+      done: list.filter((d) => matchState(d) === 'done').length,
+      amountByCurrency: sumByCurrency(list, (d) => d.currency, (d) => d.amount),
+    };
+    return { refDate, available: depositAll.length > 0, views: viewCounts(), facets, totals, ...paginate<DepositRow>(list, q) };
+  }
+  /** 입금 매칭 화면의 두 탭 건수. */
+  const viewCounts = () => ({ unpaid: unpaidAll.length, ledger: depositAll.length });
+
+  // ── 포인트: 재학생 잔액(view=balance), 졸업 예정자 정산(view=clear).
+  const WITHIN = [7, 14, 28, 56];
+  function points(q: URLSearchParams) {
+    const view = q.get('view') === 'clear' ? 'clear' : 'balance';
+    const within = WITHIN.includes(Number(q.get('within'))) ? Number(q.get('within')) : 14;
+    const until = addDays(refDate, within);
+    const clear = q.get('clear') || 'N';
+    const current = invAll.filter((r) => r.status === 'current');
+    const graduating = current.filter((r) => r.end <= until);
+    const pending = graduating.filter((r) => !r.pointClear);
+
+    let list = view === 'clear' ? (clear === 'N' ? pending : graduating) : current;
+    const facets = { campuses: countBy(list, (r) => r.campus).map((c) => c.name), nations: countBy(list, nationOf).map((n) => n.name) };
+    const campus = q.get('campus'), nation = q.get('nation'), has = q.get('has');
+    if (campus) list = list.filter((r) => r.campus === campus);
+    if (nation) list = list.filter((r) => nationOf(r) === nation);
+    if (has === 'Y') list = list.filter((r) => r.pointBalance > 0);
+    if (has === 'N') list = list.filter((r) => r.pointBalance <= 0);
+    list = [...byKeyword(list, q)].sort(
+      view === 'clear'
+        ? (a, b) => a.end.localeCompare(b.end) || a.name.localeCompare(b.name)
+        : (a, b) => b.pointBalance - a.pointBalance || a.end.localeCompare(b.end) || a.name.localeCompare(b.name),
+    );
+    const totals = {
+      withBalance: list.filter((r) => r.pointBalance > 0).length,
+      pointIn: list.reduce((s, r) => s + r.pointIn, 0),
+      pointOut: list.reduce((s, r) => s + r.pointOut, 0),
+      notCleared: list.filter((r) => !r.pointClear).length,
+    };
+    return { refDate, view, within, until, tabCounts: { balance: current.length, clear: pending.length }, facets, totals, ...paginate<InvoiceRow>(list, q) };
+  }
+
+  // ── 기초관리: 코스·기숙사 목록. 연수의 courses·dorms 문자열과 기숙사 배정(do_name)을 캠퍼스별로 묶는다.
+  type CodeAcc = { campus: string; name: string; students: Set<string>; current: Set<string>; upcoming: Set<string>; staying: Set<string>; assigned: number; lastStart: string };
+  const codeCache = new Map<string, ReturnType<typeof buildCodes>>();
+  function buildCodes(kind: 'course' | 'dorm') {
+    const m = new Map<string, CodeAcc>();
+    const acc = (campus: string, name: string) => {
+      const key = campus + '|' + nameKey(name);
+      let a = m.get(key);
+      if (!a) m.set(key, (a = { campus, name, students: new Set(), current: new Set(), upcoming: new Set(), staying: new Set(), assigned: 0, lastStart: '' }));
+      return a;
+    };
+    // 기숙사가 여러 개인 연수는 first_do_ca_code 가 첫 기숙사 캠퍼스뿐이라, 이름 끝 표시 "(P)"로 캠퍼스를 정한다.
+    // 표시 → 캠퍼스 대응은 기숙사가 하나인 연수에서 가장 많이 나온 조합으로 만든다.
+    const tagOf = (s: string) => s.match(/\(([A-Z])\)\s*$/)?.[1] ?? '';
+    const tagVotes = new Map<string, Map<string, number>>();
+    if (kind === 'dorm') {
+      for (const { raw } of all) {
+        const items = splitItems(raw.dorms);
+        const tag = items.length === 1 ? tagOf(items[0]) : '';
+        if (!tag || !raw.first_do_ca_code) continue;
+        const v = tagVotes.get(tag) ?? new Map<string, number>();
+        v.set(str(raw.first_do_ca_code), (v.get(str(raw.first_do_ca_code)) ?? 0) + 1);
+        tagVotes.set(tag, v);
+      }
+    }
+    const tagCampus = new Map([...tagVotes].map(([tag, v]) => [tag, [...v].sort((p, q2) => q2[1] - p[1])[0][0]]));
+
+    for (const { raw, row } of all) {
+      if (row.status === 'cancelled') continue;
+      const own = kind === 'course' ? raw.first_co_ca_code : raw.first_do_ca_code;
+      for (const name of splitItems(kind === 'course' ? raw.courses : raw.dorms)) {
+        const a = acc(campusName(tagCampus.get(tagOf(name)) ?? own), name);
+        a.students.add(row.stId);
+        if (row.status === 'current') a.current.add(row.stId);
+        if (row.status === 'upcoming') a.upcoming.add(row.stId);
+        if (row.start <= refDate && row.start > a.lastStart) a.lastStart = row.start;
+      }
+    }
+    if (kind === 'dorm') {
+      for (const d of dorms) {
+        const x = byTr.get(str(d.tr_id));
+        if (!x || x.row.status === 'cancelled' || yes(d.ic_cancel_yn)) continue;
+        const name = str(d.do_name_short) || str(d.do_name);
+        if (!name) continue;
+        const a = acc(d.ca_code ? campusName(d.ca_code) : str(d.ca_name) || '-', name);
+        a.assigned++;
+        const from = str(d.ic_departure_date || x.row.start), to = str(d.ic_return_date || x.row.end);
+        if (from <= refDate && to >= refDate) a.staying.add(x.row.stId);
+      }
+    }
+    return [...m.values()].map((a) => ({
+      campus: a.campus,
+      name: a.name,
+      current: a.current.size,
+      upcoming: a.upcoming.size,
+      students: a.students.size,
+      assigned: a.assigned,
+      staying: a.staying.size,
+      lastStart: a.lastStart,
+    }));
+  }
+  const codesOf = (kind: 'course' | 'dorm') => {
+    if (!codeCache.has(kind)) codeCache.set(kind, buildCodes(kind));
+    return codeCache.get(kind)!;
+  };
+
+  function listCodes(q: URLSearchParams) {
+    const kind = q.get('kind') === 'dorm' ? 'dorm' : 'course';
+    let list = codesOf(kind);
+    const facets = { campuses: countBy(list, (r) => r.campus).map((c) => c.name) };
+    const campus = q.get('campus');
+    const kw = (q.get('q') ?? '').trim().toLowerCase();
+    if (campus) list = list.filter((r) => r.campus === campus);
+    if (kw) list = list.filter((r) => r.name.toLowerCase().includes(kw));
+    list = [...list].sort((a, b) => a.campus.localeCompare(b.campus) || b.current - a.current || b.students - a.students || a.name.localeCompare(b.name));
+    return { refDate, kind, tabCounts: { course: codesOf('course').length, dorm: codesOf('dorm').length }, facets, ...paginate(list, q) };
+  }
+
+  // ── 캠퍼스·배치: 배치(sd_name)별 입국일(sd_departure_date)과 인원.
+  const arrivalsFrom = addDays(refDate, -56); // 입학 배치별 명단 화면이 고를 수 있는 범위
+  const batchAll = (() => {
+    const m = new Map<string, { batch: string; date: string; start: string; total: number; cancelled: number; byCampus: Record<string, number> }>();
+    for (const { raw, row } of all) {
+      if (!row.batch) continue;
+      let b = m.get(row.batch);
+      if (!b) m.set(row.batch, (b = { batch: row.batch, date: str(raw.sd_departure_date || raw.sd_start_date || row.start).slice(0, 10), start: str(raw.sd_start_date).slice(0, 10), total: 0, cancelled: 0, byCampus: {} }));
+      if (row.status === 'cancelled') {
+        b.cancelled++;
+        continue;
+      }
+      b.total++;
+      b.byCampus[row.campus] = (b.byCampus[row.campus] ?? 0) + 1;
+    }
+    return [...m.values()].map((b) => ({ ...b, upcoming: b.date > refDate, linkable: b.date >= arrivalsFrom }));
+  })();
+  type BatchRow = (typeof batchAll)[number];
+
+  function listBatches(q: URLSearchParams) {
+    const tab = q.get('tab') || 'upcoming';
+    const live = all.filter((x) => x.row.status !== 'cancelled');
+    const campuses = countBy(live, (x) => x.row.campus).map((c) => c.name);
+    const campusStats = campuses.map((name) => {
+      const xs = live.filter((x) => x.row.campus === name);
+      return {
+        name,
+        current: xs.filter((x) => x.row.status === 'current').length,
+        upcoming: xs.filter((x) => x.row.status === 'upcoming').length,
+        total: xs.length,
+        nextBatch: batchAll.filter((b) => b.upcoming && b.byCampus[name]).sort((a, b) => a.date.localeCompare(b.date))[0]?.batch ?? '',
+      };
+    });
+    let list = tab === 'all' ? batchAll : batchAll.filter((b) => (tab === 'past' ? !b.upcoming : b.upcoming));
+    const years = [...new Set(list.map((b) => b.date.slice(0, 4)).filter(Boolean))].sort().reverse();
+    const campus = q.get('campus'), year = q.get('year');
+    if (campus) list = list.filter((b) => b.byCampus[campus]);
+    if (year) list = list.filter((b) => b.date.startsWith(year));
+    list = [...list].sort(tab === 'upcoming' ? (a, b) => a.date.localeCompare(b.date) : (a, b) => b.date.localeCompare(a.date));
+    const tabCounts = { upcoming: batchAll.filter((b) => b.upcoming).length, past: batchAll.filter((b) => !b.upcoming).length, all: batchAll.length };
+    const people = list.reduce((s, b) => s + (campus ? b.byCampus[campus] ?? 0 : b.total), 0);
+    return { refDate, tab, tabCounts, campuses, campusStats, facets: { years }, people, ...paginate<BatchRow>(list, q) };
+  }
+
   const source: 'sample' | 'extract' = meta.source === 'sample' ? 'sample' : 'extract';
 
   return {
     refDate,
     meta: () => ({ source, extractedAt: meta.extracted_at ?? null, refDate }),
-    summary: () => `${source === 'sample' ? '[샘플 데이터] ' : ''}학생 ${students.length} · 연수 ${enrollments.length} · 인보이스 ${invoices.length} · 기숙사 ${dorms.length} · 에이전시 ${agencies.length} · 담당자 ${agents.length}`,
+    summary: () => `${source === 'sample' ? '[샘플 데이터] ' : ''}학생 ${students.length} · 연수 ${enrollments.length} · 인보이스 ${invoices.length} · 입금 ${deposits.length} · 기숙사 ${dorms.length} · 에이전시 ${agencies.length} · 담당자 ${agents.length}`,
     dashboard,
     listEnrollments,
     studentDetail,
@@ -480,6 +799,12 @@ export function createDb(input: DataInput) {
     agencyDetail,
     listAgents,
     arrivals,
+    listInvoices,
+    listUnpaid,
+    listDeposits,
+    points,
+    listCodes,
+    listBatches,
   };
 }
 
@@ -496,6 +821,12 @@ export function handleApi(db: Db, pathname: string, params: URLSearchParams): { 
     if (p === '/agencies') return { status: 200, body: db.listAgencies(params) };
     if (p === '/agents') return { status: 200, body: db.listAgents(params) };
     if (p === '/arrivals') return { status: 200, body: db.arrivals(params) };
+    if (p === '/invoices') return { status: 200, body: db.listInvoices(params) };
+    if (p === '/unpaid') return { status: 200, body: db.listUnpaid(params) };
+    if (p === '/deposits') return { status: 200, body: db.listDeposits(params) };
+    if (p === '/points') return { status: 200, body: db.points(params) };
+    if (p === '/codes') return { status: 200, body: db.listCodes(params) };
+    if (p === '/batches') return { status: 200, body: db.listBatches(params) };
     const m = p.match(/^\/students\/(\w+)$/);
     if (m) {
       const d = db.studentDetail(m[1]);

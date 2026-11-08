@@ -7,6 +7,8 @@
   "scripts": {
     "admin": "npm --workspace apps/admin run dev",
     "admin:build": "npm --workspace apps/admin run build",
-    "typecheck": "npm --workspace apps/admin run typecheck"
+    "partner": "npm --workspace apps/partner run dev",
+    "partner:build": "npm --workspace apps/partner run build",
+    "typecheck": "npm --workspace apps/admin run typecheck && npm --workspace apps/partner run typecheck"
   }
 }

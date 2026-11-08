@@ -12,6 +12,11 @@ import Arrivals from './pages/Arrivals';
 import Agencies from './pages/Agencies';
 import AgencyDetail from './pages/AgencyDetail';
 import Agents from './pages/Agents';
+import Invoices from './pages/Invoices';
+import Deposits from './pages/Deposits';
+import Points from './pages/Points';
+import Codes from './pages/Codes';
+import Batches from './pages/Batches';
 import NotReady from './pages/NotReady';
 
 // undefined = 세션 확인 중, null = 로그인 안 됨
@@ -42,6 +47,11 @@ export default function App() {
         <Route path="/agencies" element={<Agencies />} />
         <Route path="/agencies/:agId" element={<AgencyDetail />} />
         <Route path="/agents" element={<Agents />} />
+        <Route path="/invoices" element={<Invoices />} />
+        <Route path="/deposits" element={<Deposits />} />
+        <Route path="/points" element={<Points />} />
+        <Route path="/codes" element={<Codes />} />
+        <Route path="/batches" element={<Batches />} />
         <Route path="*" element={<NotReady />} />
       </Routes>
     </Shell>

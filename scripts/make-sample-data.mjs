@@ -226,6 +226,62 @@ for (const e of enrollments) {
   });
 }
 
+// ── 회계 보조: 납부 기한, 입금 원장(deposits). 위 순서를 건드리지 않도록 또 다른 시드를 쓴다.
+// 입금 원장은 실제 추출본과 같은 열 이름(dp_*, sum_id_amount, balance …)만 쓰고 받는 계좌(bk_*)는 넣지 않는다.
+let seed3 = 11;
+const rand3 = () => ((seed3 = (seed3 * 1103515245 + 12345) % 2147483648) / 2147483648);
+const deposits = [];
+let dpNo = 50000;
+const enrollmentByTr = new Map(enrollments.map((e) => [e.tr_id, e]));
+for (const e of enrollments) e.tr_deposit_due_date = day(e.sd_departure_date, -(14 + Math.floor(rand3() * 3) * 7));
+const addDeposit = (o) => {
+  const fee = o.currency === 'USD' ? Math.round(rand3() * 3) * 10 : 0;
+  deposits.push({
+    dp_id: String(++dpNo),
+    dp_ag_id: o.agId ?? '0',
+    dp_st_id: '0',
+    dp_type: '1',
+    dp_deposit_dt: o.date,
+    dp_name: o.name,
+    dp_memo: o.memo ?? null,
+    dp_currency: o.currency,
+    dp_amount: String(o.amount),
+    dp_fee: String(fee),
+    dp_amount_total: String(o.amount + fee),
+    dp_confirm_yn: rand3() < 0.2 ? 'Y' : 'N',
+    dp_use_yn: 'Y',
+    sum_id_amount: String(o.matched),
+    id_currency: o.matched ? o.currency : null,
+    balance: String(o.amount + fee - o.matched),
+    match_ag_name: o.agName ?? null,
+    cnt: String(o.cnt),
+  });
+};
+for (const inv of invoices) {
+  const paid = Number(inv.sum_id_amount);
+  if (!paid || rand3() < 0.25) continue;
+  const e = enrollmentByTr.get(inv.tr_id);
+  const extra = rand3() < 0.15 ? Math.round(paid * 0.1) : 0; // 일부는 인보이스보다 많이 들어와 잔액이 남는다
+  const date = day(e.tr_start_date, -(7 + Math.floor(rand3() * 40)));
+  addDeposit({
+    date: date <= '2026-11-07' ? date : day('2026-11-07', -Math.floor(rand3() * 14)), // 추출일 이후 입금은 없다
+    name: rand3() < 0.7 ? e.ag_name : e.st_name,
+    agId: e.ag_id,
+    agName: e.ag_name,
+    currency: inv.tr_currency,
+    amount: paid + extra,
+    matched: paid,
+    cnt: 1,
+  });
+}
+// 아직 연수에 매칭되지 않은 입금
+for (let i = 0; i < 8; i++) {
+  const a = agencies[Math.floor(rand3() * agencies.length)];
+  const currency = ['USD', 'JPY', 'KRW'][Math.floor(rand3() * 3)];
+  const amount = currency === 'KRW' ? 350000 * (2 + Math.floor(rand3() * 8)) : currency === 'JPY' ? 38000 * (2 + Math.floor(rand3() * 8)) : 280 * (2 + Math.floor(rand3() * 8));
+  addDeposit({ date: day('2026-11-07', -Math.floor(rand3() * 30)), name: a.ag_name_en, currency, amount, matched: 0, cnt: 0, memo: rand3() < 0.5 ? '샘플: 송금인 확인 필요' : null });
+}
+
 const write = (name, rows) => fs.writeFileSync(path.join(outDir, name + '.ndjson'), rows.map((r) => JSON.stringify(r)).join('\n') + '\n');
 write('students', students);
 write('enrollments', enrollments);
@@ -233,7 +289,8 @@ write('invoices', invoices);
 write('dorm_assignments', dorms);
 write('agencies', agencies);
 write('agents', agents);
-const counts = { students: students.length, enrollments: enrollments.length, invoices: invoices.length, dorm_assignments: dorms.length, agencies: agencies.length, agents: agents.length };
+write('deposits', deposits);
+const counts = { students: students.length, enrollments: enrollments.length, invoices: invoices.length, dorm_assignments: dorms.length, agencies: agencies.length, agents: agents.length, deposits: deposits.length };
 fs.writeFileSync(
   path.join(outDir, 'meta.json'),
   JSON.stringify({ source: 'sample', note: '개발용 가짜 데이터 (scripts/make-sample-data.mjs)', extracted_at: '2026-11-07T02:19:28.663Z', counts }, null, 2),

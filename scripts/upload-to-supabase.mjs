@@ -39,6 +39,7 @@ const PLAN = [
   ['legacy_dorm_assignments', 'dorm_assignments.ndjson', (r) => r.tr_id],
   ['legacy_agencies', 'agencies.ndjson', (r) => r.ag_id],
   ['legacy_agents', 'agents.ndjson', (r) => r.am_id],
+  ['legacy_deposits', 'deposits.ndjson', (r) => r.dp_id],
 ];
 // 예전 형식 service_role 키(eyJ…)는 Authorization 에도 넣고, 새 형식(sb_secret_…)은 apikey 헤더만 쓴다.
 const headers = { apikey: key, 'Content-Type': 'application/json', ...(key.startsWith('eyJ') ? { Authorization: `Bearer ${key}` } : {}) };
@@ -59,7 +60,12 @@ async function upload(table, rows) {
 console.log('업로드 대상 폴더:', path.relative(root, dir));
 for (const [table, file, idOf] of PLAN) {
   const byId = new Map();
-  for (const r of read(file)) if (idOf(r) != null) byId.set(String(idOf(r)), { id: String(idOf(r)), data: r });
+  for (const r of read(file)) {
+    if (idOf(r) == null) continue;
+    // 계좌 정보(bk_*, *_acct_bank/num/owner)는 올리지 않는다. (tr_acct_memo 같은 회계 메모는 올린다)
+    const data = Object.fromEntries(Object.entries(r).filter(([k]) => !/^bk_|_acct_(bank|num|owner)$/.test(k)));
+    byId.set(String(idOf(r)), { id: String(idOf(r)), data });
+  }
   await upload(table, [...byId.values()]);
 }
 const metaFile = path.join(dir, 'meta.json');
