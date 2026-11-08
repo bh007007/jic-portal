@@ -24,9 +24,14 @@ import Settings from './pages/Settings';
 import StudentFileDetail from './pages/StudentFileDetail';
 import StudentFiles from './pages/StudentFiles';
 
-/** 배포: 로그인한 계정이 직원(staff_users)이 아니면 안내만 한다. */
-function StaffGate({ children }: { children: ReactNode }) {
-  const { error } = useApi<{ source: string }>('/api/meta');
+/**
+ * 배포: 로그인한 계정 종류로 나눈다. 직원은 메뉴 화면, 출입구 가드 공용 계정은 가드 태블릿만,
+ * 둘 다 아니면 안내만 한다.
+ */
+function AccountGate({ children }: { children: ReactNode }) {
+  const { data, error } = useApi<{ role: 'staff' | 'guard' | null }>('/api/meta');
+  if (!data && !error) return <div className="login" />;
+  if (data?.role === 'guard') return <Guard />;
   if (error !== 'staff_only') return <>{children}</>;
   return (
     <div className="login">
@@ -35,7 +40,7 @@ function StaffGate({ children }: { children: ReactNode }) {
           <span className="brand-mark">JIC</span>
           <span className="brand-name">인트라넷</span>
         </div>
-        <p className="login-error">직원 계정으로 등록되지 않았습니다. 관리자에게 등록을 요청하세요.</p>
+        <p className="login-error">직원이나 가드 계정으로 등록되지 않았습니다. 관리자에게 등록을 요청하세요.</p>
         <button type="button" className="btn" onClick={() => void signOut()}>
           로그아웃
         </button>
@@ -44,8 +49,8 @@ function StaffGate({ children }: { children: ReactNode }) {
   );
 }
 
-/** 배포: 가드 태블릿은 가드 공용 계정을 연결한 뒤에 연다(docs/intranet.md '배포'). */
-function GuardNotReady() {
+/** 배포: 가드 태블릿은 출입구 가드 공용 계정으로 로그인해서 쓴다(직원 계정으로는 외출·귀가를 기록하지 않는다). */
+function GuardForStaff() {
   return (
     <div className="login">
       <div className="login-box">
@@ -53,7 +58,10 @@ function GuardNotReady() {
           <span className="brand-mark">JIC</span>
           <span className="brand-name">가드</span>
         </div>
-        <p className="login-foot">가드 태블릿은 가드 공용 계정을 연결한 뒤 이 주소에서 씁니다.</p>
+        <p className="login-foot">가드 태블릿은 출입구 가드 계정으로 로그인해서 씁니다. 직원 계정으로는 외출·귀가를 기록하지 않습니다.</p>
+        <a href="/" className="btn">
+          인트라넷 홈
+        </a>
       </div>
     </div>
   );
@@ -66,7 +74,7 @@ export default function App() {
   const routes = (
     <Routes>
       {/* 가드 태블릿은 메뉴 없이 전체 화면 */}
-      <Route path="/guard" element={authMode === 'supabase' ? <GuardNotReady /> : <Guard />} />
+      <Route path="/guard" element={authMode === 'supabase' ? <GuardForStaff /> : <Guard />} />
       <Route
         path="*"
         element={
@@ -100,5 +108,5 @@ export default function App() {
       />
     </Routes>
   );
-  return authMode === 'supabase' ? <StaffGate>{routes}</StaffGate> : routes;
+  return authMode === 'supabase' ? <AccountGate>{routes}</AccountGate> : routes;
 }

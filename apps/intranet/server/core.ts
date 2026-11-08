@@ -148,6 +148,8 @@ export interface IntranetCtx {
   newId: () => string;
   /** 처리자 이름: 로컬은 브라우저에 입력한 직원 이름, 배포는 로그인한 직원. 상담 기록 열람·작성과 접근 기록에 쓴다. */
   actor?: string | null;
+  /** 배포: 로그인한 계정 종류. 가드 공용 계정은 그 출입구(캠퍼스)로 고정한다. 로컬은 없음. */
+  session?: { role: 'staff' | 'guard'; campus?: string | null };
 }
 
 type Result = { status: number; body: unknown };
@@ -283,8 +285,10 @@ export type OutingRow = ReturnType<typeof outingRow>;
 async function guardView(ctx: IntranetCtx, q: URLSearchParams) {
   const settings = await loadSettings(ctx);
   const now = ctx.now().getTime();
-  const campuses = [...new Set([...currentIndex(ctx.db).values()].map((s) => s.campus))].filter((c) => c && c !== '-').sort();
-  const campus = q.get('campus') ?? '';
+  // 가드 공용 계정은 자기 출입구만(화면은 캠퍼스가 하나면 고르지 않고 그대로 쓴다)
+  const guardCampus = ctx.session?.role === 'guard' ? (ctx.session.campus ?? '') : null;
+  const campuses = guardCampus !== null ? [guardCampus] : [...new Set([...currentIndex(ctx.db).values()].map((s) => s.campus))].filter((c) => c && c !== '-').sort();
+  const campus = guardCampus ?? q.get('campus') ?? '';
   const overnights = await ctx.stores.overnights.listAll();
   const outings = (await ctx.stores.outings.all()).filter((o) => !campus || o.campus === campus);
   const rows = outings.map((o) => outingRow(ctx, o, settings.curfew, now, overnights));
@@ -322,7 +326,8 @@ async function guardScan(ctx: IntranetCtx, input: Record<string, unknown>): Prom
     rec = open ? { ...open, inAt: nowIso, inBy: guard } : { id: ctx.newId(), stId, trId: s.trId, campus, outAt: null, outBy: '', inAt: nowIso, inBy: guard };
   }
   await ctx.stores.outings.put(rec);
-  if (mode === 'in') await syncCurfewPenalties(ctx);
+  // 통금 위반 후보 정리는 직원 일이다(직원 화면을 열 때도 정리한다). 배포의 가드 계정은 후보를 쓸 권한이 없어 건너뛴다.
+  if (mode === 'in' && ctx.session?.role !== 'guard') await syncCurfewPenalties(ctx);
   return ok({ mode, row: outingRow(ctx, rec, settings.curfew, ctx.now().getTime(), await ctx.stores.overnights.listAll()) }, mode === 'out' || !open ? 201 : 200);
 }
 
@@ -862,8 +867,8 @@ export async function handleIntranetApi(ctx: IntranetCtx, method: string, pathna
     switch (route) {
       case 'GET /meta': {
         const m = ctx.db.meta();
-        // actor: 배포에서는 로그인한 직원 이름(화면 오른쪽 위), 로컬은 화면이 입력한 이름
-        return ok({ source: m.source, refDate: m.refDate, actor: ctx.actor ?? null });
+        // actor: 배포에서는 로그인한 직원 이름(화면 오른쪽 위), 로컬은 화면이 입력한 이름. role·campus: 배포의 계정 종류(가드는 출입구)
+        return ok({ source: m.source, refDate: m.refDate, actor: ctx.actor ?? null, role: ctx.session?.role ?? null, campus: ctx.session?.campus ?? null });
       }
       case 'GET /notices':
         return ok(await listNotices(noticeCtx(ctx), q));

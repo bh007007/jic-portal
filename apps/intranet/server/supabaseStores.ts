@@ -13,6 +13,7 @@ import type { AuditLog, CounselingNote, CounselingRemote } from './counseling';
 import type { DocRepo, Outing, Penalty, PenaltyRules, Repo, Settings, Stores } from './core';
 import type { Notice, NoticeRead } from './notices';
 import type { IncidentReport } from './reports';
+import { serviceHeaders } from './supabaseData';
 
 const q = encodeURIComponent;
 const readOnly = () => {
@@ -299,7 +300,28 @@ function noticeStores(rest: Rest): { notices: Repo<Notice>; noticeReads: Repo<No
   };
 }
 
-/** 로그인한 직원(userId = 토큰의 사용자 id)의 토큰으로 core 의 Stores 를 만든다. */
+/**
+ * 가드: 승인된 외박만(가드 화면의 '외박 허용 ~복귀일'과 통금 판정용). 가드 계정은 신청 테이블을 못 읽으므로 서비스 키로 읽고,
+ * 사유·담당자 메모·처리자는 읽지 않는다. 쓰기는 없다.
+ */
+export function approvedOvernights(url: string, serviceKey: string, fetchFn: typeof fetch = fetch): RequestStore<Overnight> {
+  const load = async () => {
+    const r = await fetchFn(
+      `${url.replace(/\/+$/, '')}/rest/v1/overnight_permissions?select=id,student_no,enrollment_id,leave_date,return_date,status,created_at,updated_at,decided_at&status=eq.approved`,
+      { headers: serviceHeaders(serviceKey) },
+    );
+    if (!r.ok) throw new StoreError(r.status, `store_${r.status}`);
+    return ((await r.json()) as Row[]).map((x) => toOvernight({ ...x, reason: '', staff_comment: null }));
+  };
+  return {
+    listAll: load,
+    listByStudent: async (stId) => (await load()).filter((o) => o.stId === stId),
+    get: async (id) => (await load()).find((o) => o.id === id) ?? null,
+    put: readOnly,
+  };
+}
+
+/** 로그인한 직원(userId = 토큰의 사용자 id)의 토큰으로 core 의 Stores 를 만든다. 가드도 같은 저장소를 쓰고 RLS 가 출입구 범위를 막는다. */
 export function supabaseStores(conf: SupabaseConf, token: string, userId: string, fetchFn: typeof fetch = fetch): Stores {
   const rest = restClient(conf, token, fetchFn);
   const names = staffNames(rest);
