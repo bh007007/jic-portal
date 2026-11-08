@@ -176,6 +176,13 @@ a.list-row:hover { color: var(--ink); background: #fafbfc; }
 .form-hint.right { text-align: right; }
 .form-error { margin: 0; color: var(--red); font-size: 13px; }
 .form-ok { margin: 0; color: var(--blue); font-size: 13px; }
+.ride-box { display: flex; flex-direction: column; gap: 4px; padding: 12px 14px; border: 1px solid var(--line); border-left: 3px solid var(--ink-3); border-radius: 4px; background: var(--head-bg); font-size: 14px; }
+.ride-box.confirmed { border-left-color: var(--blue); }
+.ride-box.declined { border-left-color: var(--red); }
+.ride-box.changed, .ride-box.requested { border-left-color: var(--amber); }
+.ride-strong { font-weight: 700; }
+.ride-box.confirmed .ride-strong { color: var(--blue); }
+.ride-box.declined .ride-strong { color: var(--red); }
 .form-hint.block { display: block; margin-top: 2px; }
 .check-row { display: flex; align-items: flex-start; gap: 10px; font-size: 14px; font-weight: 500; }
 .check-row input { width: 22px; height: 22px; margin: 0; flex: 0 0 auto; }

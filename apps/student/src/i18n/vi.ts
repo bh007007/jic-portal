@@ -149,4 +149,10 @@ export const vi: Record<MsgKey, string> = {
   'err.departure_passed': 'Đã qua ngày bay nên không thể sửa.',
   'err.no_enrollment': 'Bạn không có khóa học đang học hoặc sắp bắt đầu.',
   'err.dep_date': 'Ngày bay phải từ {from} đến {to}.',
+  'ride.title': 'Xe ra sân bay',
+  'ride.requested': 'Đã đăng ký · chờ văn phòng xác nhận',
+  'ride.confirmed': 'Đã xác nhận',
+  'ride.pickup': 'Rời ký túc xá {date} {time}',
+  'ride.declined': 'Không sắp xếp được',
+  'ride.changed': 'Chuyến bay đã thay đổi nên văn phòng sẽ xác nhận lại.',
 };

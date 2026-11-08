@@ -131,6 +131,11 @@ const MESSAGES: Record<string, string> = {
   invalid_until: '게시 종료일을 확인하세요(새 공지는 오늘 이후).',
   invalid_kind: '종류를 고르세요.',
   invalid_note: '내용을 입력하세요(500자까지).',
-  invalid_time: '발생 시각을 확인하세요.',
+  invalid_time: '시각을 확인하세요.',
+  no_ride_request: '학생이 차량을 요청하지 않은 항공편입니다.',
+  invalid_pickup_date: '기숙사 출발은 항공편 출발일이나 그 전날이어야 합니다.',
+  pickup_after_flight: '기숙사 출발이 비행기 출발보다 늦습니다.',
+  reason_required: '배차 불가 사유를 적어 주세요.',
+  departure_passed: '출발일이 지난 항공편입니다.',
 };
 export const errorText = (code: string) => MESSAGES[code] ?? `처리하지 못했습니다 (${code}).`;

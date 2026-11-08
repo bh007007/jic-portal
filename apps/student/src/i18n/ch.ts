@@ -149,4 +149,10 @@ export const ch: Record<MsgKey, string> = {
   'err.departure_passed': '已过出发日期，无法修改。',
   'err.no_enrollment': '你没有在读或即将开始的课程。',
   'err.dep_date': '出发日期必须在 {from} ~ {to} 之间。',
+  'ride.title': '送机',
+  'ride.requested': '已申请・等待办公室确认',
+  'ride.confirmed': '已确认',
+  'ride.pickup': '宿舍出发 {date} {time}',
+  'ride.declined': '无法安排',
+  'ride.changed': '航班有变，办公室会重新确认。',
 };
