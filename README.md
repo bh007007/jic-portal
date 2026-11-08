@@ -86,6 +86,10 @@ powershell -ExecutionPolicy Bypass -File scripts/split-export.ps1
 
 전체 추출에 없는 것만 받는 짧은 스크립트다(3~5분). 같은 방법으로 [scripts/extract/portal-extract-extra.js](scripts/extract/portal-extract-extra.js)를 콘솔에서 실행하고, 받은 `jic_portal_extra_YYYY-MM-DD.json.gz`를 `data/raw/`에 두고 `split-export.ps1`을 실행한다. 기존 표와 `meta.json`(기준일)은 그대로 두고 표만 더하며, 열 목록과 화면 구조는 `docs/data-dictionary-extra.md`에 쓴다. 콘솔에 '일부 단계가 비었습니다'가 나오면 파일은 그대로 두고 Claude에게 알린다(`data/tables/extra_meta.json`에 화면 구조가 남아 있어 다음 수정에 쓴다).
 
+### 화면 구조 조사 (새 데이터를 받기 전에)
+
+업체 화면의 검색 조건과 조회 주소를 모를 때 먼저 [scripts/extract/portal-probe.js](scripts/extract/portal-probe.js)를 같은 방법으로 실행한다(30초 안쪽). 화면마다 검색 항목 이름, 화면 코드가 부르는 주소와 넘기는 값의 이름, 응답 모양(키 이름·자료형·건수)만 담은 `jic_portal_probe_YYYY-MM-DD.json`이 내려받아진다. 학생 값은 담지 않는다. `data/raw/`에 두고 Claude에게 알리면 그 구조로 추출 스크립트를 맞춘다. 조사할 화면은 스크립트 위쪽 `PAGES`에서 고른다(지금은 회계팀 인보이스 화면들).
+
 ## 데이터 원칙
 
 - `data/` 폴더와 `*.json.gz`는 `.gitignore`로 막혀 있다. 개인정보를 GitHub, OneDrive, 메신저로 옮기지 않는다.
