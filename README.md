@@ -90,6 +90,16 @@ powershell -ExecutionPolicy Bypass -File scripts/split-export.ps1
 
 업체 화면의 검색 조건과 조회 주소를 모를 때 먼저 [scripts/extract/portal-probe.js](scripts/extract/portal-probe.js)를 같은 방법으로 실행한다(30초 안쪽). 화면마다 검색 항목 이름, 화면 코드가 부르는 주소와 넘기는 값의 이름, 응답 모양(키 이름·자료형·건수)만 담은 `jic_portal_probe_YYYY-MM-DD.json`이 내려받아진다. 학생 값은 담지 않는다. `data/raw/`에 두고 Claude에게 알리면 그 구조로 추출 스크립트를 맞춘다. 조사할 화면은 스크립트 위쪽 `PAGES`에서 고른다(지금은 회계팀 인보이스 화면들).
 
+### 인보이스 항목 추출
+
+[scripts/extract/portal-extract-invoice-items.js](scripts/extract/portal-extract-invoice-items.js)를 같은 방법으로 실행한다(출국일 기준 지난 1년~앞으로 1년, 2,000여 건에 15~20분). `jic_portal_invoice_items_YYYY-MM-DD.json.gz`를 `data/raw/`에 두고, 기존 추가 추출 사전을 덮어쓰지 않도록 사전 경로를 따로 준다.
+
+```powershell
+powershell -ExecutionPolicy Bypass -File scripts/split-export.ps1 -Source data/raw/jic_portal_invoice_items_2026-11-08.json.gz -DictPath docs/data-dictionary-invoice.md
+```
+
+학생 상세의 '인보이스 항목'(학생 가격 − 에이전시 공제, 현지 비용)이 이 표를 읽는다. 표가 없으면 그 칸은 나오지 않는다.
+
 ## 데이터 원칙
 
 - `data/` 폴더와 `*.json.gz`는 `.gitignore`로 막혀 있다. 개인정보를 GitHub, OneDrive, 메신저로 옮기지 않는다.
