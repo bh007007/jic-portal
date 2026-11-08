@@ -9,6 +9,7 @@ const KEYS = ['campus', 'nation', 'has', 'within', 'clear', 'field', 'q'] as con
 const VIEWS = [
   ['balance', '재학생 잔액'],
   ['clear', '졸업 예정자 정산'],
+  ['leftover', '잔액 남은 졸업생'],
 ] as const;
 
 const WITHIN = [
@@ -49,7 +50,8 @@ const CLEAR_COLUMNS: Column<InvoiceRow>[] = [
 
 export default function Points() {
   const { params, setParams, query, form, set, apply, submit } = useSearchForm(KEYS, { field: 'name', within: '14', clear: 'N' });
-  const view = params.get('view') === 'clear' ? 'clear' : 'balance';
+  const v = params.get('view');
+  const view = v === 'clear' || v === 'leftover' ? v : 'balance';
   const api = '/api/points' + (query ? '?' + query : '');
   const { data, error } = useApi<PointList>(api);
   const ready = data && data.view === view; // 탭을 바꾼 직후 이전 탭 응답은 그리지 않는다.
@@ -143,7 +145,7 @@ export default function Points() {
                 run={() =>
                   view === 'clear'
                     ? downloadList(api, `포인트정산_${data.until}까지졸업_${data.refDate}.csv`, CLEAR_COLUMNS)
-                    : downloadList(api, `포인트잔액_재학생_${data.refDate}.csv`, BALANCE_COLUMNS)
+                    : downloadList(api, `포인트잔액_${view === 'leftover' ? '졸업생' : '재학생'}_${data.refDate}.csv`, BALANCE_COLUMNS)
                 }
               />
               <SizeSelect size={data.size} onChange={(size) => apply({ size, page: '' })} />
@@ -196,7 +198,7 @@ function BalanceTable({ data }: { data: PointList }) {
       </thead>
       <tbody>
         {data.rows.length === 0 && (
-          <tr className="empty"><td colSpan={12}>조건에 맞는 재학생이 없습니다.</td></tr>
+          <tr className="empty"><td colSpan={12}>조건에 맞는 학생이 없습니다.</td></tr>
         )}
         {data.rows.map((r, i) => (
           <tr key={r.trId}>

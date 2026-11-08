@@ -258,10 +258,10 @@ export interface DepositList extends Paged<DepositRow> {
 }
 
 export interface PointList extends Paged<InvoiceRow> {
-  view: 'balance' | 'clear';
+  view: 'balance' | 'clear' | 'leftover';
   within: number;
   until: string;
-  tabCounts: { balance: number; clear: number };
+  tabCounts: { balance: number; clear: number; leftover: number };
   facets: { campuses: string[]; nations: string[] };
   totals: { withBalance: number; pointIn: number; pointOut: number; notCleared: number };
 }
@@ -332,3 +332,26 @@ export function useApi<T>(url: string | null) {
 export const fmt = (n: number) => n.toLocaleString('ko-KR');
 export const weekday = (d: string) => (d ? '일월화수목금토'[new Date(d + 'T00:00:00').getDay()] : '');
 export const pct = (part: number, whole: number) => (whole ? ((part / whole) * 100).toFixed(1) + '%' : '-');
+
+export interface RoomRow {
+  roomId: string;
+  number: string;
+  building: string;
+  floor: string;
+  type: string;
+  campus: string;
+  gender: string;
+  max: number;
+  beds: number;
+  bedNumbers: string[];
+  status: string;
+  start: string;
+  end: string;
+  memo: string;
+}
+
+export interface RoomList extends Paged<RoomRow> {
+  facets: { buildings: string[]; floors: string[]; types: string[]; campuses: string[] };
+  totals: { rooms: number; beds: number };
+  byType: { type: string; rooms: number; beds: number }[];
+}

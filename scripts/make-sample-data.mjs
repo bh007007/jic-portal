@@ -316,7 +316,31 @@ write('dorm_assignments', dorms);
 write('agencies', agencies);
 write('agents', agents);
 write('deposits', deposits);
-const counts = { students: students.length, enrollments: enrollments.length, invoices: invoices.length, dorm_assignments: dorms.length, agencies: agencies.length, agents: agents.length, deposits: deposits.length, point_history: pointHistory.length };
+
+// ── 방·침대(rooms): 실제 추출본과 같은 열(roo_*, do_name, beds[bed_*]). Premium만(실제도 Premium만 등록). 별도 시드.
+let seed5 = 17;
+const rand5 = () => ((seed5 = (seed5 * 1103515245 + 12345) % 2147483648) / 2147483648);
+const rooms = [];
+let rooId = 2000, bedId = 9000;
+const ROOM_TYPES = [['R4 (Bal)(P)', 4, 10], ['R4(P)', 4, 6], ['R2 (Bal)(P)', 2, 8], ['R2(P)', 2, 6], ['R1 (Bal)(P)', 1, 4]];
+let roomNo = 0;
+for (const [type, beds, count] of ROOM_TYPES) {
+  for (let i = 0; i < count; i++) {
+    const floor = 1 + (roomNo % 4);
+    const building = roomNo % 3 === 2 ? 'Student Center' : 'Dormitory Building';
+    roomNo++;
+    const id = String(++rooId);
+    rooms.push({
+      roo_id: id, roo_do_id: '1', roo_num: `${floor}${String(roomNo).padStart(2, '0')}`, roo_building: building, roo_floor: String(floor),
+      roo_rating: null, roo_gender: ['M', 'F', 'N'][Math.floor(rand5() * 3)], roo_max: String(beds),
+      roo_start_date: '2024-07-28', roo_finish_date: '2099-12-31', roo_use_yn: 'Y', roo_memo: rand5() < 0.1 ? '샘플: 에어컨 점검 예정' : null,
+      do_name: type, do_name_short: type, ca_id: '12', ca_code: 'PREMIUM', roo_status: 'ACTIVE', rst_type: null,
+      beds: Array.from({ length: beds }, (_, k) => ({ bed_id: String(++bedId), bed_roo_id: id, bed_num: String.fromCharCode(65 + k), bed_use_yn: 'Y', bed_gender: null })),
+    });
+  }
+}
+write('rooms', rooms);
+const counts = { students: students.length, enrollments: enrollments.length, invoices: invoices.length, dorm_assignments: dorms.length, agencies: agencies.length, agents: agents.length, deposits: deposits.length, point_history: pointHistory.length, rooms: rooms.length };
 fs.writeFileSync(
   path.join(outDir, 'meta.json'),
   JSON.stringify({ source: 'sample', note: '개발용 가짜 데이터 (scripts/make-sample-data.mjs)', extracted_at: '2026-11-07T02:19:28.663Z', counts }, null, 2),
