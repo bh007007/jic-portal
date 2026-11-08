@@ -84,6 +84,22 @@ GitHub `main`에 이 코드가 올라가 있어야 한다.
 
 이후에는 `main`에 머지될 때마다 자동 배포되고, 다른 브랜치를 올리면 미리보기 주소(`<브랜치>.jic-portal.pages.dev`)가 생긴다.
 
+### 파트너 포털 (두 번째 Pages 프로젝트)
+
+같은 저장소로 Pages 프로젝트를 하나 더 만든다. 위 1~5와 같은 순서로 하되 아래 값만 다르다.
+
+| 항목 | 값 |
+| --- | --- |
+| Project name | `jic-partner` |
+| Build command | `npm run partner:build` |
+| Build output directory | `apps/partner/dist` |
+| 환경변수 | 관리자 앱과 같은 `VITE_SUPABASE_URL`, `VITE_SUPABASE_ANON_KEY`, `NODE_VERSION=22` |
+
+배포한 뒤 해야 할 일:
+- Supabase **Authentication → URL Configuration → Redirect URLs**에 파트너 포털 주소(`https://jic-partner….pages.dev/**`)와 `http://127.0.0.1:5175/**`를 추가한다. 이메일 인증과 비밀번호 재설정 링크가 이 주소로 돌아온다.
+- 등록 신청을 받으려면 **Allow new users to sign up**을 켠다(`docs/partner-portal.md` '계정 흐름').
+- 저장소 루트의 `functions/`(관리자 앱 `/api`)도 이 프로젝트에 같이 올라간다. 파트너 화면은 `/api`를 쓰지 않고, `/api`는 직원 토큰이 없으면 401을 돌려준다.
+
 ## 3. GitHub (선택)
 
 - `.github/workflows/ci.yml`: PR과 `main`에서 빌드가 깨지지 않는지 확인한다. 설정할 것 없음.

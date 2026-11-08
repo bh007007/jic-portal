@@ -10,6 +10,7 @@
 
 ## 코드
 - 관리자 앱: `apps/admin` (React 18 + Vite 5 + TypeScript, npm workspaces). 실행 `npm run admin` → http://127.0.0.1:5173, 검증 `npm run admin:build`.
+- 파트너 포털: `apps/partner`. 실행 `npm run partner` → http://127.0.0.1:5175 (`apps/partner/.env.example`을 `.env.local`로 복사), 검증 `npm run partner:build`. 데이터는 전부 Supabase(테이블 이름은 기획안 '파트너' 그룹). 학생 정보는 저장하지 않는다(P3). 화면 문구는 `src/i18n.ts`. 기준 문서 `docs/partner-portal.md`.
 - `/api/*` 계산은 `apps/admin/server/core.ts` 한 곳(파일·네트워크 의존 없음). 로컬은 `server/localData.ts`(Vite 플러그인, 데이터 폴더 우선순위 `JIC_DATA_DIR` → `data/tables` → `data-sample/tables`), 배포는 저장소 루트 `functions/api/[[path]].ts`(Cloudflare Pages Function, Supabase `legacy_*` 조회)가 같은 core를 쓴다. 화면은 두 환경에서 같은 응답을 받는다.
 - 클라우드: Cloudflare Pages(루트에서 `npm run admin:build`, 출력 `apps/admin/dist`) + Supabase(Auth, `staff_users` + RLS). 설정 순서는 `docs/setup-cloud.md`. `VITE_SUPABASE_URL`이 없으면(로컬) 로그인 없이 동작한다. DB 변경은 `supabase/migrations`에 여러 번 실행해도 되는 SQL로 추가한다.
 - 연수(enrollment, 업체 `tr_`)와 학생(`st_`)은 다르다. 한 학생에 연수가 여러 건일 수 있다. 상태 분류(재학/입학 예정/졸업/취소)는 `core.ts`의 `statusOf`.

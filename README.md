@@ -13,6 +13,7 @@
 ```
 portal/
 ├─ apps/admin/            관리자 화면 (React + Vite)
+├─ apps/partner/          파트너 포털 (React + Vite + Supabase) · docs/partner-portal.md
 ├─ functions/api/         배포용 /api 서버 (Cloudflare Pages Function → Supabase)
 ├─ supabase/migrations/   Supabase 테이블·권한 SQL
 ├─ .github/workflows/     빌드 확인, DB 반영
