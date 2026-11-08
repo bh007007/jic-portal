@@ -4,7 +4,8 @@
  * - 외출·귀가 기록과 패널티는 storeDir(저장소 루트 .local-db/intranet, Git 제외)의 NDJSON 파일에 쓴다.
  *   샘플 데이터와 실제 추출본을 섞지 않도록 데이터 종류별로 파일을 나눈다. 통금·근무자·점수표 설정은 공용 JSON.
  * - 결석·외박 신청은 학생 앱의 파일(studentStoreDir, .local-db/student)을 같이 열어 승인·반려한다.
- * - 로컬에는 로그인이 없다(관리자 앱과 같다). 이 PC(127.0.0.1)에서만 열린다.
+ * - 상담 기록·접근 기록은 counseling-<source>.ndjson, audit-<source>.ndjson. 실제 데이터로 실행하면 민감 정보가 들어간다.
+ * - 로컬에는 로그인이 없다(관리자 앱과 같다). 상담 기록 처리자는 X-Staff-Name 헤더(브라우저에 입력한 이름). 이 PC(127.0.0.1)에서만 열린다.
  */
 import fs from 'node:fs';
 import path from 'node:path';
@@ -14,6 +15,7 @@ import type { Plugin } from 'vite';
 import { loadDir } from '../../admin/server/localData';
 import { fileStore, requestFiles } from '../../student/server/localData';
 import type { Absence, Overnight } from '../../student/server/requests';
+import { ACTOR_MAX } from './counseling';
 import { handleIntranetApi, type DocRepo, type Repo, type Stores } from './core';
 
 function writeAtomic(file: string, text: string) {
@@ -99,6 +101,8 @@ export function intranetLocalPlugin(dataDir: string, storeDir: string, studentSt
         penalties: fileRepo(path.join(storeDir, `penalties-${source}.ndjson`)),
         settings: fileDoc(path.join(storeDir, 'settings.json')),
         rules: fileDoc(path.join(storeDir, 'penalty-rules.json')),
+        counseling: fileRepo(path.join(storeDir, `counseling-${source}.ndjson`)),
+        audit: fileRepo(path.join(storeDir, `audit-${source}.ndjson`)),
       };
       server.config.logger.info(`[intranet-local] ${db.summary()} · 기준일 ${db.refDate} · 저장 폴더 ${storeDir}`);
 
@@ -121,8 +125,18 @@ export function intranetLocalPlugin(dataDir: string, storeDir: string, studentSt
           }
         }
         const url = new URL(req.url ?? '/', 'http://local');
+        // 로컬 직원 이름: 한글이 있어 화면에서 encodeURIComponent 로 보낸다. 배포에서는 로그인 정보로 바꾼다.
+        let actor: string | null = null;
+        const raw = req.headers['x-staff-name'];
+        if (typeof raw === 'string' && raw) {
+          try {
+            actor = decodeURIComponent(raw).trim().slice(0, ACTOR_MAX) || null;
+          } catch {
+            actor = null;
+          }
+        }
         const { status, body: out } = await handleIntranetApi(
-          { db, stores, now: () => new Date(), newId: () => crypto.randomUUID() },
+          { db, stores, actor, now: () => new Date(), newId: () => crypto.randomUUID() },
           method,
           url.pathname,
           url.searchParams,

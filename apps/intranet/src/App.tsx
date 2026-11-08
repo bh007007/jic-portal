@@ -1,5 +1,9 @@
 import { Route, Routes } from 'react-router-dom';
 import Shell from './components/Shell';
+import Audit from './pages/Audit';
+import Counseling from './pages/Counseling';
+import CounselingDetail from './pages/CounselingDetail';
+import CounselingForm from './pages/CounselingForm';
 import Guard from './pages/Guard';
 import Home from './pages/Home';
 import NotReady from './pages/NotReady';
@@ -29,6 +33,11 @@ export default function App() {
               <Route path="/requests/absences" element={<Requests key="absences" kind="absences" />} />
               <Route path="/requests/overnights" element={<Requests key="overnights" kind="overnights" />} />
               <Route path="/settings" element={<Settings />} />
+              <Route path="/counseling" element={<Counseling />} />
+              <Route path="/counseling/new" element={<CounselingForm key="new" />} />
+              <Route path="/counseling/:id" element={<CounselingDetail />} />
+              <Route path="/counseling/:id/edit" element={<CounselingForm key="edit" />} />
+              <Route path="/audit" element={<Audit />} />
               <Route path="/student-file" element={<StudentFiles />} />
               <Route path="/student-file/:stId" element={<StudentFileDetail />} />
               <Route path="*" element={<NotReady />} />

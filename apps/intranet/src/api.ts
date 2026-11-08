@@ -1,9 +1,45 @@
-/** /api 호출. 로컬에는 로그인이 없다(관리자 앱과 같다). 배포에서는 직원·가드 로그인 토큰을 붙인다(docs/intranet.md). */
+/**
+ * /api 호출. 로컬에는 로그인이 없다(관리자 앱과 같다). 배포에서는 직원·가드 로그인 토큰을 붙인다(docs/intranet.md).
+ * 상담 기록 작성·열람자와 접근 기록에 남길 직원 이름은 이 브라우저에 입력해 두고 X-Staff-Name 헤더로 보낸다(로컬 전용).
+ */
 import { useCallback, useEffect, useState } from 'react';
 import type { GuardView, OutingList, OutingRow, PenaltyList, PenaltyRules, RequestList, Settings, StudentFile, StudentFileList, Summary } from '../server/core';
 
 export type { GuardView, OutingList, OutingRow, PenaltyList, PenaltyRules, RequestList, Settings, StudentFile, StudentFileList, Summary };
 export type PenaltyRow = PenaltyList['rows'][number];
+export type { AuditList, CounselingDetail, CounselingList } from '../server/counseling';
+
+const STAFF_KEY = 'jic-staff-name';
+let staffMemory = '';
+const staffListeners = new Set<() => void>();
+export function getStaffName() {
+  try {
+    return localStorage.getItem(STAFF_KEY) ?? staffMemory;
+  } catch {
+    return staffMemory;
+  }
+}
+export function setStaffName(name: string) {
+  staffMemory = name.trim();
+  try {
+    if (staffMemory) localStorage.setItem(STAFF_KEY, staffMemory);
+    else localStorage.removeItem(STAFF_KEY);
+  } catch {
+    // 저장소를 못 쓰면 이번 화면에서만 기억
+  }
+  staffListeners.forEach((fn) => fn());
+}
+export function useStaffName() {
+  const [name, setName] = useState(getStaffName);
+  useEffect(() => {
+    const fn = () => setName(getStaffName());
+    staffListeners.add(fn);
+    return () => {
+      staffListeners.delete(fn);
+    };
+  }, []);
+  return name;
+}
 
 export class ApiError extends Error {
   constructor(
@@ -18,9 +54,12 @@ export class ApiError extends Error {
 export async function api<T>(path: string, init?: { method?: string; body?: unknown }): Promise<T> {
   let res: Response;
   try {
+    const headers: Record<string, string> = init?.body === undefined ? {} : { 'Content-Type': 'application/json' };
+    const staff = getStaffName();
+    if (staff) headers['X-Staff-Name'] = encodeURIComponent(staff); // 한글은 헤더에 그대로 못 넣는다
     res = await fetch(path, {
       method: init?.method ?? 'GET',
-      headers: init?.body === undefined ? {} : { 'Content-Type': 'application/json' },
+      headers,
       body: init?.body === undefined ? undefined : JSON.stringify(init.body),
     });
   } catch {
@@ -79,5 +118,13 @@ const MESSAGES: Record<string, string> = {
   invalid_settings: '통금 시각과 근무자 이름을 확인하세요.',
   ids_required: '처리할 건을 고르세요.',
   invalid_decision: '승인 또는 반려를 고르세요.',
+  actor_required: '오른쪽 위에 직원 이름을 먼저 입력하세요. 상담 기록은 누가 보고 썼는지 남깁니다.',
+  unknown_student: '학생번호를 확인하세요.',
+  invalid_date: '상담일을 확인하세요(오늘 이후는 안 됩니다).',
+  invalid_title: '제목을 입력하세요(100자까지).',
+  invalid_content: '내용을 입력하세요(3000자까지).',
+  invalid_followup: '후속 조치 기한은 상담일과 같거나 뒤여야 합니다.',
+  no_followup: '후속 조치 기한이 없는 기록입니다.',
+  not_found: '찾을 수 없습니다.',
 };
 export const errorText = (code: string) => MESSAGES[code] ?? `처리하지 못했습니다 (${code}).`;

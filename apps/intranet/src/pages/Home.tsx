@@ -45,6 +45,13 @@ export default function Home() {
             <small>건 · {data.overnightTonight}명</small>
           </span>
         </Link>
+        <Link to="/counseling?view=followup">
+          <span className="label">확인할 일 (상담 후속 조치)</span>
+          <span className="value">
+            {data.followUpOpen}
+            <small>건 · 기한 지남·오늘 {data.followUpDue}건</small>
+          </span>
+        </Link>
         <div>
           <span className="label">재학생</span>
           <span className="value">

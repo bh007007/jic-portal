@@ -9,6 +9,8 @@ export const hm = (iso: string | null | undefined) => (iso ? hmFmt.format(new Da
 export const localDate = (iso: string | number) => dateFmt.format(new Date(iso));
 /** 11-05 21:46 */
 export const mdhm = (iso: string | null | undefined) => (iso ? `${localDate(iso).slice(5)} ${hm(iso)}` : '-');
+/** 2026-11-05 21:46 */
+export const ymdhm = (iso: string | null | undefined) => (iso ? `${localDate(iso)} ${hm(iso)}` : '-');
 /** 2026-11-05 → 11-05 */
 export const md = (date: string) => date.slice(5);
 /** 164 → 2시간 44분 */

@@ -2,6 +2,7 @@ import { Link, useParams } from 'react-router-dom';
 import { useApi, type StudentFile } from '../api';
 import { Loading, PageTitle } from '../components/ui';
 import { duration, md, mdhm } from '../format';
+import { FollowUp } from './Counseling';
 
 // 학생 한 명의 생활 기록. 기본 정보·연수·회계·메모는 관리자 앱 학생 상세에 있다.
 const ADMIN_URL = import.meta.env.VITE_ADMIN_URL ?? 'http://127.0.0.1:5173';
@@ -133,6 +134,49 @@ export default function StudentFileDetail() {
                       <Status s={p.status} />
                     </td>
                     <td>{mdhm(p.decidedAt)}</td>
+                  </tr>
+                ))
+              )}
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <section className="panel">
+        <div className="panel-head">
+          <h2>
+            상담 기록 <small>({data.counseling.length}건 · 내용은 상세에서)</small>
+          </h2>
+          <Link to={`/counseling/new?stId=${s.stId}`} className="more">
+            상담 기록 작성 &gt;
+          </Link>
+        </div>
+        <div className="panel-body">
+          <table className="tbl center">
+            <thead>
+              <tr>
+                <th>상담일</th>
+                <th className="left">제목</th>
+                <th>작성자</th>
+                <th>후속 조치</th>
+              </tr>
+            </thead>
+            <tbody>
+              {data.counseling.length === 0 ? (
+                <tr className="empty">
+                  <td colSpan={4}>상담 기록이 없습니다.</td>
+                </tr>
+              ) : (
+                data.counseling.map((n) => (
+                  <tr key={n.id}>
+                    <td>{md(n.date)}</td>
+                    <td className="left">
+                      <Link to={`/counseling/${n.id}`}>{n.title}</Link>
+                    </td>
+                    <td>{n.author}</td>
+                    <td>
+                      <FollowUp n={n} />
+                    </td>
                   </tr>
                 ))
               )}
