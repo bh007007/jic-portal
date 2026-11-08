@@ -22,13 +22,17 @@ import {
   type OvernightStore,
 } from './requests';
 
+import { AIRPORTS, departureEnrollment, saveDeparture, type DepartureInput, type DepartureStore } from './departures';
+
 export { ABSENCE_KINDS, PERIOD_COUNT, REASON_MAX } from './requests';
+export type { Departure, DepartureStore } from './departures';
 export type { Absence, AbsenceInput, AbsenceKind, AbsenceStore, Overnight, OvernightInput, OvernightStore, RequestStatus } from './requests';
 
 export interface StudentCtx {
   db: Db;
   store: AbsenceStore;
   overnights: OvernightStore;
+  departures: DepartureStore;
   /** 로그인한 학생 번호. 없으면 null. */
   stId: string | null;
   /** 학생번호 + 생년월일 로그인(/api/login)을 열지. 로컬 개발 서버에서만 true. */
@@ -49,7 +53,7 @@ const digits = (v: unknown) => String(v ?? '').replace(/\D/g, '');
 /** 졸업 전 확인 목록을 보여 주는 기간(관리자 앱의 '졸업임박'과 같은 14일). */
 const CHECKOUT_DAYS = 14;
 
-function profile(db: Db, stId: string) {
+function baseProfile(db: Db, stId: string) {
   const d = db.studentDetail(stId);
   if (!d) return null;
   // studentDetail 은 시작일 내림차순으로 준다.
@@ -91,7 +95,33 @@ function profile(db: Db, stId: string) {
     checkout,
   };
 }
-export type Profile = NonNullable<ReturnType<typeof profile>>;
+/** 필리핀 날짜(오늘) */
+const localToday = (d: Date) => new Date(d.getTime() + 8 * 3600e3).toISOString().slice(0, 10);
+
+/** 내 정보 + 이번 연수의 귀국 항공편 */
+async function profile(ctx: StudentCtx, stId: string) {
+  const base = baseProfile(ctx.db, stId);
+  if (!base) return null;
+  const e = departureEnrollment(ctx.db, stId);
+  const departure = e ? await ctx.departures.get(`dep-${e.trId}`) : null;
+  return { ...base, departure };
+}
+export type Profile = NonNullable<Awaited<ReturnType<typeof profile>>>;
+
+async function departureView(ctx: StudentCtx, stId: string) {
+  const enrollment = departureEnrollment(ctx.db, stId);
+  const departure = enrollment ? await ctx.departures.get(`dep-${enrollment.trId}`) : null;
+  return { today: localToday(ctx.now()), airports: AIRPORTS, enrollment, departure };
+}
+export type DepartureView = Awaited<ReturnType<typeof departureView>>;
+
+async function putDeparture(ctx: StudentCtx, stId: string, input: DepartureInput): Promise<Result> {
+  const e = departureEnrollment(ctx.db, stId);
+  const existing = e ? await ctx.departures.get(`dep-${e.trId}`) : null;
+  const out = saveDeparture({ db: ctx.db, stId, now: ctx.now, today: localToday(ctx.now()) }, existing, input);
+  if (out.ok) await ctx.departures.put(out.value);
+  return fromOutcome(out);
+}
 
 const byNewest = (a: { submittedAt: string }, b: { submittedAt: string }) => b.submittedAt.localeCompare(a.submittedAt);
 
@@ -159,8 +189,10 @@ export async function handleStudentApi(ctx: StudentCtx, method: string, pathname
     const stId = ctx.stId;
     if (!stId) return fail(401, 'unauthorized');
 
+    if (p === '/departure' && method === 'GET') return ok(await departureView(ctx, stId));
+    if (p === '/departure' && method === 'PUT') return await putDeparture(ctx, stId, input);
     if (p === '/me' && method === 'GET') {
-      const pr = profile(ctx.db, stId);
+      const pr = await profile(ctx, stId);
       return pr ? ok(pr) : fail(401, 'unauthorized');
     }
     if (p === '/absences' && method === 'GET') return ok(await listAbsences(ctx, stId));

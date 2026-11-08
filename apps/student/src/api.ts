@@ -3,9 +3,10 @@
  * 이 방식은 로컬 개발 서버 전용이다. 배포에서는 Supabase Auth 토큰(Authorization)으로 바꾼다(docs/student-app.md).
  */
 import { useCallback, useEffect, useState } from 'react';
-import type { Absence, AbsenceInput, AbsenceList, OvernightInput, OvernightList, OvernightRow, Profile } from '../server/core';
+import type { Absence, AbsenceInput, AbsenceList, Departure, DepartureView, OvernightInput, OvernightList, OvernightRow, Profile } from '../server/core';
+import type { DepartureInput } from '../server/departures';
 
-export type { Absence, AbsenceList, OvernightList, OvernightRow, Profile };
+export type { Absence, AbsenceList, Departure, DepartureView, OvernightList, OvernightRow, Profile };
 export type AbsenceKind = Absence['kind'];
 export type AbsenceStatus = Absence['status'];
 
@@ -102,4 +103,5 @@ export const createAbsence = (input: AbsenceInput) => api<Absence>('/api/absence
 export const cancelAbsence = (id: string) => api<Absence>(`/api/absences/${encodeURIComponent(id)}/cancel`, { method: 'POST', body: {} });
 export const createOvernight = (input: OvernightInput) => api<OvernightRow>('/api/overnights', { method: 'POST', body: input });
 export const cancelOvernight = (id: string) => api<OvernightRow>(`/api/overnights/${encodeURIComponent(id)}/cancel`, { method: 'POST', body: {} });
+export const saveDeparture = (input: DepartureInput) => api<Departure>('/api/departure', { method: 'PUT', body: input });
 export const login = (stId: string, birthday: string) => api<{ stId: string }>('/api/login', { method: 'POST', body: { stId, birthday } });

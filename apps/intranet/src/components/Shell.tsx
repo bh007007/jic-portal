@@ -18,6 +18,7 @@ const MENU: { group?: string; items: { to: string; label: string; badge?: Badge 
       { to: '/outings', label: '외출·귀가' },
       { to: '/curfew', label: '통금 확인' },
       { to: '/reports', label: '가드 리포트' },
+      { to: '/departures', label: '귀국 일정' },
       { to: '/photos', label: '사진 관리' },
     ],
   },

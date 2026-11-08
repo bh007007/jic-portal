@@ -19,6 +19,7 @@ import {
   type CounselingCtx,
   type CounselingNote,
 } from './counseling';
+import type { Departure, DepartureStore } from '../../student/server/departures';
 import { PENALTY_KIND_OF, REPORT_KINDS, REPORT_LABEL, REPORT_NOTE_MAX, type IncidentReport, type ReportKind } from './reports';
 import { createNotice, listNotices, noticeSummary, openNotice, updateNotice, type Notice, type NoticeCtx, type NoticeRead } from './notices';
 import { COMMENT_MAX, decideRequest, nightsBetween, overnightFor, type Absence, type Overnight, type RequestStatus, type RequestStore } from '../../student/server/requests';
@@ -132,6 +133,8 @@ export interface Stores {
   noticeReads: Repo<NoticeRead>;
   /** 가드 리포트(사건 리포트) */
   reports: Repo<IncidentReport>;
+  /** 학생 앱과 같이 쓰는 귀국 항공편 */
+  departures: DepartureStore;
 }
 
 export interface IntranetCtx {
@@ -390,6 +393,47 @@ async function listReports(ctx: IntranetCtx, q: URLSearchParams) {
   };
 }
 export type ReportList = Awaited<ReturnType<typeof listReports>>;
+
+// ── 귀국 일정: 학생 앱에서 등록한 귀국 항공편(공항 이동 배차용)과 졸업이 가까운 미등록 학생
+const DEPARTURE_SOON_DAYS = 14; // 관리자 앱의 '졸업임박'과 같은 14일
+const addDaysTo = (d: string, n: number) => new Date(Date.parse(d) + n * 864e5).toISOString().slice(0, 10);
+
+async function listDepartures(ctx: IntranetCtx, q: URLSearchParams) {
+  const today = localDate(ctx.now().getTime());
+  const soon = addDaysTo(today, DEPARTURE_SOON_DAYS);
+  const view = q.get('view') === 'missing' ? 'missing' : 'registered';
+  const from = q.get('from') || today;
+  const to = q.get('to') || soon;
+  const campus = q.get('campus') || '';
+  const ride = q.get('ride') === '1';
+  const all = await ctx.stores.departures.listAll();
+  const byTr = new Map(all.map((d) => [d.trId, d]));
+  const cur = [...new Map(currentRows(ctx).map((r) => [r.stId, r] as const)).values()];
+  const endOf = new Map(cur.map((r) => [r.trId, r.end]));
+
+  const registered = all
+    .map((d) => {
+      const s = studentRef(ctx.db, d.stId);
+      return { ...d, name: s.name, campus: s.campus, end: endOf.get(d.trId) ?? '' };
+    })
+    .filter((d) => d.date >= from && d.date <= to && (!campus || d.campus === campus) && (!ride || d.needsRide))
+    .sort((a, b) => a.date.localeCompare(b.date) || a.time.localeCompare(b.time));
+  const missing = cur
+    .filter((r) => r.end >= today && r.end <= soon && !byTr.has(r.trId) && (!campus || r.campus === campus))
+    .map((r) => ({ stId: r.stId, trId: r.trId, name: r.name, campus: r.campus, end: r.end, daysLeft: Math.round((Date.parse(r.end) - Date.parse(today)) / 864e5) }))
+    .sort((a, b) => a.end.localeCompare(b.end) || a.name.localeCompare(b.name));
+  return {
+    view,
+    today,
+    from,
+    to,
+    counts: { registered: registered.length, missing: missing.length, rides: registered.filter((d) => d.needsRide).length },
+    campuses: [...new Set(cur.map((r) => r.campus))].sort(),
+    registered,
+    missing,
+  };
+}
+export type DepartureList = Awaited<ReturnType<typeof listDepartures>>;
 
 // ── 외출·귀가 기록 / 통금 확인
 async function listOutings(ctx: IntranetCtx, q: URLSearchParams) {
@@ -724,6 +768,7 @@ async function studentFile(ctx: IntranetCtx, stId: string) {
       .sort((a, b) => b.from.localeCompare(a.from))
       .map((o) => ({ ...o, nights: nightsBetween(o.from, o.until) })),
     counseling: await counselingOf(counselingCtx(ctx), stId),
+    departure: main ? ((await ctx.stores.departures.get(`dep-${main.trId}`)) as Departure | null) : null,
   };
 }
 export type StudentFile = NonNullable<Awaited<ReturnType<typeof studentFile>>>;
@@ -777,6 +822,7 @@ async function summary(ctx: IntranetCtx) {
     current: currentIndex(ctx.db).size,
     ...(await followUpCounts(counselingCtx(ctx))),
     ...(await noticeSummary(noticeCtx(ctx))),
+    departureMissing: (await listDepartures(ctx, new URLSearchParams())).counts.missing,
   };
 }
 export type Summary = Awaited<ReturnType<typeof summary>>;
@@ -812,6 +858,8 @@ export async function handleIntranetApi(ctx: IntranetCtx, method: string, pathna
         return await guardScan(ctx, input);
       case 'POST /guard/report':
         return await guardReport(ctx, input);
+      case 'GET /departures':
+        return ok(await listDepartures(ctx, q));
       case 'GET /reports':
         return ok(await listReports(ctx, q));
       case 'GET /outings':

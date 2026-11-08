@@ -2,6 +2,7 @@ import { Navigate, Route, Routes } from 'react-router-dom';
 import { useApi, useStudentId, type Meta } from './api';
 import { BottomNav, Header } from './components/Layout';
 import AbsenceNew from './pages/AbsenceNew';
+import Departure from './pages/Departure';
 import Home from './pages/Home';
 import Login from './pages/Login';
 import OvernightDetail from './pages/OvernightDetail';
@@ -30,6 +31,7 @@ export default function App() {
           <Route path="/requests/overnight/:id" element={<OvernightDetail />} />
           <Route path="/requests/:id" element={<RequestDetail />} />
           <Route path="/me" element={<Profile />} />
+          <Route path="/departure" element={<Departure />} />
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
       </main>
