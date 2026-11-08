@@ -19,7 +19,7 @@ import {
   type CounselingCtx,
   type CounselingNote,
 } from './counseling';
-import type { Departure, DepartureStore } from '../../student/server/departures';
+import { decideRide, rideState, type Departure, type DepartureStore, type RideState, type RideStore } from '../../student/server/departures';
 import { PENALTY_KIND_OF, REPORT_KINDS, REPORT_LABEL, REPORT_NOTE_MAX, type IncidentReport, type ReportKind } from './reports';
 import { createNotice, listNotices, noticeSummary, openNotice, updateNotice, type Notice, type NoticeCtx, type NoticeRead } from './notices';
 import { COMMENT_MAX, decideRequest, nightsBetween, overnightFor, type Absence, type Overnight, type RequestStatus, type RequestStore } from '../../student/server/requests';
@@ -133,8 +133,9 @@ export interface Stores {
   noticeReads: Repo<NoticeRead>;
   /** 가드 리포트(사건 리포트) */
   reports: Repo<IncidentReport>;
-  /** 학생 앱과 같이 쓰는 귀국 항공편 */
+  /** 학생 앱과 같이 쓰는 귀국 항공편과, 직원이 쓰는 공항 이동 배차 */
   departures: DepartureStore;
+  rides: RideStore;
 }
 
 export interface IntranetCtx {
@@ -405,8 +406,10 @@ async function listDepartures(ctx: IntranetCtx, q: URLSearchParams) {
   const from = q.get('from') || today;
   const to = q.get('to') || soon;
   const campus = q.get('campus') || '';
-  const ride = q.get('ride') === '1';
+  const rideFilter = q.get('ride') || ''; // '1' = 차량 요청만, 'pending' = 처리할 것(요청·재확인)
   const all = await ctx.stores.departures.listAll();
+  const rides = new Map((await ctx.stores.rides.listAll()).map((r) => [r.id, r]));
+  const PENDING: RideState[] = ['requested', 'changed'];
   const byTr = new Map(all.map((d) => [d.trId, d]));
   const cur = [...new Map(currentRows(ctx).map((r) => [r.stId, r] as const)).values()];
   const endOf = new Map(cur.map((r) => [r.trId, r.end]));
@@ -414,9 +417,11 @@ async function listDepartures(ctx: IntranetCtx, q: URLSearchParams) {
   const registered = all
     .map((d) => {
       const s = studentRef(ctx.db, d.stId);
-      return { ...d, name: s.name, campus: s.campus, end: endOf.get(d.trId) ?? '' };
+      const r = rides.get(d.id) ?? null;
+      return { ...d, name: s.name, campus: s.campus, end: endOf.get(d.trId) ?? '', ride: { state: rideState(d, r), record: r } };
     })
-    .filter((d) => d.date >= from && d.date <= to && (!campus || d.campus === campus) && (!ride || d.needsRide))
+    .filter((d) => d.date >= from && d.date <= to && (!campus || d.campus === campus))
+    .filter((d) => !rideFilter || (rideFilter === 'pending' ? PENDING.includes(d.ride.state) : d.needsRide))
     .sort((a, b) => a.date.localeCompare(b.date) || a.time.localeCompare(b.time));
   const missing = cur
     .filter((r) => r.end >= today && r.end <= soon && !byTr.has(r.trId) && (!campus || r.campus === campus))
@@ -427,13 +432,31 @@ async function listDepartures(ctx: IntranetCtx, q: URLSearchParams) {
     today,
     from,
     to,
-    counts: { registered: registered.length, missing: missing.length, rides: registered.filter((d) => d.needsRide).length },
+    counts: {
+      registered: registered.length,
+      missing: missing.length,
+      rides: registered.filter((d) => d.needsRide).length,
+      // 메뉴 숫자: 오늘 이후 출발 중 처리할 배차(기간·검색과 관계없이)
+      ridePending: all.filter((d) => d.date >= today && PENDING.includes(rideState(d, rides.get(d.id) ?? null))).length,
+    },
     campuses: [...new Set(cur.map((r) => r.campus))].sort(),
     registered,
     missing,
   };
 }
 export type DepartureList = Awaited<ReturnType<typeof listDepartures>>;
+
+/** 공항 이동 배차 확정·불가. 처리자는 직원 이름(로컬: 오른쪽 위 입력, 배포: 로그인). 다시 처리하면 덮어쓴다. */
+async function decideDepartureRide(ctx: IntranetCtx, id: string, input: Record<string, unknown>): Promise<Result> {
+  if (!ctx.actor) return fail(400, 'actor_required');
+  const d = await ctx.stores.departures.get(id);
+  if (!d) return fail(404, 'not_found');
+  if (d.date < localDate(ctx.now().getTime())) return fail(409, 'departure_passed');
+  const out = decideRide(d, input, ctx.actor, ctx.now());
+  if (!out.ok) return fail(out.status, out.error);
+  await ctx.stores.rides.put(out.value);
+  return ok({ id, state: rideState(d, out.value) });
+}
 
 // ── 외출·귀가 기록 / 통금 확인
 async function listOutings(ctx: IntranetCtx, q: URLSearchParams) {
@@ -822,7 +845,7 @@ async function summary(ctx: IntranetCtx) {
     current: currentIndex(ctx.db).size,
     ...(await followUpCounts(counselingCtx(ctx))),
     ...(await noticeSummary(noticeCtx(ctx))),
-    departureMissing: (await listDepartures(ctx, new URLSearchParams())).counts.missing,
+    ...(await listDepartures(ctx, new URLSearchParams()).then((d) => ({ departureMissing: d.counts.missing, ridePending: d.counts.ridePending }))),
   };
 }
 export type Summary = Awaited<ReturnType<typeof summary>>;
@@ -893,6 +916,8 @@ export async function handleIntranetApi(ctx: IntranetCtx, method: string, pathna
         return ok(s);
       }
     }
+    const rd = p.match(/^\/departures\/([\w-]+)\/ride$/);
+    if (rd && method === 'POST') return await decideDepartureRide(ctx, rd[1], input);
     const nt = p.match(/^\/notices\/([\w-]+)$/);
     if (nt && method === 'GET') return await openNotice(noticeCtx(ctx), nt[1]);
     if (nt && method === 'PUT') return await updateNotice(noticeCtx(ctx), nt[1], input);

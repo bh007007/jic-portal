@@ -1,7 +1,7 @@
 import { useState, type FormEvent } from 'react';
 import { ApiError, saveDeparture, useApi, type DepartureView } from '../api';
 import { LoadError, Loading, SubTitle } from '../components/Layout';
-import { ymd } from '../format';
+import { md, ymd } from '../format';
 import { errorText, useI18n } from '../i18n';
 
 /** 귀국 항공편 등록·수정(디자인 05 '졸업 전 확인'). 인트라넷 '귀국 일정'이 공항 이동 배차에 쓴다. */
@@ -53,6 +53,7 @@ function DepartureForm({ view, onSaved }: { view: DepartureView; onSaved: () => 
 
   return (
     <form className="form" onSubmit={submit}>
+      <RideStatus ride={view.ride} />
       {locked && <p className="form-hint">{t('dep.passed')}</p>}
       <fieldset className="form-group" disabled={locked}>
         <legend className="sr-only">{t('dep.title')}</legend>
@@ -107,5 +108,32 @@ function DepartureForm({ view, onSaved }: { view: DepartureView; onSaved: () => 
         </button>
       )}
     </form>
+  );
+}
+
+/** 공항 이동 배차 상태(직원이 처리). 차량을 요청하지 않았으면 보이지 않는다. */
+function RideStatus({ ride }: { ride: DepartureView['ride'] }) {
+  const { t } = useI18n();
+  if (ride.state === 'none' || ride.state === 'withdrawn') return null;
+  return (
+    <div className={'ride-box ' + ride.state} role="status">
+      <strong>{t('ride.title')}</strong>
+      {ride.state === 'requested' && <span>{t('ride.requested')}</span>}
+      {ride.state === 'changed' && <span>{t('ride.changed')}</span>}
+      {ride.state === 'confirmed' && (
+        <>
+          <span className="ride-strong">
+            {t('ride.confirmed')} · {t('ride.pickup', { date: md(ride.pickupDate!), time: ride.pickupTime! })}
+          </span>
+          {ride.note && <span className="pre">{ride.note}</span>}
+        </>
+      )}
+      {ride.state === 'declined' && (
+        <>
+          <span className="ride-strong">{t('ride.declined')}</span>
+          {ride.note && <span className="pre">{ride.note}</span>}
+        </>
+      )}
+    </div>
   );
 }

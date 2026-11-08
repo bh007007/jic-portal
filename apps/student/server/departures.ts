@@ -96,3 +96,59 @@ export function saveDeparture(
     },
   };
 }
+
+// ── 공항 이동 배차: 직원이 쓰는 기록. 항공편(학생이 씀)과 따로 둔다(기획안 C2: 데이터마다 쓰는 곳은 한 곳).
+export type RideDecision = 'confirmed' | 'declined';
+export const RIDE_NOTE_MAX = 200;
+
+export interface Ride {
+  id: string; // 항공편 id 와 같다(`dep-${trId}`)
+  stId: string;
+  trId: string;
+  decision: RideDecision;
+  pickupDate: string | null; // 기숙사 출발 날짜(확정일 때)
+  pickupTime: string | null; // 기숙사 출발 시각(확정일 때)
+  note: string; // 차량·집합 장소, 또는 불가 사유
+  forDate: string; // 처리할 때의 항공편 출발일·시각(학생이 바꾸면 다시 확인)
+  forTime: string;
+  decidedBy: string;
+  decidedAt: string;
+}
+export interface RideStore {
+  listAll(): Promise<Ride[]>;
+  get(id: string): Promise<Ride | null>;
+  put(x: Ride): Promise<void>;
+}
+
+/**
+ * 배차 상태: none(차량 요청 없음) · requested(요청, 처리 전) · confirmed · declined
+ * · changed(처리 뒤 학생이 항공편 날짜·시각을 바꿈 → 다시 확인) · withdrawn(처리 뒤 학생이 차량 요청을 뺌)
+ */
+export type RideState = 'none' | 'requested' | 'confirmed' | 'declined' | 'changed' | 'withdrawn';
+export function rideState(d: Departure, r: Ride | null): RideState {
+  if (!r) return d.needsRide ? 'requested' : 'none';
+  if (!d.needsRide) return 'withdrawn';
+  if (r.forDate !== d.date || r.forTime !== d.time) return 'changed';
+  return r.decision;
+}
+
+/** 직원 처리 확인. 확정은 기숙사 출발 일시가 필요하고, 항공편 출발일이나 그 전날이어야 한다. 불가는 사유가 필요하다. */
+export function decideRide(d: Departure, input: { decision?: unknown; pickupDate?: unknown; pickupTime?: unknown; note?: unknown }, by: string, now: Date): Outcome<Ride> {
+  const decision = input.decision;
+  const note = typeof input.note === 'string' ? input.note.trim() : '';
+  if (decision !== 'confirmed' && decision !== 'declined') return { ok: false, status: 400, error: 'invalid_decision' };
+  if (!d.needsRide) return { ok: false, status: 409, error: 'no_ride_request' };
+  if (note.length > RIDE_NOTE_MAX) return { ok: false, status: 400, error: 'invalid_note' };
+  let pickupDate: string | null = null;
+  let pickupTime: string | null = null;
+  if (decision === 'confirmed') {
+    if (!isDate(input.pickupDate) || (input.pickupDate !== d.date && input.pickupDate !== addDays(d.date, -1))) return { ok: false, status: 400, error: 'invalid_pickup_date' };
+    if (!isHm(input.pickupTime)) return { ok: false, status: 400, error: 'invalid_time' };
+    if (input.pickupDate === d.date && input.pickupTime >= d.time) return { ok: false, status: 400, error: 'pickup_after_flight' };
+    pickupDate = input.pickupDate;
+    pickupTime = input.pickupTime;
+  } else if (!note) {
+    return { ok: false, status: 400, error: 'reason_required' };
+  }
+  return { ok: true, status: 200, value: { id: d.id, stId: d.stId, trId: d.trId, decision, pickupDate, pickupTime, note, forDate: d.date, forTime: d.time, decidedBy: by, decidedAt: now.toISOString() } };
+}

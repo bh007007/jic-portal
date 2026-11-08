@@ -178,6 +178,12 @@ textarea { font: inherit; }
 .cell-input.num-input { width: 80px; text-align: right; }
 .cell-input.wide { width: 100%; max-width: 360px; height: auto; padding: 6px 8px; line-height: 1.5; }
 .memo-input { width: 260px; }
+.tbl.center .ride-edit td { background: var(--head-bg); text-align: left; }
+.ride-form { display: flex; flex-direction: column; gap: 8px; padding: 6px 8px; }
+.ride-form-row { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 14px; }
+.ride-form-row > span:first-child { flex: 0 0 72px; font-size: 12px; font-weight: 500; color: #333; }
+.ride-form-row label { display: inline-flex; align-items: center; gap: 4px; }
+.wide-input { width: min(520px, 100%); }
 .staff-form { display: inline-flex; gap: 4px; align-items: center; }
 .staff-form .cell-input { width: 120px; height: 26px; }
 .link-btn { padding: 0; border: 0; background: none; color: var(--primary); text-decoration: underline; cursor: pointer; font-size: 12px; }

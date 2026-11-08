@@ -12,7 +12,7 @@ import type { IncomingMessage, ServerResponse } from 'node:http';
 import type { Plugin } from 'vite';
 import { loadDir } from '../../admin/server/localData';
 import { handleStudentApi } from './core';
-import type { Departure } from './departures';
+import type { Departure, Ride } from './departures';
 import type { Absence, Overnight, RequestStore } from './requests';
 
 /**
@@ -60,6 +60,7 @@ export function requestFiles(storeDir: string, source: string) {
     absences: path.join(storeDir, `absences-${source}.ndjson`),
     overnights: path.join(storeDir, `overnights-${source}.ndjson`),
     departures: path.join(storeDir, `departures-${source}.ndjson`),
+    rides: path.join(storeDir, `rides-${source}.ndjson`),
   };
 }
 
@@ -99,6 +100,7 @@ export function studentLocalPlugin(dataDir: string, storeDir: string): Plugin {
       const store = fileStore<Absence>(files.absences);
       const overnights = fileStore<Overnight>(files.overnights);
       const departures = fileStore<Departure>(files.departures);
+      const rides = fileStore<Ride>(files.rides);
       server.config.logger.info(`[student-local] ${db.summary()} · 기준일 ${db.refDate} · 신청 파일 ${storeDir}`);
 
       server.middlewares.use('/api', async (req: IncomingMessage, res: ServerResponse) => {
@@ -123,7 +125,7 @@ export function studentLocalPlugin(dataDir: string, storeDir: string): Plugin {
         const header = req.headers['x-student-id'];
         const stId = typeof header === 'string' && /^\d+$/.test(header) ? header : null;
         const { status, body: out } = await handleStudentApi(
-          { db, store, overnights, departures, stId, localLogin: true, now: () => new Date(), newId: () => crypto.randomUUID() },
+          { db, store, overnights, departures, rides, stId, localLogin: true, now: () => new Date(), newId: () => crypto.randomUUID() },
           method,
           url.pathname,
           body,
