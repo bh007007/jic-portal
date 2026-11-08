@@ -12,6 +12,12 @@
       "runtimeExecutable": "C:\\Windows\\System32\\WindowsPowerShell\\v1.0\\powershell.exe",
       "runtimeArgs": ["-NoProfile", "-Command", "$env:JIC_DATA_DIR='data-sample/tables'; & 'C:\\Program Files\\nodejs\\node.exe' node_modules/vite/bin/vite.js apps/admin --port 5174"],
       "port": 5174
+    },
+    {
+      "name": "student",
+      "runtimeExecutable": "C:\\Program Files\\nodejs\\node.exe",
+      "runtimeArgs": ["node_modules/vite/bin/vite.js", "apps/student"],
+      "port": 5176
     }
   ]
 }

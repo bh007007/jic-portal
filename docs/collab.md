@@ -19,6 +19,8 @@
 - **`.github/workflows/ci.yml`**: 자기 앱 빌드 줄 하나만 더한다.
 - **`HANDOFF.md`, `README.md`**: 자기 앱 항목만 고친다. 표의 다른 줄은 그대로 둔다.
 - **`data-sample/`**: `scripts/make-sample-data.mjs`로만 바꾼다. 새 필드는 별도 시드로 만들어 기존 학생·연수 값이 바뀌지 않게 한다.
+- **학생 앱의 관리자 core 의존**: `apps/student`는 `apps/admin/server/core.ts`의 `createDb`·`studentDetail`과 `server/localData.ts`의 `loadDir`을 가져다 쓴다. 이 응답 모양을 바꾸면 `npm run student:build`도 확인한다(CI가 함께 빌드한다).
+- **개발 서버 포트**: 관리자 5173(샘플 데이터 실행 5174), 파트너 5175, 학생 5176. 새 앱은 5177부터.
 
 ## 데이터베이스 규칙
 - 마이그레이션 파일 이름은 `YYYYMMDDHHMMSS_설명.sql`로 하고, main에 있는 마지막 파일보다 뒤 시각을 쓴다.

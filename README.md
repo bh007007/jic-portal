@@ -14,6 +14,7 @@
 portal/
 ├─ apps/admin/            관리자 화면 (React + Vite)
 ├─ apps/partner/          파트너 포털 (React + Vite + Supabase) · docs/partner-portal.md
+├─ apps/student/          학생 앱 (모바일, 로컬 전용)
 ├─ functions/api/         배포용 /api 서버 (Cloudflare Pages Function → Supabase)
 ├─ supabase/migrations/   Supabase 테이블·권한 SQL
 ├─ .github/workflows/     빌드 확인, DB 반영
@@ -46,6 +47,16 @@ npm run admin
 - 기준일은 추출 시각(`data/tables/meta.json`)이다. 다시 추출하고 분리하면 서버를 재시작해 반영한다.
 - 추출본에 없는 항목: 방·침대 번호, 인보이스 총액. 추가 추출 후 화면에 붙인다. 회계 화면은 입금 매칭 합계(`sum_id_amount`)와 포인트 충전·사용 합계만 보여 주고 총액·미수금은 만들지 않는다.
 - 입금 원장(`deposits.ndjson`)은 로컬에서만 읽는다. 배포 환경(Supabase)에는 아직 테이블이 없어 입금 매칭 > 입금 원장 탭에 '데이터 없음'이 표시된다.
+
+## 학생 앱 실행 (로컬)
+
+`apps/student`는 학생용 모바일 화면(홈, 결석 신청, 신청 내역, 내 정보)이다. 관리자 앱과 같은 데이터 폴더를 읽고, 결석 신청은 `.local-db/`(Git 제외)에 저장한다.
+
+```powershell
+npm run student
+```
+
+http://127.0.0.1:5176 을 연다. 로그인은 학생번호 + 생년월일 8자리이며, 샘플 데이터로 실행하면 시험용 학생이 로그인 화면에 나온다. 자세한 내용은 [docs/student-app.md](docs/student-app.md), 두 작업 세션의 분담은 [docs/collab.md](docs/collab.md).
 
 ## 데이터 다시 추출하기
 
