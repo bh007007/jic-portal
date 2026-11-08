@@ -60,6 +60,8 @@ const stores: Stores = {
   overnights: memReq<Overnight>(),
   counseling: memRepo(),
   audit: memRepo(),
+  notices: memRepo(),
+  noticeReads: memRepo(),
 };
 let clock = Date.parse('2026-11-05T19:02:00+08:00');
 let n = 0;
@@ -283,6 +285,65 @@ const sm3 = (await call('GET', '/summary')).body as any;
 expect('홈: 열린 후속 조치 1(A), 기한 지남·오늘 1', sm3.followUpOpen === 1 && sm3.followUpDue === 1, sm3);
 r = await call('POST', '/counseling/' + noteId + '/followup', { done: 'yes' });
 expect('완료 값 잘못되면 400', r.status === 400, r);
+
+// ── 내부 공지
+at('2026-11-07T09:00:00');
+actor = null;
+r = await call('POST', '/notices', { title: '이번 주 통금 점검', content: '금요일 밤 통금 점검' });
+expect('공지: 처리자 없으면 작성 불가', (r.body as any).error === 'actor_required', r);
+actor = '레오';
+r = await call('POST', '/notices', { title: '', content: 'x' });
+expect('공지: 제목 없으면 400', (r.body as any).error === 'invalid_title', r);
+r = await call('POST', '/notices', { title: 't', content: 'x', campus: '없는캠퍼스' });
+expect('공지: 없는 캠퍼스 400', (r.body as any).error === 'invalid_campus', r);
+r = await call('POST', '/notices', { title: 't', content: 'x', until: '2026-11-06' });
+expect('공지: 지난 날짜까지 새 공지 400', (r.body as any).error === 'invalid_until', r);
+r = await call('POST', '/notices', { title: '전체 공지', content: '모든 캠퍼스', until: '2026-11-07' });
+const nAll = (r.body as any).id;
+at('2026-11-07T09:01:00');
+r = await call('POST', '/notices', { title: `${campus} 정전 안내`, content: '토요일 오전 정전', campus });
+const nCampus = (r.body as any).id;
+at('2026-11-07T09:02:00');
+r = await call('POST', '/notices', { title: '고정 공지', content: '비상 연락망', pinned: true });
+const nPinned = (r.body as any).id;
+let nl = (await call('GET', '/notices')).body as any;
+expect('공지 3건, 고정 먼저, 그다음 최근 순', nl.rows.map((x: any) => x.id).join() === [nPinned, nCampus, nAll].join(), nl.rows.map((x: any) => x.title));
+expect('작성자는 안 읽음으로 시작', nl.rows.every((x: any) => !x.readByMe && x.readCount === 0), nl.rows);
+const other = cur.find((x) => x.campus !== campus)?.campus;
+if (other) {
+  nl = (await call('GET', '/notices', null, 'campus=' + other)).body as any;
+  expect('다른 캠퍼스로 보면 전체 공지만(그 캠퍼스 공지 제외)', nl.rows.length === 2 && !nl.rows.some((x: any) => x.id === nCampus), nl.rows.map((x: any) => x.title));
+}
+let sm4 = (await call('GET', '/summary')).body as any;
+expect('홈: 레오 안 읽은 공지 3, 최근 공지 3개', sm4.unreadNotices === 3 && sm4.latestNotices.length === 3, sm4.unreadNotices);
+let nd = (await call('GET', '/notices/' + nPinned)).body as any;
+expect('공지 열면 읽음 1(레오)', nd.readCount === 1 && nd.reads[0].name === '레오' && nd.content === '비상 연락망', nd);
+nd = (await call('GET', '/notices/' + nPinned)).body as any;
+expect('같은 직원이 다시 열어도 읽음 1', nd.readCount === 1, nd.readCount);
+actor = '김상담';
+nd = (await call('GET', '/notices/' + nPinned)).body as any;
+expect('다른 직원이 열면 읽음 2', nd.readCount === 2, nd.reads);
+actor = null;
+nd = (await call('GET', '/notices/' + nAll)).body as any;
+expect('이름 없이 열면 읽음 안 남김', nd.readCount === 0, nd.readCount);
+actor = '레오';
+sm4 = (await call('GET', '/summary')).body as any;
+expect('레오 안 읽은 공지 2', sm4.unreadNotices === 2, sm4.unreadNotices);
+// 게시 종료일이 지나면 지난 공지
+at('2026-11-08T09:00:00');
+nl = (await call('GET', '/notices')).body as any;
+expect('11/08: 11/07까지 공지는 지난 공지로', nl.counts.current === 2 && nl.counts.past === 1 && !nl.rows.some((x: any) => x.id === nAll), nl.counts);
+sm4 = (await call('GET', '/summary')).body as any;
+expect('지난 공지는 안 읽은 수에서 빠짐', sm4.unreadNotices === 1, sm4.unreadNotices);
+// 수정으로 게시 내리기
+r = await call('PUT', '/notices/' + nCampus, { title: `${campus} 정전 안내(종료)`, content: '토요일 오전 정전', campus, until: '2026-11-07' });
+expect('수정으로 게시 내리기 200', r.status === 200, r);
+nl = (await call('GET', '/notices', null, 'view=past')).body as any;
+expect('지난 공지 2건, 수정한 제목', nl.rows.length === 2 && nl.rows.some((x: any) => x.title.endsWith('(종료)')), nl.rows.map((x: any) => x.title));
+nl = (await call('GET', '/notices', null, 'q=연락망')).body as any;
+expect('내용으로 검색', nl.rows.length === 1 && nl.rows[0].id === nPinned, nl.rows.length);
+r = await call('GET', '/notices/nope');
+expect('없는 공지 404', r.status === 404, r);
 
 console.log(fails ? `\n${fails}건 실패` : '\n모두 통과');
 if (fails) process.exit(1);

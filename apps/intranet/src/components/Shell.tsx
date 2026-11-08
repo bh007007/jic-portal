@@ -4,10 +4,10 @@ import { setStaffName, useApi, useStaffName, useSummaryChanged, type Summary } f
 import { dateWithDay, localDate } from '../format';
 
 // 디자인 I1(IntranetPenalty.dc.html)의 메뉴. 아직 없는 화면은 '준비 중'으로 연결된다.
-type Badge = 'pending' | 'pendingAbsences' | 'pendingOvernights' | 'followUpDue';
+type Badge = 'pending' | 'pendingAbsences' | 'pendingOvernights' | 'followUpDue' | 'unreadNotices';
 const MENU: { group?: string; items: { to: string; label: string; badge?: Badge }[] }[] = [
   { items: [{ to: '/', label: '홈' }] },
-  { group: '공지·결재', items: [{ to: '/notices', label: '내부 공지' }, { to: '/approvals', label: '전자결재' }, { to: '/forms', label: '양식·자료실' }] },
+  { group: '공지·결재', items: [{ to: '/notices', label: '내부 공지', badge: 'unreadNotices' }, { to: '/approvals', label: '전자결재' }, { to: '/forms', label: '양식·자료실' }] },
   {
     group: '학생 생활',
     items: [

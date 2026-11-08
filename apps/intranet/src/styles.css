@@ -168,6 +168,9 @@ button, input, select { font: inherit; }
 .page-actions { display: flex; flex-wrap: wrap; gap: 6px; }
 .nav-count { margin-left: 6px; color: var(--red); font-weight: 700; }
 .toolbar-msg { margin-left: 12px; color: var(--blue); }
+/* 칸 수가 줄을 다 채우지 않아도 빈 곳이 회색으로 보이지 않게, 구분선을 칸마다 그린다. */
+.summary { gap: 0; background: #fff; }
+.summary > * { outline: 1px solid var(--line); }
 .summary > a { background: #fff; padding: 16px 20px; display: flex; flex-direction: column; gap: 4px; color: var(--ink); text-decoration: none; }
 .summary > a:hover { background: #fafbfc; color: var(--ink); }
 .cell-input { height: 30px; padding: 0 8px; border: 1px solid #c5cad2; border-radius: 3px; background: #fff; font-size: 13px; color: var(--ink); }
@@ -183,6 +186,10 @@ button, input, select { font: inherit; }
 .form-grid input, .form-grid textarea { height: 34px; padding: 0 8px; border: 1px solid #c5cad2; border-radius: 3px; font-size: 13px; color: var(--ink); background: #fff; }
 .form-grid textarea { height: auto; padding: 8px; line-height: 1.6; resize: vertical; }
 .form-grid .narrow { max-width: 220px; }
+.form-grid select.cell-input { height: 34px; }
+.form-grid .check { flex-direction: row; align-items: center; gap: 6px; font-weight: 400; font-size: 13px; }
+.form-grid .check input { height: auto; }
+.read-list { margin: 0; display: flex; flex-wrap: wrap; gap: 6px 18px; }
 .form-actions { display: flex; flex-wrap: wrap; align-items: center; justify-content: flex-end; gap: 12px; padding-top: 12px; }
 .tbl td.right, .tbl th.right { text-align: right; }
 .field.range input[type='date'] { flex: 1 1 130px; min-width: 120px; }

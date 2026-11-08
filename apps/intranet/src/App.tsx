@@ -6,6 +6,9 @@ import CounselingDetail from './pages/CounselingDetail';
 import CounselingForm from './pages/CounselingForm';
 import Guard from './pages/Guard';
 import Home from './pages/Home';
+import NoticeDetail from './pages/NoticeDetail';
+import NoticeForm from './pages/NoticeForm';
+import Notices from './pages/Notices';
 import NotReady from './pages/NotReady';
 import Outings from './pages/Outings';
 import Penalties from './pages/Penalties';
@@ -38,6 +41,10 @@ export default function App() {
               <Route path="/counseling/:id" element={<CounselingDetail />} />
               <Route path="/counseling/:id/edit" element={<CounselingForm key="edit" />} />
               <Route path="/audit" element={<Audit />} />
+              <Route path="/notices" element={<Notices />} />
+              <Route path="/notices/new" element={<NoticeForm key="new" />} />
+              <Route path="/notices/:id" element={<NoticeDetail />} />
+              <Route path="/notices/:id/edit" element={<NoticeForm key="edit" />} />
               <Route path="/student-file" element={<StudentFiles />} />
               <Route path="/student-file/:stId" element={<StudentFileDetail />} />
               <Route path="*" element={<NotReady />} />
