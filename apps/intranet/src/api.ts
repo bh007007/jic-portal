@@ -1,8 +1,8 @@
 /** /api 호출. 로컬에는 로그인이 없다(관리자 앱과 같다). 배포에서는 직원·가드 로그인 토큰을 붙인다(docs/intranet.md). */
 import { useCallback, useEffect, useState } from 'react';
-import type { GuardView, OutingList, OutingRow, PenaltyList, PenaltyRules, RequestList, Settings, Summary } from '../server/core';
+import type { GuardView, OutingList, OutingRow, PenaltyList, PenaltyRules, RequestList, Settings, StudentFile, StudentFileList, Summary } from '../server/core';
 
-export type { GuardView, OutingList, OutingRow, PenaltyList, PenaltyRules, RequestList, Settings, Summary };
+export type { GuardView, OutingList, OutingRow, PenaltyList, PenaltyRules, RequestList, Settings, StudentFile, StudentFileList, Summary };
 export type PenaltyRow = PenaltyList['rows'][number];
 
 export class ApiError extends Error {

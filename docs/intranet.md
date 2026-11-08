@@ -19,13 +19,15 @@ http://127.0.0.1:5177 을 연다. 가드 태블릿은 http://127.0.0.1:5177/guar
 | `/` | 홈 | 지금 외출 중, 오늘 밤 통금 위반, 패널티 승인 대기, 재학생 수 |
 | `/outings` | 외출·귀가 | 그날 밤 전체 / 지금 외출 중 / 통금 위반 탭, 날짜(밤)·캠퍼스·학생 검색 |
 | `/curfew` | 통금 확인 | 위 화면의 통금 위반 탭 |
+| `/student-file` | Student File 목록 | 재학생별 누적 점수(승인)·경고 단계, 최근 30일 통금 위반, 대기 패널티·신청, 지금 외출 중·외박. 누적 점수순·통금 위반순·이름순 |
+| `/student-file/:stId` | Student File 상세 | 한 학생의 패널티 이력, 외출·귀가 기록(최근 50건), 결석·외박 신청(담당자 메모). 기본 정보·연수·회계·메모는 '통합관리 학생 상세'(관리자 앱) 링크 |
 | `/penalties` | 패널티 승인 | 승인 대기·완료·반려 탭, 발생일·캠퍼스·위반 종류·학생 검색, 한 건씩 또는 선택해서 승인·반려, 경고 단계 기준 |
 | `/penalty-rules` | 패널티 점수표 | 위반별 점수·승인 권한, 경고 단계(1~3단계) 기준 점수 |
 | `/settings` | 통금·근무자 설정 | 통금 시각, 가드 태블릿 근무자 목록 |
 | `/requests/absences` | 결석 신청 처리 | 학생 앱에서 낸 결석 신청. 대기·승인·반려·학생 취소 탭, 결석일·캠퍼스·종류·학생 검색, 처리 메모(학생에게 보임)와 함께 승인·반려 |
 | `/requests/overnights` | 외박 신청 처리 | 학생 앱에서 낸 외박 신청. 같은 방식. 승인하면 그 밤들이 통금 확인에서 빠진다 |
 
-메뉴의 나머지(내부 공지, 전자결재, Student File, 상담 기록, 사진 관리, 직원 등)는 '준비 중'이다. 디자인의 '논아카데믹 신청'은 '외박 신청'으로 시작했고, 여행 등 다른 종류가 생기면 같은 묶음에 더한다.
+메뉴의 나머지(내부 공지, 전자결재, 상담 기록, 사진 관리, 직원 등)는 '준비 중'이다. 패널티·외출·신청 표의 학생 이름은 Student File 로 이어진다. 디자인의 '논아카데믹 신청'은 '외박 신청'으로 시작했고, 여행 등 다른 종류가 생기면 같은 묶음에 더한다.
 
 ## 규칙
 
@@ -71,7 +73,7 @@ apps/intranet/
 
 - 학생·연수는 관리자 앱의 `createDb`(재학생 명단 `listEnrollments`, 이름 `studentDetail`)와 `loadDir`을 그대로 쓴다.
 - 스타일은 관리자 앱과 같은 값을 `src/styles.css`에 복사해 두었다(공통 UI 패키지가 생기면 옮긴다).
-- 시험: `npm --workspace apps/intranet run test`. 통금 판정 경계(통금 후 외출, 자정 넘어 귀가, 외출 기록 없는 귀가, 미귀가 후 귀가), 점수표 검증, 승인 점수 유지, 통금 변경 시 후보 정리, 외박 승인 시 후보 제외·외박 허용 표시, 결석·외박 승인·반려와 메모 등 43개 항목.
+- 시험: `npm --workspace apps/intranet run test`. 통금 판정 경계(통금 후 외출, 자정 넘어 귀가, 외출 기록 없는 귀가, 미귀가 후 귀가), 점수표 검증, 승인 점수 유지, 통금 변경 시 후보 정리, 외박 승인 시 후보 제외·외박 허용 표시, 결석·외박 승인·반려와 메모, Student File 목록·상세 등 51개 항목.
 
 ### API
 
@@ -86,6 +88,8 @@ apps/intranet/
 | `POST /api/penalties/decide` | `{ ids, approve }` 승인·반려(대기 중인 건만) |
 | `GET·PUT /api/penalty-rules` | 점수표 |
 | `GET·PUT /api/settings` | 통금 시각, 근무자 목록 |
+| `GET /api/students?q=&campus=&sort=score|breaches|name` | Student File 목록(재학생) |
+| `GET /api/students/:stId` | Student File 상세 |
 | `GET /api/requests/absences?tab=&from=&to=&campus=&kind=&q=` | 결석 신청 목록 |
 | `GET /api/requests/overnights?tab=&from=&to=&campus=&q=` | 외박 신청 목록(기간이 조회 범위와 겹치는 건) |
 | `POST /api/requests/{absences,overnights}/decide` | `{ ids, approve, comment }` 승인·반려(대기 중인 건만) |

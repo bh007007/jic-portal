@@ -8,6 +8,8 @@ import Penalties from './pages/Penalties';
 import Requests from './pages/Requests';
 import PenaltyRules from './pages/PenaltyRules';
 import Settings from './pages/Settings';
+import StudentFileDetail from './pages/StudentFileDetail';
+import StudentFiles from './pages/StudentFiles';
 
 export default function App() {
   return (
@@ -27,6 +29,8 @@ export default function App() {
               <Route path="/requests/absences" element={<Requests key="absences" kind="absences" />} />
               <Route path="/requests/overnights" element={<Requests key="overnights" kind="overnights" />} />
               <Route path="/settings" element={<Settings />} />
+              <Route path="/student-file" element={<StudentFiles />} />
+              <Route path="/student-file/:stId" element={<StudentFileDetail />} />
               <Route path="*" element={<NotReady />} />
             </Routes>
           </Shell>

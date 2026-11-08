@@ -509,6 +509,127 @@ async function decideRequests(ctx: IntranetCtx, kind: RequestKind, input: Record
   return ok({ done: doneCount, skipped });
 }
 
+// ── Student File: 학생 한 명의 생활 기록(외출·패널티·결석·외박). 기본 정보·연수·회계는 관리자 앱 학생 상세에 있다.
+const RECENT_NIGHTS = 30;
+
+async function lifeData(ctx: IntranetCtx) {
+  await syncCurfewPenalties(ctx);
+  const [settings, rules, outings, penalties, absences, overnights] = await Promise.all([
+    loadSettings(ctx),
+    loadRules(ctx),
+    ctx.stores.outings.all(),
+    ctx.stores.penalties.all(),
+    ctx.stores.absences.listAll(),
+    ctx.stores.overnights.listAll(),
+  ]);
+  return { settings, rules, outings, penalties, absences, overnights };
+}
+const approvedScore = (list: Penalty[]) => list.filter((p) => p.status === 'approved').reduce((sum, p) => sum + (p.score ?? 0), 0);
+
+async function studentFiles(ctx: IntranetCtx, q: URLSearchParams) {
+  const life = await lifeData(ctx);
+  const now = ctx.now().getTime();
+  const tonight = nightOf(now);
+  const since = nightOf(now - RECENT_NIGHTS * 864e5);
+  const by = <T extends { stId: string }>(list: T[]) => {
+    const m = new Map<string, T[]>();
+    for (const x of list) m.set(x.stId, [...(m.get(x.stId) ?? []), x]);
+    return m;
+  };
+  const pen = by(life.penalties);
+  const outs = by(life.outings);
+  const abs = by(life.absences);
+  const ovs = by(life.overnights);
+  // 연장으로 재학 연수가 둘이면 학생당 한 줄만 남긴다.
+  const current = [...new Map(currentRows(ctx).map((r) => [r.stId, r] as const)).values()];
+
+  const campus = q.get('campus') || '';
+  const kw = (q.get('q') ?? '').trim().toLowerCase();
+  const sort = q.get('sort') || 'score';
+  const rows = current
+    .filter((r) => (!campus || r.campus === campus) && (!kw || r.stId.includes(kw) || r.name.toLowerCase().includes(kw)))
+    .map((r) => {
+      const ps = pen.get(r.stId) ?? [];
+      const os = outs.get(r.stId) ?? [];
+      const total = approvedScore(ps);
+      const breaches = os.filter((o) => outingTimes(o).night >= since && curfewBreach(o, life.settings.curfew, now, life.overnights)).length;
+      return {
+        stId: r.stId,
+        name: r.name,
+        nation: r.nation,
+        campus: r.campus,
+        end: r.end,
+        total,
+        stage: stageOf(life.rules.stages, total),
+        breaches,
+        pendingPenalties: ps.filter((p) => p.status === 'pending').length,
+        pendingRequests: [...(abs.get(r.stId) ?? []), ...(ovs.get(r.stId) ?? [])].filter((x) => x.status === 'pending').length,
+        outNow: os.some((o) => o.inAt === null),
+        overnightTonight: !!overnightFor(life.overnights, r.stId, tonight),
+      };
+    });
+  const sorters: Record<string, (a: (typeof rows)[number], b: (typeof rows)[number]) => number> = {
+    score: (a, b) => b.total - a.total || b.breaches - a.breaches || a.name.localeCompare(b.name),
+    breaches: (a, b) => b.breaches - a.breaches || b.total - a.total || a.name.localeCompare(b.name),
+    name: (a, b) => a.name.localeCompare(b.name),
+  };
+  rows.sort(sorters[sort] ?? sorters.score);
+  return { recentNights: RECENT_NIGHTS, sort, campuses: [...new Set(current.map((r) => r.campus))].sort(), rows };
+}
+export type StudentFileList = Awaited<ReturnType<typeof studentFiles>>;
+
+/** 재학생 연수 행(관리자 core 의 '재학' 분류). */
+function currentRows(ctx: IntranetCtx) {
+  return ctx.db.listEnrollments(new URLSearchParams({ tab: 'current', all: '1' })).rows;
+}
+
+async function studentFile(ctx: IntranetCtx, stId: string) {
+  const d = ctx.db.studentDetail(stId);
+  if (!d) return null;
+  const life = await lifeData(ctx);
+  const now = ctx.now().getTime();
+  const kindName = new Map(life.rules.kinds.map((k) => [k.code, k.name]));
+  const main = d.enrollments.find((e) => e.status === 'current') ?? d.enrollments.find((e) => e.status === 'upcoming') ?? d.enrollments[0] ?? null;
+  const penalties = life.penalties
+    .filter((p) => p.stId === stId)
+    .sort((a, b) => b.date.localeCompare(a.date))
+    .map((p) => ({ ...p, kindName: kindName.get(p.kind) ?? p.kind, score: p.status === 'pending' ? (life.rules.kinds.find((k) => k.code === p.kind)?.score ?? null) : p.score }));
+  const total = approvedScore(life.penalties.filter((p) => p.stId === stId));
+  const outings = life.outings
+    .filter((o) => o.stId === stId)
+    .map((o) => outingRow(ctx, o, life.settings.curfew, now, life.overnights))
+    .sort((a, b) => (b.outAt ?? b.inAt ?? '').localeCompare(a.outAt ?? a.inAt ?? ''));
+  return {
+    refDate: d.refDate,
+    curfew: life.settings.curfew,
+    student: {
+      stId,
+      name: d.student.name,
+      nation: d.student.nation,
+      gender: d.student.gender,
+      campus: main?.campus ?? '-',
+      course: main?.course ?? '',
+      dorm: main?.dormStay?.type || main?.dorm || '',
+      start: main?.start ?? '',
+      end: main?.end ?? '',
+      status: main?.status ?? 'other',
+    },
+    total,
+    stage: stageOf(life.rules.stages, total),
+    stagesSet: life.rules.stages.some((s) => s.min !== null),
+    penalties,
+    outings: outings.slice(0, 50),
+    outingCount: outings.length,
+    breachCount: outings.filter((o) => o.breach).length,
+    absences: life.absences.filter((a) => a.stId === stId).sort((a, b) => b.date.localeCompare(a.date)),
+    overnights: life.overnights
+      .filter((o) => o.stId === stId)
+      .sort((a, b) => b.from.localeCompare(a.from))
+      .map((o) => ({ ...o, nights: nightsBetween(o.from, o.until) })),
+  };
+}
+export type StudentFile = NonNullable<Awaited<ReturnType<typeof studentFile>>>;
+
 async function summary(ctx: IntranetCtx) {
   await syncCurfewPenalties(ctx);
   const settings = await loadSettings(ctx);
@@ -545,6 +666,8 @@ export async function handleIntranetApi(ctx: IntranetCtx, method: string, pathna
         const m = ctx.db.meta();
         return ok({ source: m.source, refDate: m.refDate });
       }
+      case 'GET /students':
+        return ok(await studentFiles(ctx, q));
       case 'GET /summary':
         return ok(await summary(ctx));
       case 'GET /guard':
@@ -581,6 +704,11 @@ export async function handleIntranetApi(ctx: IntranetCtx, method: string, pathna
         await ctx.stores.settings.set(s);
         return ok(s);
       }
+    }
+    const sf = route.match(/^GET \/students\/(\w+)$/);
+    if (sf) {
+      const file = await studentFile(ctx, sf[1]);
+      return file ? ok(file) : fail(404, 'not_found');
     }
     return fail(404, 'not_found');
   } catch (e) {

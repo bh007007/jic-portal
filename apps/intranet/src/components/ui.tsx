@@ -1,4 +1,10 @@
 import type { ReactNode } from 'react';
+import { Link } from 'react-router-dom';
+
+/** 학생 이름 → Student File */
+export function StudentLink({ stId, name }: { stId: string; name: string }) {
+  return <Link to={`/student-file/${stId}`}>{name}</Link>;
+}
 
 export function PageTitle({ title, path, actions }: { title: string; path: string; actions?: ReactNode }) {
   return (

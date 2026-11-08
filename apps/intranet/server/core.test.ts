@@ -204,5 +204,22 @@ if (otherCampus) {
 const sm2 = (await call('GET', '/summary')).body as any;
 expect('홈 요약: 결석 대기 0, 외박 대기 0, 오늘 밤 외박 1', sm2.pendingAbsences === 0 && sm2.pendingOvernights === 0 && sm2.overnightTonight === 1, sm2);
 
+// ── Student File
+const files = (await call('GET', '/students', null, 'sort=score')).body as any;
+const fB = files.rows.find((x: any) => x.stId === B);
+expect('Student File 목록: 재학생 전원, 학생당 한 줄', files.rows.length === new Set(cur.map((x) => x.stId)).size, files.rows.length);
+expect('B 누적 점수 2(승인 1건), 점수순 맨 위', fB.total === 2 && files.rows[0].stId === B, fB);
+const fD = files.rows.find((x: any) => x.stId === D);
+expect('D 오늘 밤 외박 허용 표시', fD.overnightTonight === true, fD);
+const byName = (await call('GET', '/students', null, 'sort=name&q=' + B)).body as any;
+expect('학생번호 검색 1명', byName.rows.length === 1 && byName.rows[0].stId === B, byName.rows.length);
+const fileB = (await call('GET', '/students/' + B)).body as any;
+expect('B 상세: 패널티 이력·외출 기록·누적 점수', fileB.total === 2 && fileB.penalties.length >= 2 && fileB.outingCount === 2 && fileB.student.name, { total: fileB.total, p: fileB.penalties.length, o: fileB.outingCount });
+expect('B 상세: 결석 신청 이력(반려 메모 포함)', fileB.absences.length === 1 && fileB.absences[0].comment === '진단서 필요', fileB.absences);
+const fileC = (await call('GET', '/students/' + C)).body as any;
+expect('C 상세: 외박 이력 1박, 그 밤 외출은 외박 허용', fileC.overnights[0]?.nights === 1 && fileC.outings.some((o: any) => o.overnightUntil === '2026-11-06'), fileC.overnights);
+r = await call('GET', '/students/99999999');
+expect('없는 학생 404', r.status === 404, r);
+
 console.log(fails ? `\n${fails}건 실패` : '\n모두 통과');
 if (fails) process.exit(1);
