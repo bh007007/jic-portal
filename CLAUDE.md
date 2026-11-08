@@ -14,7 +14,7 @@
 - `/api/*` 계산은 `apps/admin/server/core.ts` 한 곳(파일·네트워크 의존 없음). 로컬은 `server/localData.ts`(Vite 플러그인, 데이터 폴더 우선순위 `JIC_DATA_DIR` → `data/tables` → `data-sample/tables`), 배포는 저장소 루트 `functions/api/[[path]].ts`(Cloudflare Pages Function, Supabase `legacy_*` 조회)가 같은 core를 쓴다. 화면은 두 환경에서 같은 응답을 받는다.
 - 클라우드: Cloudflare Pages(루트에서 `npm run admin:build`, 출력 `apps/admin/dist`) + Supabase(Auth, `staff_users` + RLS). 설정 순서는 `docs/setup-cloud.md`. `VITE_SUPABASE_URL`이 없으면(로컬) 로그인 없이 동작한다. DB 변경은 `supabase/migrations`에 여러 번 실행해도 되는 SQL로 추가한다.
 - 학생 앱: `apps/student` (모바일, 로컬 전용). 실행 `npm run student` → http://127.0.0.1:5176, 검증 `npm run student:build`. 학생·연수는 관리자 core의 `studentDetail`을 가져다 쓰고 학생에게 보일 항목만 고른다. 결석·외박 신청 규칙은 `server/requests.ts`(인트라넷과 같이 씀). 설명 `docs/student-app.md`.
-- 인트라넷: `apps/intranet` (가드 태블릿 외출·귀가, 통금 확인, 패널티 승인·점수표, 결석·외박 신청 처리, 로컬 전용). 실행 `npm run intranet` → http://127.0.0.1:5177, 검증 `npm run intranet:build`(core 시험 포함). 점수·경고 기준은 코드에 넣지 않고 점수표 화면에서 입력한다. 설명 `docs/intranet.md`.
+- 인트라넷: `apps/intranet` (가드 태블릿 외출·귀가, 통금 확인, 패널티 승인·점수표, 결석·외박 신청 처리, Student File, 로컬 전용). 실행 `npm run intranet` → http://127.0.0.1:5177, 검증 `npm run intranet:build`(core 시험 포함). 점수·경고 기준은 코드에 넣지 않고 점수표 화면에서 입력한다. 설명 `docs/intranet.md`.
 - 연수(enrollment, 업체 `tr_`)와 학생(`st_`)은 다르다. 한 학생에 연수가 여러 건일 수 있다. 상태 분류(재학/입학 예정/졸업/취소)는 `core.ts`의 `statusOf`.
 - 추출본에 없는 것: 방·침대 번호, 인보이스 총액(`sum_td_amount`는 총액이 아님). 화면에 추정값을 넣지 않는다.
 - 디자인 원본: `docs/design/*.dc.html` (캔버스 형식, 텍스트로 읽어 참고). 스타일: Noto Sans KR 13px, 주색 #24427A, 로고 #D52B1E, 회색 검색 박스 + 표 위 진한 선. AI 느낌의 카드·배지·설명 문구는 쓰지 않는다.

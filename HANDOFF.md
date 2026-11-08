@@ -69,7 +69,7 @@ jic-portal/
 | 관리자 앱 기초관리: 코스·기숙사(캠퍼스별 학생 수), 캠퍼스·배치(배치 일정·캠퍼스별 인원) | 동작 (11/8), 읽기 전용 |
 | 파트너 포털 1차 (`apps/partner`, 사이트맵 0.1~12.7): 공개 대시보드, 로그인·등록 신청·승인, 상담 6단계·학습계획서, 캠퍼스·코스, 견적·공실·등록 링크, 자료실, 공지·프로모션, 방문 신청, JIC 관리자 화면 | 배포 (11/8): https://jic-partner.bh007007.workers.dev (Cloudflare Workers, main 자동 배포). Supabase 테이블·권한 반영·시험 완료. `docs/partner-portal.md` |
 | 학생 앱 1차 (`apps/student`): 홈, 결석·외박 신청·취소, 신청 내역(담당자 메모), 내 정보 (한국어·영어) | 동작 (11/8, 로컬 전용 `npm run student`). 배포는 학생 계정·정규화 스키마 이후. `docs/student-app.md` |
-| 인트라넷 1차 (`apps/intranet`): 가드 태블릿 외출·귀가, 외출·귀가 기록·통금 확인, 패널티 승인(통금 위반 자동 후보)·점수표, 결석·외박 신청 처리(외박 승인 밤은 통금 제외), 통금·근무자 설정 | 동작 (11/8, 로컬 전용 `npm run intranet`). 점수·경고 기준은 미정이라 비워 둠. `docs/intranet.md` |
+| 인트라넷 1차 (`apps/intranet`): 가드 태블릿 외출·귀가, 외출·귀가 기록·통금 확인, 패널티 승인(통금 위반 자동 후보)·점수표, 결석·외박 신청 처리(외박 승인 밤은 통금 제외), Student File(학생별 생활 기록), 통금·근무자 설정 | 동작 (11/8, 로컬 전용 `npm run intranet`). 점수·경고 기준은 미정이라 비워 둠. `docs/intranet.md` |
 | Supabase 테이블(`legacy_*` 원본 jsonb)·직원 로그인·Cloudflare Pages 배포 | 동작 중 (11/7): https://jic-portal-916.pages.dev , Supabase `jic-portal`(Singapore). 샘플 데이터만. 계정은 레오에게 요청. 설정 순서 `docs/setup-cloud.md` |
 
 ## 5. 실제 데이터로 실행하기 (권한 있는 사람만)

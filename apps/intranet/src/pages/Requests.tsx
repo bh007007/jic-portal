@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { api, ApiError, errorText, notifySummaryChanged, useApi, type RequestList } from '../api';
-import { Loading, PageTitle, Tabs } from '../components/ui';
+import { Loading, PageTitle, StudentLink, Tabs } from '../components/ui';
 import { md, mdhm } from '../format';
 import { useSearchForm } from '../useSearchForm';
 
@@ -210,7 +210,7 @@ export default function Requests({ kind }: { kind: Kind }) {
                       {check(r.id, r.name)}
                       <td className="nowrap">{day(r.date)}</td>
                       <td className="left">
-                        {r.name} <span className="muted small">{r.stId}</span>
+                        <StudentLink stId={r.stId} name={r.name} /> <span className="muted small">{r.stId}</span>
                       </td>
                       <td>{r.campus}</td>
                       <td>{KIND_LABEL[r.kind] ?? r.kind}</td>
@@ -229,7 +229,7 @@ export default function Requests({ kind }: { kind: Kind }) {
                         {day(r.from)} ~ {day(r.until)}
                       </td>
                       <td className="left">
-                        {r.name} <span className="muted small">{r.stId}</span>
+                        <StudentLink stId={r.stId} name={r.name} /> <span className="muted small">{r.stId}</span>
                       </td>
                       <td>{r.campus}</td>
                       <td>{r.nights}</td>

@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { api, ApiError, errorText, notifySummaryChanged, useApi, type PenaltyList, type PenaltyRow } from '../api';
-import { Loading, PageTitle, Tabs } from '../components/ui';
+import { Loading, PageTitle, StudentLink, Tabs } from '../components/ui';
 import { md, mdhm } from '../format';
 import { useSearchForm } from '../useSearchForm';
 
@@ -203,7 +203,7 @@ function Row({ r, pending, checked, onToggle, onDecide, busy }: { r: PenaltyRow;
       )}
       <td>{md(r.date)}</td>
       <td className="left">
-        {r.name}
+        <StudentLink stId={r.stId} name={r.name} />
         <br />
         <span className="muted small">{r.stId}</span>
       </td>

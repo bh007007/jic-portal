@@ -1,6 +1,6 @@
 import { Link } from 'react-router-dom';
 import { useApi, type OutingList } from '../api';
-import { Loading, PageTitle, Tabs } from '../components/ui';
+import { Loading, PageTitle, StudentLink, Tabs } from '../components/ui';
 import { dateWithDay, duration, md, mdhm } from '../format';
 import { useSearchForm } from '../useSearchForm';
 
@@ -103,7 +103,7 @@ export default function Outings({ mode }: { mode: 'outings' | 'curfew' }) {
                   data.rows.map((r) => (
                     <tr key={r.id}>
                       <td className="left">
-                        {r.name} <span className="muted">{r.stId}</span>
+                        <StudentLink stId={r.stId} name={r.name} /> <span className="muted">{r.stId}</span>
                       </td>
                       <td>{r.campus}</td>
                       <td>{r.outAt ? mdhm(r.outAt) : <span className="muted">기록 없음</span>}</td>
