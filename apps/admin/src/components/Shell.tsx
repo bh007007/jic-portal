@@ -46,6 +46,9 @@ export default function Shell({ children, user }: { children: ReactNode; user?: 
             <strong>{user ?? '레오'}</strong>님
           </span>
           <span className={'data-badge' + (meta?.source === 'sample' ? ' sample' : '')}>{dataLabel}</span>
+          <a href="/" className="btn btn-xs">
+            포털 홈
+          </a>
           <a href={INTRANET_URL} className="btn btn-xs">
             인트라넷
           </a>

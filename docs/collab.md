@@ -10,6 +10,8 @@
 | 배포용 서버 | `functions/` (`functions/intranet/`은 인트라넷 담당) | 레오 PC의 Claude |
 | 학생 앱 | `apps/student` | 다른 계정의 Claude |
 | 인트라넷 | `apps/intranet` | 다른 계정의 Claude (11/8 사용자 진행 요청) |
+| 강사 포털(LMS) | `apps/teacher` (예정) | 레오 PC의 Claude (11/8) |
+| JIC 포털 첫 화면 | `apps/admin/src/pages/Hub.tsx`, `apps/admin/src/portals.ts` | 레오 PC의 Claude |
 | DB 변경 | `supabase/migrations/` | 각자 자기 앱용 **새 파일만** 추가 |
 | Supabase 적용, Cloudflare 배포, 업체 포털 추출 | 대시보드·레오 PC | 레오 PC의 Claude (계정 접근이 있는 쪽) |
 
@@ -21,6 +23,7 @@
 - **`data-sample/`**: `scripts/make-sample-data.mjs`로만 바꾼다. 새 필드는 별도 시드로 만들어 기존 학생·연수 값이 바뀌지 않게 한다.
 - **학생 신청 공용 모듈**: 결석·외박 신청의 모양과 규칙은 `apps/student/server/requests.ts`, 생활 요청은 `apps/student/server/lifeRequests.ts`, 학교 여행은 `apps/student/server/trips.ts` 한 곳이다. 인트라넷이 승인·반려에 같이 쓰고, 로컬에서는 같은 파일(`.local-db/student`)을 연다. LMS가 결석 승인을 맡게 되면 같은 모듈을 쓴다.
 - **학생 앱·인트라넷의 관리자 core 의존**: `apps/student`와 `apps/intranet`은 `apps/admin/server/core.ts`의 `createDb`·`studentDetail`과 `server/localData.ts`의 `loadDir`을 가져다 쓴다. 이 응답 모양을 바꾸면 `npm run student:build`도 확인한다(CI가 함께 빌드한다).
+- **포털 구조(11/8 사용자 결정)**: 관리자(인트라넷 포함)·학생·에이전시·강사(LMS) 4개 포털, DB는 Supabase 하나. `docs/architecture.md`. 주소 `/` = JIC 포털 첫 화면(포털 선택), `/admin/` = 관리자 포털(11/8 옮김, 예전 주소 `/students` 등은 `/admin/…`로 넘어감), `/intranet/` = 인트라넷, `/teacher/` = 강사 포털 예정. 인트라넷의 '통합관리'(`/`)와 학생 상세 링크(`/students/…`)는 첫 화면·넘김으로 그대로 동작한다. 바로 가려면 `/admin/`으로 바꾼다.
 - **인트라넷은 포털 주소 아래(`/intranet`)**: Pages 빌드는 `npm run portal:build`(관리자 앱 빌드 뒤 인트라넷을 `apps/admin/dist/intranet`에 넣음). 관리자 앱의 출력 폴더나 `/intranet` 경로를 바꾸면 인트라넷 담당에게 알린다. 로그인 저장 키는 두 앱 모두 Supabase 기본값(같은 주소라 한 번 로그인).
 - **개발 서버 포트**: 관리자 5173(샘플 데이터 실행 5174), 파트너 5175, 학생 5176, 인트라넷 5177. 새 앱은 5178부터.
 
