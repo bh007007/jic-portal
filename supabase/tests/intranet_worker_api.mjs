@@ -380,6 +380,31 @@ ok('가드는 학생 계정 403', x.status === 403 && x.body.error === 'guard_fo
 x = await handleApi(new Request('https://intranet.example/api/accounts', { headers: { Authorization: `Bearer ${tC}` } }), { ...env, SUPABASE_SERVICE_ROLE_KEY: undefined });
 ok('서비스 키가 없으면 안내(server_config)', (await x.json()).reason === 'server_config');
 
+// ── 가드 계정 관리: 직원이 만든 계정으로 가드가 로그인 → 비밀번호 변경 → 지우기(서비스 키, 접근 기록)
+const gEmail = 'gate-premium@guard.example';
+x = await api('POST', '/api/guard-accounts', tC, { label: 'Premium 후문', campus: 'Premium', email: gEmail, password: 'gate2026', confirm: 'gate2026' });
+ok('직원: 가드 계정 만들기 201', x.status === 201 && x.body.userId, x);
+const gUser = x.body.userId;
+const gRow = (await sb.sql(`select campus, label from public.guard_accounts where user_id = $1`, [gUser]))[0];
+ok('DB: guard_accounts 연결(캠퍼스·출입구)', gRow?.campus === 'Premium' && gRow.label === 'Premium 후문', gRow);
+let tNew = await login(gEmail, 'gate2026');
+x = await api('GET', '/api/guard', tNew);
+ok('만든 계정으로 가드 태블릿(Premium 고정)', x.status === 200 && x.body.campus === 'Premium', x.body?.campus ?? x);
+x = await api('GET', '/api/guard-accounts', tC);
+ok('목록: 마지막 로그인 보임', x.body.rows?.some((g) => g.userId === gUser && g.lastSignIn), x.body.rows);
+x = await api('GET', '/api/guard-accounts', tNew);
+ok('가드는 가드 계정 화면 403', x.status === 403 && x.body.error === 'guard_forbidden', x);
+x = await api('POST', `/api/guard-accounts/${gUser}/password`, tP, { password: 'gate2027b', confirm: 'gate2027b' });
+ok('다른 직원이 비밀번호 바꾸기', x.status === 200, x);
+ok('옛 비밀번호로는 로그인 안 됨, 새 비밀번호는 됨', !(await login(gEmail, 'gate2026')) && !!(await login(gEmail, 'gate2027b')));
+x = await api('POST', `/api/guard-accounts/${U.staffC}/password`, tC, { password: 'hack12345', confirm: 'hack12345' });
+ok('직원 계정 id 로는 비밀번호를 못 바꿈(404)', x.status === 404, x);
+x = await api('POST', `/api/guard-accounts/${gUser}/delete`, tC, {});
+ok('가드 계정 지우기', x.status === 200, x);
+ok('지운 뒤 로그인 안 됨, 연결도 없음', !(await login(gEmail, 'gate2027b')) && (await sb.sql(`select count(*)::int n from public.guard_accounts where user_id = $1`, [gUser]))[0].n === 0);
+const gaud = await sb.sql(`select action, actor_id::text from public.audit_logs where target = 'guard_account' order by id`);
+ok('접근 기록: 만들기(직원C)·비밀번호(직원P)·지우기(직원C)', gaud.map((a) => a.action).join() === 'guard_create,guard_password,guard_delete' && gaud[1].actor_id === U.staffP, gaud);
+
 await sb.close();
 console.log(fails ? `${fails}건 실패` : '모두 통과');
 process.exit(fails ? 1 : 0);
