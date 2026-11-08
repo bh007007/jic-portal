@@ -1,0 +1,19 @@
+// 학생 앱 배포 설정 (Cloudflare Workers: 정적 파일 + /api 서버 코드). 설명은 docs/student-app.md '배포'.
+// Workers Builds 설정: 루트 디렉터리 /, 빌드 명령 `npm run student:build`,
+// 배포 명령 `npx wrangler deploy --config apps/student/wrangler.jsonc`,
+// 빌드 변수 VITE_SUPABASE_URL·VITE_SUPABASE_ANON_KEY(화면의 로그인), NODE_VERSION=22.
+// 실행 변수(Settings → Variables and Secrets): SUPABASE_URL, SUPABASE_ANON_KEY, 비밀 SUPABASE_SERVICE_ROLE_KEY.
+{
+  "name": "jic-student",
+  "main": "./worker/index.ts",
+  "compatibility_date": "2026-10-01",
+  // 대시보드에서 넣은 실행 변수를 배포할 때 지우지 않는다.
+  "keep_vars": true,
+  "assets": {
+    "directory": "./dist",
+    "binding": "ASSETS",
+    "not_found_handling": "single-page-application",
+    // /api 는 정적 파일보다 서버 코드가 먼저 받는다.
+    "run_worker_first": ["/api/*"]
+  }
+}
