@@ -111,7 +111,7 @@ Cloudflare는 이미 Pages 프로젝트에 연결된 저장소로 Pages 프로�
 
 ### 인트라넷 (위 Pages 프로젝트 안 `/intranet`)
 
-인트라넷은 따로 프로젝트를 만들지 않고 이 Pages 프로젝트 주소 아래 `/intranet/`에 함께 올린다(11/8 결정, 한 번 로그인으로 오간다). 위 2번 표의 Build command 를 **`npm run portal:build`** 로 바꾸고(관리자 앱 + 인트라넷), Variables and Secrets 에 **Secret** `SUPABASE_SERVICE_ROLE_KEY` 를 더한다(가드 태블릿만 씀). 서버 코드는 `functions/intranet/`. 가드 공용 계정(출입구마다)은 Authentication에서 만든 뒤 `guard_accounts`에 잇는다. 순서는 `docs/intranet.md` '배포'.
+인트라넷은 따로 프로젝트를 만들지 않고 이 Pages 프로젝트 주소 아래 `/intranet/`에 함께 올린다(11/8 결정, 한 번 로그인으로 오간다). 위 2번 표의 Build command(`npm run admin:build`)가 인트라넷까지 빌드하므로 빌드 설정은 그대로 두고, Variables and Secrets 에 **Secret** `SUPABASE_SERVICE_ROLE_KEY` 만 더한다(가드 태블릿만 씀. 없어도 직원 화면은 동작). 서버 코드는 `functions/intranet/`. 가드 공용 계정(출입구마다)은 Authentication에서 만든 뒤 `guard_accounts`에 잇는다. 순서는 `docs/intranet.md` '배포'.
 
 ## 3. GitHub (선택)
 
