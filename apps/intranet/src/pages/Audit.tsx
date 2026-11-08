@@ -79,10 +79,22 @@ export default function Audit() {
                       <td>{l.actor}</td>
                       <td>{ACTION_LABEL[l.action] ?? l.action}</td>
                       <td className="left">
-                        <StudentLink stId={l.stId} name={l.name} /> <span className="muted small">{l.stId}</span>
+                        {l.stId ? (
+                          <>
+                            <StudentLink stId={l.stId} name={l.name} /> <span className="muted small">{l.stId}</span>
+                          </>
+                        ) : (
+                          <span className="muted">-</span>
+                        )}
                       </td>
                       <td className="left">
-                        {l.target === 'student_account' ? <Link to="/accounts">학생 계정</Link> : <Link to={`/counseling/${l.targetId}`}>{l.title || l.targetId}</Link>}
+                        {l.target === 'student_account' ? (
+                          <Link to="/accounts">학생 계정</Link>
+                        ) : l.target === 'guard_account' ? (
+                          <Link to="/guard-accounts">가드 계정 · {l.targetId}</Link>
+                        ) : (
+                          <Link to={`/counseling/${l.targetId}`}>{l.title || l.targetId}</Link>
+                        )}
                       </td>
                     </tr>
                   ))

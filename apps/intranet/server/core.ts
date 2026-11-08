@@ -28,6 +28,7 @@ import { COMMENT_MAX, decideRequest, nightsBetween, overnightFor, type Absence, 
 import { readKeycard, type KeycardSecret } from '../../student/server/keycard';
 import type { AccountAdmin } from '../../student/server/accountAdmin';
 import { createAccounts, listAccounts, resetAccount, type AccountAction, type AccountsCtx } from './studentAccounts';
+import { createGuard, listGuards, removeGuard, setGuardPassword, type GuardAction, type GuardAdmin, type GuardsCtx } from './guardAccounts';
 import {
   isAccepting,
   REMOVE_REASON_MAX,
@@ -166,6 +167,8 @@ export interface Stores {
   trips: TripStore;
   /** 배포: 학생 계정 만들기·초기화 접근 기록(DB 함수 student_account_audit). 없으면 audit 저장소에 남긴다 */
   accountAudit?: (action: AccountAction, stNo: string, campus: string) => Promise<void>;
+  /** 배포: 가드 계정 만들기·비밀번호·지우기 접근 기록(DB 함수 guard_account_audit) */
+  guardAudit?: (action: GuardAction, label: string, campus: string) => Promise<void>;
   /** 학생 앱과 같이 쓰는 귀국 항공편과, 직원이 쓰는 공항 이동 배차 */
   departures: DepartureStore;
   rides: RideStore;
@@ -183,6 +186,8 @@ export interface IntranetCtx {
   /** 학생 계정 관리(서비스 키, 배포 직원 요청만). 없으면 '학생 계정' 화면은 안내만 */
   accounts?: AccountAdmin;
   accountsUnavailable?: 'local' | 'server_config';
+  /** 가드 계정 관리(서비스 키, 배포 직원 요청만). 없으면 '가드 계정' 화면은 안내만 */
+  guardAdmin?: GuardAdmin;
   studentEmailDomain?: string;
   /** 배포: 로그인한 계정 종류. 가드 공용 계정은 그 출입구(캠퍼스)로 고정한다. 로컬은 없음. */
   session?: { role: 'staff' | 'guard'; campus?: string | null };
@@ -977,6 +982,18 @@ function accountsCtx(ctx: IntranetCtx): AccountsCtx {
   };
 }
 
+function guardsCtx(ctx: IntranetCtx): GuardsCtx {
+  return {
+    admin: ctx.guardAdmin,
+    unavailable: ctx.guardAdmin ? undefined : (ctx.accountsUnavailable ?? 'local'),
+    campuses: tripCampuses(ctx),
+    log: async (action, label, campus) => {
+      if (ctx.stores.guardAudit) return ctx.stores.guardAudit(action, label, campus);
+      await ctx.stores.audit.put({ id: ctx.newId(), at: ctx.now().toISOString(), actor: ctx.actor ?? '', action, target: 'guard_account', targetId: label, stId: '' });
+    },
+  };
+}
+
 function noticeCtx(ctx: IntranetCtx): NoticeCtx {
   return {
     stores: ctx.stores,
@@ -1097,6 +1114,10 @@ export async function handleIntranetApi(ctx: IntranetCtx, method: string, pathna
         return await decideRequests(ctx, 'overnights', input);
       case 'GET /requests/life':
         return ok(await listLifeRequests(ctx, q));
+      case 'GET /guard-accounts':
+        return ok(await listGuards(guardsCtx(ctx)));
+      case 'POST /guard-accounts':
+        return await createGuard(guardsCtx(ctx), input);
       case 'GET /accounts':
         return ok(await listAccounts(accountsCtx(ctx), q));
       case 'POST /accounts/create':
@@ -1114,6 +1135,8 @@ export async function handleIntranetApi(ctx: IntranetCtx, method: string, pathna
         return ok(s);
       }
     }
+    const ga = p.match(/^\/guard-accounts\/([0-9a-zA-Z-]+)\/(password|delete)$/);
+    if (ga && method === 'POST') return ga[2] === 'password' ? await setGuardPassword(guardsCtx(ctx), ga[1], input) : await removeGuard(guardsCtx(ctx), ga[1]);
     const ar = p.match(/^\/accounts\/(\d+)\/reset$/);
     if (ar && method === 'POST') return await resetAccount(accountsCtx(ctx), ar[1]);
     const ts = p.match(/^\/trips\/signups\/([\w-]+)\/remove$/);
