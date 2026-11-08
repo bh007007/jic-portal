@@ -1,5 +1,6 @@
 import { useState, type FormEvent } from 'react';
 import { loadStaff, type StaffRow } from '../data';
+import { useT } from '../i18n';
 import { supabase } from '../supabase';
 import { Loading, PageHead, Section, useLoad, useSave } from '../ui';
 
@@ -8,9 +9,10 @@ const CAMPUSES = ['Challenger', 'Premium', 'MCO'];
 
 /**
  * 강사 목록(매니저·직원). 로그인 계정이 없어도 등록하고, 업체 포털 교사 번호(legacy_id)로 시간표와 잇는다.
- * 로그인 계정 발급과 역할(강사·체커·스케줄러·매니저) 부여는 관리자 포털 '사용자·권한'에서 한다(준비 중, 그때까지 Claude가 SQL로).
+ * 로그인 계정 발급과 역할 부여는 관리자 포털 '사용자·권한'에서 한다.
  */
 export default function Staff() {
+  const { t } = useT();
   const { data, error, loading, reload } = useLoad(() => loadStaff(), []);
   const [form, setForm] = useState(EMPTY);
   const save = useSave();
@@ -36,49 +38,49 @@ export default function Staff() {
 
   return (
     <>
-      <PageHead title="강사 목록" sub={data ? `${data.filter((s) => s.active).length}명 근무` : undefined} />
+      <PageHead title={t('staffList')} sub={data ? t('working', { n: data.filter((s) => s.active).length }) : undefined} />
       {loading || error ? (
         <Loading error={error} />
       ) : (data ?? []).length === 0 ? (
-        <div className="state">등록된 강사가 없습니다. 업체 포털 교사 목록을 옮겨 오거나 아래에서 추가합니다.</div>
+        <div className="state">{t('noStaff')}</div>
       ) : (
         <table className="tbl">
           <thead>
-            <tr><th>이름</th><th>부르는 이름</th><th>캠퍼스</th><th>업체 번호</th><th>로그인</th><th /></tr>
+            <tr><th>{t('name')}</th><th>{t('nickname')}</th><th>{t('campus')}</th><th>{t('vendorNo')}</th><th>{t('loginAcct')}</th><th /></tr>
           </thead>
           <tbody>
             {(data ?? []).map((s) => (
               <tr key={s.id} className={s.active ? '' : 'muted'}>
                 <td className="strong">{s.name}</td>
                 <td>{s.nickname || '-'}</td>
-                <td>{s.campus || '전체'}</td>
+                <td>{s.campus || t('all')}</td>
                 <td>{s.legacy_id || '-'}</td>
-                <td>{s.user_id ? '있음' : <span className="muted">없음</span>}</td>
-                <td><button type="button" className="link-btn" onClick={() => toggle(s)} disabled={save.busy}>{s.active ? '퇴직' : '복직'}</button></td>
+                <td>{s.user_id ? t('yes') : <span className="muted">{t('no')}</span>}</td>
+                <td><button type="button" className="link-btn" onClick={() => toggle(s)} disabled={save.busy}>{s.active ? t('retire') : t('rehire')}</button></td>
               </tr>
             ))}
           </tbody>
         </table>
       )}
 
-      <Section title="강사 추가">
+      <Section title={t('addTeacher')}>
         <form className="form" onSubmit={submit}>
           <div className="row2">
-            <label>이름<input value={form.name} onChange={set('name')} required maxLength={60} /></label>
-            <label>부르는 이름<input value={form.nickname} onChange={set('nickname')} maxLength={40} placeholder="예: Teacher Ann" /></label>
+            <label>{t('name')}<input value={form.name} onChange={set('name')} required maxLength={60} /></label>
+            <label>{t('nickname')}<input value={form.nickname} onChange={set('nickname')} maxLength={40} placeholder="Teacher Ann" /></label>
           </div>
           <div className="row2">
             <label>
-              캠퍼스
+              {t('campus')}
               <select value={form.campus} onChange={set('campus')}>
-                <option value="">전체</option>
+                <option value="">{t('all')}</option>
                 {CAMPUSES.map((c) => <option key={c}>{c}</option>)}
               </select>
             </label>
-            <label>업체 포털 교사 번호<input value={form.legacy_id} onChange={set('legacy_id')} maxLength={20} placeholder="te_id (선택)" /></label>
+            <label>{t('vendorTeacherNo')}<input value={form.legacy_id} onChange={set('legacy_id')} maxLength={20} placeholder="te_id" /></label>
           </div>
           {save.error && <p className="err" role="alert">{save.error}</p>}
-          <button type="submit" className="btn btn-primary btn-lg" disabled={save.busy}>추가</button>
+          <button type="submit" className="btn btn-primary btn-lg" disabled={save.busy}>{t('add')}</button>
         </form>
       </Section>
     </>

@@ -1,4 +1,5 @@
 import { createClient } from '@supabase/supabase-js';
+import { tNow } from './i18n';
 
 const url = import.meta.env.VITE_SUPABASE_URL as string | undefined;
 const key = import.meta.env.VITE_SUPABASE_ANON_KEY as string | undefined;
@@ -7,18 +8,18 @@ const key = import.meta.env.VITE_SUPABASE_ANON_KEY as string | undefined;
 export const configured = Boolean(url && key);
 export const supabase = createClient(url || 'http://localhost', key || 'missing');
 
-/** Supabase·DB 오류를 화면용 문장으로. */
+/** Supabase·DB 오류를 화면용 문장으로(지금 고른 언어). */
 export function errText(e: unknown): string {
   const m = (e as { message?: string })?.message ?? String(e);
-  if (m === 'Invalid login credentials') return '이메일 또는 비밀번호가 맞지 않습니다.';
-  if (/Failed to fetch/i.test(m)) return '서버에 연결하지 못했습니다. 잠시 후 다시 시도하세요.';
-  if (/invalid_value/.test(m)) return '점수가 시험 종류의 범위·단위를 벗어났습니다.';
-  if (/invalid_section/.test(m)) return '이 시험 종류에 없는 영역입니다.';
-  if (/invalid_date/.test(m)) return '오늘 이후 날짜는 넣을 수 없습니다.';
-  if (/invalid_test_type/.test(m)) return '쓰지 않는 시험 종류입니다.';
-  if (/row-level security|violates row-level/.test(m)) return '권한이 없습니다.';
-  if (/duplicate key/.test(m)) return '이미 있는 항목입니다.';
-  if (/check constraint/.test(m)) return '입력 형식이 맞지 않습니다.';
+  if (m === 'Invalid login credentials') return tNow('e_login');
+  if (/Failed to fetch/i.test(m)) return tNow('e_net');
+  if (/invalid_value/.test(m)) return tNow('e_value');
+  if (/invalid_section/.test(m)) return tNow('e_section');
+  if (/invalid_date/.test(m)) return tNow('e_date');
+  if (/invalid_test_type/.test(m)) return tNow('e_type');
+  if (/row-level security|violates row-level/.test(m)) return tNow('e_rls');
+  if (/duplicate key/.test(m)) return tNow('e_dup');
+  if (/check constraint/.test(m)) return tNow('e_check');
   return m;
 }
 

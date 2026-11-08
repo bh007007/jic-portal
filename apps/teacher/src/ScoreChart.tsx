@@ -1,10 +1,12 @@
 import type { CefrMapping, TestResult, TestType } from './data';
+import { useT } from './i18n';
 
 /**
  * 시험 종류 하나의 총점 추이(원칙 L2: 코스별 성적표와 CEFR 성장선). 한 줄짜리 선 그래프라 범례 없이 제목이 이름을 대신한다.
  * CEFR 대응 점수가 입력돼 있으면 가로 점선과 레벨 이름을 같이 그린다(JIC 기준 추정 레벨). 숫자는 아래 기록 표에 모두 있다.
  */
 export default function ScoreChart({ type, results, maps }: { type: TestType; results: TestResult[]; maps: CefrMapping[] }) {
+  const { t } = useT();
   const pts = results
     .filter((r) => r.test_type === type.code && r.section === '')
     .map((r) => ({ date: r.test_date, value: Number(r.value) }))
@@ -31,7 +33,7 @@ export default function ScoreChart({ type, results, maps }: { type: TestType; re
 
   return (
     <figure className="chart">
-      <svg viewBox={`0 0 ${W} ${H}`} role="img" aria-label={`${type.name} 총점 추이 ${pts.map((p) => `${p.date} ${p.value}`).join(', ')}`}>
+      <svg viewBox={`0 0 ${W} ${H}`} role="img" aria-label={`${t('chartCaption', { name: type.name, n: pts.length })}: ${pts.map((p) => `${p.date} ${p.value}`).join(', ')}`}>
         {ticks.map((v) => (
           <g key={v}>
             <line x1={L} x2={W - R} y1={y(v)} y2={y(v)} className="grid" />
@@ -59,7 +61,7 @@ export default function ScoreChart({ type, results, maps }: { type: TestType; re
         <text x={L} y={H - 6} className="axis">{pts[0].date}</text>
         <text x={W - R} y={H - 6} textAnchor="end" className="axis">{pts[pts.length - 1].date}</text>
       </svg>
-      <figcaption className="muted small">{type.name} 총점 {pts.length}회{levels.length ? ' · 점선은 CEFR 하한(JIC 기준 추정)' : ''}</figcaption>
+      <figcaption className="muted small">{t('chartCaption', { name: type.name, n: pts.length })}{levels.length ? t('chartRef') : ''}</figcaption>
     </figure>
   );
 }

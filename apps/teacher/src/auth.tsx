@@ -56,5 +56,3 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   return <Ctx.Provider value={{ loading: session === undefined || loadingMe, session: session ?? null, me, error }}>{children}</Ctx.Provider>;
 }
-
-export const ROLE_LABEL: Record<string, string> = { teacher: '강사', checker: '체커', scheduler: '스케줄러', manager: '매니저', staff: '직원' };
