@@ -1,6 +1,6 @@
 // 시험용 Supabase 흉내: Auth(메모리, auth.users 와 맞춤) + REST(PGlite 위 실제 마이그레이션, 역할·RLS 그대로). 데이터는 가짜 샘플만.
-// 학생 앱 코드가 쓰는 REST 형식만 SQL 로 옮긴다: GET 필터(col=eq.v, data->>k=eq.v)·select·order·limit·offset,
-// POST(insert), PATCH(update, return=representation), rpc/함수. 서비스 키 'service-key', anon 키 'anon-key'.
+// 학생 앱·인트라넷 코드가 쓰는 REST 형식만 SQL 로 옮긴다: GET 필터(col=eq.v, data->>k=eq.v)·select·order·limit·offset,
+// POST(insert), PATCH(update, return=representation), 행 지우기, rpc/함수(값 하나 또는 표). 서비스 키 'service-key', anon 키 'anon-key'.
 //
 // 직접 띄우기(화면 시험용): node supabase/tests/pg-supabase.mjs 54321
 // 시험 코드에서: const sb = await startPgSupabase(); … sb.url, sb.sql(), sb.addUser(), sb.close()
@@ -11,7 +11,7 @@ import fs from 'node:fs';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 
 const REPO = fileURLToPath(new URL('../../', import.meta.url));
-const MIGRATIONS = ['20261107000000_legacy_tables.sql', '20261108100000_student_intranet.sql', '20261108120000_student_request_ids.sql'];
+const MIGRATIONS = ['20261107000000_legacy_tables.sql', '20261108100000_student_intranet.sql', '20261108120000_student_request_ids.sql', '20261108130000_intranet_deploy.sql'];
 
 export async function startPgSupabase({ port = 0 } = {}) {
   const { PGlite } = await import(process.env.PGLITE ? pathToFileURL(process.env.PGLITE).href : '@electric-sql/pglite');
@@ -114,8 +114,12 @@ export async function startPgSupabase({ port = 0 } = {}) {
     const rpc = path.match(/^rpc\/([a-z_]+)$/);
     if (rpc) {
       const keys = Object.keys(body ?? {});
-      const r = await db.query(`select public.${ident(rpc[1])}(${keys.map((k, i) => `${ident(k)} => $${i + 1}`).join(', ')}) as v`, keys.map((k) => body[k]));
-      const v = r.rows[0].v;
+      const call = `public.${ident(rpc[1])}(${keys.map((k, i) => `${ident(k)} => $${i + 1}`).join(', ')})`;
+      const values = keys.map((k) => body[k]);
+      // 표를 돌려주는 함수(returns table / setof)는 PostgREST 처럼 행 배열로
+      const set = (await db.query(`select p.proretset from pg_proc p join pg_namespace n on n.oid = p.pronamespace where n.nspname = 'public' and p.proname = $1`, [rpc[1]])).rows[0]?.proretset;
+      if (set) return { status: 200, body: (await db.query(`select coalesce(json_agg(x), '[]'::json) as j from ${call} x`, values)).rows[0].j };
+      const v = (await db.query(`select ${call} as v`, values)).rows[0].v;
       return { status: 200, body: v === '' || v === undefined ? null : v };
     }
     const table = `public.${ident(path)}`;
@@ -129,6 +133,11 @@ export async function startPgSupabase({ port = 0 } = {}) {
       if (params.get('offset')) q += ` offset ${Number(params.get('offset'))}`;
       // PostgREST 와 같은 JSON 모양(날짜·시각·배열)
       return { status: 200, body: (await db.query(`select coalesce(json_agg(x), '[]'::json) as j from (${q}) x`, values)).rows[0].j };
+    }
+    if (req.method === 'DELETE') {
+      const values = [];
+      await db.query(`delete from ${table}${where(params, values)}`, values);
+      return { status: 204, body: undefined };
     }
     const cols = Object.keys(body).map(ident);
     if (req.method === 'POST') {

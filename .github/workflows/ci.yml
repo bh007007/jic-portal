@@ -23,3 +23,4 @@ jobs:
       - run: npm i --no-save @electric-sql/pglite@0.3
       - run: node supabase/tests/student_intranet_rls.mjs
       - run: node supabase/tests/student_worker_api.mjs
+      - run: node supabase/tests/intranet_worker_api.mjs

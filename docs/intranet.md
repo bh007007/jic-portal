@@ -1,6 +1,6 @@
 # 인트라넷 (`apps/intranet`)
 
-직원용 화면과 경비실 가드 태블릿이다. 디자인은 `docs/design/IntranetPenalty.dc.html`(I1 패널티 승인)과 `GuardTablet.dc.html`(I2 외출·귀가 가드 태블릿, 1180×820)을 따른다. 1차는 **로컬 개발 서버 전용**이다.
+직원용 화면과 경비실 가드 태블릿이다. 디자인은 `docs/design/IntranetPenalty.dc.html`(I1 패널티 승인)과 `GuardTablet.dc.html`(I2 외출·귀가 가드 태블릿, 1180×820)을 따른다. 로컬 개발 서버로 개발하고, 배포는 Cloudflare Workers 하나로 한다(아래 '배포', 직원 화면 서버 코드 11/8, 가드 태블릿은 다음 단계, Cloudflare 설정 전).
 
 ## 실행
 
@@ -109,6 +109,9 @@ apps/intranet/
 ├─ server/notices.ts     내부 공지·읽음
 ├─ server/reports.ts     가드 리포트 종류·패널티 종류 연결
 ├─ server/core.test.ts   core 시험 (가짜 시계·메모리 저장소). 빌드할 때 함께 돈다
+├─ server/supabaseData.ts  배포: 직원 확인, 업체 원본 읽기(직원 토큰)
+├─ server/supabaseStores.ts 배포: Supabase 저장소(직원 토큰, RLS·DB 함수)
+├─ worker/index.ts       배포 서버(Cloudflare Workers), 설정 wrangler.jsonc
 ├─ server/localData.ts   로컬: Vite 플러그인, 파일 저장 (결석·외박 신청은 학생 앱 파일을 같이 연다)
 └─ src/                  화면 (React + Vite + TypeScript)
 ```
@@ -152,17 +155,46 @@ apps/intranet/
 
 결석·외박 신청은 학생 앱과 같은 `.local-db/student/` 파일을 쓴다. 상담 기록·접근 기록은 `counseling-<source>.ndjson`, `audit-<source>.ndjson`(실제 데이터로 실행하면 민감 정보). 가드 리포트는 `reports-<source>.ndjson`. 귀국 항공편과 공항 이동 배차는 학생 앱 폴더의 `departures-<source>.ndjson`, `rides-<source>.ndjson`을 같이 쓴다. 내부 공지는 학생 데이터와 상관없어 `notices.ndjson`, `notice-reads.ndjson` 하나씩. 나머지는 저장소 루트 `.local-db/intranet/`(Git 제외)에 `outings-<sample|extract>.ndjson`, `penalties-<sample|extract>.ndjson`, `settings.json`, `penalty-rules.json`을 쓴다. 실제 추출본으로 실행하면 학생 번호가 들어가므로 `data/`와 같이 다룬다.
 
-## 배포 전에 필요한 것
+## 배포 (Cloudflare Workers)
 
-테이블과 권한(RLS)은 `supabase/migrations/20261108100000_student_intranet.sql`(11/8, 학생 앱과 같은 파일)에 만들었다. 권한 시험은 `supabase/tests/student_intranet_rls.mjs`.
+인트라넷은 **Workers 한 개**로 올린다(정적 파일 + `/api` 서버 코드, 설정 `apps/intranet/wrangler.jsonc`, 서버 `apps/intranet/worker/index.ts`). 학생 앱·파트너 포털과 같은 방식이다. 1단계(11/8)는 **직원 화면**이고, 가드 태블릿(공용 계정)은 다음 단계다.
 
-1. **계정**(11/8 결정)
-   - 직원: `staff_users`(+ 역할별 권한, HANDOFF 6-4). 처리자는 로그인한 직원으로 채운다(화면이 보내는 이름은 믿지 않는다).
-   - 가드: 출입구(캠퍼스)마다 공용 계정 하나(`guard_accounts`, `is_guard()`, `current_guard_campus()`). 기록에는 근무자 이름을 고른다(설정의 근무자 목록, `intranet_settings.guards`).
-   - 상담 기록: 같은 캠퍼스 직원만 본다. 직원이 맡는 캠퍼스는 `staff_campuses`에 넣는다(관리자도 넣어야 본다).
-2. **서버(Workers) 연결**: `server/core.ts`의 저장소를 Supabase 구현으로 바꾸고, 상담 기록은 아래 함수로 바꾼다. 로컬의 `X-Staff-Name` 헤더는 쓰지 않는다.
-3. **미귀가 확인**: 지금은 화면을 열 때 계산한다. 배포에서는 통금 직후 Cloudflare Workers 크론(서비스 키)으로 후보를 만든다.
-4. **태블릿**: 경비실 태블릿에서 배포 주소를 연다(로컬 개발 서버는 이 PC에서만 열린다).
+- **로그인**: 직원 계정(이메일·비밀번호, 관리자 앱과 같은 Supabase 계정). `staff_users`에 있는 계정만 쓴다(아니면 '직원 계정으로 등록되지 않았습니다'). 처리자 이름은 `staff_users.name`이고, 오른쪽 위 이름 입력 칸 대신 로그인한 이름과 로그아웃이 보인다.
+- **학생·연수**: 직원 토큰으로 업체 원본(`legacy_*`, 직원만 읽기)을 읽는다(`server/supabaseData.ts`: 메타, 학생, 연수, 기숙사 배정). 관리자 앱 `functions/api`와 같은 방식이라 서비스 키를 쓰지 않는다. 같은 Worker 안에서 60초 기억한다.
+- **저장소**: Supabase 테이블을 직원 토큰으로 읽고 쓴다(`server/supabaseStores.ts`, RLS). 계산은 로컬과 같은 core.
+  - 결석·외박 승인·반려는 `decide_*` 함수, 배차·패널티 처리자는 로그인한 직원 id로 남기고, 화면에는 `staff_directory()`로 이름을 보인다.
+  - 상담 기록은 테이블을 직접 못 읽으므로 `counseling.ts`의 `stores.remote`로 DB 함수(`counseling_open/create/update/followup`)를 쓴다. 목록은 `counseling_list()`(내용 없음, 맡은 캠퍼스만), 접근 기록은 DB 함수가 남긴다. 맡지 않은 캠퍼스 학생의 상담은 쓸 수 없다(`campus_not_allowed`).
+  - 설정(통금·근무자)은 `intranet_settings` 한 행, 점수표는 `penalty_rules`·`penalty_stages`(종류·단계는 고정, 점수·기준만 바꿈).
+- **가드 화면**(`/guard`)은 가드 공용 계정을 연결하기 전까지 안내만 보인다.
+
+### 설정 순서 (레오 PC의 Claude)
+
+1. Supabase에 마이그레이션 `20261108100000_student_intranet.sql`, `20261108120000_student_request_ids.sql`, `20261108130000_intranet_deploy.sql`을 차례로 적용한다.
+2. 직원 계정은 관리자 앱과 같다(`staff_users`, `docs/setup-cloud.md` 1-4). 이름(`staff_users.name`)을 넣어 둔다(처리자·접근 기록에 남는다). 상담 기록을 볼 직원은 `staff_campuses`에 맡은 캠퍼스를 넣는다(예: `insert into staff_campuses values ('<user_id>', 'Challenger')`).
+3. **Workers & Pages → Create → Workers → Import a repository** → `jic-portal`
+
+   | 항목 | 값 |
+   | --- | --- |
+   | Project name | `jic-intranet` |
+   | Root directory | `/` (비워 둠) |
+   | Build command | `npm run intranet:build` |
+   | Deploy command | `npx wrangler deploy --config apps/intranet/wrangler.jsonc` |
+   | Build variables | `VITE_SUPABASE_URL`, `VITE_SUPABASE_ANON_KEY`, `VITE_ADMIN_URL`(관리자 앱 주소, '통합관리' 버튼), `NODE_VERSION=22` |
+
+4. Worker의 **Settings → Variables and Secrets**에 `SUPABASE_URL`, `SUPABASE_ANON_KEY`(빌드 변수와 같은 값)를 넣는다. 서비스 키는 필요 없다.
+5. 주소(`https://jic-intranet.<계정>.workers.dev`)에서 직원 계정으로 로그인 → 홈이 보이면 된다.
+
+### 배포 시험
+
+- `supabase/tests/intranet_worker_api.mjs`(49개): 실제 마이그레이션을 올린 PGlite(`pg-supabase.mjs`)에서 직원 두 명(Challenger·Premium 담당)으로 설정·점수표 → 통금 위반 후보·승인(점수표 점수, 처리자) → 결석 반려·외박 승인 → 배차 확정 → 공지·읽음 → 상담 기록(같은 캠퍼스만, 내용은 함수로, 열람 10초 중복 제외, 접근 기록) → Student File → 가드 리포트 목록. CI가 함께 돌린다.
+- 11/8 `wrangler dev`(workerd)에 이 Worker를 띄우고 Playwright로 26개 확인: 로그인, 직원 아닌 계정 안내, 메뉴 12개 화면, 상담 작성(맡지 않은 캠퍼스 안내 → 작성 → 목록 → 상세 내용·열람 기록), 공지 작성, 가드 화면 안내, 로그아웃.
+
+### 남은 것
+
+1. **가드 태블릿**(다음 단계): 출입구마다 공용 계정(`guard_accounts`) 생성 스크립트, 가드 로그인, 가드가 쓰는 API만 열기. 가드는 업체 원본을 못 읽으므로 재학생 확인용 읽기 방법을 정한다(서비스 키로 학생 앱처럼 필요한 행만, 또는 가드용 명단).
+2. **미귀가 확인**: 지금은 화면을 열 때 계산한다. 배포에서는 통금 직후 Cloudflare Workers 크론으로 후보를 만든다.
+3. **역할별 권한**(HANDOFF 6-4): 지금은 `staff_users`면 모든 직원 화면을 쓴다.
+4. 실제 학생 데이터는 보안 점검 뒤에만 올린다(2026-11-07 결정).
 
 ### 테이블과 권한
 

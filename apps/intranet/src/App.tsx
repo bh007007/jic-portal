@@ -1,5 +1,9 @@
+import type { ReactNode } from 'react';
 import { Route, Routes } from 'react-router-dom';
+import { authMode, signOut, useSession } from './auth';
 import Shell from './components/Shell';
+import { useApi } from './api';
+import Login from './pages/Login';
 import Audit from './pages/Audit';
 import Counseling from './pages/Counseling';
 import CounselingDetail from './pages/CounselingDetail';
@@ -20,11 +24,49 @@ import Settings from './pages/Settings';
 import StudentFileDetail from './pages/StudentFileDetail';
 import StudentFiles from './pages/StudentFiles';
 
-export default function App() {
+/** 배포: 로그인한 계정이 직원(staff_users)이 아니면 안내만 한다. */
+function StaffGate({ children }: { children: ReactNode }) {
+  const { error } = useApi<{ source: string }>('/api/meta');
+  if (error !== 'staff_only') return <>{children}</>;
   return (
+    <div className="login">
+      <div className="login-box">
+        <div className="brand">
+          <span className="brand-mark">JIC</span>
+          <span className="brand-name">인트라넷</span>
+        </div>
+        <p className="login-error">직원 계정으로 등록되지 않았습니다. 관리자에게 등록을 요청하세요.</p>
+        <button type="button" className="btn" onClick={() => void signOut()}>
+          로그아웃
+        </button>
+      </div>
+    </div>
+  );
+}
+
+/** 배포: 가드 태블릿은 가드 공용 계정을 연결한 뒤에 연다(docs/intranet.md '배포'). */
+function GuardNotReady() {
+  return (
+    <div className="login">
+      <div className="login-box">
+        <div className="brand">
+          <span className="brand-mark">JIC</span>
+          <span className="brand-name">가드</span>
+        </div>
+        <p className="login-foot">가드 태블릿은 가드 공용 계정을 연결한 뒤 이 주소에서 씁니다.</p>
+      </div>
+    </div>
+  );
+}
+
+export default function App() {
+  const session = useSession();
+  if (authMode === 'supabase' && session === 'loading') return <div className="login" />;
+  if (authMode === 'supabase' && !session) return <Login />;
+  const routes = (
     <Routes>
       {/* 가드 태블릿은 메뉴 없이 전체 화면 */}
-      <Route path="/guard" element={<Guard />} />
+      <Route path="/guard" element={authMode === 'supabase' ? <GuardNotReady /> : <Guard />} />
       <Route
         path="*"
         element={
@@ -58,4 +100,5 @@ export default function App() {
       />
     </Routes>
   );
+  return authMode === 'supabase' ? <StaffGate>{routes}</StaffGate> : routes;
 }

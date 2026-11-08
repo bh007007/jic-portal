@@ -1,7 +1,7 @@
 /**
  * 인트라넷 /api/* 계산. 파일·네트워크에 의존하지 않는다.
  * - 학생·연수는 관리자 앱 core(createDb)를 그대로 쓴다(재학생 명단, 이름·캠퍼스).
- * - 외출·귀가 기록, 패널티, 설정은 Stores 로 분리한다. 로컬은 파일(server/localData.ts), 배포는 Supabase(예정, docs/intranet.md).
+ * - 외출·귀가 기록, 패널티, 설정은 Stores 로 분리한다. 로컬은 파일(server/localData.ts), 배포는 Supabase(server/supabaseStores.ts).
  * - 학생 신청(결석·외박)은 학생 앱의 server/requests.ts 모양·규칙을 그대로 쓴다(같은 저장소를 학생 앱과 같이 씀).
  * - 시각은 ISO(UTC)로 저장하고, 날짜·통금 판정은 필리핀 시간(UTC+8, 일광절약 없음)으로 한다.
  */
@@ -18,6 +18,7 @@ import {
   type AuditLog,
   type CounselingCtx,
   type CounselingNote,
+  type CounselingRemote,
 } from './counseling';
 import { decideRide, rideState, type Departure, type DepartureStore, type RideState, type RideStore } from '../../student/server/departures';
 import { PENALTY_KIND_OF, REPORT_KINDS, REPORT_LABEL, REPORT_NOTE_MAX, type IncidentReport, type ReportKind } from './reports';
@@ -128,6 +129,8 @@ export interface Stores {
   /** 상담 기록과 접근 기록(추가만) */
   counseling: Repo<CounselingNote>;
   audit: Repo<AuditLog>;
+  /** 배포: 상담 기록 열람·작성·수정·후속 조치는 DB 함수로(counseling.ts) */
+  counselingRemote?: CounselingRemote;
   /** 내부 공지와 읽음 */
   notices: Repo<Notice>;
   noticeReads: Repo<NoticeRead>;
@@ -809,7 +812,7 @@ function noticeCtx(ctx: IntranetCtx): NoticeCtx {
 
 function counselingCtx(ctx: IntranetCtx): CounselingCtx {
   return {
-    stores: ctx.stores,
+    stores: { counseling: ctx.stores.counseling, audit: ctx.stores.audit, remote: ctx.stores.counselingRemote },
     actor: ctx.actor ?? null,
     now: ctx.now,
     newId: ctx.newId,
@@ -859,7 +862,8 @@ export async function handleIntranetApi(ctx: IntranetCtx, method: string, pathna
     switch (route) {
       case 'GET /meta': {
         const m = ctx.db.meta();
-        return ok({ source: m.source, refDate: m.refDate });
+        // actor: 배포에서는 로그인한 직원 이름(화면 오른쪽 위), 로컬은 화면이 입력한 이름
+        return ok({ source: m.source, refDate: m.refDate, actor: ctx.actor ?? null });
       }
       case 'GET /notices':
         return ok(await listNotices(noticeCtx(ctx), q));
@@ -932,6 +936,8 @@ export async function handleIntranetApi(ctx: IntranetCtx, method: string, pathna
     }
     return fail(404, 'not_found');
   } catch (e) {
-    return fail(500, (e as Error).message);
+    // 배포 저장소의 오류(StoreError)는 Supabase 상태 코드를 그대로(예: 맡지 않은 캠퍼스의 상담 기록 → 400 campus_not_allowed)
+    const status = (e as { status?: unknown }).status;
+    return fail(typeof status === 'number' && status >= 400 && status < 600 ? status : 500, (e as Error).message);
   }
 }
