@@ -544,6 +544,43 @@ export function createDb(input: DataInput) {
         remark: str(raw.tr_pick_remark),
       }))
       .sort((a, b) => (a.arrival || '9').localeCompare(b.arrival || '9') || a.name.localeCompare(b.name));
+
+    // 배치 구성: 업체 포털 통계 > Student List(입국일별 국적·코스·방·나이·에이전시 분포)와 같은 항목.
+    // 나이는 입국일 기준 만 나이(생년월일이 없으면 '미상'). 코스·기숙사는 연수의 첫 항목.
+    const batchDate = info?.date || refDate;
+    const ageOf = (raw: Raw) => {
+      const b = str(raw.st_birthday || studentById.get(str(raw.tr_st_id))?.st_birthday).slice(0, 10);
+      if (!/^\d{4}-\d{2}-\d{2}$/.test(b)) return null;
+      let age = Number(batchDate.slice(0, 4)) - Number(b.slice(0, 4));
+      if (batchDate.slice(5) < b.slice(5)) age--;
+      return age;
+    };
+    const AGE_BANDS: [string, (a: number) => boolean][] = [
+      ['19세 이하', (a) => a <= 19], ['20~24세', (a) => a >= 20 && a <= 24], ['25~29세', (a) => a >= 25 && a <= 29],
+      ['30~39세', (a) => a >= 30 && a <= 39], ['40~49세', (a) => a >= 40 && a <= 49], ['50세 이상', (a) => a >= 50],
+    ];
+    const members = live.filter((x) => x.row.batch === batch);
+    const nationMap = new Map<string, { name: string; female: number; male: number; total: number }>();
+    for (const x of members) {
+      const n = x.row.nation || '미상';
+      const r = nationMap.get(n) ?? { name: n, female: 0, male: 0, total: 0 };
+      r.total++;
+      if (x.row.gender === '여') r.female++;
+      else if (x.row.gender === '남') r.male++;
+      nationMap.set(n, r);
+    }
+    const ages = members.map((x) => ageOf(x.raw));
+    const composition = {
+      nations: [...nationMap.values()].sort((a, b) => b.total - a.total || a.name.localeCompare(b.name)),
+      courses: countBy(members, (x) => splitItems(x.raw.courses)[0] ?? '미정'),
+      dorms: countBy(members, (x) => splitItems(x.raw.dorms)[0] ?? '없음'),
+      ages: [
+        ...AGE_BANDS.map(([name, test]) => ({ name, count: ages.filter((a) => a !== null && test(a)).length })),
+        { name: '미상', count: ages.filter((a) => a === null).length },
+      ].filter((a) => a.count > 0),
+      agencies: countBy(members, (x) => x.row.agency || '미상'),
+      campuses: countBy(members, (x) => x.row.campus),
+    };
     return {
       refDate,
       batch,
@@ -552,6 +589,7 @@ export function createDb(input: DataInput) {
       total: rows.length,
       byType: countBy(rows, (r) => r.pickType),
       byPlace: countBy(rows.filter((r) => r.place), (r) => r.place),
+      composition,
       rows,
     };
   }
@@ -1021,7 +1059,10 @@ export function createDb(input: DataInput) {
     const lastYear = (d: string) => (unit === 'month' ? `${Number(d.slice(0, 4)) - 1}${d.slice(4)}` : addDays(d, -364));
     const prevPeriods = periods.map((p) => ({ from: lastYear(p.from), to: unit === 'month' ? monthEnd(lastYear(p.from).slice(0, 7)) : lastYear(p.to) }));
 
+    // 에이전시 이름(한글·영문) 일부로 거른다(업체 s_ag_name 과 같음).
+    const agencyKw = (q.get('agency') ?? '').trim().toLowerCase();
     const counted = all.filter((x) => {
+      if (agencyKw && !`${x.row.agency} ${str(x.raw.ag_name_en || agencyById.get(agencyIdOf(x.raw))?.ag_name_en)}`.toLowerCase().includes(agencyKw)) return false;
       const c = stateCode(x.raw);
       if (NEVER_REGISTERED.has(c)) return false;
       if (c === 'CANCEL') return withCancel;
@@ -1084,6 +1125,7 @@ export function createDb(input: DataInput) {
       withCancel,
       withTrainCancel,
       compare,
+      agency: agencyKw,
       end,
       prevEnd: addDays(periods[0].from, -1),
       nextEnd: unit === 'month' ? monthEnd(shiftMonth(end.slice(0, 7), 12)) : addDays(periods[n - 1].to, 14 * 11),

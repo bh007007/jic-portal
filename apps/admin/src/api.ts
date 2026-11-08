@@ -193,6 +193,14 @@ export interface Arrivals {
   total: number;
   byType: NameCount[];
   byPlace: NameCount[];
+  composition: {
+    nations: { name: string; female: number; male: number; total: number }[];
+    courses: NameCount[];
+    dorms: NameCount[];
+    ages: NameCount[];
+    agencies: NameCount[];
+    campuses: NameCount[];
+  };
   rows: ArrivalRow[];
 }
 
@@ -412,6 +420,7 @@ export interface Registrations {
   withCancel: boolean;
   withTrainCancel: boolean;
   compare: boolean;
+  agency: string;
   end: string;
   prevEnd: string;
   nextEnd: string;
