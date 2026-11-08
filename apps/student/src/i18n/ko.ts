@@ -147,6 +147,12 @@ export const ko = {
   'err.departure_passed': '출발일이 지나 수정할 수 없습니다.',
   'err.no_enrollment': '재학 중이거나 입학 예정인 연수가 없습니다.',
   'err.dep_date': '출발일은 {from} ~ {to} 사이여야 합니다.',
+  'ride.title': '공항 이동',
+  'ride.requested': '요청됨 · 오피스 확인 전',
+  'ride.confirmed': '확정',
+  'ride.pickup': '기숙사 출발 {date} {time}',
+  'ride.declined': '배차 불가',
+  'ride.changed': '항공편이 바뀌어 오피스가 다시 확인합니다.',
 };
 
 export type MsgKey = keyof typeof ko;

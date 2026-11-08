@@ -149,4 +149,10 @@ export const tw: Record<MsgKey, string> = {
   'err.departure_passed': '已過出發日，無法修改。',
   'err.no_enrollment': '你目前沒有在學或即將開始的課程。',
   'err.dep_date': '出發日必須在 {from} ~ {to} 之間。',
+  'ride.title': '送機',
+  'ride.requested': '已申請・等待辦公室確認',
+  'ride.confirmed': '已確認',
+  'ride.pickup': '宿舍出發 {date} {time}',
+  'ride.declined': '無法安排',
+  'ride.changed': '航班有變，辦公室會重新確認。',
 };

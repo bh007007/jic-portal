@@ -149,4 +149,10 @@ export const jp: Record<MsgKey, string> = {
   'err.departure_passed': '出発日を過ぎたため変更できません。',
   'err.no_enrollment': '在籍中または入学予定の課程がありません。',
   'err.dep_date': '出発日は {from} ~ {to} の間にしてください。',
+  'ride.title': '空港送迎',
+  'ride.requested': '申請済み・オフィス確認前',
+  'ride.confirmed': '確定',
+  'ride.pickup': '寮を出発 {date} {time}',
+  'ride.declined': '手配できません',
+  'ride.changed': '便が変わったため、オフィスが再確認します。',
 };

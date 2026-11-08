@@ -16,7 +16,7 @@ http://127.0.0.1:5177 을 연다. 가드 태블릿은 http://127.0.0.1:5177/guar
 | 경로 | 화면 | 내용 |
 | --- | --- | --- |
 | `/guard` | 가드 태블릿 (메뉴 없는 전체 화면) | 출입구 캠퍼스 선택, 근무자 선택, 외출/귀가 전환, 학생번호 입력(QR 스캐너 입력 포함), 방금 처리한 학생, 외출 중 목록(통금이 지나면 표시), 사건 리포트 작성 |
-| `/departures` | 귀국 일정 | 학생 앱에서 등록한 귀국 항공편(기본 오늘~14일, 출발일·시각 순, 공항 이동 차량 요청만 보기), 졸업 14일 이내인데 미등록인 학생 |
+| `/departures` | 귀국 일정 | 학생 앱에서 등록한 귀국 항공편(기본 오늘~14일, 출발일·시각 순, 차량 요청만·배차 처리할 것만 보기)과 공항 이동 배차 확정·불가, 졸업 14일 이내인데 미등록인 학생 |
 | `/reports` | 가드 리포트 | 태블릿에서 등록한 사건 리포트. 발생일·캠퍼스·종류·학생·근무자 검색, 연결된 패널티의 처리 상태(승인 대기·승인·반려) |
 | `/` | 홈 | 지금 외출 중, 오늘 밤 통금 위반, 패널티·결석·외박 대기, 확인할 일, 재학생 수, 최근 내부 공지(안 읽음 표시) |
 | `/notices` | 내부 공지 | 게시 중 / 지난 공지 탭, 캠퍼스(그 캠퍼스 + 전체 공지)·검색(제목·내용·작성자). 고정 공지가 위, 안 읽은 공지는 굵게 |
@@ -54,6 +54,13 @@ http://127.0.0.1:5177 을 연다. 가드 태블릿은 http://127.0.0.1:5177/guar
 - 외출·귀가는 '밤' 단위로 묶는다. **오전 5시 전 기록은 전날 밤**이다(예: 11/8 01:10 귀가 → 11/7 밤).
 - **승인된 외박이 있는 밤은 통금 위반이 아니다.** 외출 기록과 가드 태블릿에 '외박 허용 ~복귀일'로 보인다.
 - 그 밖에 그날 밤 통금 시각(설정, 처음 값 23:00)보다 늦게 외출했거나, 늦게 귀가했거나, 통금이 지나도 귀가하지 않았으면 통금 위반이다. 근거 문장 예: `통금 23:00, 귀가 23:41`, `통금 23:00 이후 외출 23:20, 귀가 23:55`, `통금 23:00, 미귀가`, `통금 23:00, 귀가 01:30 (외출 기록 없음)`.
+
+### 공항 이동 배차 (귀국 일정)
+
+- 학생이 귀국 항공편에서 '공항 이동 차량 요청'을 하면 '요청'으로 보인다. '처리'에서 **배차 확정**(기숙사 출발: 출발일 또는 전날 + 시각, 메모: 차량·집합 장소) 또는 **배차 불가**(사유 필수)로 처리한다. 메모는 학생 앱에 보인다.
+- 기숙사 출발이 비행기 출발보다 늦으면 거절한다. 처리자(오른쪽 위 직원 이름)와 시각이 남고, 다시 처리하면 덮어쓴다. 출발일이 지난 항공편은 처리하지 않는다.
+- 처리 뒤 학생이 출발일·시각을 바꾸면 **재확인 필요**, 차량 요청을 빼면 **요청 취소**로 보인다. 메뉴의 숫자는 오늘 이후 출발 중 요청·재확인 건수.
+- 배차 기록(직원이 씀)과 항공편(학생이 씀)은 따로 저장한다(기획안 C2). 모양과 규칙은 `apps/student/server/departures.ts`.
 
 ### 가드 리포트 (업체 eni, 기획안 incident_reports)
 
@@ -108,7 +115,7 @@ apps/intranet/
 
 - 학생·연수는 관리자 앱의 `createDb`(재학생 명단 `listEnrollments`, 이름 `studentDetail`)와 `loadDir`을 그대로 쓴다.
 - 스타일은 관리자 앱과 같은 값을 `src/styles.css`에 복사해 두었다(공통 UI 패키지가 생기면 옮긴다).
-- 시험: `npm --workspace apps/intranet run test`. 통금 판정 경계(통금 후 외출, 자정 넘어 귀가, 외출 기록 없는 귀가, 미귀가 후 귀가), 점수표 검증, 승인 점수 유지, 통금 변경 시 후보 정리, 외박 승인 시 후보 제외·외박 허용 표시, 결석·외박 승인·반려와 메모, Student File 목록·상세, 상담 기록(처리자 필수, 목록에 내용 없음, 내용 검색 안 됨, 열람 기록·10초 중복 제외, 수정·후속 조치, 필리핀 날짜 검색), 내부 공지(고정 순서, 캠퍼스 대상, 읽음 직원마다 1번, 안 읽은 수, 게시 종료), 가드 리포트(검증, 자정 넘은 발생 시각, 패널티 후보·종류 연결, 목록 검색), 귀국 일정(기본 기간, 미등록, 차량 요청) 등 109개 항목.
+- 시험: `npm --workspace apps/intranet run test`. 통금 판정 경계(통금 후 외출, 자정 넘어 귀가, 외출 기록 없는 귀가, 미귀가 후 귀가), 점수표 검증, 승인 점수 유지, 통금 변경 시 후보 정리, 외박 승인 시 후보 제외·외박 허용 표시, 결석·외박 승인·반려와 메모, Student File 목록·상세, 상담 기록(처리자 필수, 목록에 내용 없음, 내용 검색 안 됨, 열람 기록·10초 중복 제외, 수정·후속 조치, 필리핀 날짜 검색), 내부 공지(고정 순서, 캠퍼스 대상, 읽음 직원마다 1번, 안 읽은 수, 게시 종료), 가드 리포트(검증, 자정 넘은 발생 시각, 패널티 후보·종류 연결, 목록 검색), 귀국 일정(기본 기간, 미등록, 차량 요청), 공항 이동 배차(직원 이름 필수, 처리할 것, 확정·불가, 항공편 변경 시 재확인) 등 117개 항목.
 
 ### API
 
@@ -119,7 +126,8 @@ apps/intranet/
 | `GET /api/guard?campus=` | 가드 태블릿: 통금, 근무자 목록, 캠퍼스 목록, 외출 중, 최근 처리 |
 | `POST /api/guard/scan` | `{ code, mode: 'out'|'in', campus, guard }` |
 | `POST /api/guard/report` | `{ code, campus, guard, kind, note, time }` 사건 리포트 → 패널티 후보 |
-| `GET /api/departures?view=registered|missing&from=&to=&campus=&ride=1` | 귀국 일정 |
+| `GET /api/departures?view=registered|missing&from=&to=&campus=&ride=1|pending` | 귀국 일정(배차 상태 포함) |
+| `POST /api/departures/:id/ride` | `{ decision: 'confirmed'|'declined', pickupDate, pickupTime, note }` 공항 이동 배차 |
 | `GET /api/reports?from=&to=&campus=&kind=&q=` | 가드 리포트 목록(패널티 상태 포함) |
 | `GET /api/outings?date=&view=all|out|breach&campus=&q=` | 외출·귀가 기록 |
 | `GET /api/penalties?tab=&from=&to=&campus=&kind=&q=` | 패널티 목록(조회할 때 통금 위반 후보를 맞춘다) |
@@ -142,7 +150,7 @@ apps/intranet/
 
 ### 로컬 저장
 
-결석·외박 신청은 학생 앱과 같은 `.local-db/student/` 파일을 쓴다. 상담 기록·접근 기록은 `counseling-<source>.ndjson`, `audit-<source>.ndjson`(실제 데이터로 실행하면 민감 정보). 가드 리포트는 `reports-<source>.ndjson`. 귀국 항공편은 학생 앱 파일(`.local-db/student/departures-<source>.ndjson`)을 같이 읽는다. 내부 공지는 학생 데이터와 상관없어 `notices.ndjson`, `notice-reads.ndjson` 하나씩. 나머지는 저장소 루트 `.local-db/intranet/`(Git 제외)에 `outings-<sample|extract>.ndjson`, `penalties-<sample|extract>.ndjson`, `settings.json`, `penalty-rules.json`을 쓴다. 실제 추출본으로 실행하면 학생 번호가 들어가므로 `data/`와 같이 다룬다.
+결석·외박 신청은 학생 앱과 같은 `.local-db/student/` 파일을 쓴다. 상담 기록·접근 기록은 `counseling-<source>.ndjson`, `audit-<source>.ndjson`(실제 데이터로 실행하면 민감 정보). 가드 리포트는 `reports-<source>.ndjson`. 귀국 항공편과 공항 이동 배차는 학생 앱 폴더의 `departures-<source>.ndjson`, `rides-<source>.ndjson`을 같이 쓴다. 내부 공지는 학생 데이터와 상관없어 `notices.ndjson`, `notice-reads.ndjson` 하나씩. 나머지는 저장소 루트 `.local-db/intranet/`(Git 제외)에 `outings-<sample|extract>.ndjson`, `penalties-<sample|extract>.ndjson`, `settings.json`, `penalty-rules.json`을 쓴다. 실제 추출본으로 실행하면 학생 번호가 들어가므로 `data/`와 같이 다룬다.
 
 ## 배포 전에 필요한 것
 

@@ -14,7 +14,7 @@ import type { IncomingMessage, ServerResponse } from 'node:http';
 import type { Plugin } from 'vite';
 import { loadDir } from '../../admin/server/localData';
 import { fileStore, requestFiles } from '../../student/server/localData';
-import type { Departure } from '../../student/server/departures';
+import type { Departure, Ride } from '../../student/server/departures';
 import type { Absence, Overnight } from '../../student/server/requests';
 import { ACTOR_MAX } from './counseling';
 import { handleIntranetApi, type DocRepo, type Repo, type Stores } from './core';
@@ -99,6 +99,7 @@ export function intranetLocalPlugin(dataDir: string, storeDir: string, studentSt
         absences: fileStore<Absence>(req.absences),
         overnights: fileStore<Overnight>(req.overnights),
         departures: fileStore<Departure>(req.departures),
+        rides: fileStore<Ride>(req.rides),
         outings: fileRepo(path.join(storeDir, `outings-${source}.ndjson`)),
         penalties: fileRepo(path.join(storeDir, `penalties-${source}.ndjson`)),
         settings: fileDoc(path.join(storeDir, 'settings.json')),

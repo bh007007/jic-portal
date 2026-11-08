@@ -148,4 +148,10 @@ export const en: Record<MsgKey, string> = {
   'err.departure_passed': 'The departure date has passed, so it cannot be changed.',
   'err.no_enrollment': 'You have no current or upcoming enrollment.',
   'err.dep_date': 'The departure date must be between {from} and {to}.',
+  'ride.title': 'Airport transfer',
+  'ride.requested': 'Requested · waiting for the office',
+  'ride.confirmed': 'Confirmed',
+  'ride.pickup': 'Leaves the dorm {date} {time}',
+  'ride.declined': 'Not available',
+  'ride.changed': 'Your flight changed, so the office will check again.',
 };

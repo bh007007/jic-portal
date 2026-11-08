@@ -4,7 +4,7 @@
  */
 import path from 'node:path';
 import { loadDir } from '../../admin/server/localData';
-import type { Departure } from '../../student/server/departures';
+import type { Departure, Ride } from '../../student/server/departures';
 import type { Absence, Overnight, RequestStore } from '../../student/server/requests';
 import { handleIntranetApi, type Stores } from './core';
 
@@ -65,6 +65,7 @@ const stores: Stores = {
   noticeReads: memRepo(),
   reports: memRepo(),
   departures: memReq<Departure>(),
+  rides: memReq<Ride>(),
 };
 let clock = Date.parse('2026-11-05T19:02:00+08:00');
 let n = 0;
@@ -401,6 +402,29 @@ const sfDep = (await call('GET', '/students/' + S1.stId)).body as any;
 expect('Student File 에 귀국 항공편', sfDep.departure?.date === '2026-11-15', sfDep.departure);
 const sm5 = (await call('GET', '/summary')).body as any;
 expect('홈: 귀국 미등록 수', sm5.departureMissing === soonRows.length - 2, sm5.departureMissing);
+
+// ── 공항 이동 배차 (S1: 11/15 09:40 차량 요청, S2: 차량 요청 없음)
+dl = (await call('GET', '/departures', null, 'ride=pending')).body as any;
+expect('배차: 처리할 것 1건(S1 요청), 메뉴 숫자 1', dl.registered.length === 1 && dl.registered[0].ride.state === 'requested' && dl.counts.ridePending === 1, dl.registered.map((x: any) => x.ride.state));
+actor = null;
+r = await call('POST', `/departures/dep-${S1.trId}/ride`, { decision: 'confirmed', pickupDate: '2026-11-15', pickupTime: '06:00' });
+expect('배차: 직원 이름 필수', (r.body as any).error === 'actor_required', r);
+actor = '오피스 김';
+r = await call('POST', `/departures/dep-${S2.trId}/ride`, { decision: 'declined', note: 'x' });
+expect('차량 요청 없는 항공편 409', (r.body as any).error === 'no_ride_request', r);
+r = await call('POST', `/departures/dep-${S1.trId}/ride`, { decision: 'confirmed', pickupDate: '2026-11-15', pickupTime: '06:00', note: '정문 집합, 밴 1호차' });
+expect('배차 확정', r.status === 200 && (r.body as any).state === 'confirmed', r);
+dl = (await call('GET', '/departures')).body as any;
+const s1Row = dl.registered.find((x: any) => x.stId === S1.stId);
+expect('목록에 확정·처리자·기숙사 출발', s1Row.ride.state === 'confirmed' && s1Row.ride.record.decidedBy === '오피스 김' && s1Row.ride.record.pickupTime === '06:00' && dl.counts.ridePending === 0, s1Row.ride);
+// 학생이 시각을 바꾸면 재확인
+await stores.departures.put({ ...(await stores.departures.get(`dep-${S1.trId}`))!, time: '11:20' });
+dl = (await call('GET', '/departures', null, 'ride=pending')).body as any;
+expect('항공편 시각 변경 → 재확인, 메뉴 숫자 1', dl.registered.length === 1 && dl.registered[0].ride.state === 'changed' && dl.counts.ridePending === 1, dl.registered.map((x: any) => x.ride.state));
+r = await call('POST', `/departures/dep-${S1.trId}/ride`, { decision: 'declined', note: '그 시각에는 차량이 없음. 택시 안내' });
+expect('다시 처리(불가)하면 덮어씀', (r.body as any).state === 'declined', r);
+const sm6 = (await call('GET', '/summary')).body as any;
+expect('홈 요약 배차 미처리 0', sm6.ridePending === 0, sm6.ridePending);
 
 console.log(fails ? `\n${fails}건 실패` : '\n모두 통과');
 if (fails) process.exit(1);

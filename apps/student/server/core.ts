@@ -22,10 +22,10 @@ import {
   type OvernightStore,
 } from './requests';
 
-import { AIRPORTS, departureEnrollment, saveDeparture, type DepartureInput, type DepartureStore } from './departures';
+import { AIRPORTS, departureEnrollment, rideState, saveDeparture, type DepartureInput, type DepartureStore, type RideStore } from './departures';
 
 export { ABSENCE_KINDS, PERIOD_COUNT, REASON_MAX } from './requests';
-export type { Departure, DepartureStore } from './departures';
+export type { Departure, DepartureStore, Ride, RideState, RideStore } from './departures';
 export type { Absence, AbsenceInput, AbsenceKind, AbsenceStore, Overnight, OvernightInput, OvernightStore, RequestStatus } from './requests';
 
 export interface StudentCtx {
@@ -33,6 +33,7 @@ export interface StudentCtx {
   store: AbsenceStore;
   overnights: OvernightStore;
   departures: DepartureStore;
+  rides: RideStore;
   /** 로그인한 학생 번호. 없으면 null. */
   stId: string | null;
   /** 학생번호 + 생년월일 로그인(/api/login)을 열지. 로컬 개발 서버에서만 true. */
@@ -111,7 +112,11 @@ export type Profile = NonNullable<Awaited<ReturnType<typeof profile>>>;
 async function departureView(ctx: StudentCtx, stId: string) {
   const enrollment = departureEnrollment(ctx.db, stId);
   const departure = enrollment ? await ctx.departures.get(`dep-${enrollment.trId}`) : null;
-  return { today: localToday(ctx.now()), airports: AIRPORTS, enrollment, departure };
+  const r = departure ? await ctx.rides.get(departure.id) : null;
+  const state = departure ? rideState(departure, r) : 'none';
+  // 학생에게는 처리 결과만 보인다(처리자 이름은 내보내지 않음).
+  const ride = { state, pickupDate: state === 'confirmed' ? r!.pickupDate : null, pickupTime: state === 'confirmed' ? r!.pickupTime : null, note: state === 'confirmed' || state === 'declined' ? r!.note : '' };
+  return { today: localToday(ctx.now()), airports: AIRPORTS, enrollment, departure, ride };
 }
 export type DepartureView = Awaited<ReturnType<typeof departureView>>;
 
