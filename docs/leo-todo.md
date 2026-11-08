@@ -4,7 +4,7 @@ Claude가 대신할 수 없는 일(키·비밀번호 입력, 계정 만들기, �
 
 ## 머지 대기 PR (밤사이 머지는 권한 확인에 막혀 레오님이 해 주셔야 함)
 
-PR이 CI를 통과하면 GitHub에서 **Merge pull request**를 누르거나 Claude에게 "머지"라고 말씀해 주세요. 머지하면 Cloudflare가 자동으로 배포한다.
+PR이 CI를 통과하면 GitHub에서 **Merge pull request**를 누르거나 Claude에게 "머지"라고 말씀해 주세요. 머지하면 Cloudflare가 자동으로 배포한다. #38(인보이스 항목)은 11/9에 main에 들어갔고, 아래 세 PR에 합쳐 두었다(충돌 없음, 빌드 통과).
 
 머지 전에 미리 보기:
 - 첫 화면 https://feat-portal-hub.jic-portal-916.pages.dev/ (#37).
@@ -15,7 +15,6 @@ PR이 CI를 통과하면 GitHub에서 **Merge pull request**를 누르거나 Cla
 | [#37](https://github.com/bh007007/jic-portal/pull/37) | JIC 포털 첫 화면(4개 포털 선택), 관리자 포털 `/admin`, 구조 문서, 이 목록 | 1 |
 | [#39](https://github.com/bh007007/jic-portal/pull/39) | 강사 포털(LMS) 1차 `/teacher`: 학생(결석 신청 기록 포함)·성적(한 명씩·여러 명 한 번에)·자료실·시험 종류·강사 목록. #37 위에 쌓음 | 2 (#37 다음) |
 | [#40](https://github.com/bh007007/jic-portal/pull/40) | 관리자 포털 '사용자·권한'(계정 목록, 강사 포털 역할 주기·회수), 기초관리 '휴일'(학생수 달력·강사 포털 홈에 표시), 학생 상세의 강사 포털 성적. #39 위에 쌓음 | 3 |
-| [#38](https://github.com/bh007007/jic-portal/pull/38) | (회계 세션) 인보이스 항목별 금액: 학생 상세 '인보이스 항목' 표, 항목 추출 스크립트. 로컬 전용 | 순서 상관없음. #37·#39·#40과 겹치는 파일은 있지만 충돌 없이 합쳐지고 합친 빌드 통과(11/9 확인) |
 | (밤사이 추가되는 PR은 여기에 적는다) | | |
 
 ## 머지할 때 같이 할 일 (밤사이 권한 확인에 막힘: Supabase 적용·Cloudflare 설정은 배포로 분류됨)
