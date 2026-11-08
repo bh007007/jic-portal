@@ -1,10 +1,10 @@
 import { Link, useParams } from 'react-router-dom';
 import { useAuth } from '../auth';
-import { cefrOf, loadCefr, loadResults, loadStudents, loadTestTypes, type TestResult } from '../data';
-import { useT } from '../i18n';
+import { cefrOf, loadAbsences, loadCefr, loadResults, loadStudents, loadTestTypes, type TestResult } from '../data';
+import { useT, type Key } from '../i18n';
 import ScoreForm from '../ScoreForm';
 import ScoreChart from '../ScoreChart';
-import { supabase } from '../supabase';
+import { manilaToday, supabase } from '../supabase';
 import { Loading, PageHead, Section, fmtDate, useLoad, useSave } from '../ui';
 
 /** 학생 한 명: 연수 정보, 성적 기록(시험 종류별), 성적 입력. 연락처·여권·금액은 강사 포털에 없다. */
@@ -16,6 +16,10 @@ export default function StudentDetail() {
   const types = useLoad(() => loadTestTypes(), []);
   const cefr = useLoad(() => loadCefr(), []);
   const results = useLoad(() => loadResults(no), [no]);
+  // 결석 신청: 지난 3주 ~ 다음 1주(lms_absences 는 31일까지). 사유 글은 함수가 주지 않는다(원칙 L4)
+  const today = manilaToday();
+  const shift = (n: number) => new Date(Date.parse(today) + n * 864e5).toISOString().slice(0, 10);
+  const absences = useLoad(() => loadAbsences(shift(-23), shift(7)), [today]);
   const del = useSave();
 
   const mine = (students.data ?? []).filter((s) => s.student_no === no).sort((a, b) => b.start_date.localeCompare(a.start_date));
@@ -26,6 +30,7 @@ export default function StudentDetail() {
 
   const typeOf = (c: string) => types.data?.find((x) => x.code === c);
   const typeName = (c: string) => typeOf(c)?.name ?? c;
+  const myAbsences = (absences.data ?? []).filter((a) => a.student_no === no).sort((a, b) => b.absence_date.localeCompare(a.absence_date));
   const byType = new Map<string, TestResult[]>();
   for (const r of results.data ?? []) byType.set(r.test_type, [...(byType.get(r.test_type) ?? []), r]);
 
@@ -48,6 +53,26 @@ export default function StudentDetail() {
           <dt>{t('period')}</dt><dd>{fmtDate(s.start_date)} ~ {fmtDate(s.end_date)}</dd>
           <dt>{t('batch')}</dt><dd>{s.batch || '-'}</dd>
         </dl>
+      </Section>
+
+      <Section title={t('absencesNear')} extra={<Link to="/absences" className="more">{t('byDate')}</Link>}>
+        {absences.loading ? (
+          <p className="muted">{t('loading')}</p>
+        ) : absences.error ? (
+          <p className="err">{absences.error}</p>
+        ) : myAbsences.length === 0 ? (
+          <p className="muted">{t('noAbsence')}</p>
+        ) : (
+          <ul className="rows">
+            {myAbsences.map((a) => (
+              <li key={a.id}>
+                <span>{fmtDate(a.absence_date)}{a.absence_date === today ? ` · ${t('today')}` : ''}</span>
+                <span className={a.status === 'approved' ? 'ok' : a.status === 'rejected' ? 'err' : 'muted'}>{t(('st_' + a.status) as Key)}</span>
+                <span className="muted small">{a.periods.length ? t('periodsLabel', { p: a.periods.join('·') }) : t('allDay')} · {t(('abs_' + a.kind) as Key)}</span>
+              </li>
+            ))}
+          </ul>
+        )}
       </Section>
 
       <Section title={t('enterScores')}>
