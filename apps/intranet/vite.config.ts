@@ -18,9 +18,10 @@ const dataDir = process.env.JIC_DATA_DIR
     ? realDir
     : sampleDir;
 const storeDir = path.resolve(here, '../../.local-db/intranet');
+const studentStoreDir = path.resolve(here, '../../.local-db/student'); // 결석·외박 신청은 학생 앱과 같은 파일
 
 export default defineConfig({
-  plugins: [react(), intranetLocalPlugin(dataDir, storeDir)],
+  plugins: [react(), intranetLocalPlugin(dataDir, storeDir, studentStoreDir)],
   server: { host: '127.0.0.1', port: 5177, strictPort: true },
   preview: { host: '127.0.0.1', port: 5177 },
 });

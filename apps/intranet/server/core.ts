@@ -2,9 +2,11 @@
  * 인트라넷 /api/* 계산. 파일·네트워크에 의존하지 않는다.
  * - 학생·연수는 관리자 앱 core(createDb)를 그대로 쓴다(재학생 명단, 이름·캠퍼스).
  * - 외출·귀가 기록, 패널티, 설정은 Stores 로 분리한다. 로컬은 파일(server/localData.ts), 배포는 Supabase(예정, docs/intranet.md).
+ * - 학생 신청(결석·외박)은 학생 앱의 server/requests.ts 모양·규칙을 그대로 쓴다(같은 저장소를 학생 앱과 같이 씀).
  * - 시각은 ISO(UTC)로 저장하고, 날짜·통금 판정은 필리핀 시간(UTC+8, 일광절약 없음)으로 한다.
  */
 import type { Db } from '../../admin/server/core';
+import { COMMENT_MAX, decideRequest, nightsBetween, overnightFor, type Absence, type Overnight, type RequestStatus, type RequestStore } from '../../student/server/requests';
 
 // ── 시간
 const TZ_OFFSET_MS = 8 * 3600e3;
@@ -104,6 +106,9 @@ export interface Stores {
   penalties: Repo<Penalty>;
   settings: DocRepo<Settings>;
   rules: DocRepo<PenaltyRules>;
+  /** 학생 앱과 같이 쓰는 신청 저장소 */
+  absences: RequestStore<Absence>;
+  overnights: RequestStore<Overnight>;
 }
 
 export interface IntranetCtx {
@@ -167,9 +172,10 @@ function outingTimes(o: Outing) {
   return { outMs, inMs, night };
 }
 
-/** 통금 위반이면 근거 문장, 아니면 null. 외출 중이면 지금 시각으로 판단한다. */
-function curfewBreach(o: Outing, curfew: string, now: number): string | null {
+/** 통금 위반이면 근거 문장, 아니면 null. 외출 중이면 지금 시각으로 판단한다. 승인된 외박이 있는 밤은 위반이 아니다. */
+function curfewBreach(o: Outing, curfew: string, now: number, overnights: Overnight[]): string | null {
   const { outMs, inMs, night } = outingTimes(o);
+  if (overnightFor(overnights, o.stId, night)) return null;
   const deadline = deadlineOf(night, curfew);
   const back = inMs !== null ? `귀가 ${localHm(inMs)}` : '미귀가';
   if (outMs !== null && outMs > deadline) return `통금 ${curfew} 이후 외출 ${localHm(outMs)}, ${back}`;
@@ -185,10 +191,10 @@ function curfewBreach(o: Outing, curfew: string, now: number): string | null {
 async function syncCurfewPenalties(ctx: IntranetCtx) {
   const { curfew } = await loadSettings(ctx);
   const now = ctx.now().getTime();
-  const [outings, penalties] = await Promise.all([ctx.stores.outings.all(), ctx.stores.penalties.all()]);
+  const [outings, penalties, overnights] = await Promise.all([ctx.stores.outings.all(), ctx.stores.penalties.all(), ctx.stores.overnights.listAll()]);
   const bySource = new Map(penalties.filter((p) => p.source === 'outing').map((p) => [p.sourceId, p]));
   for (const o of outings) {
-    const basis = curfewBreach(o, curfew, now);
+    const basis = curfewBreach(o, curfew, now, overnights);
     const existing = bySource.get(o.id);
     if (existing && existing.status !== 'pending') continue;
     if (!basis) {
@@ -221,9 +227,10 @@ async function syncCurfewPenalties(ctx: IntranetCtx) {
 }
 
 // ── 가드 태블릿
-function outingRow(ctx: IntranetCtx, o: Outing, curfew: string, now: number) {
+function outingRow(ctx: IntranetCtx, o: Outing, curfew: string, now: number, overnights: Overnight[]) {
   const s = studentRef(ctx.db, o.stId);
   const { outMs, inMs, night } = outingTimes(o);
+  const permit = overnightFor(overnights, o.stId, night);
   return {
     id: o.id,
     stId: o.stId,
@@ -235,7 +242,8 @@ function outingRow(ctx: IntranetCtx, o: Outing, curfew: string, now: number) {
     outBy: o.outBy,
     inBy: o.inBy,
     minutes: outMs !== null ? minutesBetween(outMs, inMs ?? now) : null,
-    breach: curfewBreach(o, curfew, now),
+    breach: curfewBreach(o, curfew, now, overnights),
+    overnightUntil: permit?.until ?? null, // 승인된 외박의 복귀일
   };
 }
 export type OutingRow = ReturnType<typeof outingRow>;
@@ -245,12 +253,15 @@ async function guardView(ctx: IntranetCtx, q: URLSearchParams) {
   const now = ctx.now().getTime();
   const campuses = [...new Set([...currentIndex(ctx.db).values()].map((s) => s.campus))].filter((c) => c && c !== '-').sort();
   const campus = q.get('campus') ?? '';
+  const overnights = await ctx.stores.overnights.listAll();
   const outings = (await ctx.stores.outings.all()).filter((o) => !campus || o.campus === campus);
-  const rows = outings.map((o) => outingRow(ctx, o, settings.curfew, now));
+  const rows = outings.map((o) => outingRow(ctx, o, settings.curfew, now, overnights));
+  const tonight = nightOf(now);
+  const overnightTonight = overnights.filter((o) => overnightFor([o], o.stId, tonight) && (!campus || studentRef(ctx.db, o.stId).campus === campus)).length;
   const out = rows.filter((r) => r.inAt === null).sort((a, b) => (a.outAt ?? '').localeCompare(b.outAt ?? ''));
   const touched = (r: OutingRow) => r.inAt ?? r.outAt ?? '';
   const recent = rows.sort((a, b) => touched(b).localeCompare(touched(a))).slice(0, 5);
-  return { now: ctx.now().toISOString(), curfew: settings.curfew, guards: settings.guards, campus, campuses, out, recent };
+  return { now: ctx.now().toISOString(), curfew: settings.curfew, guards: settings.guards, campus, campuses, out, recent, overnightTonight };
 }
 export type GuardView = Awaited<ReturnType<typeof guardView>>;
 
@@ -280,7 +291,7 @@ async function guardScan(ctx: IntranetCtx, input: Record<string, unknown>): Prom
   }
   await ctx.stores.outings.put(rec);
   if (mode === 'in') await syncCurfewPenalties(ctx);
-  return ok({ mode, row: outingRow(ctx, rec, settings.curfew, ctx.now().getTime()) }, mode === 'out' || !open ? 201 : 200);
+  return ok({ mode, row: outingRow(ctx, rec, settings.curfew, ctx.now().getTime(), await ctx.stores.overnights.listAll()) }, mode === 'out' || !open ? 201 : 200);
 }
 
 // ── 외출·귀가 기록 / 통금 확인
@@ -292,7 +303,8 @@ async function listOutings(ctx: IntranetCtx, q: URLSearchParams) {
   const campus = q.get('campus') || '';
   const kw = (q.get('q') ?? '').trim().toLowerCase();
 
-  const all = (await ctx.stores.outings.all()).map((o) => outingRow(ctx, o, settings.curfew, now));
+  const overnights = await ctx.stores.overnights.listAll();
+  const all = (await ctx.stores.outings.all()).map((o) => outingRow(ctx, o, settings.curfew, now, overnights));
   const scoped = all.filter((r) => (!campus || r.campus === campus) && (!kw || r.stId.includes(kw) || r.name.toLowerCase().includes(kw)));
   const ofNight = scoped.filter((r) => r.night === night);
   const outNow = scoped.filter((r) => r.inAt === null);
@@ -433,19 +445,90 @@ function validSettings(input: Record<string, unknown>): Settings | null {
   return { curfew: input.curfew, guards: [...new Set(guards)] };
 }
 
+// ── 학생 신청 처리(결석·외박)
+type RequestKind = 'absences' | 'overnights';
+const REQUEST_TABS: RequestStatus[] = ['pending', 'approved', 'rejected', 'cancelled'];
+
+function requestRow(ctx: IntranetCtx, r: Absence | Overnight) {
+  const s = studentRef(ctx.db, r.stId);
+  return { name: s.name, campus: s.campus, current: s.current };
+}
+
+async function listRequests(ctx: IntranetCtx, kind: RequestKind, q: URLSearchParams) {
+  const tab = (REQUEST_TABS as string[]).includes(q.get('tab') ?? '') ? (q.get('tab') as RequestStatus) : 'pending';
+  const from = q.get('from') || '';
+  const to = q.get('to') || '';
+  const campus = q.get('campus') || '';
+  const absKind = q.get('kind') || '';
+  const kw = (q.get('q') ?? '').trim().toLowerCase();
+
+  const counts = { pending: 0, approved: 0, rejected: 0, cancelled: 0 };
+  const match = (r: { stId: string; name: string; campus: string; status: RequestStatus }) =>
+    r.status === tab && (!campus || r.campus === campus) && (!kw || r.stId.includes(kw) || r.name.toLowerCase().includes(kw));
+  // 대기는 날짜가 가까운 순(처리할 순서), 처리된 건은 최근 처리 순
+  const order = <T extends { status: RequestStatus; decidedAt: string | null; updatedAt: string }>(day: (x: T) => string) => (a: T, b: T) =>
+    tab === 'pending' ? day(a).localeCompare(day(b)) : (b.decidedAt ?? b.updatedAt).localeCompare(a.decidedAt ?? a.updatedAt);
+
+  if (kind === 'absences') {
+    const all = (await ctx.stores.absences.listAll()).map((a) => ({ ...a, ...requestRow(ctx, a) }));
+    for (const a of all) counts[a.status]++;
+    const rows = all
+      .filter((a) => match(a) && (!from || a.date >= from) && (!to || a.date <= to) && (!absKind || a.kind === absKind))
+      .sort(order((a) => a.date));
+    return { kind, tab, counts, campuses: [...new Set(all.map((a) => a.campus))].sort(), commentMax: COMMENT_MAX, absences: rows, overnights: [] };
+  }
+  const all = (await ctx.stores.overnights.listAll()).map((o) => ({ ...o, ...requestRow(ctx, o), nights: nightsBetween(o.from, o.until) }));
+  for (const o of all) counts[o.status]++;
+  // 기간 검색은 외박 기간이 조회 범위와 겹치는 건
+  const rows = all.filter((o) => match(o) && (!from || o.until > from) && (!to || o.from <= to)).sort(order((o) => o.from));
+  return { kind, tab, counts, campuses: [...new Set(all.map((o) => o.campus))].sort(), commentMax: COMMENT_MAX, absences: [], overnights: rows };
+}
+export type RequestList = Awaited<ReturnType<typeof listRequests>>;
+
+async function decideRequests(ctx: IntranetCtx, kind: RequestKind, input: Record<string, unknown>): Promise<Result> {
+  const ids = Array.isArray(input.ids) ? input.ids.map(String) : [];
+  if (input.approve !== true && input.approve !== false) return fail(400, 'invalid_decision');
+  if (!ids.length || ids.length > 200) return fail(400, 'ids_required');
+  const comment = typeof input.comment === 'string' && input.comment.trim() ? input.comment.trim().slice(0, COMMENT_MAX) : null;
+  // 로컬에는 로그인이 없어 처리자를 남기지 않는다. 배포에서는 로그인한 직원으로 채운다.
+  const store = (kind === 'absences' ? ctx.stores.absences : ctx.stores.overnights) as RequestStore<Absence | Overnight>;
+  let doneCount = 0;
+  const skipped: string[] = [];
+  for (const id of ids) {
+    const x = await store.get(id);
+    const out = x ? decideRequest(x, input.approve, comment, null, ctx.now()) : null;
+    if (!out || !out.ok) {
+      skipped.push(id);
+      continue;
+    }
+    await store.put(out.value);
+    doneCount++;
+  }
+  // 외박 승인·반려는 통금 위반 후보에 바로 반영한다.
+  if (kind === 'overnights' && doneCount) await syncCurfewPenalties(ctx);
+  return ok({ done: doneCount, skipped });
+}
+
 async function summary(ctx: IntranetCtx) {
   await syncCurfewPenalties(ctx);
   const settings = await loadSettings(ctx);
   const now = ctx.now().getTime();
   const night = nightOf(now);
-  const outings = await ctx.stores.outings.all();
-  const penalties = await ctx.stores.penalties.all();
+  const [outings, penalties, absences, overnights] = await Promise.all([
+    ctx.stores.outings.all(),
+    ctx.stores.penalties.all(),
+    ctx.stores.absences.listAll(),
+    ctx.stores.overnights.listAll(),
+  ]);
   return {
     night,
     curfew: settings.curfew,
     outNow: outings.filter((o) => o.inAt === null).length,
-    breachTonight: outings.filter((o) => outingTimes(o).night === night && curfewBreach(o, settings.curfew, now)).length,
+    breachTonight: outings.filter((o) => outingTimes(o).night === night && curfewBreach(o, settings.curfew, now, overnights)).length,
+    overnightTonight: overnights.filter((o) => overnightFor([o], o.stId, night)).length,
     pending: penalties.filter((p) => p.status === 'pending').length,
+    pendingAbsences: absences.filter((a) => a.status === 'pending').length,
+    pendingOvernights: overnights.filter((o) => o.status === 'pending').length,
     current: currentIndex(ctx.db).size,
   };
 }
@@ -482,6 +565,14 @@ export async function handleIntranetApi(ctx: IntranetCtx, method: string, pathna
         await ctx.stores.rules.set(r);
         return ok(r);
       }
+      case 'GET /requests/absences':
+        return ok(await listRequests(ctx, 'absences', q));
+      case 'GET /requests/overnights':
+        return ok(await listRequests(ctx, 'overnights', q));
+      case 'POST /requests/absences/decide':
+        return await decideRequests(ctx, 'absences', input);
+      case 'POST /requests/overnights/decide':
+        return await decideRequests(ctx, 'overnights', input);
       case 'GET /settings':
         return ok(await loadSettings(ctx));
       case 'PUT /settings': {

@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState, type FormEvent } from 'react';
 import { Link } from 'react-router-dom';
 import { api, ApiError, errorText, useApi, type GuardView, type OutingRow } from '../api';
-import { duration, hm } from '../format';
+import { duration, hm, md } from '../format';
 
 // 디자인 I2(GuardTablet.dc.html). 이 기기에서 고른 캠퍼스·근무자·처리 종류는 기기에만 기억한다.
 type Mode = 'out' | 'in';
@@ -220,6 +220,7 @@ function GuardScreen({ view, campus, onCampus, reload }: { view: GuardView; camp
               <h2 id="out-h">
                 외출 중 <span className="text-primary">{view.out.length}</span>명
               </h2>
+              <span className="guard-sub-dark">외박 허용 {view.overnightTonight}명</span>
             </div>
             <div className="guard-out-list">
               <table>
@@ -248,7 +249,7 @@ function GuardScreen({ view, campus, onCampus, reload }: { view: GuardView; camp
                         </td>
                         <td>{hm(r.outAt)}</td>
                         <td className={r.breach ? 'text-amber' : ''}>{duration(r.minutes)}</td>
-                        <td className="right small">{r.breach ? '통금 지남' : ''}</td>
+                        <td className="right small">{r.overnightUntil ? `외박 허용 ~${md(r.overnightUntil)}` : r.breach ? '통금 지남' : ''}</td>
                       </tr>
                     ))
                   )}

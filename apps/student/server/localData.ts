@@ -1,7 +1,7 @@
 /**
  * 로컬 개발용 학생 앱 서버: Vite 개발 서버의 /api/* 를 처리한다.
  * - 학생·연수 데이터는 관리자 앱과 같은 파일(data/tables 또는 data-sample/tables)을 관리자 앱의 loadDir 로 읽는다.
- * - 결석 신청은 storeDir(저장소 루트 .local-db/student, Git 제외)의 NDJSON 파일에 쓴다.
+ * - 결석·외박 신청은 storeDir(저장소 루트 .local-db/student, Git 제외)의 NDJSON 파일에 쓴다. 인트라넷도 같은 파일을 쓴다.
  *   샘플 데이터와 실제 추출본을 섞지 않도록 데이터 종류별로 파일을 나눈다.
  * - 로그인한 학생은 X-Student-Id 헤더로 구분한다. 이 PC(127.0.0.1)에서만 열리는 개발 서버 전용이다.
  */
@@ -11,38 +11,53 @@ import crypto from 'node:crypto';
 import type { IncomingMessage, ServerResponse } from 'node:http';
 import type { Plugin } from 'vite';
 import { loadDir } from '../../admin/server/localData';
-import { handleStudentApi, type Absence, type AbsenceStore } from './core';
+import { handleStudentApi } from './core';
+import type { Absence, Overnight, RequestStore } from './requests';
 
-/** 파일 하나에 모든 신청을 둔다. 손으로 승인·반려를 바꿔 볼 수 있도록 읽을 때마다 파일을 다시 읽는다. */
-export function fileStore(file: string): AbsenceStore {
-  const readAll = (): Absence[] => {
+/**
+ * 신청 파일 하나(결석 또는 외박). 인트라넷 개발 서버도 같은 파일을 열어 승인·반려한다.
+ * 손으로 승인·반려를 바꿔 볼 수 있도록 읽을 때마다 파일을 다시 읽는다(건수가 적은 로컬 전용).
+ */
+export function fileStore<T extends { id: string; stId: string }>(file: string): RequestStore<T> {
+  const readAll = (): T[] => {
     if (!fs.existsSync(file)) return [];
     return fs
       .readFileSync(file, 'utf8')
       .split('\n')
       .filter((l) => l.trim())
-      .map((l) => JSON.parse(l) as Absence);
+      .map((l) => JSON.parse(l) as T);
   };
-  const writeAll = (rows: Absence[]) => {
+  const writeAll = (rows: T[]) => {
     fs.mkdirSync(path.dirname(file), { recursive: true });
     const tmp = file + '.tmp';
     fs.writeFileSync(tmp, rows.map((r) => JSON.stringify(r)).join('\n') + '\n', 'utf8');
     fs.renameSync(tmp, file);
   };
   return {
+    async listAll() {
+      return readAll();
+    },
     async listByStudent(stId) {
       return readAll().filter((r) => r.stId === stId);
     },
     async get(id) {
       return readAll().find((r) => r.id === id) ?? null;
     },
-    async put(a) {
+    async put(x) {
       const rows = readAll();
-      const i = rows.findIndex((r) => r.id === a.id);
-      if (i >= 0) rows[i] = a;
-      else rows.push(a);
+      const i = rows.findIndex((r) => r.id === x.id);
+      if (i >= 0) rows[i] = x;
+      else rows.push(x);
       writeAll(rows);
     },
+  };
+}
+
+/** 학생 앱·인트라넷이 같이 쓰는 신청 파일 위치. source 는 'sample' 또는 'extract'. */
+export function requestFiles(storeDir: string, source: string) {
+  return {
+    absences: path.join(storeDir, `absences-${source}.ndjson`),
+    overnights: path.join(storeDir, `overnights-${source}.ndjson`),
   };
 }
 
@@ -78,9 +93,10 @@ export function studentLocalPlugin(dataDir: string, storeDir: string): Plugin {
     configureServer(server) {
       const db = loadDir(dataDir);
       const source = db.meta().source;
-      const storeFile = path.join(storeDir, `absences-${source}.ndjson`);
-      const store = fileStore(storeFile);
-      server.config.logger.info(`[student-local] ${db.summary()} · 기준일 ${db.refDate} · 결석 신청 파일 ${storeFile}`);
+      const files = requestFiles(storeDir, source);
+      const store = fileStore<Absence>(files.absences);
+      const overnights = fileStore<Overnight>(files.overnights);
+      server.config.logger.info(`[student-local] ${db.summary()} · 기준일 ${db.refDate} · 신청 파일 ${storeDir}`);
 
       server.middlewares.use('/api', async (req: IncomingMessage, res: ServerResponse) => {
         const send = (status: number, body: unknown) => {
@@ -104,7 +120,7 @@ export function studentLocalPlugin(dataDir: string, storeDir: string): Plugin {
         const header = req.headers['x-student-id'];
         const stId = typeof header === 'string' && /^\d+$/.test(header) ? header : null;
         const { status, body: out } = await handleStudentApi(
-          { db, store, stId, localLogin: true, now: () => new Date(), newId: () => crypto.randomUUID() },
+          { db, store, overnights, stId, localLogin: true, now: () => new Date(), newId: () => crypto.randomUUID() },
           method,
           url.pathname,
           body,

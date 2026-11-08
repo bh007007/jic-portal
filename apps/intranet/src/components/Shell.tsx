@@ -4,7 +4,8 @@ import { useApi, useSummaryChanged, type Summary } from '../api';
 import { dateWithDay, localDate } from '../format';
 
 // 디자인 I1(IntranetPenalty.dc.html)의 메뉴. 아직 없는 화면은 '준비 중'으로 연결된다.
-const MENU: { group?: string; items: { to: string; label: string; badge?: 'pending' }[] }[] = [
+type Badge = 'pending' | 'pendingAbsences' | 'pendingOvernights';
+const MENU: { group?: string; items: { to: string; label: string; badge?: Badge }[] }[] = [
   { items: [{ to: '/', label: '홈' }] },
   { group: '공지·결재', items: [{ to: '/notices', label: '내부 공지' }, { to: '/approvals', label: '전자결재' }, { to: '/forms', label: '양식·자료실' }] },
   {
@@ -19,7 +20,14 @@ const MENU: { group?: string; items: { to: string; label: string; badge?: 'pendi
       { to: '/photos', label: '사진 관리' },
     ],
   },
-  { group: '신청 처리', items: [{ to: '/requests', label: '논아카데믹 신청' }] },
+  // 외박은 논아카데믹 신청의 첫 종류다. 여행·기타 신청이 생기면 같은 묶음에 더한다.
+  {
+    group: '신청 처리',
+    items: [
+      { to: '/requests/absences', label: '결석 신청', badge: 'pendingAbsences' },
+      { to: '/requests/overnights', label: '외박 신청', badge: 'pendingOvernights' },
+    ],
+  },
   { group: '직원', items: [{ to: '/staff', label: '직원·부서' }, { to: '/staff-review', label: 'Staff 평가' }] },
 ];
 
@@ -52,7 +60,7 @@ export default function Shell({ children }: { children: ReactNode }) {
               {sec.items.map((it) => (
                 <NavLink key={it.to} to={it.to} end={it.to === '/'} className={({ isActive }) => (sec.group ? 'nav-item' : 'nav-top') + (isActive ? ' active' : '')}>
                   {it.label}
-                  {it.badge === 'pending' && summary && summary.pending > 0 && <span className="nav-count">{summary.pending}</span>}
+                  {it.badge && summary && summary[it.badge] > 0 && <span className="nav-count">{summary[it.badge]}</span>}
                 </NavLink>
               ))}
             </div>

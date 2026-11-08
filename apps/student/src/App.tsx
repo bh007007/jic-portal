@@ -4,6 +4,8 @@ import { BottomNav, Header } from './components/Layout';
 import AbsenceNew from './pages/AbsenceNew';
 import Home from './pages/Home';
 import Login from './pages/Login';
+import OvernightDetail from './pages/OvernightDetail';
+import OvernightNew from './pages/OvernightNew';
 import Profile from './pages/Profile';
 import RequestDetail from './pages/RequestDetail';
 import Requests from './pages/Requests';
@@ -24,6 +26,8 @@ export default function App() {
           <Route path="/timetable" element={<Timetable />} />
           <Route path="/requests" element={<Requests />} />
           <Route path="/requests/absence/new" element={<AbsenceNew />} />
+          <Route path="/requests/overnight/new" element={<OvernightNew />} />
+          <Route path="/requests/overnight/:id" element={<OvernightDetail />} />
           <Route path="/requests/:id" element={<RequestDetail />} />
           <Route path="/me" element={<Profile />} />
           <Route path="*" element={<Navigate to="/" replace />} />
