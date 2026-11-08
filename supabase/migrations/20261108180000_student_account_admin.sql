@@ -5,7 +5,7 @@
 
 alter table public.audit_logs drop constraint if exists audit_logs_action_check;
 alter table public.audit_logs add constraint audit_logs_action_check
-  check (action in ('view', 'create', 'update', 'followup_done', 'followup_reopen', 'account_create', 'password_reset'));
+  check (action in ('view', 'create', 'update', 'followup_done', 'followup_reopen', 'account_create', 'password_reset', 'guard_create', 'guard_password', 'guard_delete')); -- 가드 종류는 20261108190000(다시 실행해도 지워지지 않게 같은 목록)
 
 create or replace function public.student_account_audit(p_action text, p_student_no text, p_campus text)
 returns void language plpgsql security definer set search_path = public as $$

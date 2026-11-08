@@ -9,7 +9,8 @@ import { newLifeRequest, type LifeRequest } from '../../student/server/lifeReque
 import type { Absence, Overnight, RequestStore } from '../../student/server/requests';
 import { memoryTripStore, signUp } from '../../student/server/trips';
 import { KEYCARD_PERIOD, keycardCode } from '../../student/server/keycard';
-import type { AccountAdmin, LinkedAccount } from '../../student/server/accountAdmin';
+import { AccountAdminError, type AccountAdmin, type LinkedAccount } from '../../student/server/accountAdmin';
+import type { GuardAccount, GuardAdmin } from './guardAccounts';
 import { handleIntranetApi, type Stores } from './core';
 
 function memRepo<T extends { id: string }>() {
@@ -636,6 +637,48 @@ const auA = (await acall('GET', '/audit')).body as any;
 expect('접근 기록 목록에 학생 계정', auA.rows.some((x: any) => x.target === 'student_account' && x.action === 'password_reset'), auA.rows.slice(0, 2));
 r = await handleIntranetApi({ ...ctx, accountsUnavailable: 'server_config' }, 'GET', '/accounts', new URLSearchParams(), null);
 expect('서비스 키 없는 배포: 안내', (r.body as any).available === false && (r.body as any).reason === 'server_config', r.body);
+
+// ── 가드 계정 관리: 로컬은 안내, 배포(GuardAdmin)는 만들기·비밀번호·지우기·접근 기록
+r = await call('GET', '/guard-accounts');
+expect('로컬: 가드 계정 없음 안내', (r.body as any).available === false && (r.body as any).reason === 'local', r.body);
+const gstore = new Map<string, GuardAccount & { password: string }>();
+const gadmin: GuardAdmin = {
+  list: async () => [...gstore.values()].map(({ password: _p, ...g }) => g),
+  async create({ email, password, campus: c, label }) {
+    if ([...gstore.values()].some((g) => g.email === email)) throw new AccountAdminError(422, 'POST /auth/v1/admin/users 422: email_exists');
+    const id = 'g-' + gstore.size;
+    gstore.set(id, { userId: id, email, campus: c, label, createdAt: null, lastSignIn: null, password });
+    return id;
+  },
+  async setPassword(id, password) {
+    gstore.get(id)!.password = password;
+  },
+  async remove(id) {
+    gstore.delete(id);
+  },
+};
+const gctx = { ...ctx, actor: '오피스 김', guardAdmin: gadmin };
+const gcall = (m: string, p: string, body: any = null): Promise<any> => handleIntranetApi(gctx, m, p, new URLSearchParams(), body);
+const gbody = { label: 'Challenger 정문', campus, email: 'Gate-C@JIC.example', password: 'gate2026', confirm: 'gate2026' };
+expect('출입구 이름 필수', (await gcall('POST', '/guard-accounts', { ...gbody, label: ' ' })).body.error === 'invalid_label');
+expect('없는 캠퍼스', (await gcall('POST', '/guard-accounts', { ...gbody, campus: 'Busan' })).body.error === 'invalid_campus');
+expect('이메일 모양', (await gcall('POST', '/guard-accounts', { ...gbody, email: 'gate' })).body.error === 'invalid_email');
+expect('비밀번호 영문+숫자', (await gcall('POST', '/guard-accounts', { ...gbody, password: 'abcdefgh', confirm: 'abcdefgh' })).body.error === 'pw_weak');
+expect('비밀번호 확인', (await gcall('POST', '/guard-accounts', { ...gbody, confirm: 'gate2027' })).body.error === 'pw_mismatch');
+r = await gcall('POST', '/guard-accounts', gbody);
+expect('가드 계정 만들기 201(이메일 소문자)', r.status === 201 && (r.body as any).email === 'gate-c@jic.example', r);
+const gid = (r.body as any).userId;
+expect('같은 이메일 409', (await gcall('POST', '/guard-accounts', gbody)).body.error === 'email_exists');
+let gl = (await gcall('GET', '/guard-accounts')).body as any;
+expect('목록: 출입구·캠퍼스·이메일', gl.available && gl.rows.length === 1 && gl.rows[0].label === 'Challenger 정문' && gl.rows[0].campus === campus && gl.campuses.includes(campus), gl);
+expect('비밀번호 바꾸기: 규칙 확인', (await gcall('POST', `/guard-accounts/${gid}/password`, { password: 'short1', confirm: 'short1' })).body.error === 'pw_short');
+r = await gcall('POST', `/guard-accounts/${gid}/password`, { password: 'newgate2026', confirm: 'newgate2026' });
+expect('비밀번호 바꾸기 200', r.status === 200 && gstore.get(gid)!.password === 'newgate2026', r);
+expect('가드가 아닌 계정 id 는 404(직원·학생 비밀번호를 못 바꿈)', (await gcall('POST', '/guard-accounts/u-staff/password', { password: 'x1234567', confirm: 'x1234567' })).status === 404);
+r = await gcall('POST', `/guard-accounts/${gid}/delete`, {});
+expect('지우기 200', r.status === 200 && gstore.size === 0, r);
+const gaud = (await stores.audit.all()).filter((x: any) => x.target === 'guard_account');
+expect('접근 기록: 만들기·비밀번호·지우기(출입구 이름)', ['guard_create', 'guard_password', 'guard_delete'].every((a) => gaud.some((x: any) => x.action === a && x.targetId === 'Challenger 정문' && x.actor === '오피스 김')), gaud.map((x: any) => x.action));
 
 console.log(fails ? `\n${fails}건 실패` : '\n모두 통과');
 if (fails) process.exit(1);

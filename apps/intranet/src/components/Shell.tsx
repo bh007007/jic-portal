@@ -35,7 +35,7 @@ const MENU: { group?: string; items: { to: string; label: string; badge?: Badge 
       { to: '/trips', label: '학교 여행' },
     ],
   },
-  { group: '직원', items: [{ to: '/staff', label: '직원·부서' }, { to: '/staff-review', label: 'Staff 평가' }, { to: '/audit', label: '접근 기록' }] },
+  { group: '직원', items: [{ to: '/guard-accounts', label: '가드 계정' }, { to: '/staff', label: '직원·부서' }, { to: '/staff-review', label: 'Staff 평가' }, { to: '/audit', label: '접근 기록' }] },
 ];
 
 

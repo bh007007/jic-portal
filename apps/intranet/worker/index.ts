@@ -13,6 +13,7 @@ import { accountCaches, serviceHeaders, userHeaders } from '../server/supabaseDa
 import { approvedOvernights, supabaseStores } from '../server/supabaseStores';
 import { serviceKeycardSecret, type KeycardSecret } from '../../student/server/keycard';
 import { supabaseAccountAdmin } from '../../student/server/accountAdmin';
+import { supabaseGuardAdmin } from '../server/guardAccounts';
 import { DEFAULT_EMAIL_DOMAIN } from '../../student/server/accounts';
 
 export interface Env {
@@ -98,6 +99,7 @@ export async function handleApi(req: Request, env: Env, fetchFn: typeof fetch = 
         // 학생 계정 관리는 서비스 키로(Auth Admin API). 계정 작업 경로에서만 쓰인다
         accounts: env.SUPABASE_SERVICE_ROLE_KEY ? supabaseAccountAdmin(conf.url, env.SUPABASE_SERVICE_ROLE_KEY, env.STUDENT_EMAIL_DOMAIN || DEFAULT_EMAIL_DOMAIN, fetchFn) : undefined,
         accountsUnavailable: env.SUPABASE_SERVICE_ROLE_KEY ? undefined : 'server_config',
+        guardAdmin: env.SUPABASE_SERVICE_ROLE_KEY ? supabaseGuardAdmin(conf.url, env.SUPABASE_SERVICE_ROLE_KEY, fetchFn) : undefined,
         studentEmailDomain: env.STUDENT_EMAIL_DOMAIN || DEFAULT_EMAIL_DOMAIN,
       },
       req.method,
