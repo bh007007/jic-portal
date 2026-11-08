@@ -181,6 +181,13 @@ const MESSAGES: Record<string, string> = {
   invalid_contact: '연락처를 확인하세요.',
   invalid_companion: '같이 가는 학생번호를 확인하세요.',
   // 배포(Supabase)
+  invalid_label: '출입구 이름을 입력하세요(40자까지).',
+  invalid_email: '로그인 이메일을 확인하세요.',
+  email_exists: '이미 쓰는 이메일입니다. 다른 이메일을 쓰세요.',
+  pw_short: '비밀번호는 8자 이상이어야 합니다.',
+  pw_long: '비밀번호는 72자까지 쓸 수 있습니다.',
+  pw_weak: '비밀번호에 영문과 숫자를 함께 쓰세요.',
+  pw_mismatch: '비밀번호 확인이 맞지 않습니다.',
   accounts_local: '로컬 개발 서버에는 학생 계정이 없습니다.',
   server_config: '서버 설정(서비스 키)이 빠져 있습니다. 관리자에게 알려 주세요.',
   no_account: '아직 계정이 없는 학생입니다. 먼저 계정을 만드세요.',

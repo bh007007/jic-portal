@@ -11,7 +11,7 @@ import fs from 'node:fs';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 
 const REPO = fileURLToPath(new URL('../../', import.meta.url));
-const MIGRATIONS = ['20261107000000_legacy_tables.sql', '20261107020000_legacy_deposits.sql', '20261108000000_legacy_point_history.sql', '20261108010000_legacy_rooms.sql', '20261108100000_student_intranet.sql', '20261108120000_student_request_ids.sql', '20261108130000_intranet_deploy.sql', '20261108140000_nonacademic_requests.sql', '20261108150000_overnight_travel.sql', '20261108160000_school_trips.sql', '20261108170000_keycard_qr.sql', '20261108180000_student_account_admin.sql', '20261108200000_teacher_portal.sql', '20261108220000_lms_absences.sql', '20261108230000_holidays.sql', '20261109000000_attendance.sql', '20261109010000_roles.sql', '20261109040000_lms_students_extend.sql'];
+const MIGRATIONS = ['20261107000000_legacy_tables.sql', '20261107020000_legacy_deposits.sql', '20261108000000_legacy_point_history.sql', '20261108010000_legacy_rooms.sql', '20261108100000_student_intranet.sql', '20261108120000_student_request_ids.sql', '20261108130000_intranet_deploy.sql', '20261108140000_nonacademic_requests.sql', '20261108150000_overnight_travel.sql', '20261108160000_school_trips.sql', '20261108170000_keycard_qr.sql', '20261108180000_student_account_admin.sql', '20261108190000_guard_account_admin.sql', '20261108200000_teacher_portal.sql', '20261108220000_lms_absences.sql', '20261108230000_holidays.sql', '20261109000000_attendance.sql', '20261109010000_roles.sql', '20261109040000_lms_students_extend.sql'];
 
 export async function startPgSupabase({ port = 0 } = {}) {
   const { PGlite } = await import(process.env.PGLITE ? pathToFileURL(process.env.PGLITE).href : '@electric-sql/pglite');
@@ -41,7 +41,7 @@ export async function startPgSupabase({ port = 0 } = {}) {
   const refresh = new Map();
   const b64 = (o) => Buffer.from(JSON.stringify(o)).toString('base64url');
   const jwt = (sub) => `${b64({ alg: 'HS256', typ: 'JWT' })}.${b64({ sub, role: 'authenticated', exp: Math.floor(Date.now() / 1000) + 3600 })}.${crypto.randomBytes(8).toString('hex')}`;
-  const userJson = (u) => ({ id: u.id, aud: 'authenticated', role: 'authenticated', email: u.email, user_metadata: u.user_metadata ?? {}, app_metadata: { provider: 'email' }, created_at: new Date().toISOString() });
+  const userJson = (u) => ({ id: u.id, aud: 'authenticated', role: 'authenticated', email: u.email, user_metadata: u.user_metadata ?? {}, app_metadata: { provider: 'email' }, created_at: new Date().toISOString(), last_sign_in_at: u.lastSignIn ?? null });
   const session = (u) => {
     const access_token = jwt(u.id);
     tokens.set(access_token, u.id);
@@ -177,6 +177,7 @@ export async function startPgSupabase({ port = 0 } = {}) {
       if (p === '/__user' && req.method === 'POST') return send(res, 200, await addUser(body));
       if (p === '/auth/v1/token' && u.searchParams.get('grant_type') === 'password') {
         const x = [...users.values()].find((v) => v.email === String(body.email).toLowerCase() && v.password === body.password);
+        if (x) x.lastSignIn = new Date().toISOString();
         return x ? send(res, 200, session(x)) : send(res, 400, { code: 400, error_code: 'invalid_credentials', msg: 'Invalid login credentials' });
       }
       if (p === '/auth/v1/token' && u.searchParams.get('grant_type') === 'refresh_token') {
@@ -212,6 +213,13 @@ export async function startPgSupabase({ port = 0 } = {}) {
         if (!x) return send(res, 404, { msg: 'User not found' });
         if (body.password) x.password = body.password;
         return send(res, 200, userJson(x));
+      }
+      if (am && req.method === 'DELETE') {
+        if (!users.has(am[1])) return send(res, 404, { msg: 'User not found' });
+        users.delete(am[1]);
+        for (const [t, id] of tokens) if (id === am[1]) tokens.delete(t);
+        await serial(() => db.query('delete from auth.users where id = $1', [am[1]])); // 연결 표(on delete cascade)도 같이 지워진다
+        return send(res, 200, {});
       }
       const rm = p.match(/^\/rest\/v1\/(.+)$/);
       if (rm) {
