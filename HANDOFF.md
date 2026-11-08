@@ -103,7 +103,10 @@ jic-portal/
    - **침대 배정**: 업체 포털에 기록이 없다. 오늘 입실자 295명(체크인 화면 `checkin_v3_load`) 모두 침대 사용이 0이고, 학생별 방 조회(`checkin_v3_student_rooms`)도 모두 비어 있다.
      - 그래서 디자인(04) 방·침대 배정판은 데이터를 옮겨 올 수 없다. 새 시스템에서 배정을 입력하는 기능으로 만든다.
      - 타입별 침대 수와 입실 인원이 맞지 않는 곳이 있어서(예: R2 (Bal) 침대 24개, 입실 32명) 공실은 계산해 보여 주지 않는다.
-   - 인보이스 금액(PR #24, 회계 세션 담당): 인보이스 총액은 기존 추출본의 `sum_ic_price`에 있다(완납 594건 중 541건이 입금 매칭 합계 = 총액). 현지 청구·납부는 `sum_tc_price`·`sum_td_amount`다. 항목별 상세 금액은 업체 회계 화면(현지 인보이스 납부·Check Balance·Payment Report) 조사 스크립트 실행 뒤 추출한다.
+   - 인보이스 금액(PR #24, 회계 세션 담당): 인보이스 총액은 기존 추출본의 `sum_ic_price`에 있다(완납 594건 중 541건이 입금 매칭 합계 = 총액). 현지 청구·납부는 `sum_tc_price`·`sum_td_amount`다.
+     - 항목별 금액(PR #38, 11/8 추출): 업체 '현지 인보이스 납부'의 `payment_select`로 연수 2,286건을 받았다(`scripts/extract/portal-extract-invoice-items.js`, 열은 `docs/data-dictionary-invoice.md`).
+     - 학생 가격(`inv_invoice_cost_st`) − 에이전시 공제(`inv_invoice_cost_ag`) = 해외 총액 `sum_ic_price`가 98% 맞는다. 현지 비용 항목(`inv_etc`, PHP) 합계 = `sum_tc_price`는 99% 맞는다. 학생 상세 '인보이스 항목' 표로 붙였다(로컬 전용, 배포·Supabase는 아직).
+     - 받는 계좌 열이 있는 `inv_invoice_deposit`은 앱에서 읽지 않는다. 남은 것: 배포용 Supabase 테이블, Check Balance·Payment Report 화면 조사.
    - 다음: 연장 기록(`adm/train3/extend` → `extend_load`, `tt_*` 열)과 신입·연장·복귀·변경 탭(`freshman_load_*`). 추출 스크립트 `scripts/extract/portal-extract-extend.js`(11/9, 개인 열은 빼고 `tr_id`로 연수와 잇는다)를 레오님 브라우저에서 돌리면 '연장 현황'과 변경 이력 화면을 만든다.
 3. **Supabase 정규화 스키마**: 지금은 `legacy_*`(원본 레코드 jsonb)를 통째로 읽어 계산한다. `docs/plan.md`의 데이터 모델 기준으로 학생·연수(enrollments)·배치·기숙사 테이블을 만들고 `functions/api`를 조건 조회로 바꾼다. 실제 데이터를 올리기 전에 필수. 테스트 DB에는 샘플 데이터만.
 4. **역할별 권한**: 지금은 `staff_users`에 있으면 전부 읽기. 역할 9개(학생, 선생님, 체커, 스케줄러, 매니저, 오피스, 관리자, 가드, 에이전시 지점)로 RLS 세분화.
