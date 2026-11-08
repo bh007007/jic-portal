@@ -307,6 +307,42 @@ for (const e of enrollments) {
   }
 }
 
+// ── 통계·중단·메모 보조(11/8): 상태 코드, 입국·귀국일, 첫 인보이스 발행일, 인보이스 국적, 취소 날짜·사유, 아카데미 메모.
+// 실제 추출본과 같은 열 이름(tr_state, tr_departure_date, tr_return_date, tr_invoice_dt, tr_st_country …). 별도 시드라 위 값은 그대로다.
+let seed6 = 19;
+const rand6 = () => ((seed6 = (seed6 * 1103515245 + 12345) % 2147483648) / 2147483648);
+const STATE_CODE = { 인보이스승인: 'INVOICE', 캔슬: 'CANCEL', '연수중 취소': 'CANCEL_TRAIN' };
+const COUNTRY_CODE = { 일본: ['JPN', 'Japan'], 대만: ['TWN', 'Taiwan'], 한국: ['KOR', 'Korea'], 중국: ['CHN', 'China'], 베트남: ['VIE', 'Vietnam'], 사우디아라비아: ['SAU', 'Saudi Arabia'], 예멘: ['YEM', 'Yemen'] };
+const CANCEL_REASONS = ['샘플: 개인 사정으로 입학 취소', '샘플: 비자 일정 문제', '샘플: 다른 일정으로 변경 요청'];
+const STOP_REASONS = ['샘플: 가족 사정으로 조기 귀국', '샘플: 건강 문제로 귀국', '샘플: 취업 일정으로 조기 종료'];
+const SAMPLE_REF = '2026-11-07';
+const notAfter = (d) => (d <= SAMPLE_REF ? d : SAMPLE_REF);
+for (const e of enrollments) {
+  const [code, nameEn] = COUNTRY_CODE[e.st_country_name];
+  const planned = day(e.sd_departure_date, -(10 + Math.floor(rand6() * 70)));
+  const invoiceDay = planned <= SAMPLE_REF ? planned : day(SAMPLE_REF, -Math.floor(rand6() * 50)); // 추출일 이후 발행은 없다
+  Object.assign(e, {
+    tr_state: STATE_CODE[e.tr_state_name] ?? 'INVOICE',
+    tr_departure_date: e.sd_departure_date,
+    tr_return_date: day(e.tr_finish_date, 1),
+    tr_invoice_dt: `${invoiceDay} ${two(9 + Math.floor(rand6() * 9))}:${two(Math.floor(rand6() * 60))}:00`,
+    tr_st_country: code,
+    tr_st_country_name: nameEn,
+    st_country: code,
+  });
+  if (e.tr_state === 'CANCEL') {
+    e.tr_cancel_dt = `${notAfter(day(e.sd_departure_date, -(3 + Math.floor(rand6() * 30))))} 11:00:00`;
+    e.tr_cancel_memo = CANCEL_REASONS[Math.floor(rand6() * CANCEL_REASONS.length)];
+  }
+  if (e.tr_state === 'CANCEL_TRAIN') {
+    const stop = notAfter(day(e.tr_start_date, 7 * (1 + Math.floor(rand6() * Math.max(1, Number(e.tr_total_week) - 1))) - 2));
+    e.tr_cancel_train_dt = `${stop} 15:00:00`;
+    e.tr_cancel_train_memo = STOP_REASONS[Math.floor(rand6() * STOP_REASONS.length)];
+    if (stop > e.tr_start_date) e.tr_return_date = day(stop, 1); // 업체 포털도 연수 중 취소는 귀국일을 당긴다
+  }
+  if (rand6() < 0.08) e.tr_br_memo_en = '샘플 메모: 첫 주 레벨 재평가 예정';
+}
+
 const write = (name, rows) => fs.writeFileSync(path.join(outDir, name + '.ndjson'), rows.map((r) => JSON.stringify(r)).join('\n') + '\n');
 write('point_history', pointHistory);
 write('students', students);

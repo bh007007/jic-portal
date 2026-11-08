@@ -88,10 +88,11 @@ function maskPhone(v: unknown) {
   return digits.length >= 4 ? '***-****-' + digits.slice(-4) : '';
 }
 
+// 업체 포털 Checking Memo 화면의 이름: tr_ag_memo = Agency Memo, tr_br_memo = Marketing Memo, tr_br_memo_en = Academy Memo.
 const MEMO_FIELDS: [string, string][] = [
   ['tr_ag_memo', '에이전시'],
-  ['tr_br_memo', '아카데미'],
-  ['tr_br_memo_en', '아카데미(EN)'],
+  ['tr_br_memo', '마케팅'],
+  ['tr_br_memo_en', '아카데미'],
   ['tr_st_memo', '학생'],
   ['tr_acct_memo', '회계'],
   ['tr_bank_memo', '은행'],
@@ -99,6 +100,37 @@ const MEMO_FIELDS: [string, string][] = [
   ['tr_cancel_train_memo', '연수 중 취소'],
   ['tr_postpone_memo', '연기'],
 ];
+
+// 연수 상태 코드. 추출본에는 tr_state(코드)와 tr_state_name(이름)이 함께 있고, 이름만 있는 데이터도 받는다.
+const STATE_BY_NAME: Record<string, string> = {
+  인보이스승인: 'INVOICE', 캔슬: 'CANCEL', '연수중 취소': 'CANCEL_TRAIN', 연기: 'POSTPONE', 거절: 'REJECT', 퇴교: 'EXPEL', 승인: 'APPROVE', 요청: 'REQUEST', 홀드: 'HOLD',
+};
+const stateCode = (e: Raw) => str(e.tr_state).toUpperCase() || STATE_BY_NAME[str(e.tr_state_name)] || '';
+// 학생수(달력)·등록 현황에서 빼는 상태. 업체 포털 같은 화면의 건수와 대조해 정했다(2026-11-08, docs/legacy-portal.md).
+//   학생수: 캔슬·거절·홀드·요청·연기 제외(연수 중 취소·퇴교는 귀국일이 당겨진 채로 포함).
+//   등록 현황: 거절·홀드·요청은 늘 제외, 캔슬은 '취소 포함'일 때만, 연수 중 취소·퇴교는 기본 포함.
+const NOT_IN_SCHOOL = new Set(['CANCEL', 'REJECT', 'HOLD', 'REQUEST', 'POSTPONE']);
+const NEVER_REGISTERED = new Set(['REJECT', 'HOLD', 'REQUEST']);
+// 입국일·귀국일. 추출본은 tr_departure_date·tr_return_date(재원 = 입국일 ≤ 날짜 < 귀국일). 없으면 배치 입국일, 수업 종료 다음 날.
+const departOf = (e: Raw) => str(e.tr_departure_date) || str(e.sd_departure_date) || str(e.tr_start_date);
+const returnOf = (e: Raw) => str(e.tr_return_date) || (str(e.tr_finish_date) ? addDays(str(e.tr_finish_date), 1) : '');
+const monthEnd = (ym: string) => {
+  const [y, m] = ym.split('-').map(Number);
+  return new Date(Date.UTC(y, m, 0)).toISOString().slice(0, 10);
+};
+const shiftMonth = (ym: string, n: number) => {
+  const [y, m] = ym.split('-').map(Number);
+  const d = new Date(Date.UTC(y, m - 1 + n, 1));
+  return d.toISOString().slice(0, 7);
+};
+
+// 중단·연기 현황: 업체 포털 '중단/연기 현황'(퇴교·연수 중 취소·연기)과 입학 전 캔슬. [이름, 날짜 열, 사유 열]
+const STOP_STATES: Record<string, [string, string, string]> = {
+  CANCEL_TRAIN: ['연수 중 취소', 'tr_cancel_train_dt', 'tr_cancel_train_memo'],
+  POSTPONE: ['연기', 'tr_postpone_dt', 'tr_postpone_memo'],
+  EXPEL: ['퇴교', 'tr_expel_dt', 'tr_expel_memo'],
+  CANCEL: ['캔슬', 'tr_cancel_dt', 'tr_cancel_memo'],
+};
 
 export function createDb(input: DataInput) {
   const { meta, enrollments, students, invoices, dorms, agencies, agents } = input;
@@ -871,6 +903,265 @@ export function createDb(input: DataInput) {
     return { refDate, facets, totals: { rooms: list.length, beds: list.reduce((s, r) => s + r.beds, 0) }, byType, ...paginate<RoomRow>(list, q) };
   }
 
+  // ── 통계 > 학생수(달력): 날짜마다 재원·입국·귀국 인원. 업체 포털 학생수(달력형)과 같은 기준(재원 = 입국일 ≤ 날짜 < 귀국일).
+  // 캠퍼스는 다른 화면처럼 첫 코스 캠퍼스, 기숙사 밖(Off-site)은 기숙사 배정의 do_type = NONROOM.
+  const stays = all
+    .filter((x) => !NOT_IN_SCHOOL.has(stateCode(x.raw)))
+    .map((x) => ({ x, dep: departOf(x.raw), ret: returnOf(x.raw), offsite: str(dormByTr.get(x.row.trId)?.do_type).toUpperCase() === 'NONROOM' }))
+    .filter((s) => s.dep && s.ret && s.dep < s.ret);
+  const stayCampuses = countBy(stays, (s) => s.x.row.campus).map((c) => c.name);
+
+  function studentCalendar(q: URLSearchParams) {
+    const m = q.get('month') ?? '';
+    const month = /^\d{4}-(0[1-9]|1[0-2])$/.test(m) ? m : refDate.slice(0, 7);
+    const campus = q.get('campus') ?? '';
+    const scoped = campus ? stays.filter((s) => s.x.row.campus === campus) : stays;
+    const last = monthEnd(month);
+    const from = month + '-01';
+    // 그 달에 하루라도 걸치는 연수만 날짜별로 센다.
+    const inMonth = scoped.filter((s) => s.dep <= last && s.ret >= from);
+    const days = [];
+    for (let d = from; d <= last; d = addDays(d, 1)) {
+      const here = inMonth.filter((s) => s.dep <= d && s.ret > d);
+      const byCampus: Record<string, number> = {};
+      for (const s of here) byCampus[s.x.row.campus] = (byCampus[s.x.row.campus] ?? 0) + 1;
+      days.push({
+        date: d,
+        inSchool: here.length,
+        arrive: inMonth.filter((s) => s.dep === d).length,
+        leave: inMonth.filter((s) => s.ret === d).length,
+        offsite: here.filter((s) => s.offsite).length,
+        byCampus,
+      });
+    }
+    const day = q.get('day') ?? '';
+    const kind = q.get('kind') === 'arrive' ? 'arrive' : q.get('kind') === 'leave' ? 'leave' : 'in';
+    let selected = null;
+    if (day >= from && day <= last) {
+      const pick = inMonth.filter((s) => (kind === 'arrive' ? s.dep === day : kind === 'leave' ? s.ret === day : s.dep <= day && s.ret > day));
+      selected = {
+        date: day,
+        kind,
+        rows: pick
+          .map((s) => ({ ...s.x.row, depart: s.dep, ret: s.ret, offsite: s.offsite }))
+          .sort((a, b) => a.campus.localeCompare(b.campus) || a.ret.localeCompare(b.ret) || a.name.localeCompare(b.name)),
+      };
+    }
+    return {
+      refDate,
+      month,
+      prev: shiftMonth(month, -1),
+      next: shiftMonth(month, 1),
+      campus,
+      campuses: stayCampuses,
+      totals: {
+        arrive: days.reduce((s, d) => s + d.arrive, 0),
+        leave: days.reduce((s, d) => s + d.leave, 0),
+        max: Math.max(0, ...days.map((d) => d.inSchool)),
+        min: days.length ? Math.min(...days.map((d) => d.inSchool)) : 0,
+      },
+      days,
+      selected,
+    };
+  }
+
+  // ── 통계 > 등록 현황: 기간(배치 2주 또는 월) × 인보이스 국적별 연수 수. 업체 포털 Register Stat 과 같은 기준.
+  //   기준일: invoice = 첫 인보이스 발행일(tr_invoice_dt), departure = 입국일. 캠퍼스는 첫 코스 캠퍼스.
+  // 정규 배치(sd_extra_yn ≠ Y)의 입국일만 기간 기준으로 쓴다.
+  const batchDates = [...new Set(all.filter((x) => !yes(x.raw.sd_extra_yn)).map((x) => str(x.raw.sd_departure_date)).filter(Boolean))].sort();
+  // 인보이스 국적(tr_st_country)은 코드와 영문 이름뿐이라, 학생 국적 코드(st_country)의 한글 이름을 빌려 쓴다.
+  const koByCode = new Map<string, string>();
+  for (const x of all) if (str(x.raw.st_country) && str(x.raw.st_country_name)) koByCode.set(str(x.raw.st_country), str(x.raw.st_country_name));
+  const nationCode = (e: Raw) => str(e.tr_st_country) || str(e.st_country_name) || '-';
+  const nationName = (e: Raw) => koByCode.get(str(e.tr_st_country)) || str(e.tr_st_country_name) || str(e.st_country_name) || '미상';
+
+  function registrations(q: URLSearchParams) {
+    const basis = q.get('basis') === 'departure' ? 'departure' : 'invoice';
+    const unit = q.get('unit') === 'month' ? 'month' : 'batch';
+    const withCancel = q.get('cancel') === '1';
+    const withTrainCancel = q.get('trainCancel') !== '0';
+    const compare = q.get('compare') === '1';
+    const e0 = q.get('end') ?? '';
+    const end = /^\d{4}-\d{2}-\d{2}$/.test(e0) ? e0 : refDate;
+
+    // 기간: 끝 날짜가 든 기간까지 배치 11개(2주) 또는 12개월.
+    type Period = { from: string; to: string; label: string };
+    const periods: Period[] = [];
+    if (unit === 'month') {
+      const ym = end.slice(0, 7);
+      for (let i = 11; i >= 0; i--) {
+        const m = shiftMonth(ym, -i);
+        periods.push({ from: m + '-01', to: monthEnd(m), label: m });
+      }
+    } else {
+      // 배치 입국일(2주 간격) 중 끝 날짜 이전의 마지막 날을 기준으로 2주씩 나눈다.
+      const anchor = [...batchDates].reverse().find((d) => d <= end) ?? end;
+      for (let i = 10; i >= 0; i--) {
+        const f = addDays(anchor, -14 * i);
+        periods.push({ from: f, to: addDays(f, 13), label: f });
+      }
+    }
+    const lastYear = (d: string) => (unit === 'month' ? `${Number(d.slice(0, 4)) - 1}${d.slice(4)}` : addDays(d, -364));
+    const prevPeriods = periods.map((p) => ({ from: lastYear(p.from), to: unit === 'month' ? monthEnd(lastYear(p.from).slice(0, 7)) : lastYear(p.to) }));
+
+    const counted = all.filter((x) => {
+      const c = stateCode(x.raw);
+      if (NEVER_REGISTERED.has(c)) return false;
+      if (c === 'CANCEL') return withCancel;
+      if (c === 'CANCEL_TRAIN' || c === 'EXPEL') return withTrainCancel;
+      return true;
+    });
+    const dateOf = (e: Raw) => (basis === 'invoice' ? str(e.tr_invoice_dt).slice(0, 10) : departOf(e));
+    const indexIn = (list: { from: string; to: string }[], d: string) => (d ? list.findIndex((p) => d >= p.from && d <= p.to) : -1);
+
+    const n = periods.length;
+    const rowMap = new Map<string, { code: string; nation: string; counts: number[]; total: number; prevTotal: number }>();
+    const totals = Array(n).fill(0) as number[];
+    const prevTotals = Array(n).fill(0) as number[];
+    const byCampus: Record<string, number[]> = {};
+    const cells: { x: (typeof all)[number]; i: number; code: string }[] = [];
+    for (const x of counted) {
+      const d = dateOf(x.raw);
+      const code = nationCode(x.raw);
+      const i = indexIn(periods, d);
+      const pi = compare ? indexIn(prevPeriods, d) : -1;
+      if (i < 0 && pi < 0) continue;
+      const r = rowMap.get(code) ?? { code, nation: nationName(x.raw), counts: Array(n).fill(0), total: 0, prevTotal: 0 };
+      if (i >= 0) {
+        r.counts[i]++;
+        r.total++;
+        totals[i]++;
+        (byCampus[x.row.campus] ??= Array(n).fill(0))[i]++;
+        cells.push({ x, i, code });
+      }
+      if (pi >= 0) {
+        r.prevTotal++;
+        prevTotals[pi]++;
+      }
+      rowMap.set(code, r);
+    }
+    const rows = [...rowMap.values()].filter((r) => r.total || r.prevTotal).sort((a, b) => b.total - a.total || b.prevTotal - a.prevTotal || a.nation.localeCompare(b.nation));
+
+    // 칸을 누르면 그 기간(·국적·캠퍼스)의 명단
+    const p = q.get('p');
+    let list = null;
+    if (p !== null && Number(p) >= 0 && Number(p) < n) {
+      const pi = Number(p);
+      const nation = q.get('nation') ?? '';
+      const campus = q.get('campus') ?? '';
+      list = {
+        period: periods[pi],
+        nation: nation ? rowMap.get(nation)?.nation ?? nation : '',
+        campus,
+        rows: cells
+          .filter((c) => c.i === pi && (!nation || c.code === nation) && (!campus || c.x.row.campus === campus))
+          .map((c) => ({ ...c.x.row, nation: nationName(c.x.raw), basisDate: dateOf(c.x.raw), depart: departOf(c.x.raw) }))
+          .sort((a, b) => a.basisDate.localeCompare(b.basisDate) || a.name.localeCompare(b.name)),
+      };
+    }
+
+    return {
+      refDate,
+      basis,
+      unit,
+      withCancel,
+      withTrainCancel,
+      compare,
+      end,
+      prevEnd: addDays(periods[0].from, -1),
+      nextEnd: unit === 'month' ? monthEnd(shiftMonth(end.slice(0, 7), 12)) : addDays(periods[n - 1].to, 14 * 11),
+      periods,
+      campuses: Object.keys(byCampus).sort((a, b) => byCampus[b].reduce((s, v) => s + v, 0) - byCampus[a].reduce((s, v) => s + v, 0)),
+      byCampus,
+      rows,
+      totals,
+      prevTotals: compare ? prevTotals : null,
+      list,
+    };
+  }
+
+  // ── 학생관리 > 중단·연기 현황: 업체 포털 '중단/연기 현황'(연수 중 취소·연기·퇴교)과 입학 전 캔슬. 사유는 상태별 메모 열.
+  const stopRow = (x: (typeof all)[number], code: string) => {
+    const [label, dtKey, memoKey] = STOP_STATES[code];
+    return { ...x.row, stateCode: code, stateLabel: label, stopDate: str(x.raw[dtKey]).slice(0, 10), reason: str(x.raw[memoKey]), depart: departOf(x.raw), ret: returnOf(x.raw) };
+  };
+  const stopped = all.filter((x) => STOP_STATES[stateCode(x.raw)]).map((x) => stopRow(x, stateCode(x.raw)));
+  type StopRow = (typeof stopped)[number];
+
+  function cancellations(q: URLSearchParams) {
+    const tab = q.get('tab') === 'cancel' ? 'cancel' : 'stopped';
+    const inTab = (r: StopRow) => (tab === 'cancel' ? r.stateCode === 'CANCEL' : r.stateCode !== 'CANCEL');
+    let list = stopped.filter(inTab);
+    const stateCounts = Object.fromEntries(Object.keys(STOP_STATES).map((k) => [k, stopped.filter((r) => r.stateCode === k).length]));
+    const facets = {
+      years: [...new Set(list.map((r) => (r.stopDate || r.start).slice(0, 4)).filter(Boolean))].sort().reverse(),
+      nations: countBy(list, (r) => r.nation || '미상').map((c) => c.name),
+      campuses: countBy(list, (r) => r.campus).map((c) => c.name),
+    };
+    const state = q.get('state');
+    const year = q.get('year');
+    const nation = q.get('nation');
+    const campus = q.get('campus');
+    const kw = (q.get('q') ?? '').trim().toLowerCase();
+    const field = q.get('field') ?? 'name';
+    if (state) list = list.filter((r) => r.stateCode === state);
+    if (year) list = list.filter((r) => (r.stopDate || r.start).startsWith(year));
+    if (nation) list = list.filter((r) => r.nation === nation);
+    if (campus) list = list.filter((r) => r.campus === campus);
+    if (kw) list = list.filter((r) => (field === 'agency' ? `${r.agency} ${r.branch}` : field === 'reason' ? r.reason : field === 'no' ? r.stId : r.name).toLowerCase().includes(kw));
+    list = [...list].sort((a, b) => (b.stopDate || b.start).localeCompare(a.stopDate || a.start) || a.name.localeCompare(b.name));
+    return { refDate, tab, tabCounts: { stopped: stopped.filter((r) => r.stateCode !== 'CANCEL').length, cancel: stateCounts.CANCEL }, stateCounts, facets, ...paginate<StopRow>(list, q) };
+  }
+
+  // ── 학생관리 > 체크 메모: 업체 포털 Checking Memo. 에이전시·마케팅·아카데미 메모가 있는 연수. 읽기 전용(메모 수정은 새 시스템 이관 뒤).
+  const memoRows = all
+    .filter((x) => str(x.raw.tr_ag_memo) || str(x.raw.tr_br_memo) || str(x.raw.tr_br_memo_en))
+    .map((x) => ({
+      ...x.row,
+      depart: departOf(x.raw),
+      pickType: pickLabel(x.raw.tr_pick_type),
+      pickPlace: str(x.raw.tr_pick_place),
+      agencyMemo: str(x.raw.tr_ag_memo),
+      marketingMemo: str(x.raw.tr_br_memo),
+      academyMemo: str(x.raw.tr_br_memo_en),
+    }));
+  type MemoRow = (typeof memoRows)[number];
+
+  function checkingMemos(q: URLSearchParams) {
+    const tab = q.get('tab') || 'upcoming';
+    const inTab = (r: MemoRow) => (tab === 'all' ? true : r.status === tab);
+    let list = memoRows.filter(inTab);
+    const facets = {
+      batches: [...new Set(list.map((r) => r.batch).filter(Boolean))].sort().reverse().slice(0, 60),
+      campuses: countBy(list, (r) => r.campus).map((c) => c.name),
+      pickTypes: countBy(list, (r) => r.pickType).map((c) => c.name),
+    };
+    const batch = q.get('batch');
+    const campus = q.get('campus');
+    const pick = q.get('pick');
+    const kind = q.get('kind');
+    const kw = (q.get('q') ?? '').trim().toLowerCase();
+    const field = q.get('field') ?? 'memo';
+    if (batch) list = list.filter((r) => r.batch === batch);
+    if (campus) list = list.filter((r) => r.campus === campus);
+    if (pick) list = list.filter((r) => r.pickType === pick);
+    if (kind === 'agency') list = list.filter((r) => r.agencyMemo);
+    if (kind === 'marketing') list = list.filter((r) => r.marketingMemo);
+    if (kind === 'academy') list = list.filter((r) => r.academyMemo);
+    if (kw) {
+      list = list.filter((r) =>
+        (field === 'name' ? r.name : field === 'no' ? r.stId : field === 'agency' ? `${r.agency} ${r.branch}` : `${r.agencyMemo} ${r.marketingMemo} ${r.academyMemo}`).toLowerCase().includes(kw),
+      );
+    }
+    list = [...list].sort(tab === 'upcoming' ? (a, b) => a.depart.localeCompare(b.depart) || a.name.localeCompare(b.name) : (a, b) => b.depart.localeCompare(a.depart) || a.name.localeCompare(b.name));
+    const tabCounts = {
+      upcoming: memoRows.filter((r) => r.status === 'upcoming').length,
+      current: memoRows.filter((r) => r.status === 'current').length,
+      all: memoRows.length,
+    };
+    return { refDate, tab, tabCounts, facets, ...paginate<MemoRow>(list, q) };
+  }
+
   const source: 'sample' | 'extract' = meta.source === 'sample' ? 'sample' : 'extract';
 
   return {
@@ -892,6 +1183,10 @@ export function createDb(input: DataInput) {
     listCodes,
     listBatches,
     rooms,
+    studentCalendar,
+    registrations,
+    cancellations,
+    checkingMemos,
   };
 }
 
@@ -915,6 +1210,10 @@ export function handleApi(db: Db, pathname: string, params: URLSearchParams): { 
     if (p === '/rooms') return { status: 200, body: db.rooms(params) };
     if (p === '/codes') return { status: 200, body: db.listCodes(params) };
     if (p === '/batches') return { status: 200, body: db.listBatches(params) };
+    if (p === '/stats/calendar') return { status: 200, body: db.studentCalendar(params) };
+    if (p === '/stats/registrations') return { status: 200, body: db.registrations(params) };
+    if (p === '/cancellations') return { status: 200, body: db.cancellations(params) };
+    if (p === '/memos') return { status: 200, body: db.checkingMemos(params) };
     const m = p.match(/^\/students\/(\w+)$/);
     if (m) {
       const d = db.studentDetail(m[1]);
