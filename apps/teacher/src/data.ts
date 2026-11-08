@@ -100,6 +100,18 @@ export const loadResults = (studentNo: string) =>
   must<TestResult[]>(supabase.from('test_results').select('*').eq('student_no', studentNo).order('test_date', { ascending: false }).order('created_at', { ascending: false }));
 export const loadRecentResults = (limit = 30) =>
   must<TestResult[]>(supabase.from('test_results').select('*').order('created_at', { ascending: false }).limit(limit));
+/** 한 시험·한 날짜의 기록(여러 명 입력에서 이미 넣은 점수 표시용) */
+export const loadResultsOn = (testType: string, date: string) =>
+  must<TestResult[]>(supabase.from('test_results').select('*').eq('test_type', testType).eq('test_date', date));
+/** DB 트리거(test_results_check)와 같은 규칙: 범위 안, 최소값에서 단위의 배수 */
+export function validScore(t: Pick<TestType, 'min_value' | 'max_value' | 'step'>, v: number): boolean {
+  const min = Number(t.min_value);
+  const max = Number(t.max_value);
+  const step = Number(t.step);
+  if (!Number.isFinite(v) || v < min || v > max) return false;
+  const k = (v - min) / step;
+  return Math.abs(k - Math.round(k)) < 1e-9;
+}
 export const loadMaterials = () => must<Material[]>(supabase.from('materials').select('*').order('course').order('textbook').order('unit').order('sort').order('title'));
 export const loadStaff = () => must<StaffRow[]>(supabase.from('staff').select('*').order('active', { ascending: false }).order('name'));
 
