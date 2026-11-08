@@ -89,7 +89,33 @@ export interface StudentDetail {
     memos: { kind: string; text: string }[];
     /** 업체 포인트 내역(충전·현지 비용 사용). 원장이 없는 환경에서는 빈 배열 */
     points: { dt: string; kind: string; item: string; amount: number; staff: string; memo: string }[];
+    /** 인보이스 항목(최신 버전). 항목 추출본이 없는 환경(배포)에서는 null */
+    invoiceDetail: InvoiceDetail | null;
   })[];
+}
+
+export interface InvoiceItem {
+  type: string;
+  label: string;
+  name: string;
+  weeks: number;
+  from: string;
+  to: string;
+  currency: string;
+  amount: number;
+}
+
+/** 학생 가격 항목 − 에이전시 공제 = 해외 인보이스 총액(대부분). 현지 비용·납부는 PHP. */
+export interface InvoiceDetail {
+  version: number | null;
+  items: InvoiceItem[];
+  agency: InvoiceItem[];
+  itemsTotal: number;
+  agencyTotal: number;
+  local: { type: string; label: string; currency: string; amount: number; rest: number }[];
+  localPayments: { date: string; currency: string; amount: number }[];
+  localTotal: number;
+  localPaidTotal: number;
 }
 
 export interface DormStay {
