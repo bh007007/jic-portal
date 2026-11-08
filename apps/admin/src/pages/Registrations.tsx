@@ -22,10 +22,11 @@ const LIST_COLUMNS: Column<RegistrationStudent>[] = [
   ['상태', (r) => r.state],
 ];
 
-type Form = { basis: string; unit: string; cancel: boolean; trainCancel: boolean; compare: boolean };
+type Form = { basis: string; unit: string; agency: string; cancel: boolean; trainCancel: boolean; compare: boolean };
 const readForm = (p: URLSearchParams): Form => ({
   basis: p.get('basis') ?? 'invoice',
   unit: p.get('unit') ?? 'batch',
+  agency: p.get('agency') ?? '',
   cancel: p.get('cancel') === '1',
   trainCancel: p.get('trainCancel') !== '0',
   compare: p.get('compare') === '1',
@@ -53,6 +54,7 @@ export default function Registrations() {
     apply({
       basis: form.basis === 'invoice' ? '' : form.basis,
       unit: form.unit === 'batch' ? '' : form.unit,
+      agency: form.agency.trim(),
       cancel: form.cancel ? '1' : '',
       trainCancel: form.trainCancel ? '' : '0',
       compare: form.compare ? '1' : '',
@@ -84,7 +86,7 @@ export default function Registrations() {
       ['합계', (l) => l.total],
       ...(data.compare ? [['작년 같은 기간', (l: Line) => l.prev ?? ''] as Column<Line>] : []),
     ];
-    saveCsv(`등록현황_${BASIS[data.basis]}_${data.periods[0].from}_${data.periods[data.periods.length - 1].to}.csv`, cols, lines);
+    saveCsv(`등록현황_${BASIS[data.basis]}${data.agency ? '_' + data.agency : ''}_${data.periods[0].from}_${data.periods[data.periods.length - 1].to}.csv`, cols, lines);
   };
 
   return (
@@ -111,6 +113,10 @@ export default function Registrations() {
               </label>
             ))}
           </div>
+          <label className="field">
+            <span>에이전시</span>
+            <input type="text" placeholder="이름 일부(한글·영문)" value={form.agency} onChange={(e) => setForm((f) => ({ ...f, agency: e.target.value }))} />
+          </label>
           <div className="field" role="group" aria-label="포함 조건">
             <span>포함</span>
             <label><input type="checkbox" checked={form.trainCancel} onChange={(e) => setForm((f) => ({ ...f, trainCancel: e.target.checked }))} />연수 중 취소·퇴교</label>
@@ -135,7 +141,7 @@ export default function Registrations() {
               <button type="button" className="btn" aria-label="다음 기간" onClick={() => apply({ end: data.nextEnd, p: '', nation: '', campus: '' })}>›</button>
               {params.get('end') && <button type="button" className="btn btn-xs" onClick={() => apply({ end: '', p: '', nation: '', campus: '' })}>오늘 기준</button>}
               <span className="muted">
-                {BASIS[data.basis]} 기준 · 인보이스 국적 · 첫 코스 캠퍼스{data.withTrainCancel ? '' : ' · 연수 중 취소·퇴교 제외'}{data.withCancel ? ' · 캔슬 포함' : ''}
+                {BASIS[data.basis]} 기준 · 인보이스 국적 · 첫 코스 캠퍼스{data.agency ? ` · 에이전시 '${data.agency}'` : ''}{data.withTrainCancel ? '' : ' · 연수 중 취소·퇴교 제외'}{data.withCancel ? ' · 캔슬 포함' : ''}
               </span>
             </span>
             <span className="toolbar-right">

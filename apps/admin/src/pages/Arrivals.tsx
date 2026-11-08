@@ -1,7 +1,7 @@
 import { Link, useSearchParams } from 'react-router-dom';
-import { fmt, useApi, weekday, type ArrivalRow, type Arrivals as Data } from '../api';
+import { fmt, useApi, weekday, type ArrivalRow, type Arrivals as Data, type NameCount } from '../api';
 import { saveCsv, type Column } from '../csv';
-import { DownloadButton, Loading, PageTitle, PayText } from '../components/ui';
+import { DownloadButton, Loading, PageTitle, Panel, PayText } from '../components/ui';
 
 const COLUMNS: Column<ArrivalRow>[] = [
   ['배치', (r) => r.batch],
@@ -25,6 +25,23 @@ const COLUMNS: Column<ArrivalRow>[] = [
   ['픽업 비고', (r) => r.remark],
   ['납부', (r) => r.pay],
 ];
+
+/** 배치 구성 표 하나. limit 를 넘는 항목은 '그 밖'으로 묶는다. */
+function CountTable({ title, items, limit }: { title: string; items: NameCount[]; limit?: number }) {
+  const shown = limit && items.length > limit ? items.slice(0, limit) : items;
+  const rest = items.slice(shown.length).reduce((s, i) => s + i.count, 0);
+  return (
+    <table className="tbl center">
+      <thead>
+        <tr><th className="left">{title}</th><th>인원</th></tr>
+      </thead>
+      <tbody>
+        {shown.map((i) => <tr key={i.name}><td className="left">{i.name}</td><td>{i.count}</td></tr>)}
+        {rest > 0 && <tr><td className="left muted">그 밖 {items.length - shown.length}곳</td><td className="muted">{rest}</td></tr>}
+      </tbody>
+    </table>
+  );
+}
 
 export default function Arrivals() {
   const [params, setParams] = useSearchParams();
@@ -79,6 +96,35 @@ export default function Arrivals() {
               </span>
             </div>
           </div>
+
+          {data.total > 0 && (
+            <Panel title={<>배치 구성 <small>나이는 입국일 기준 만 나이</small></>}>
+              <div className="mix">
+                <table className="tbl center">
+                  <thead>
+                    <tr><th className="left">국적</th><th>여</th><th>남</th><th>계</th></tr>
+                  </thead>
+                  <tbody>
+                    {data.composition.nations.map((n) => (
+                      <tr key={n.name}><td className="left">{n.name}</td><td>{n.female}</td><td>{n.male}</td><td className="strong">{n.total}</td></tr>
+                    ))}
+                  </tbody>
+                  <tfoot>
+                    <tr>
+                      <th className="left">합계</th>
+                      <th>{data.composition.nations.reduce((s, n) => s + n.female, 0)}</th>
+                      <th>{data.composition.nations.reduce((s, n) => s + n.male, 0)}</th>
+                      <th>{data.total}</th>
+                    </tr>
+                  </tfoot>
+                </table>
+                <CountTable title="코스" items={data.composition.courses} />
+                <CountTable title="기숙사" items={data.composition.dorms} />
+                <CountTable title="나이" items={data.composition.ages} />
+                <CountTable title="에이전시" items={data.composition.agencies} limit={8} />
+              </div>
+            </Panel>
+          )}
 
           <div className="toolbar">
             <span>총 <strong style={{ color: 'var(--primary)' }}>{fmt(data.total)}</strong>명 <span className="muted">· 도착 시각 순</span></span>

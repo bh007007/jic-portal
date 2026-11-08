@@ -175,6 +175,10 @@ button, input, select { font: inherit; }
 .cal-moves { display: flex; flex-wrap: wrap; gap: 2px 8px; font-size: 12px; }
 .cal-campus { margin-top: 2px; font-size: 11px; }
 
+/* 배치 구성: 작은 표를 나란히 */
+.mix { display: grid; grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); gap: 12px 16px; align-items: start; }
+.mix .tbl td, .mix .tbl th { padding: 6px 8px; }
+
 /* 등록 현황 표 */
 .matrix td.on, .matrix th.on { background: var(--primary-soft); }
 .matrix th.now { color: var(--primary); font-weight: 700; }
