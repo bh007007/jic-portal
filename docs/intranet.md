@@ -26,10 +26,11 @@ http://127.0.0.1:5177 을 연다. 가드 태블릿은 http://127.0.0.1:5177/guar
 | `/curfew` | 통금 확인 | 위 화면의 통금 위반 탭 |
 | `/student-file` | Student File 목록 | 재학생별 누적 점수(승인)·경고 단계, 최근 30일 통금 위반, 대기 패널티·신청, 지금 외출 중·외박. 누적 점수순·통금 위반순·이름순 |
 | `/student-file/:stId` | Student File 상세 | 한 학생의 패널티 이력, 외출·귀가 기록(최근 50건), 결석·외박 신청(담당자 메모), 생활 요청, 학교 여행(신청·제외 사유). 기본 정보·연수·회계·메모는 '통합관리 학생 상세'(관리자 앱) 링크 |
+| `/accounts` | 학생 계정 | 재학·입학 예정 학생의 학생 앱 계정 상태(계정 없음·첫 비밀번호 변경 전·사용 중·생년월일 없음), 마지막 로그인, 캠퍼스·이름·학생번호 검색. **계정 없는 학생 계정 만들기**(8명씩 이어서), 줄마다 **생년월일로 초기화**. 배포에서만 동작(로컬은 안내) |
 | `/counseling` | 상담 기록 | 전체 / 확인할 일(후속 조치) 탭, 상담일·캠퍼스·학생·제목·작성자 검색. **목록에는 제목만** 보인다 |
 | `/counseling/new`, `/counseling/:id/edit` | 상담 기록 작성·수정 | 학생번호(이름 확인), 상담일(오늘까지), 제목, 내용(3000자), 후속 조치 기한(선택) |
 | `/counseling/:id` | 상담 기록 상세 | 내용, 후속 조치 완료·되돌리기, 이 기록의 열람·수정 기록. **열 때마다 접근 기록에 '열람'이 남는다** |
-| `/audit` | 접근 기록 | 상담 기록을 누가 언제 열람·작성·수정·후속 조치했는지. 날짜·종류·직원·학생 검색 |
+| `/audit` | 접근 기록 | 상담 기록을 누가 언제 열람·작성·수정·후속 조치했는지, 학생 계정을 누가 만들고 비밀번호를 초기화했는지. 날짜·종류·직원·학생 검색 |
 | `/penalties` | 패널티 승인 | 승인 대기·완료·반려 탭, 발생일·캠퍼스·위반 종류·학생 검색, 한 건씩 또는 선택해서 승인·반려, 경고 단계 기준 |
 | `/penalty-rules` | 패널티 점수표 | 위반별 점수·승인 권한, 경고 단계(1~3단계) 기준 점수 |
 | `/settings` | 통금·근무자 설정 | 통금 시각, 가드 태블릿 근무자 목록 |
@@ -83,6 +84,14 @@ http://127.0.0.1:5177 을 연다. 가드 태블릿은 http://127.0.0.1:5177/guar
 - 상태: 신청 받는 중 ↔ 신청 마감(직원이 일찍 닫음), 여행 취소. 신청 마감일이 지나면 상태와 상관없이 학생은 신청·취소하지 못한다.
 - 명단에서 빼기: 참가 신청만, 사유 필수(300자, 학생에게 보인다). 처리자는 로컬은 오른쪽 위 이름, 배포는 로그인한 직원. 다시 넣으려면 학생이 다시 신청한다.
 - **외박 허용**: 1박 이상 여행의 참가 신청은 승인된 외박과 같이 본다(출발일 밤 ~ 돌아오는 날 전날 밤). 통금 확인·가드 태블릿·Student File·홈의 '오늘 밤 외박'에 들어가고, 신청 처리의 외박 목록에는 들어가지 않는다. 학생 취소·명단 제외·여행 취소·날짜 변경은 통금 위반 후보에 바로 반영한다.
+
+### 학생 계정 (학생 앱 로그인)
+
+- 규칙은 학생 앱과 같다(`apps/student/server/accounts.ts`): 아이디 = 학생번호, 첫 비밀번호 = 생년월일 8자리, 첫 로그인 때 새 비밀번호를 정한다. 대상은 재학·입학 예정 학생.
+- **만들기**: 계정 없는 학생을 한 번에 8명씩 만든다(Cloudflare 무료 요금제의 요청당 외부 호출 한도 때문에 나누고, 화면이 남은 수가 0이 될 때까지 이어서 부른다). 계정만 있고 연결이 빠진 학생은 잇기만 한다. 생년월일이 없는 학생은 만들지 않는다.
+- **비밀번호 초기화**: 학생이 비밀번호를 잊었을 때 생년월일로 되돌리고 다음 로그인 때 다시 바꾸게 한다.
+- 계정 작업은 배포 서버가 서비스 키로 Supabase Auth Admin API 를 부른다(`apps/student/server/accountAdmin.ts`, 계정 생성 스크립트 `npm run student:accounts` 와 같은 코드). 서비스 키가 없으면 안내만 보인다. 로컬 개발 서버에는 계정이 없다(학생 앱이 학생번호 + 생년월일로 로그인).
+- 만들기·초기화는 **접근 기록**에 남는다(처리자 = 로그인한 직원, DB 함수 `student_account_audit`). 지금은 직원이면 누구나 할 수 있다(역할별 권한은 HANDOFF 6-4).
 
 ### 생활 요청 (업체 '요청사항(학생)'·'ID 카드 교체', 기획안 nonacademic_requests)
 
@@ -173,6 +182,9 @@ apps/intranet/
 | `GET /api/requests/overnights?tab=&from=&to=&campus=&q=` | 외박 신청 목록(기간이 조회 범위와 겹치는 건) |
 | `GET /api/requests/life?tab=&category=&campus=&q=` | 생활 요청 목록(탭: received·in_progress·done·rejected·cancelled) |
 | `POST /api/requests/life/:id/handle` | 생활 요청 처리 `{ status: in_progress·done·rejected, reply }` |
+| `GET /api/accounts?status=&campus=&q=` | 학생 계정 목록(배포만, 로컬은 `available: false`) |
+| `POST /api/accounts/create` | 계정 없는 학생 계정 만들기(최대 8명, `remaining` 이 0이 될 때까지 다시 부름) |
+| `POST /api/accounts/:stId/reset` | 비밀번호를 생년월일로 되돌림(다음 로그인 때 변경) |
 | `GET /api/trips?tab=upcoming|past&campus=&q=` | 학교 여행 목록(신청 수, 박 수, 신청 받는 중 여부) |
 | `POST /api/trips`, `PUT /api/trips/:id` | 등록 `{ campus, title, place, meeting, description, start, end, deadline, capacity, cost }`, 수정 |
 | `GET /api/trips/:id` | 여행 상세와 참가 명단(이름·캠퍼스·상태·제외 사유·처리자) |
@@ -207,7 +219,7 @@ apps/intranet/
 
 ### 설정 순서 (레오 PC의 Claude, 지금 쓰는 Cloudflare·Supabase 계정)
 
-1. Supabase에 마이그레이션 `20261108100000_student_intranet.sql`, `20261108120000_student_request_ids.sql`, `20261108130000_intranet_deploy.sql`, `20261108140000_nonacademic_requests.sql`(생활 요청), `20261108150000_overnight_travel.sql`(외박·여행 정보), `20261108160000_school_trips.sql`(학교 여행), `20261108170000_keycard_qr.sql`(카드키 QR)을 차례로 적용한다.
+1. Supabase에 마이그레이션 `20261108100000_student_intranet.sql`, `20261108120000_student_request_ids.sql`, `20261108130000_intranet_deploy.sql`, `20261108140000_nonacademic_requests.sql`(생활 요청), `20261108150000_overnight_travel.sql`(외박·여행 정보), `20261108160000_school_trips.sql`(학교 여행), `20261108170000_keycard_qr.sql`(카드키 QR), `20261108180000_student_account_admin.sql`(학생 계정 관리 접근 기록)을 차례로 적용한다.
 2. 직원 계정은 관리자 앱과 같다(`staff_users`, `docs/setup-cloud.md` 1-4). 이름(`staff_users.name`)을 넣어 둔다(처리자·접근 기록에 남는다). 상담 기록을 볼 직원은 `staff_campuses`에 맡은 캠퍼스를 넣는다(예: `insert into staff_campuses values ('<user_id>', 'Challenger')`).
 3. 빌드 설정은 그대로 둔다. 이미 있는 JIC 포털 Pages 프로젝트(`docs/setup-cloud.md` 2)의 `npm run admin:build`가 인트라넷까지 빌드한다. 새 프로젝트는 만들지 않는다.
 4. 같은 프로젝트의 **Settings → Variables and Secrets** 에 **Secret** `SUPABASE_SERVICE_ROLE_KEY` 하나를 더한다(Production). 가드 태블릿 요청(재학생 명단·승인된 외박)에서만 쓰고, 없으면 가드 요청만 `500 server_config`(직원 화면은 동작). Supabase 주소·anon 키는 관리자 앱이 쓰는 `VITE_SUPABASE_URL`·`VITE_SUPABASE_ANON_KEY` 를 그대로 쓴다.
@@ -251,7 +263,7 @@ apps/intranet/
 | `trip_signups` | 참가 신청(applied)만 읽기 | 읽기, 명단 제외는 `trip_remove_signup(id, 사유)`(처리자 = 로그인한 직원, 신청 수 다시 셈). 신청·취소는 학생이 `trip_sign_up`·`trip_cancel_signup` |
 | `internal_notices`, `internal_notice_reads` | - | 읽기·쓰기, 읽음은 본인 것만 |
 | `counseling_notes` | - | 테이블 직접 읽기·쓰기 불가, 아래 함수만 |
-| `audit_logs` | - | 맡은 캠퍼스 기록만 읽기, 쓰기·삭제 불가 |
+| `audit_logs` | - | 맡은 캠퍼스 기록만 읽기, 쓰기·삭제 불가(상담 함수와 학생 계정 함수 `student_account_audit` 만 남김) |
 
 상담 기록 함수(맡은 캠퍼스만, 처리자 이름은 `staff_users.name`):
 - `counseling_list()`: 목록(내용 없음)

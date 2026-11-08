@@ -240,7 +240,7 @@ function counselingStores(rest: Rest): { counseling: Repo<CounselingNote>; audit
           at: iso(r.at)!,
           actor: String(r.actor_name),
           action: r.action as AuditLog['action'],
-          target: 'counseling' as const,
+          target: (r.target === 'student_account' ? 'student_account' : 'counseling') as AuditLog['target'],
           targetId: String(r.target_id),
           stId: String(r.student_no),
         })),
@@ -407,6 +407,10 @@ export function supabaseStores(conf: SupabaseConf, token: string, userId: string
     rides: rideStore(rest, names, userId),
     lifeRequests: lifeRequestStore(rest, names),
     trips: tripStore(rest, names),
+    // 학생 계정 만들기·초기화 접근 기록: 직원 토큰으로 DB 함수(처리자 = 로그인한 직원)
+    accountAudit: async (action, stNo, campus) => {
+      await rest('POST', 'rpc/student_account_audit', { p_action: action, p_student_no: stNo, p_campus: campus }, 'return=minimal');
+    },
   };
 }
 export type { Departure };

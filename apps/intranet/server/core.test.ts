@@ -9,6 +9,7 @@ import { newLifeRequest, type LifeRequest } from '../../student/server/lifeReque
 import type { Absence, Overnight, RequestStore } from '../../student/server/requests';
 import { memoryTripStore, signUp } from '../../student/server/trips';
 import { KEYCARD_PERIOD, keycardCode } from '../../student/server/keycard';
+import type { AccountAdmin, LinkedAccount } from '../../student/server/accountAdmin';
 import { handleIntranetApi, type Stores } from './core';
 
 function memRepo<T extends { id: string }>() {
@@ -575,6 +576,66 @@ expect('리포트는 만료된 QR 로도 학생 확인', r.status === 201 && (r.
 const og = ((await call('GET', '/outings', null, 'date=2026-11-21')).body as any).rows;
 expect('외출 목록에 찍은 방법', og.some((x: any) => x.stId === Q1 && x.outVia === 'qr' && x.inVia === 'qr') && og.some((x: any) => x.stId === Q2 && x.outVia === 'number'), og.map((x: any) => [x.stId, x.outVia, x.inVia]));
 void KEYCARD_PERIOD;
+
+// ── 학생 계정 관리: 로컬은 안내만, 배포(AccountAdmin)는 만들기·초기화·접근 기록
+r = await call('GET', '/accounts');
+expect('로컬: 학생 계정 없음 안내', (r.body as any).available === false && (r.body as any).reason === 'local', r.body);
+expect('로컬: 만들기 503', (await call('POST', '/accounts/create', {})).status === 503);
+const authU = new Map<string, { id: string; email: string; password: string; lastSignIn: string | null }>();
+const linkedA = new Map<string, LinkedAccount>();
+let failNext = '';
+const admin: AccountAdmin = {
+  linked: async () => [...linkedA.values()].map((a) => ({ ...a })),
+  authUsers: async () => [...authU.values()].map((u) => ({ id: u.id, email: u.email, lastSignIn: u.lastSignIn })),
+  async create(email, password) {
+    if (failNext && email.startsWith(failNext)) throw new Error('POST /auth/v1/admin/users 500: boom');
+    const id = 'u-' + email;
+    authU.set(id, { id, email, password, lastSignIn: null });
+    return id;
+  },
+  async link(userId, stNo) {
+    linkedA.set(stNo, { stNo, userId, mustChangePassword: true });
+  },
+  async resetPassword(userId, stNo, password) {
+    authU.get(userId)!.password = password;
+    linkedA.get(stNo)!.mustChangePassword = true;
+  },
+};
+const actx = { ...ctx, actor: '오피스 김', accounts: admin, studentEmailDomain: 'students.jic.internal' };
+const acall = (m: string, p: string, body: any = null, q = '') => handleIntranetApi(actx, m, p, new URLSearchParams(q), body);
+let al = (await acall('GET', '/accounts')).body as any;
+const targetN = al.rows.length;
+expect('계정 목록: 대상 = 재학·입학 예정 학생, 처음엔 모두 계정 없음', al.available === true && targetN > 0 && al.counts.none + al.counts.no_birthday === targetN && al.batch === 8, al.counts);
+// 지난 실행이 계정만 만들고 끊긴 학생 하나: 잇기만 한다
+const half = al.rows[1].stId;
+authU.set('u-half', { id: 'u-half', email: `${half}@students.jic.internal`, password: 'x', lastSignIn: null });
+// 만드는 순서는 학생번호 순: 그 첫 학생이 실패하게
+const failId = al.rows.filter((x: any) => x.status === 'none' && x.stId !== half).map((x: any) => x.stId).sort()[0];
+failNext = failId + '@';
+r = await acall('POST', '/accounts/create', {});
+let cr = r.body as any;
+expect('한 번에 8명까지(잇기 먼저, 실패는 학생번호와 오류만)', r.status === 200 && cr.linked === 7 && cr.created === 6 && cr.failed.length === 1 && cr.failed[0].stId === failId && cr.remaining === al.counts.none - 8, cr);
+expect('계정만 있던 학생은 새로 안 만들고 이음', linkedA.get(half)?.userId === 'u-half', linkedA.get(half));
+expect('비밀번호 = 생년월일 8자리', [...authU.values()].some((u) => /^\d{8}$/.test(u.password)));
+failNext = '';
+for (let i = 0; i < 100 && cr.remaining > 0; i++) cr = (await acall('POST', '/accounts/create', {})).body;
+al = (await acall('GET', '/accounts')).body as any;
+expect('남은 수가 0이 될 때까지 부르면 모두 생김(실패했던 학생 포함)', al.counts.none === 0 && al.counts.pending === targetN - al.counts.no_birthday, al.counts);
+// 학생이 비밀번호를 바꾸고 로그인함 → 사용 중
+const one = al.rows[0];
+linkedA.get(one.stId)!.mustChangePassword = false;
+authU.get(linkedA.get(one.stId)!.userId)!.lastSignIn = '2026-11-20T01:00:00Z';
+al = (await acall('GET', '/accounts', null, 'status=active')).body as any;
+expect('사용 중 탭: 마지막 로그인', al.rows.length === 1 && al.rows[0].stId === one.stId && al.rows[0].lastSignIn === '2026-11-20T01:00:00Z', al.rows);
+r = await acall('POST', `/accounts/${one.stId}/reset`, {});
+expect('비밀번호 초기화: 다시 첫 비밀번호 변경 전', r.status === 200 && (r.body as any).status === 'pending' && linkedA.get(one.stId)!.mustChangePassword === true, r);
+expect('없는 학생 404', (await acall('POST', '/accounts/99999999/reset', {})).status === 404);
+const auditRows = (await stores.audit.all()).filter((x: any) => x.target === 'student_account');
+expect('접근 기록: 만들기·초기화(처리자 이름)', auditRows.some((x: any) => x.action === 'password_reset' && x.stId === one.stId && x.actor === '오피스 김') && auditRows.filter((x: any) => x.action === 'account_create').length === targetN - al.counts.no_birthday, auditRows.length);
+const auA = (await acall('GET', '/audit')).body as any;
+expect('접근 기록 목록에 학생 계정', auA.rows.some((x: any) => x.target === 'student_account' && x.action === 'password_reset'), auA.rows.slice(0, 2));
+r = await handleIntranetApi({ ...ctx, accountsUnavailable: 'server_config' }, 'GET', '/accounts', new URLSearchParams(), null);
+expect('서비스 키 없는 배포: 안내', (r.body as any).available === false && (r.body as any).reason === 'server_config', r.body);
 
 console.log(fails ? `\n${fails}건 실패` : '\n모두 통과');
 if (fails) process.exit(1);
