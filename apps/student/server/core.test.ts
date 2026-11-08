@@ -10,6 +10,7 @@ import { studentFromToken, tokenCache, tokenSubject } from './supabaseAuth';
 import { decideRide, rideState, type Departure, type Ride } from './departures';
 import { handleLifeRequest, LIFE_OPEN_MAX, type LifeRequest } from './lifeRequests';
 import { decideRequest, overnightFor, type Absence, type Overnight, type RequestStore } from './requests';
+import { memoryTripStore, removeSignup, saveTrip, tripPermits, type Trip } from './trips';
 
 function memStore<T extends { id: string; stId: string }>(): RequestStore<T> {
   const m = new Map<string, T>();
@@ -35,10 +36,11 @@ const overnights = memStore<Overnight>();
 const departures = memStore<Departure>();
 const rides = memStore<Ride>();
 const life = memStore<LifeRequest>();
+const trips = memoryTripStore();
 let n = 0;
 const now = new Date('2026-11-08T02:00:00Z');
 const stId = '30095'; // 샘플: 재학 2026-07-26 ~ 2026-11-13
-const ctx = (who: string | null = stId) => ({ db, store, overnights, departures, rides, life, stId: who, localLogin: true, now: () => now, newId: () => 'r' + ++n });
+const ctx = (who: string | null = stId) => ({ db, store, overnights, departures, rides, life, trips, stId: who, localLogin: true, now: () => now, newId: () => 'r' + ++n });
 const call = (m: string, p: string, body: unknown = null, who: string | null = stId) => handleStudentApi(ctx(who), m, p, body);
 const TRIP = { destination: 'Manila', contact: '+63 917 123 4567' };
 let fails = 0;
@@ -256,6 +258,83 @@ r = await call('POST', `/life-requests/${open.id}/cancel`, {}, '30140');
 expect('남의 요청 취소 404', r.status === 404, r);
 r = await call('POST', '/life-requests', { category: 'document', content: '재학증명서 1부' });
 expect('취소하면 다시 요청 가능', r.status === 201, r);
+
+// ── 학교 여행·액티비티 (trips.ts): 오늘(필리핀) 2026-11-08, 30095·30140 은 Challenger 재학 ~11/13
+const staff = { now: () => now, newId: () => 't' + ++n, today: '2026-11-08', actor: '오피스 김', campuses: ['Challenger', 'Premium'] };
+const mkTrip = async (input: Record<string, unknown>, status?: Trip['status']) => {
+  const out = saveTrip(staff, null, { campus: 'Challenger', title: '여행', place: 'Island', start: '2026-11-11', end: '2026-11-12', deadline: '2026-11-09', capacity: 20, cost: 0, ...input });
+  if (!out.ok) throw new Error(out.error);
+  await trips.putTrip(status ? { ...out.value, status } : out.value);
+  return out.value;
+};
+let st = saveTrip(staff, null, { campus: 'Busan', title: 'x', place: 'y', start: '2026-11-11', end: '2026-11-11', deadline: '2026-11-10', capacity: 5 });
+expect('여행 등록: 없는 캠퍼스', !st.ok && st.error === 'invalid_campus');
+st = saveTrip(staff, null, { title: 'x', place: 'y', start: '2026-11-11', end: '2026-11-11', deadline: '2026-11-12', capacity: 5 });
+expect('여행 등록: 마감일은 출발일 이전', !st.ok && st.error === 'deadline_after_start');
+st = saveTrip(staff, null, { title: 'x', place: 'y', start: '2026-11-07', end: '2026-11-07', deadline: '2026-11-06', capacity: 5 });
+expect('여행 등록: 지난 날짜', !st.ok && st.error === 'start_in_past');
+st = saveTrip(staff, null, { title: 'x', place: 'y', start: '2026-11-11', end: '2026-11-30', deadline: '2026-11-10', capacity: 5 });
+expect('여행 등록: 14박까지', !st.ok && st.error === 'trip_too_long');
+st = saveTrip(staff, null, { title: 'x', place: 'y', start: '2026-11-11', end: '2026-11-11', deadline: '2026-11-10', capacity: 0 });
+expect('여행 등록: 정원 1 이상', !st.ok && st.error === 'invalid_capacity');
+st = saveTrip(staff, null, { title: ' 아일랜드 호핑 ', place: 'Boracay', start: '2026-11-11', end: '2026-11-11', deadline: '2026-11-10', capacity: '30', cost: '1500' });
+expect('여행 등록: 다듬기·숫자 문자열·전체 캠퍼스', st.ok && st.value.title === '아일랜드 호핑' && st.value.capacity === 30 && st.value.cost === 1500 && st.value.campus === '' && st.value.status === 'open', st);
+
+const T1 = await mkTrip({ title: '보라카이 1박', place: 'Boracay', cost: 2500 });
+const T2 = await mkTrip({ title: '당일 하이킹', campus: '', start: '2026-11-10', end: '2026-11-10', capacity: 1 });
+const T3 = await mkTrip({ title: 'Premium 여행', campus: 'Premium' });
+const T4 = await mkTrip({ title: '취소된 여행' }, 'cancelled');
+const T5 = await mkTrip({ title: '마감 지남', start: '2026-11-09', end: '2026-11-09', deadline: '2026-11-08' });
+await trips.putTrip({ ...T5, deadline: '2026-11-07' }); // 마감일을 어제로(수정은 지난 날짜도 된다)
+const T6 = await mkTrip({ title: '연수 뒤 여행', start: '2026-11-14', end: '2026-11-15', deadline: '2026-11-12' });
+r = await call('GET', '/trips');
+let tl = r.body as any;
+const titles = tl.rows.map((x: any) => x.title);
+expect('여행 목록: 내 캠퍼스·전체, 다른 캠퍼스·취소 안 보임', r.status === 200 && titles.includes('보라카이 1박') && titles.includes('당일 하이킹') && !titles.includes('Premium 여행') && !titles.includes('취소된 여행'), titles);
+const row1 = tl.rows.find((x: any) => x.id === T1.id);
+expect('여행 행: 1박, 남은 자리, 신청 가능, 올린 직원 안 보임', row1.nights === 1 && row1.left === 20 && row1.canApply === true && row1.why === null && row1.mine === null && !('createdBy' in row1), row1);
+expect('신청 못 하는 이유: 마감·연수 기간', tl.rows.find((x: any) => x.id === T5.id).why === 'trip_closed' && tl.rows.find((x: any) => x.id === T6.id).why === 'outside_enrollment', tl.rows.map((x: any) => [x.title, x.why]));
+r = await call('POST', `/trips/${T1.id}/signup`, {});
+expect('참가 신청 201: 신청함, 자리 1 줄어듦, 취소 가능', r.status === 201 && (r.body as any).mine.status === 'applied' && (r.body as any).left === 19 && (r.body as any).canCancel === true && (r.body as any).why === 'already_applied', r.body);
+r = await call('POST', `/trips/${T1.id}/signup`, {});
+expect('같은 여행 두 번 409', r.status === 409 && err(r) === 'already_applied', r);
+r = await call('POST', `/trips/${T2.id}/signup`, {}, '30140');
+expect('다른 학생이 정원 1 여행 신청', r.status === 201, r);
+r = await call('POST', `/trips/${T2.id}/signup`, {});
+expect('자리 없음 409', r.status === 409 && err(r) === 'trip_full', r);
+expect('취소된 여행 409', err(await call('POST', `/trips/${T4.id}/signup`, {})) === 'trip_cancelled');
+expect('마감 지난 여행 409', err(await call('POST', `/trips/${T5.id}/signup`, {})) === 'trip_closed');
+expect('연수 기간 밖 400', err(await call('POST', `/trips/${T6.id}/signup`, {})) === 'outside_enrollment');
+expect('다른 캠퍼스 여행 404', (await call('POST', `/trips/${T3.id}/signup`, {})).status === 404);
+expect('없는 여행 404', (await call('GET', '/trips/nope')).status === 404);
+r = await call('POST', `/trips/${T1.id}/cancel`, {});
+expect('신청 취소: 취소, 자리 돌아옴', r.status === 200 && (r.body as any).mine.status === 'cancelled' && (r.body as any).left === 20 && (r.body as any).canApply === true, r.body);
+expect('취소할 신청 없음 404', (await call('POST', `/trips/${T1.id}/cancel`, {})).status === 404);
+r = await call('POST', `/trips/${T1.id}/signup`, {});
+expect('취소 뒤 다시 신청 201', r.status === 201, r);
+// 직원이 명단에서 뺌: 사유는 학생에게 보이고 처리자는 안 보인다
+const mine1 = (await trips.signupsByStudent(stId)).find((s) => s.tripId === T1.id && s.status === 'applied')!;
+let rm = removeSignup(mine1, { reason: '' }, '오피스 김', now);
+expect('명단 제외는 사유 필수', !rm.ok && rm.error === 'reason_required');
+rm = removeSignup(mine1, { reason: '보호자 동의서 미제출' }, '오피스 김', now);
+expect('명단 제외', rm.ok && rm.value.status === 'removed' && rm.value.handledBy === '오피스 김', rm);
+if (rm.ok) await trips.putSignup(rm.value);
+r = await call('GET', `/trips/${T1.id}`);
+expect('학생이 제외 사유를 봄(처리자 없음), 다시 신청 가능', (r.body as any).mine.status === 'removed' && (r.body as any).mine.reason === '보호자 동의서 미제출' && !('handledBy' in (r.body as any).mine) && (r.body as any).canApply === true, r.body);
+// 마감이 지나면 학생이 취소하지 못한다
+await call('POST', `/trips/${T1.id}/signup`, {});
+await trips.putTrip({ ...(await trips.getTrip(T1.id))!, deadline: '2026-11-07' });
+r = await call('POST', `/trips/${T1.id}/cancel`, {});
+expect('마감 뒤 취소 409', r.status === 409 && err(r) === 'deadline_passed', r);
+expect('마감 뒤에는 취소 버튼 없음', ((await call('GET', `/trips/${T1.id}`)).body as any).canCancel === false);
+// 취소된 여행도 내가 신청했으면 목록에 남는다
+await trips.putTrip({ ...(await trips.getTrip(T2.id))!, status: 'cancelled' });
+tl = (await call('GET', '/trips', null, '30140')).body as any;
+expect('신청한 여행이 취소되면 목록에 취소로', tl.rows.find((x: any) => x.id === T2.id)?.status === 'cancelled', tl.rows.map((x: any) => [x.title, x.status]));
+// 외박 허용: 1박 이상, 참가 신청, 취소되지 않은 여행만
+const permits = tripPermits(await trips.listTrips(), await trips.listSignups());
+expect('1박 여행 참가 → 출발일 밤 외박 허용(여행 이름)', !!overnightFor(permits, stId, '2026-11-11') && !overnightFor(permits, stId, '2026-11-12') && overnightFor(permits, stId, '2026-11-11')?.reason === '보라카이 1박', permits);
+expect('당일 여행·취소된 여행은 외박 허용 아님', !overnightFor(permits, '30140', '2026-11-10') && permits.every((p) => p.tripId === T1.id), permits.map((p) => p.tripId));
 
 console.log(fails ? `\n${fails}건 실패` : '\n모두 통과');
 if (fails) process.exit(1);

@@ -23,6 +23,9 @@ import Requests from './pages/Requests';
 import PenaltyRules from './pages/PenaltyRules';
 import Settings from './pages/Settings';
 import StudentFileDetail from './pages/StudentFileDetail';
+import TripDetail from './pages/TripDetail';
+import TripForm from './pages/TripForm';
+import Trips from './pages/Trips';
 import StudentFiles from './pages/StudentFiles';
 
 /**
@@ -101,6 +104,10 @@ export default function App() {
               <Route path="/notices/new" element={<NoticeForm key="new" />} />
               <Route path="/notices/:id" element={<NoticeDetail />} />
               <Route path="/notices/:id/edit" element={<NoticeForm key="edit" />} />
+              <Route path="/trips" element={<Trips />} />
+              <Route path="/trips/new" element={<TripForm key="new" />} />
+              <Route path="/trips/:id" element={<TripDetail />} />
+              <Route path="/trips/:id/edit" element={<TripForm key="edit" />} />
               <Route path="/student-file" element={<StudentFiles />} />
               <Route path="/student-file/:stId" element={<StudentFileDetail />} />
               <Route path="*" element={<NotReady />} />

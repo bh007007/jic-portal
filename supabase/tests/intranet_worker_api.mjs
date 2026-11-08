@@ -1,7 +1,8 @@
 // 인트라넷 배포 서버(apps/intranet/worker)의 /api 시험. 실제 마이그레이션을 올린 PGlite(pg-supabase.mjs)에서
 // 직원 두 명(Challenger·Premium 담당)으로: 설정·점수표 → 통금 위반 후보·승인 → 결석·외박 처리 → 배차 → 공지·읽음
 // → 상담 기록(같은 캠퍼스만, 내용은 함수로, 접근 기록) → Student File, 그리고 가드 공용 계정(출입구 고정, 가드 API 만,
-// 재학생 명단·승인된 외박은 서비스 키로 사유 없이). 학생 쓰기는 학생 역할로 SQL 을 실행한다.
+// 재학생 명단·승인된 외박은 서비스 키로 사유 없이), 학교 여행(등록·수정·명단 제외·취소, 참가자 외박 허용이 가드 화면에).
+// 학생 쓰기는 학생 역할로 SQL 을 실행한다.
 //
 // 실행(저장소 루트, 의존성에 추가하지 않고 임시로 설치):
 //   npm i --no-save @electric-sql/pglite@0.3
@@ -272,6 +273,60 @@ ok('다른 출입구 가드: 캠퍼스 Premium, Challenger 외출 안 보임', x
 x = await api('POST', '/api/guard/scan', tGP, { code: sC3, mode: 'in', guard: '근무자1' });
 const p3 = await sb.sql(`select campus, in_at from public.outings where student_no = $1 order by created_at`, [sC3]);
 ok('다른 출입구에서 귀가를 찍으면 그 출입구의 새 기록(원래 외출 기록은 그대로)', x.status === 201 && p3.length === 2 && p3[0].campus === 'Challenger' && p3[0].in_at === null && p3[1].campus === 'Premium', p3);
+
+// ── 학교 여행: 직원 등록·수정 → 학생 신청(함수) → 가드 화면 외박 허용 → 명단 제외(함수) → 취소
+const tplus = (n) => plus(manila, n);
+const fitT = await sb.sql(
+  `select data->>'tr_st_id' st, id from public.legacy_enrollments where data->>'first_co_ca_code' = 'CHALLENGER' and left(data->>'tr_start_date', 10) <= $1 and left(data->>'tr_finish_date', 10) >= $2
+     and coalesce(data->>'tr_state_name', '') !~ '캔슬|거절|취소|연기|홀드|요청' and data->>'tr_st_id' not in ($3, $4, $5) order by 1 limit 1`,
+  [manila, tplus(1), sC, sC2, sC3],
+);
+ok('오늘~내일 재학하는 Challenger 학생', fitT.length === 1, fitT);
+const [{ st: sT, id: trT }] = fitT;
+const U2 = '00000000-0000-4000-8000-0000000000a2';
+await sb.addUser({ id: U2, email: 's2@students.example', password: 'studentpass1' });
+await sb.sql(`insert into public.student_users (user_id, student_no, must_change_password) values ($1, $2, false)`, [U2, sT]);
+const tripBody = { campus: 'Challenger', title: '라 우니온 1박', place: 'La Union', meeting: '정문 07:00', description: '왕복 밴', start: manila, end: tplus(1), deadline: manila, capacity: 10, cost: 1800 };
+x = await api('POST', '/api/trips', tC, { ...tripBody, start: tplus(-1), deadline: tplus(-2) });
+ok('지난 날짜 여행 400', x.status === 400 && x.body.error === 'start_in_past', x);
+x = await api('POST', '/api/trips', tC, tripBody);
+ok('여행 등록 201(올린 직원 = 로그인한 직원)', x.status === 201 && x.body.id, x);
+const tripId = x.body.id;
+let tdb2 = (await sb.sql(`select created_by_name, created_by::text, seats_taken from public.trips where id = $1`, [tripId]))[0];
+ok('DB: 올린 직원 이름·계정', tdb2.created_by_name === '직원C' && tdb2.created_by === U.staffC && tdb2.seats_taken === 0, tdb2);
+x = await api('GET', '/api/trips', tP);
+const tl0 = (x.body.rows ?? []).find((t) => t.id === tripId);
+ok('다른 직원도 여행 목록에서 봄(올린 직원 이름)', x.status === 200 && tl0?.createdBy === '직원C' && tl0.nights === 1 && tl0.accepting === true, tl0);
+const g0 = (await api('GET', '/api/guard', tG)).body.overnightTonight;
+const suT = (await sb.sql(`select public.trip_sign_up($1, $2) id`, [tripId, trT], as(U2)))[0].id;
+x = await api('GET', `/api/trips/${tripId}`, tC);
+ok('여행 상세: 명단 1(이름·캠퍼스), 신청 1', x.status === 200 && x.body.trip.taken === 1 && x.body.signups.length === 1 && x.body.signups[0].stId === sT && x.body.signups[0].name && x.body.signups[0].campus === 'Challenger', x.body);
+x = await api('PUT', `/api/trips/${tripId}`, tC, { ...tripBody, title: '라 우니온 1박 (밴 2대)', capacity: 12 });
+ok('여행 수정', x.status === 200 && x.body.title === '라 우니온 1박 (밴 2대)', x);
+ok('DB: 수정됨', (await sb.sql(`select title, capacity from public.trips where id = $1`, [tripId]))[0].capacity === 12);
+x = await api('GET', '/api/guard', tG);
+ok('가드 화면: 여행 참가자만큼 오늘 밤 외박 허용이 늘어남', x.body.overnightTonight === g0 + 1, [g0, x.body.overnightTonight]);
+x = await api('POST', '/api/guard/scan', tG, { code: sT, mode: 'out', guard: '근무자1' });
+ok('가드: 여행 참가자 외출에 외박 허용·여행 이름', x.status === 201 && x.body.row?.overnightUntil === tplus(1) && x.body.row.overnightTrip === '라 우니온 1박 (밴 2대)', x.body);
+x = await api('GET', '/api/trips', tG);
+ok('가드는 여행 화면 403', x.status === 403 && x.body.error === 'guard_forbidden', x);
+x = await api('POST', `/api/trips/signups/${suT}/remove`, tP, { reason: '' });
+ok('명단 제외는 사유 필수 400', x.status === 400 && x.body.error === 'reason_required', x);
+x = await api('POST', `/api/trips/signups/${suT}/remove`, tP, { reason: '출발 전 연락 없음' });
+ok('명단 제외(함수), 처리자 이름 직원P', x.status === 200 && x.body.status === 'removed', x);
+const sdb = (await sb.sql(`select s.status, s.removed_reason, s.handled_by::text, t.seats_taken from public.trip_signups s join public.trips t on t.id = s.trip_id where s.id = $1`, [suT]))[0];
+ok('DB: 제외·사유·처리자, 신청 수 0', sdb.status === 'removed' && sdb.removed_reason === '출발 전 연락 없음' && sdb.handled_by === U.staffP && sdb.seats_taken === 0, sdb);
+x = await api('GET', `/api/trips/${tripId}`, tC);
+ok('명단에 제외 처리자 이름', x.body.signups[0].status === 'removed' && x.body.signups[0].handledBy === '직원P', x.body.signups);
+x = await api('GET', '/api/guard', tG);
+ok('명단에서 빠지면 가드 화면 외박 허용도 빠짐', x.body.overnightTonight === g0 && !JSON.stringify(x.body).includes('출발 전 연락 없음'), x.body.overnightTonight);
+x = await api('GET', `/api/students/${sT}`, tC);
+ok('Student File 에 학교 여행', x.body.trips?.length === 1 && x.body.trips[0].status === 'removed' && x.body.trips[0].trip.title === '라 우니온 1박 (밴 2대)', x.body.trips);
+x = await api('POST', `/api/trips/${tripId}/status`, tC, { status: 'cancelled' });
+ok('여행 취소', x.status === 200 && x.body.status === 'cancelled', x);
+x = await api('PUT', `/api/trips/${tripId}`, tC, tripBody);
+ok('취소한 여행 수정 409', x.status === 409 && x.body.error === 'trip_cancelled', x);
+ok('홈 요약: 다가오는 여행 0', (await api('GET', '/api/summary', tC)).body.tripsUpcoming === 0);
 
 await sb.close();
 console.log(fails ? `${fails}건 실패` : '모두 통과');

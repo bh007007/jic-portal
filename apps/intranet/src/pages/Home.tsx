@@ -52,6 +52,13 @@ export default function Home() {
             <small>건</small>
           </span>
         </Link>
+        <Link to="/trips">
+          <span className="label">학교 여행 (다가오는 · 신청 받는 중)</span>
+          <span className="value">
+            {data.tripsUpcoming}
+            <small>건 · {data.tripsAccepting}건</small>
+          </span>
+        </Link>
         <Link to="/counseling?view=followup">
           <span className="label">확인할 일 (상담 후속 조치)</span>
           <span className="value">

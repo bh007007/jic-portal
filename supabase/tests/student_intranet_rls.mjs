@@ -1,5 +1,5 @@
 // 학생 앱·인트라넷 마이그레이션(20261108100000_student_intranet.sql, 20261108120000_student_request_ids.sql,
-// 20261108140000_nonacademic_requests.sql, 20261108150000_overnight_travel.sql)의 권한 시험.
+// 20261108140000_nonacademic_requests.sql, 20261108150000_overnight_travel.sql, 20261108160000_school_trips.sql)의 권한 시험.
 // 실제 Postgres(PGlite, WebAssembly)에 Supabase 흉내(auth.uid, anon/authenticated/service_role)를 만들고
 // 마이그레이션을 두 번 실행한 뒤(여러 번 실행 가능 확인) 역할별로 읽기·쓰기를 시험한다. 데이터는 전부 가짜.
 //
@@ -37,6 +37,8 @@ await db.exec(mig('20261108140000_nonacademic_requests.sql'));
 await db.exec(mig('20261108140000_nonacademic_requests.sql'));
 await db.exec(mig('20261108150000_overnight_travel.sql'));
 await db.exec(mig('20261108150000_overnight_travel.sql'));
+await db.exec(mig('20261108160000_school_trips.sql'));
+await db.exec(mig('20261108160000_school_trips.sql'));
 ok('마이그레이션 2회 실행', true);
 
 // ── 가짜 사용자
@@ -294,6 +296,103 @@ await as(U.stA, async () => {
   await denied('처리된 요청 취소', `select cancel_nonacademic_request('${nr}')`, /not_pending/);
 });
 await as(U.guardC, async () => ok('가드는 생활 요청을 못 봄', (await count(`select count(*) n from nonacademic_requests`)) === 0));
+
+// ── 학교 여행(trips·trip_signups): 직원이 올리고, 학생은 함수로 신청·취소, 직원은 함수로 명단 제외. 가드는 참가 신청만 읽는다
+const day = (n) => new Date(Date.now() + 8 * 3600e3 + n * 864e5).toISOString().slice(0, 10); // 필리핀 오늘 + n일
+await db.exec(`insert into public.legacy_enrollments (id, data) values
+  ('trA', '{"tr_st_id":"1001","tr_start_date":"${day(-30)}","tr_finish_date":"${day(60)}","first_co_ca_code":"CHALLENGER","tr_state_name":"인보이스승인"}'),
+  ('trB', '{"tr_st_id":"1002","tr_start_date":"${day(-30)}","tr_finish_date":"${day(60)}","first_co_ca_code":"PREMIUM","tr_state_name":"인보이스승인"}'),
+  ('trAx', '{"tr_st_id":"1001","tr_start_date":"${day(-30)}","tr_finish_date":"${day(60)}","first_co_ca_code":"CHALLENGER","tr_state_name":"캔슬"}')`);
+const tripSql = (o) => `insert into trips (campus, title, place, start_date, end_date, deadline, capacity) values ('${o.campus ?? 'Challenger'}', '${o.title}', 'Island', '${o.start ?? day(5)}', '${o.end ?? day(6)}', '${o.deadline ?? day(3)}', ${o.capacity ?? 5}) returning id`;
+let trip1, trip2, trip3;
+await as(U.staffC, async () => {
+  trip1 = (await one(tripSql({ title: '정원 1', capacity: 1 }))).id;
+  const t = await one(`select created_by_name, seats_taken, status from trips where id = '${trip1}'`);
+  ok('직원 여행 등록: 올린 직원 이름은 DB 가, 신청 0, 신청 받는 중', t.created_by_name === '직원C' && t.seats_taken === 0 && t.status === 'open', JSON.stringify(t));
+  trip2 = (await one(tripSql({ title: '전체 캠퍼스', campus: '' }))).id;
+  trip3 = (await one(tripSql({ title: 'Premium', campus: 'Premium' }))).id;
+  await denied('지난 날짜 여행 등록', tripSql({ title: 'x', start: day(-1), end: day(-1), deadline: day(-2) }), RLS);
+  await denied('마감일이 출발일 뒤', tripSql({ title: 'x', deadline: day(9) }), CHECK);
+  await denied('15박 여행', tripSql({ title: 'x', end: day(20) }), CHECK);
+  await denied('신청 수를 직접 넣기', `insert into trips (title, place, start_date, end_date, deadline, capacity, seats_taken) values ('x', 'y', '${day(5)}', '${day(5)}', '${day(4)}', 5, 3)`, PERM);
+  await denied('올린 직원 이름을 직접 넣기', `insert into trips (title, place, start_date, end_date, deadline, capacity, created_by_name) values ('x', 'y', '${day(5)}', '${day(5)}', '${day(4)}', 5, '남')`, PERM);
+});
+await db.exec(`set role service_role`);
+const tripLate = (await one(`insert into trips (campus, title, place, start_date, end_date, deadline, capacity) values ('Challenger', '마감 지남', 'x', '${day(2)}', '${day(3)}', '${day(-1)}', 5) returning id`)).id;
+await q(`insert into trip_signups (id, trip_id, student_no, enrollment_id) values ('b0000000-0000-4000-8000-000000000001', '${tripLate}', '1001', 'trA')`);
+await db.exec(`reset role`);
+let suA;
+await as(U.stA, async () => {
+  ok('학생은 여행을 읽음', (await count(`select count(*) n from trips`)) === 4);
+  await denied('학생 여행 등록', tripSql({ title: 'x' }), RLS);
+  ok('학생 여행 수정은 0건', (await affected(`update trips set title = 'x' where id = '${trip1}'`)) === 0);
+  await denied('학생이 참가 신청을 직접 넣기', `insert into trip_signups (trip_id, student_no, enrollment_id) values ('${trip1}', '1001', 'trA')`, PERM);
+  suA = (await one(`select trip_sign_up('${trip1}', 'trA', 'b0000000-0000-4000-8000-0000000000a1') id`)).id;
+  ok('학생 참가 신청(번호는 서버가 정한 값), 신청 수 1', suA === 'b0000000-0000-4000-8000-0000000000a1' && (await one(`select seats_taken from trips where id = '${trip1}'`)).seats_taken === 1);
+  await denied('같은 여행 두 번', `select trip_sign_up('${trip1}', 'trA')`, /already_applied/);
+  await denied('남의 연수로 신청', `select trip_sign_up('${trip2}', 'tr2')`, /outside_enrollment/);
+  await denied('취소된 연수로 신청', `select trip_sign_up('${trip2}', 'trAx')`, /outside_enrollment/);
+  await denied('다른 캠퍼스 여행', `select trip_sign_up('${trip3}', 'trA')`, /outside_enrollment/);
+  await denied('마감 지난 여행', `select trip_sign_up('${tripLate}', 'trA')`, /trip_closed/);
+  await denied('마감 뒤 취소', `select trip_cancel_signup('b0000000-0000-4000-8000-000000000001')`, /deadline_passed/);
+  await q(`select trip_sign_up('${trip2}', 'trA')`);
+  await denied('학생이 명단 제외 함수', `select trip_remove_signup('${suA}', 'x')`, /staff_only/);
+  await denied('학생이 신청 수 다시 세기', `select trip_recount('${trip1}')`, PERM);
+  await denied('학생이 연수 확인 함수', `select trip_enrollment_ok('trA', '1001', '${day(5)}', '${day(6)}', '')`, PERM);
+});
+await as(U.stB, async () => {
+  ok('학생B는 A 참가 신청을 못 봄', (await count(`select count(*) n from trip_signups`)) === 0);
+  await denied('정원이 차면 신청 못 함', `select trip_sign_up('${trip1}', 'trB')`, /trip_full/);
+  await q(`select trip_sign_up('${trip2}', 'trB')`);
+  ok('전체 캠퍼스 여행은 다른 캠퍼스 학생도 신청', (await count(`select count(*) n from trip_signups`)) === 1);
+  await denied('학생B가 A 신청 취소', `select trip_cancel_signup('${suA}')`, /not_found/);
+});
+let suB2;
+await as(U.staffP, async () => {
+  ok('직원은 참가 신청을 모두 봄', (await count(`select count(*) n from trip_signups`)) === 4);
+  await denied('정원을 신청 수보다 줄이기', `update trips set capacity = 1 where id = '${trip2}'`, CHECK);
+  await denied('신청 수를 직접 바꾸기', `update trips set seats_taken = 0 where id = '${trip2}'`, PERM);
+  suB2 = (await one(`select id from trip_signups where trip_id = '${trip2}' and student_no = '1002'`)).id;
+  await denied('명단 제외는 사유 필수', `select trip_remove_signup('${suB2}', ' ')`, /reason_required/);
+  await q(`select trip_remove_signup('${suB2}', '보호자 동의서 미제출')`);
+  const x = await one(`select status, removed_reason, handled_by::text from trip_signups where id = '${suB2}'`);
+  ok('명단 제외: 사유·처리자, 신청 수 다시 셈', x.status === 'removed' && x.removed_reason === '보호자 동의서 미제출' && x.handled_by === U.staffP && (await one(`select seats_taken from trips where id = '${trip2}'`)).seats_taken === 1, JSON.stringify(x));
+  await denied('빠진 신청을 다시 제외', `select trip_remove_signup('${suB2}', 'x')`, /not_applied/);
+  ok('직원 여행 수정', (await affected(`update trips set title = '전체 캠퍼스 (수정)', capacity = 3 where id = '${trip2}'`)) === 1);
+});
+await as(U.stB, async () => {
+  ok('학생이 제외 사유를 봄', (await one(`select removed_reason from trip_signups where id = '${suB2}'`)).removed_reason === '보호자 동의서 미제출');
+  await q(`select trip_sign_up('${trip2}', 'trB')`);
+  ok('제외 뒤 다시 신청', (await count(`select count(*) n from trip_signups where status = 'applied'`)) === 1);
+});
+await as(U.guardC, async () => {
+  ok('가드는 여행을 읽음', (await count(`select count(*) n from trips`)) === 4);
+  const rows = await q(`select status from trip_signups`);
+  ok('가드는 참가 신청(applied)만 읽음', rows.length === 4 && rows.every((r) => r.status === 'applied'), JSON.stringify(rows));
+  await denied('가드 참가 신청', `select trip_sign_up('${trip2}', 'trA')`, /student_only/);
+  await denied('가드 여행 등록', tripSql({ title: 'x' }), RLS);
+});
+await as(U.stA, async () => {
+  await q(`select trip_cancel_signup('${suA}')`);
+  ok('학생 신청 취소, 신청 수 0', (await one(`select status from trip_signups where id = '${suA}'`)).status === 'cancelled' && (await one(`select seats_taken from trips where id = '${trip1}'`)).seats_taken === 0);
+  await denied('취소한 신청을 다시 취소', `select trip_cancel_signup('${suA}')`, /not_applied/);
+  await q(`select trip_sign_up('${trip1}', 'trA')`);
+  ok('취소 뒤 다시 신청', (await one(`select seats_taken from trips where id = '${trip1}'`)).seats_taken === 1);
+});
+await as(U.staffC, async () => {
+  ok('여행 취소', (await affected(`update trips set status = 'cancelled' where id = '${trip1}'`)) === 1);
+  ok('취소한 여행은 수정 0건', (await affected(`update trips set status = 'open', title = 'x' where id = '${trip1}'`)) === 0);
+  await denied('직원이 참가 신청을 직접 바꾸기', `update trip_signups set status = 'cancelled'`, PERM);
+});
+await as(U.stA, async () => {
+  const mine = (await one(`select id from trip_signups where trip_id = '${trip1}' and status = 'applied'`)).id;
+  await denied('취소된 여행의 신청 취소', `select trip_cancel_signup('${mine}')`, /trip_cancelled/);
+  await denied('취소된 여행 신청', `select trip_sign_up('${trip1}', 'trA')`, /trip_cancelled/);
+});
+await as(null, async () => {
+  await denied('익명 여행 읽기', `select * from trips`, PERM);
+  await denied('익명 참가 신청', `select trip_sign_up('${trip2}', 'trA')`, PERM);
+});
 
 // ── 익명, 서비스 키
 await as(null, async () => {

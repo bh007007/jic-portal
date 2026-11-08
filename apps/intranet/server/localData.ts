@@ -13,7 +13,7 @@ import crypto from 'node:crypto';
 import type { IncomingMessage, ServerResponse } from 'node:http';
 import type { Plugin } from 'vite';
 import { loadDir } from '../../admin/server/localData';
-import { fileStore, requestFiles } from '../../student/server/localData';
+import { fileStore, requestFiles, tripFileStore } from '../../student/server/localData';
 import type { Departure, Ride } from '../../student/server/departures';
 import type { LifeRequest } from '../../student/server/lifeRequests';
 import type { Absence, Overnight } from '../../student/server/requests';
@@ -102,6 +102,7 @@ export function intranetLocalPlugin(dataDir: string, storeDir: string, studentSt
         departures: fileStore<Departure>(req.departures),
         rides: fileStore<Ride>(req.rides),
         lifeRequests: fileStore<LifeRequest>(req.life),
+        trips: tripFileStore(req.trips, req.tripSignups),
         outings: fileRepo(path.join(storeDir, `outings-${source}.ndjson`)),
         penalties: fileRepo(path.join(storeDir, `penalties-${source}.ndjson`)),
         settings: fileDoc(path.join(storeDir, 'settings.json')),

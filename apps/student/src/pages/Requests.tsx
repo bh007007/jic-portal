@@ -1,7 +1,7 @@
 import { Link } from 'react-router-dom';
 import { useApi, type AbsenceList, type LifeList, type OvernightList } from '../api';
 import { AbsenceRow, LifeRowLink, OvernightRowLink } from '../components/absence';
-import { IconForm } from '../components/icons';
+import { IconCalendar, IconForm } from '../components/icons';
 import { LoadError, Section } from '../components/Layout';
 import { useI18n } from '../i18n';
 
@@ -24,9 +24,13 @@ export default function Requests() {
           <IconForm size={18} w={1.8} />
           {t('req.newOvernight')}
         </Link>
-        <Link to="/requests/life/new" className="btn btn-primary span-2">
+        <Link to="/requests/life/new" className="btn btn-primary">
           <IconForm size={18} w={1.8} />
           {t('req.newLife')}
+        </Link>
+        <Link to="/trips" className="btn btn-primary">
+          <IconCalendar size={18} w={1.8} />
+          {t('req.trips')}
         </Link>
       </div>
       <Section labelId="hist-abs" title={t('req.absences')}>
