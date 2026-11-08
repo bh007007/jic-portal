@@ -62,6 +62,7 @@ const stores: Stores = {
   audit: memRepo(),
   notices: memRepo(),
   noticeReads: memRepo(),
+  reports: memRepo(),
 };
 let clock = Date.parse('2026-11-05T19:02:00+08:00');
 let n = 0;
@@ -344,6 +345,40 @@ nl = (await call('GET', '/notices', null, 'q=연락망')).body as any;
 expect('내용으로 검색', nl.rows.length === 1 && nl.rows[0].id === nPinned, nl.rows.length);
 r = await call('GET', '/notices/nope');
 expect('없는 공지 404', r.status === 404, r);
+
+// ── 가드 리포트
+await call('PUT', '/settings', { curfew: '23:00', guards: ['RAMOS J.'] });
+at('2026-11-08T00:20:00');
+r = await call('POST', '/guard/report', { code: A, campus, kind: 'alcohol', note: '음주 후 귀가', guard: '' });
+expect('리포트: 근무자 필수', (r.body as any).error === 'guard_required', r);
+r = await call('POST', '/guard/report', { code: notCurrent, campus, kind: 'alcohol', note: 'x', guard: 'RAMOS J.' });
+expect('리포트: 재학생만', r.status === 404, r);
+r = await call('POST', '/guard/report', { code: A, campus, kind: 'drunk', note: 'x', guard: 'RAMOS J.' });
+expect('리포트: 종류 확인', (r.body as any).error === 'invalid_kind', r);
+r = await call('POST', '/guard/report', { code: A, campus, kind: 'alcohol', note: '', guard: 'RAMOS J.' });
+expect('리포트: 내용 필수', (r.body as any).error === 'invalid_note', r);
+r = await call('POST', '/guard/report', { code: A, campus, kind: 'alcohol', note: 'x', guard: 'RAMOS J.', time: '25:00' });
+expect('리포트: 시각 확인', (r.body as any).error === 'invalid_time', r);
+// 00:20 에 '23:50' 으로 쓰면 전날 밤 23:50
+r = await call('POST', '/guard/report', { code: A, campus, kind: 'alcohol', note: '정문에서 술 냄새, 비틀거림. 기숙사 사감에게 인계', guard: 'RAMOS J.', time: '23:50' });
+expect('리포트 등록 201', r.status === 201 && (r.body as any).report.kindLabel === '음주', r);
+const rep1 = (r.body as any).report;
+expect('발생 시각이 지금보다 뒤면 전날(11/07 23:50)', rep1.occurredAt === '2026-11-07T15:50:00.000Z', rep1.occurredAt);
+r = await call('POST', '/guard/report', { code: D, campus, kind: 'unauthorized', note: '카드키 미반납 외출', guard: 'RAMOS J.' });
+const rep2 = (r.body as any).report;
+pl = (await call('GET', '/penalties', null, 'q=' + A)).body as any;
+const pA = pl.rows.find((x: any) => x.source === 'guard');
+expect('음주 리포트 → 패널티 대기(음주), 발생일 11/07 밤, 근거', pA && pA.kind === 'alcohol' && pA.date === '2026-11-07' && pA.basis.startsWith('가드 리포트(23:50): 음주 — 정문에서'), pA);
+pl = (await call('GET', '/penalties', null, 'q=' + D)).body as any;
+const pD = pl.rows.find((x: any) => x.source === 'guard');
+expect('무단외출 리포트 → 패널티 대기(기타)', pD && pD.kind === 'other' && pD.kindName === '기타', pD);
+await call('POST', '/penalties/decide', { ids: [pD.id], approve: false });
+const rl = (await call('GET', '/reports')).body as any;
+expect('리포트 목록 2건, 최근 순, 패널티 상태(대기·반려)', rl.rows.length === 2 && rl.rows[0].id === rep2.id && rl.rows[0].penaltyStatus === 'rejected' && rl.rows[1].penaltyStatus === 'pending', rl.rows.map((x: any) => [x.kindLabel, x.penaltyStatus]));
+const rlK = (await call('GET', '/reports', null, 'kind=alcohol&from=2026-11-07&to=2026-11-07')).body as any;
+expect('리포트 종류·날짜(필리핀) 검색', rlK.rows.length === 1 && rlK.rows[0].id === rep1.id, rlK.rows.length);
+const synced = (await call('GET', '/penalties', null, 'tab=rejected&q=' + D)).body as any;
+expect('통금 후보 정리가 가드 리포트 패널티를 건드리지 않음', synced.rows.some((x: any) => x.source === 'guard'), synced.rows.length);
 
 console.log(fails ? `\n${fails}건 실패` : '\n모두 통과');
 if (fails) process.exit(1);

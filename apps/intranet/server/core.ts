@@ -19,6 +19,7 @@ import {
   type CounselingCtx,
   type CounselingNote,
 } from './counseling';
+import { PENALTY_KIND_OF, REPORT_KINDS, REPORT_LABEL, REPORT_NOTE_MAX, type IncidentReport, type ReportKind } from './reports';
 import { createNotice, listNotices, noticeSummary, openNotice, updateNotice, type Notice, type NoticeCtx, type NoticeRead } from './notices';
 import { COMMENT_MAX, decideRequest, nightsBetween, overnightFor, type Absence, type Overnight, type RequestStatus, type RequestStore } from '../../student/server/requests';
 
@@ -59,7 +60,7 @@ export interface Penalty {
   date: string; // 발생일(통금 위반은 그날 밤)
   campus: string;
   basis: string; // 근거 문장
-  source: 'outing';
+  source: 'outing' | 'guard'; // 외출 기록(통금 위반 자동) | 가드 리포트
   sourceId: string;
   status: PenaltyStatus;
   score: number | null; // 승인할 때의 점수표 점수(이후 점수표가 바뀌어도 그대로)
@@ -129,6 +130,8 @@ export interface Stores {
   /** 내부 공지와 읽음 */
   notices: Repo<Notice>;
   noticeReads: Repo<NoticeRead>;
+  /** 가드 리포트(사건 리포트) */
+  reports: Repo<IncidentReport>;
 }
 
 export interface IntranetCtx {
@@ -315,6 +318,78 @@ async function guardScan(ctx: IntranetCtx, input: Record<string, unknown>): Prom
   if (mode === 'in') await syncCurfewPenalties(ctx);
   return ok({ mode, row: outingRow(ctx, rec, settings.curfew, ctx.now().getTime(), await ctx.stores.overnights.listAll()) }, mode === 'out' || !open ? 201 : 200);
 }
+
+/**
+ * 가드 리포트 등록 → 패널티 승인 대기 후보(출처 'guard')를 바로 만든다.
+ * 발생 시각은 'HH:MM'(필리핀 시간)으로 받고, 지금보다 뒤면 전날로 본다(자정 넘어 쓰는 리포트). 없으면 지금.
+ */
+async function guardReport(ctx: IntranetCtx, input: Record<string, unknown>): Promise<Result> {
+  const stId = String(input.code ?? '').replace(/\D/g, '');
+  const campus = typeof input.campus === 'string' ? input.campus.trim() : '';
+  const guard = typeof input.guard === 'string' ? input.guard.trim().slice(0, 40) : '';
+  const kind = input.kind as ReportKind;
+  const note = typeof input.note === 'string' ? input.note.trim() : '';
+  if (!campus) return fail(400, 'campus_required');
+  if (!stId) return fail(400, 'code_required');
+  const s = currentIndex(ctx.db).get(stId);
+  if (!s) return fail(404, 'not_current');
+  if (!REPORT_KINDS.includes(kind)) return fail(400, 'invalid_kind');
+  if (!note || note.length > REPORT_NOTE_MAX) return fail(400, 'invalid_note');
+  const settings = await loadSettings(ctx);
+  if (settings.guards.length && !settings.guards.includes(guard)) return fail(400, 'guard_required');
+
+  const nowMs = ctx.now().getTime();
+  let occurredMs = nowMs;
+  if (input.time !== undefined && input.time !== null && input.time !== '') {
+    if (!isHm(input.time)) return fail(400, 'invalid_time');
+    occurredMs = Date.parse(`${localDate(nowMs)}T${input.time}:00+08:00`);
+    if (occurredMs > nowMs) occurredMs -= 864e5;
+  }
+  const createdAt = ctx.now().toISOString();
+  const rep: IncidentReport = { id: ctx.newId(), stId, trId: s.trId, campus, kind, note, occurredAt: new Date(occurredMs).toISOString(), reportedBy: guard, createdAt };
+  await ctx.stores.reports.put(rep);
+  const short = note.length > 60 ? note.slice(0, 60) + '…' : note;
+  await ctx.stores.penalties.put({
+    id: 'guard-' + rep.id,
+    stId,
+    kind: PENALTY_KIND_OF[kind],
+    date: nightOf(occurredMs),
+    campus,
+    basis: `가드 리포트(${localHm(occurredMs)}): ${REPORT_LABEL[kind]} — ${short}`,
+    source: 'guard',
+    sourceId: rep.id,
+    status: 'pending',
+    score: null,
+    createdAt,
+    decidedAt: null,
+    decidedBy: null,
+    note: null,
+  });
+  return ok({ report: { ...rep, name: s.name, kindLabel: REPORT_LABEL[kind] } }, 201);
+}
+
+async function listReports(ctx: IntranetCtx, q: URLSearchParams) {
+  const from = q.get('from') || '';
+  const to = q.get('to') || '';
+  const campus = q.get('campus') || '';
+  const kind = q.get('kind') || '';
+  const kw = (q.get('q') ?? '').trim().toLowerCase();
+  const penalties = new Map((await ctx.stores.penalties.all()).filter((p) => p.source === 'guard').map((p) => [p.sourceId, p]));
+  const all = (await ctx.stores.reports.all()).map((r) => {
+    const p = penalties.get(r.id);
+    return { ...r, name: studentRef(ctx.db, r.stId).name, kindLabel: REPORT_LABEL[r.kind], date: localDate(Date.parse(r.occurredAt)), penaltyStatus: p?.status ?? null, penaltyId: p?.id ?? null };
+  });
+  const rows = all
+    .filter((r) => (!from || r.date >= from) && (!to || r.date <= to) && (!campus || r.campus === campus) && (!kind || r.kind === kind))
+    .filter((r) => !kw || r.stId.includes(kw) || r.name.toLowerCase().includes(kw) || r.reportedBy.toLowerCase().includes(kw))
+    .sort((a, b) => b.occurredAt.localeCompare(a.occurredAt));
+  return {
+    kinds: REPORT_KINDS.map((k) => ({ code: k, name: REPORT_LABEL[k] })),
+    campuses: [...new Set(all.map((r) => r.campus))].sort(),
+    rows,
+  };
+}
+export type ReportList = Awaited<ReturnType<typeof listReports>>;
 
 // ── 외출·귀가 기록 / 통금 확인
 async function listOutings(ctx: IntranetCtx, q: URLSearchParams) {
@@ -735,6 +810,10 @@ export async function handleIntranetApi(ctx: IntranetCtx, method: string, pathna
         return ok(await guardView(ctx, q));
       case 'POST /guard/scan':
         return await guardScan(ctx, input);
+      case 'POST /guard/report':
+        return await guardReport(ctx, input);
+      case 'GET /reports':
+        return ok(await listReports(ctx, q));
       case 'GET /outings':
         return ok(await listOutings(ctx, q));
       case 'GET /penalties':

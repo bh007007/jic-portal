@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState, type FormEvent } from 'react';
 import { Link } from 'react-router-dom';
 import { api, ApiError, errorText, useApi, type GuardView, type OutingRow } from '../api';
+import { REPORT_KINDS, REPORT_LABEL, type ReportKind } from '../../server/reports';
 import { duration, hm, md } from '../format';
 
 // 디자인 I2(GuardTablet.dc.html). 이 기기에서 고른 캠퍼스·근무자·처리 종류는 기기에만 기억한다.
@@ -22,6 +23,7 @@ const save = (k: string, v: string) => {
 };
 
 type Result = { ok: true; mode: Mode; row: OutingRow } | { ok: false; message: string };
+type Reported = { name: string; stId: string; campus: string; kindLabel: string; occurredAt: string };
 
 export default function Guard() {
   const [campus, setCampus] = useState(load(KEY.campus));
@@ -115,6 +117,8 @@ function GuardScreen({ view, campus, onCampus, reload }: { view: GuardView; camp
   const [code, setCode] = useState('');
   const [busy, setBusy] = useState(false);
   const [result, setResult] = useState<Result | null>(null);
+  const [reporting, setReporting] = useState(false);
+  const [reported, setReported] = useState<Reported | null>(null);
   const input = useRef<HTMLInputElement>(null);
 
   const setMode = (m: Mode) => {
@@ -140,10 +144,12 @@ function GuardScreen({ view, campus, onCampus, reload }: { view: GuardView; camp
     try {
       const r = await api<{ mode: Mode; row: OutingRow }>('/api/guard/scan', { method: 'POST', body: { code: value, mode, campus, guard } });
       setResult({ ok: true, mode: r.mode, row: r.row });
+      setReported(null);
       reload();
     } catch (err) {
       const ae = err as ApiError;
       const outAt = typeof ae.data.outAt === 'string' ? ae.data.outAt : null;
+      setReported(null);
       setResult({ ok: false, message: ae.code === 'already_out' && outAt ? `이미 외출 중입니다 (외출 ${hm(outAt)}). 귀가로 처리하세요.` : errorText(ae.code) });
     }
     setCode('');
@@ -158,6 +164,24 @@ function GuardScreen({ view, campus, onCampus, reload }: { view: GuardView; camp
     <div className="guard">
       <GuardHeader view={view} campus={campus} onCampus={onCampus} guard={guard} setGuard={setGuard} />
       <div className="guard-body">
+        {reporting ? (
+          <ReportForm
+            campus={campus}
+            guard={guard}
+            defaultCode={last?.stId ?? ''}
+            onCancel={() => {
+              setReporting(false);
+              setTimeout(() => input.current?.focus(), 0);
+            }}
+            onDone={(r) => {
+              setReported(r);
+              setResult(null);
+              setReporting(false);
+              reload();
+              setTimeout(() => input.current?.focus(), 0);
+            }}
+          />
+        ) : (
         <section className="guard-scan" aria-label="스캔">
           <div role="group" aria-label="처리 종류" className="guard-mode">
             <button type="button" aria-pressed={mode === 'out'} onClick={() => setMode('out')}>
@@ -184,12 +208,28 @@ function GuardScreen({ view, campus, onCampus, reload }: { view: GuardView; camp
             </button>
           </form>
           {!guardValid && <p className="guard-warn">근무자를 고르세요.</p>}
+          <button type="button" className="guard-report-btn" onClick={() => setReporting(true)}>
+            사건 리포트 작성
+          </button>
         </section>
+        )}
 
         <div className="guard-side">
           <section className={'guard-last' + (result && !result.ok ? ' error' : '')} aria-live="polite">
             <h2 className="sr-only">방금 처리</h2>
-            {result && !result.ok ? (
+            {reported ? (
+              <>
+                <div className="guard-photo">사진</div>
+                <div className="guard-last-text">
+                  <span className="guard-name">{reported.name}</span>
+                  <span className="muted">
+                    {reported.stId} · {reported.campus}
+                  </span>
+                  <span className="guard-big report">리포트 등록 · {reported.kindLabel}</span>
+                  <span className="muted">발생 {hm(reported.occurredAt)} · 패널티 승인 대기로 넘어갔습니다</span>
+                </div>
+              </>
+            ) : result && !result.ok ? (
               <p className="guard-error">{result.message}</p>
             ) : last ? (
               <>
@@ -260,5 +300,75 @@ function GuardScreen({ view, campus, onCampus, reload }: { view: GuardView; camp
         </div>
       </div>
     </div>
+  );
+}
+
+/** 사건 리포트(음주·폭력·무단외출·기타). 등록하면 인트라넷 패널티 승인 대기로 넘어간다. */
+function ReportForm({ campus, guard, defaultCode, onCancel, onDone }: { campus: string; guard: string; defaultCode: string; onCancel: () => void; onDone: (r: Reported) => void }) {
+  const [code, setCode] = useState(defaultCode);
+  const [kind, setKind] = useState<ReportKind | ''>('');
+  const [note, setNote] = useState('');
+  const [time, setTime] = useState('');
+  const [error, setError] = useState<string | null>(null);
+  const [busy, setBusy] = useState(false);
+
+  async function submit(e: FormEvent) {
+    e.preventDefault();
+    if (!kind) return setError('종류를 고르세요.');
+    setBusy(true);
+    setError(null);
+    try {
+      const r = await api<{ report: Reported }>('/api/guard/report', { method: 'POST', body: { code, campus, guard, kind, note, time } });
+      onDone(r.report);
+    } catch (err) {
+      setError(errorText((err as ApiError).code));
+      setBusy(false);
+    }
+  }
+
+  return (
+    <form className="guard-scan guard-report" aria-label="사건 리포트" onSubmit={submit}>
+      <h2>사건 리포트</h2>
+      <label className="guard-field">
+        <span>학생번호</span>
+        <input inputMode="numeric" autoComplete="off" autoFocus required value={code} onChange={(e) => setCode(e.target.value)} />
+      </label>
+      <div className="guard-field">
+        <span id="report-kind">종류</span>
+        <div role="group" aria-labelledby="report-kind" className="guard-kinds">
+          {REPORT_KINDS.map((k) => (
+            <button
+              key={k}
+              type="button"
+              aria-pressed={kind === k}
+              onClick={() => {
+                setKind(k);
+                setError(null);
+              }}
+            >
+              {REPORT_LABEL[k]}
+            </button>
+          ))}
+        </div>
+      </div>
+      <label className="guard-field top">
+        <span>내용</span>
+        <textarea rows={4} required maxLength={500} value={note} onChange={(e) => setNote(e.target.value)} />
+      </label>
+      <label className="guard-field">
+        <span>발생 시각</span>
+        <input type="time" value={time} onChange={(e) => setTime(e.target.value)} />
+        <em>비우면 지금</em>
+      </label>
+      {error && <p className="guard-warn">{error}</p>}
+      <div className="guard-report-actions">
+        <button type="button" onClick={onCancel}>
+          취소
+        </button>
+        <button type="submit" className="primary" disabled={busy}>
+          리포트 등록
+        </button>
+      </div>
+    </form>
   );
 }
