@@ -1,5 +1,5 @@
 import { Link, useParams } from 'react-router-dom';
-import { fmt, useApi, type StudentDetail as Detail } from '../api';
+import { fmt, useApi, type InvoiceDetail, type InvoiceItem, type StudentDetail as Detail } from '../api';
 import { Loading, PageTitle, Panel, PayText } from '../components/ui';
 
 const STATUS_LABEL: Record<string, string> = { current: '재학', upcoming: '입학 예정', graduated: '졸업', cancelled: '취소', other: '기타' };
@@ -146,6 +146,8 @@ export default function StudentDetail() {
         </div>
       )}
 
+      {latest?.invoiceDetail && latest.invoice && <InvoiceItems d={latest.invoiceDetail} currency={latest.invoice.currency} total={latest.invoice.total} />}
+
       {data.enrollments.filter((e) => e.points.length > 0).map((en) => (
         <Panel key={en.trId} title={<>포인트 내역 <small>({en.batch} · {en.start} ~ {en.end} · {en.points.length}건 · 1P = 1페소)</small></>}>
           <table className="tbl center" style={{ minWidth: 720 }}>
@@ -194,5 +196,69 @@ export default function StudentDetail() {
         </table>
       </Panel>
     </>
+  );
+}
+
+/** 최신 연수의 인보이스 항목: 학생 가격 − 에이전시 공제, 현지 비용(PHP). 업체 '현지 인보이스 납부 > 편집' 화면과 같은 값. */
+function InvoiceItems({ d, currency, total }: { d: InvoiceDetail; currency: string; total: number }) {
+  const period = (i: InvoiceItem) => [i.weeks ? `${i.weeks}주` : '', i.from && i.to ? `${i.from} ~ ${i.to}` : ''].filter(Boolean).join(' · ');
+  const money = (c: string, n: number) => `${c || currency} ${fmt(n)}`;
+  const net = d.itemsTotal - d.agencyTotal;
+  return (
+    <Panel title={<>인보이스 항목 <small>(최신 연수{d.version != null ? ` · 버전 ${d.version}` : ''})</small></>}>
+      <table className="tbl center" style={{ minWidth: 720 }}>
+        <thead>
+          <tr><th>구분</th><th className="left">항목</th><th className="left">내용</th><th className="left">기간</th><th className="num">금액</th></tr>
+        </thead>
+        <tbody>
+          {d.items.map((i, k) => (
+            <tr key={'s' + k}>
+              {k === 0 && <td rowSpan={d.items.length}>학생 가격</td>}
+              <td className="left">{i.label}</td>
+              <td className="left">{i.name || '-'}</td>
+              <td className="left nowrap" style={{ fontSize: 12 }}>{period(i) || '-'}</td>
+              <td className={'num' + (i.amount < 0 ? ' text-blue' : '')}>{money(i.currency, i.amount)}</td>
+            </tr>
+          ))}
+          {d.agency.map((i, k) => (
+            <tr key={'a' + k}>
+              {k === 0 && <td rowSpan={d.agency.length}>에이전시 공제</td>}
+              <td className="left">{i.label}</td>
+              <td className="left">-</td>
+              <td className="left">-</td>
+              <td className="num">− {money(i.currency, i.amount)}</td>
+            </tr>
+          ))}
+        </tbody>
+        <tfoot>
+          <tr><th colSpan={4} className="left">학생 가격 합계</th><td className="num">{money('', d.itemsTotal)}</td></tr>
+          {d.agency.length > 0 && <tr><th colSpan={4} className="left">에이전시 공제 합계</th><td className="num">− {money('', d.agencyTotal)}</td></tr>}
+          <tr><th colSpan={4} className="left">학생 가격 − 공제</th><td className="num strong">{money('', net)}</td></tr>
+          <tr><th colSpan={4} className="left">인보이스 총액</th><td className={'num' + (net === total ? ' muted' : ' strong')}>{money('', total)}</td></tr>
+        </tfoot>
+      </table>
+
+      {d.local.length > 0 && (
+        <table className="tbl center" style={{ minWidth: 720, marginTop: 14 }}>
+          <thead>
+            <tr><th>구분</th><th className="left">항목</th><th className="num">청구</th><th className="num">남은 금액</th></tr>
+          </thead>
+          <tbody>
+            {d.local.map((l, k) => (
+              <tr key={'l' + k}>
+                {k === 0 && <td rowSpan={d.local.length}>현지 비용</td>}
+                <td className="left">{l.label}</td>
+                <td className="num">{l.currency} {fmt(l.amount)}</td>
+                <td className={'num' + (l.rest > 0 ? ' text-red' : ' muted')}>{fmt(l.rest)}</td>
+              </tr>
+            ))}
+          </tbody>
+          <tfoot>
+            <tr><th colSpan={2} className="left">현지 청구 합계</th><td className="num">{d.local[0]?.currency} {fmt(d.localTotal)}</td><td /></tr>
+            <tr><th colSpan={2} className="left">현지 납부 합계</th><td className="num">{d.local[0]?.currency} {fmt(d.localPaidTotal)}</td><td /></tr>
+          </tfoot>
+        </table>
+      )}
+    </Panel>
   );
 }

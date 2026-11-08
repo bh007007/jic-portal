@@ -297,6 +297,56 @@ for (const inv of invoices) {
   inv.sum_td_amount = String(local && rand7() < 0.1 ? Math.round(local / 2) : local);
 }
 
+// ── 인보이스 항목(portal-extract-invoice-items.js 와 같은 표·열). 별도 시드(seed8)라 위 값은 그대로다.
+// inv_invoice_cost_st = 학생 가격 항목, inv_invoice_cost_ag = 에이전시 공제, inv_etc = 현지 비용(tc_*)·납부(td_*), PHP.
+// 실제 추출본처럼 학생 가격 합계 − 에이전시 공제 합계 = sum_ic_price 가 되게 만들고, 일부 연수에는 예전 버전(ic_ver 1) 항목을 남긴다.
+let seed8 = 23;
+const rand8 = () => ((seed8 = (seed8 * 1103515245 + 12345) % 2147483648) / 2147483648);
+const costSt = [], costAg = [], localEtc = [];
+const REGIST_FEE = { KRW: 150000, JPY: 15000, USD: 150 };
+const IC_NAME = { COURSE: 'Course', REGIST: 'Registration Fee', DORM: 'Dormitory', PROMO: 'Promotion', AGENCY_COMM: 'Agency Commission', AGENCY_REGIST: 'Agency Registration' };
+const stripW = (s) => String(s || '').replace(/\(\d+w\)$/, '');
+let icNo = 600000, tcNo = 700000, tdNo = 800000;
+for (const inv of invoices) {
+  const e = enrollmentByTr.get(inv.tr_id);
+  const cur = inv.tr_currency, total = Number(inv.sum_ic_price), weeks = Number(e.tr_total_week);
+  const reg = REGIST_FEE[cur] ?? 150;
+  const comm = Math.round(total * 0.15);
+  const agReg = rand8() < 0.5 ? Math.round(reg / 2) : 0;
+  const promo = rand8() < 0.3 ? -Math.round(total * 0.05) : 0;
+  const stay = !/^Stay Out/.test(e.dorms);
+  const dorm = stay ? Math.round((total + comm + agReg - reg) * 0.35) : 0;
+  const course = total + comm + agReg - reg - dorm - promo;
+  const twoVersions = rand8() < 0.1;
+  const ver = twoVersions ? 2 : 1;
+  const base = (type, price, extra = {}) => ({
+    _tr_id: inv.tr_id, ic_id: String(++icNo), ic_tr_id: inv.tr_id, ic_ver: String(ver), ic_type: type, ic_type_name: IC_NAME[type],
+    ic_currency: cur, ic_price: String(price), ic_week: String(weeks), ic_use_yn: 'Y', ic_cancel_yn: 'N', ...extra,
+  });
+  if (twoVersions) costSt.push({ ...base('COURSE', Math.round(course * 0.9), { co_name: stripW(e.courses) }), ic_ver: '1' }); // 예전 버전: 최신만 쓰는지 확인용
+  costSt.push(base('REGIST', reg, { ic_week: '0' }));
+  costSt.push(base('COURSE', course, { co_name: stripW(e.courses), ic_departure_date: e.tr_start_date, ic_return_date: e.tr_finish_date }));
+  if (stay) costSt.push(base('DORM', dorm, { do_name: stripW(e.dorms), ic_departure_date: e.sd_departure_date, ic_return_date: day(e.tr_finish_date, 1) }));
+  if (promo) costSt.push(base('PROMO', promo, { ic_week: '0' }));
+  costAg.push(base('AGENCY_COMM', comm, { ic_week: '0' }));
+  if (agReg) costAg.push(base('AGENCY_REGIST', agReg, { ic_week: '0' }));
+  // 현지 비용: seed7 의 sum_tc_price(6,500 + 1,000 × n) 를 SSP 와 교재로 나눈다. 납부는 SSP 부터 채운다.
+  const tc = Number(inv.sum_tc_price), td = Number(inv.sum_td_amount);
+  if (tc > 0) {
+    const charges = [['SSP', 'SSP (Valid for 6 mon)', 6500], ...(tc > 6500 ? [['BOOK', 'Class Materials', tc - 6500]] : [])];
+    let left = td;
+    for (const [type, name, price] of charges) {
+      const paidPart = Math.min(price, Math.max(0, left));
+      left -= paidPart;
+      localEtc.push({ _tr_id: inv.tr_id, tc_id: String(++tcNo), ec_type: type, tc_type_name: name, tc_currency: 'PHP', tc_price: String(price), rest_amount: String(price - paidPart), td_id: null, td_currency: null, td_amount: null, td_deposit_dt: null });
+    }
+    if (td > 0) localEtc.push({ _tr_id: inv.tr_id, tc_id: String(tcNo), ec_type: '', tc_type_name: null, tc_currency: null, tc_price: null, rest_amount: null, td_id: String(++tdNo), td_currency: 'PHP', td_amount: String(td), td_deposit_dt: `${day(e.tr_start_date, 1)} 10:00:00` });
+  }
+}
+for (const [name, rows] of [['inv_invoice_cost_st', costSt], ['inv_invoice_cost_ag', costAg], ['inv_etc', localEtc]]) {
+  fs.writeFileSync(path.join(outDir, name + '.ndjson'), rows.map((r) => JSON.stringify(r)).join('\n') + '\n');
+}
+
 // ── 포인트 내역(point_history): 실제 추출본과 같은 열(type D=충전, U=현지 비용 사용, point=페소, ec_name=비용 항목).
 // 또 다른 시드를 써서 위 데이터는 그대로 둔다. 입학한 Premium 연수만(실제 추출본도 Premium만 있음).
 let seed4 = 13;

@@ -21,7 +21,17 @@ export interface DataInput {
   pointHistory?: Raw[];
   /** 업체 포털 방관리(rooms, room_bed_v2). 방 하나에 beds 배열. 2026-11-08 기준 Premium만 등록되어 있다. */
   rooms?: Raw[];
+  /** 인보이스 학생 가격 항목(inv_invoice_cost_st, portal-extract-invoice-items.js). 배포에는 아직 없다. */
+  invoiceItems?: Raw[];
+  /** 인보이스 에이전시 공제 항목(inv_invoice_cost_ag: 커미션·에이전시 등록비·바우처). */
+  invoiceAgencyItems?: Raw[];
+  /** 현지 인보이스 비용·납부(inv_etc: tc_* 청구, td_* 납부, PHP). */
+  localCosts?: Raw[];
 }
+
+/** 인보이스 항목 표에서 읽는 열(직원 메모 ic_memo 는 읽지 않는다). localData 가 이 열만 골라 넘긴다. */
+export const INVOICE_ITEM_COLUMNS = ['_tr_id', 'ic_ver', 'ic_type', 'ic_type_name', 'ic_currency', 'ic_price', 'ic_week', 'ic_departure_date', 'ic_return_date', 'co_name', 'do_name', 'ic_use_yn', 'ic_cancel_yn'];
+export const LOCAL_COST_COLUMNS = ['_tr_id', 'tc_id', 'ec_type', 'tc_type_name', 'tc_currency', 'tc_price', 'rest_amount', 'td_id', 'td_currency', 'td_amount', 'td_deposit_dt'];
 
 /** 포인트 내역에서 화면에 쓰는 열. 원본 행에는 학생·에이전시 정보가 200여 열 붙어 있어 줄여서 싣는다. */
 export const POINT_HISTORY_COLUMNS = ['tr_id', 'type', 'dt', 'point', 'php', 'ec_name', 'nickname', 'memo', 'campus'];
@@ -225,6 +235,74 @@ export function createDb(input: DataInput) {
       }))
       .sort((a, b) => a.dt.localeCompare(b.dt));
 
+  // 인보이스 항목(업체 '현지 인보이스 납부 > 편집' 화면의 payment_select). 연수마다 최신 버전(ic_ver 가장 큰 값)만 쓴다.
+  // 추출본 확인(11/8): 해외 총액 sum_ic_price = 학생 가격 항목 합계 − 에이전시 공제 합계(2,286건 중 2,219건 일치).
+  // 현지 비용(tc_*)·납부(td_*)는 PHP. 화면에는 항목 값과 그 합계만 보여 주고 맞지 않는 차이를 메우지 않는다.
+  const latestItems = (rows: Raw[]) => {
+    const live = rows.filter((r) => !/^n$/i.test(str(r.ic_use_yn)) && !yes(r.ic_cancel_yn));
+    const maxVer = new Map<string, number>();
+    for (const r of live) maxVer.set(str(r._tr_id), Math.max(maxVer.get(str(r._tr_id)) ?? -Infinity, num(r.ic_ver)));
+    const m = new Map<string, Raw[]>();
+    for (const r of live) {
+      const k = str(r._tr_id);
+      if (num(r.ic_ver) !== maxVer.get(k)) continue;
+      if (!m.has(k)) m.set(k, []);
+      m.get(k)!.push(r);
+    }
+    return m;
+  };
+  const studentItemsByTr = latestItems(input.invoiceItems ?? []);
+  const agencyItemsByTr = latestItems(input.invoiceAgencyItems ?? []);
+  const localByTr = new Map<string, Raw[]>();
+  for (const r of input.localCosts ?? []) {
+    const k = str(r._tr_id);
+    if (!localByTr.has(k)) localByTr.set(k, []);
+    localByTr.get(k)!.push(r);
+  }
+  const itemRow = (r: Raw) => ({
+    type: str(r.ic_type),
+    label: str(r.ic_type_name) || str(r.ic_type),
+    name: str(r.co_name) || str(r.do_name),
+    weeks: num(r.ic_week),
+    from: str(r.ic_departure_date).slice(0, 10),
+    to: str(r.ic_return_date).slice(0, 10),
+    currency: str(r.ic_currency),
+    amount: num(r.ic_price),
+  });
+  const filled = (v: unknown) => v != null && str(v) !== '';
+  const sumOf = (xs: { amount: number }[]) => xs.reduce((s, x) => s + x.amount, 0);
+  const invoiceBreakdown = (trId: string) => {
+    const st = studentItemsByTr.get(trId) ?? [];
+    const ag = agencyItemsByTr.get(trId) ?? [];
+    const lc = localByTr.get(trId) ?? [];
+    if (!st.length && !ag.length && !lc.length) return null;
+    const items = st.map(itemRow);
+    const agency = ag.map(itemRow);
+    const local = lc.filter((r) => filled(r.tc_id) && filled(r.tc_price)).map((r) => ({
+      type: str(r.ec_type),
+      label: str(r.tc_type_name) || str(r.ec_type),
+      currency: str(r.tc_currency),
+      amount: num(r.tc_price),
+      rest: num(r.rest_amount),
+    }));
+    const localPayments = lc.filter((r) => filled(r.td_id) && filled(r.td_amount)).map((r) => ({
+      date: str(r.td_deposit_dt).slice(0, 10),
+      currency: str(r.td_currency),
+      amount: num(r.td_amount),
+    }));
+    return {
+      version: st.length ? num(st[0].ic_ver) : null,
+      items,
+      agency,
+      itemsTotal: sumOf(items),
+      agencyTotal: sumOf(agency),
+      local,
+      localPayments,
+      localTotal: sumOf(local),
+      localPaidTotal: sumOf(localPayments),
+    };
+  };
+
   const memoText = (e: Raw) => MEMO_FIELDS.map(([k]) => e[k]).filter(Boolean).join(' ');
 
   // 상태 탭별 기본 정렬: 재학은 졸업일, 입학 예정은 입학일 빠른 순, 졸업·전체는 최근 순.
@@ -356,6 +434,7 @@ export function createDb(input: DataInput) {
           dormStay: dorm ? { type: String(dorm.do_name || ''), campus: String(dorm.ca_name || campusName(dorm.ca_code)), from: String(dorm.ic_departure_date || ''), to: String(dorm.ic_return_date || ''), weeks: num(dorm.ic_week) } : null,
           memos: MEMO_FIELDS.filter(([k]) => raw[k]).map(([k, kind]) => ({ kind, text: String(raw[k]) })),
           points: pointItems(row.trId),
+          invoiceDetail: invoiceBreakdown(row.trId),
         };
       }),
     };

@@ -6,7 +6,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import type { IncomingMessage, ServerResponse } from 'node:http';
 import type { Plugin } from 'vite';
-import { createDb, handleApi, POINT_HISTORY_COLUMNS, type Raw } from './core';
+import { createDb, handleApi, INVOICE_ITEM_COLUMNS, LOCAL_COST_COLUMNS, POINT_HISTORY_COLUMNS, type Raw } from './core';
 
 const pick = (cols: string[]) => (r: Raw) => Object.fromEntries(cols.map((c) => [c, r[c] ?? null]));
 
@@ -32,6 +32,10 @@ export function loadDir(dataDir: string) {
     deposits: readNdjson(path.join(dataDir, 'deposits.ndjson')),
     pointHistory: readNdjson(path.join(dataDir, 'point_history.ndjson')).map(pick(POINT_HISTORY_COLUMNS)),
     rooms: readNdjson(path.join(dataDir, 'rooms.ndjson')),
+    // 인보이스 항목(portal-extract-invoice-items.js). 입금 표(inv_invoice_deposit)는 받는 계좌 열이 있어 읽지 않는다.
+    invoiceItems: readNdjson(path.join(dataDir, 'inv_invoice_cost_st.ndjson')).map(pick(INVOICE_ITEM_COLUMNS)),
+    invoiceAgencyItems: readNdjson(path.join(dataDir, 'inv_invoice_cost_ag.ndjson')).map(pick(INVOICE_ITEM_COLUMNS)),
+    localCosts: readNdjson(path.join(dataDir, 'inv_etc.ndjson')).map(pick(LOCAL_COST_COLUMNS)),
   });
 }
 
