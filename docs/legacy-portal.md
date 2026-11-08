@@ -87,6 +87,15 @@
 | agents | adm/agency/agent_load | 에이전시마다 `ag_id` |
 | memo_history | com/dialog/dlg_train_memo_load | 연수마다 `dlg_train_memo_tr_id`. 2026-11-07 기준 사용 기록 없음 |
 
+추가 추출(`portal-extract-extra.js`, 업체 포털에서 아직 실행 전). 주소는 화면 HTML에서 찾고, 못 찾으면 아래 주소를 쓴다.
+
+| 데이터셋 | 화면 → 조회 주소 | 조건 |
+| --- | --- | --- |
+| point_balance | adm/point/balance → balance_load | 화면 기본 조건. 날짜 항목을 비운 결과가 더 많으면 그쪽 |
+| point_history_all | adm/point/history → history_load | 날짜 항목을 모두 비움 (첫 추출은 2026-06까지만 있었음) |
+| rooms | adm/room/room_bed → room_bed_v2_load | 캠퍼스 선택이 있으면 캠퍼스마다 |
+| bed_board | adm/checkin/checkin_v3 → checkin_v3_student_rooms | 날짜 = 오늘, 캠퍼스마다. 페이지 번호 없는 주소라 응답 모양을 기록 |
+
 ## 주의
 
 - 연수 목록 응답의 모든 행에 `token`, `debug_info`, `online_user_id`가 붙어 온다. 저장하지 않는다.
