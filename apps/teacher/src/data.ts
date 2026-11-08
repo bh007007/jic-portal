@@ -75,7 +75,23 @@ export interface StaffRow {
   active: boolean;
 }
 
-export const CEFR_LEVELS = ['Pre-A1', 'A1', 'A2', 'B1', 'B2', 'C1', 'C2'] as const;
+export interface LmsAbsence {
+  id: string;
+  student_no: string;
+  name: string;
+  campus: string;
+  absence_date: string;
+  periods: number[]; // 빈 배열 = 종일
+  kind: 'sick' | 'official' | 'personal';
+  status: 'pending' | 'approved' | 'rejected';
+}
+export const ABSENCE_KIND: Record<string, string> = { sick: '병결', official: '공결', personal: '개인' };
+export const ABSENCE_STATUS: Record<string, string> = { pending: '처리 전', approved: '인정', rejected: '반려' };
+export const periodText = (p: number[]) => (p.length ? `${p.join('·')}교시` : '종일');
+export const loadAbsences = (from?: string, to?: string) =>
+  must<LmsAbsence[]>(supabase.rpc('lms_absences', { ...(from ? { p_from: from } : {}), ...(to ? { p_to: to } : {}) }));
+
+export const CEFR_LEVELS =['Pre-A1', 'A1', 'A2', 'B1', 'B2', 'C1', 'C2'] as const;
 export const SCALE_LABEL: Record<TestType['scale'], string> = { band: '밴드', score: '점수', level: '레벨', percent: '퍼센트' };
 export const MATERIAL_KINDS: [string, string][] = [
   ['book', '교재'], ['worksheet', '워크시트'], ['slides', '슬라이드'], ['audio', '음성'], ['video', '영상'], ['test', '시험지'], ['answer', '정답지'], ['other', '기타'],

@@ -6,7 +6,7 @@ import { PageHead, Section } from '../ui';
 const PLANNED: [string, string][] = [
   ['출석 체크', '수업 중 휴대폰으로(원칙 L7). 업체 수업 시간표 연결 뒤'],
   ['출석 확인 · 사유별 합계', '출석 원본이 생기면'],
-  ['결석 신청 승인', '지금은 인트라넷 › 신청 처리에서 한다(원칙 L4, 같은 DB 함수)'],
+  ['결석 신청 승인', '지금은 인트라넷 › 신청 처리에서 한다(원칙 L4). 신청 보기는 아래 결석 신청'],
   ['무단결석 목록', '출석 원본이 생기면. 패널티 승인은 인트라넷'],
   ['그로스 리포트 · Daily Recall · IELTS 기록', '스피킹 리포트 사이트 연결 방식 결정 뒤(원칙 L10)'],
   ['녹음', '보관 기간 결정 뒤(원칙 L9)'],
@@ -26,6 +26,11 @@ export default function More() {
           </ul>
         </Section>
       )}
+      <Section title="수업">
+        <ul className="menu">
+          <li><Link to="/absences">결석 신청 (날짜별, 종류·처리 상태)</Link></li>
+        </ul>
+      </Section>
       <Section title="준비 중">
         <ul className="planned">
           {PLANNED.map(([name, why]) => (
