@@ -81,14 +81,18 @@ jic-portal/
 ## 6. 다음 할 일 (우선순위 순)
 
 1. **회계 화면 데이터 보강** (화면은 11/8 완료): 추출본을 건수로 확인한 결과
-   - 재학·입학 예정 연수의 `sum_pd_point`·`sum_pu_point`는 모두 0이고 `tr_point_clear_yn`·`tr_room_clear_yn`이 Y인 연수는 0건이다. 그래서 실제 데이터에서 포인트 > 재학생 잔액은 전부 0, 졸업 예정자 정산은 전원 '미처리'로 나온다. 실제 잔액은 `point_history`(14,439건, `type`·`point`·`php`)에서 계산해야 하므로 `type` 값의 뜻(충전·사용·환불)을 업체 화면(Point > Balance)과 맞춰 본 뒤 붙인다. 정산 여부도 업체가 쓰는 다른 표시가 있는지 확인한다.
+   - 재학·입학 예정 연수의 `sum_pd_point`·`sum_pu_point`는 모두 0이고 `tr_point_clear_yn`·`tr_room_clear_yn`이 Y인 연수는 0건이다. 그래서 실제 데이터에서 포인트 > 재학생 잔액은 전부 0, 졸업 예정자 정산은 전원 '미처리'로 나온다.
+   - `point_history`(14,439건)를 붙였다(11/8, 학생 상세의 '포인트 내역' 표, 포인트 합계는 원장 우선).
+     - `type` D는 항목명 없이 충전, U는 현지 비용 항목(`ec_name`: Maintenance, Laundry, Utility, SSP, Visa, Deposit, pick-up 등) 사용이다. 1포인트는 1페소(`point`=`php`)다.
+     - 다만 추출본의 1,228개 연수는 **모두 졸업생**이고, 1,212건은 충전액과 사용액이 같다. 즉 진행 중인 잔액이 아니라 현지 비용 정산 기록이다.
+     - 재학생 잔액은 이 데이터로 알 수 없다. 업체 화면 Point > Balance의 조회 API를 추출 스크립트에 추가해야 한다. 정산 여부 표시도 같이 확인한다.
    - 입금 원장(`deposits`, 679건)은 `legacy_deposits` 테이블과 `functions/api` 읽기를 추가했다. 업로드 스크립트는 계좌 열(`bk_*`, `*_acct_bank/num/owner`)을 빼고 올린다. `balance`는 업체 포털 값을 그대로 보여 준다(97건은 `dp_amount_total - sum_id_amount`와 다르다, 매칭 통화가 다른 경우로 보임).
    - 코스의 캠퍼스는 연수의 첫 코스 캠퍼스(`first_co_ca_code`) 기준이다. 기숙사는 이름 끝 "(P)" 같은 표시로 캠퍼스를 정한다.
    - 에이전시 담당자 이메일은 지금 가려서 보여 준다. 역할별 권한(4번)이 생기면 관리자에게만 전체 표시.
 2. **추가 추출**: 방·침대 배정(체크인 화면 `checkin_v3_student_rooms`, `room_bed_v2_load`)과 인보이스 상세 금액. 추출 스크립트에 단계 추가 → 기숙사 화면을 디자인(04)의 방·침대 보드로 교체.
 3. **Supabase 정규화 스키마**: 지금은 `legacy_*`(원본 레코드 jsonb)를 통째로 읽어 계산한다. `docs/plan.md`의 데이터 모델 기준으로 학생·연수(enrollments)·배치·기숙사 테이블을 만들고 `functions/api`를 조건 조회로 바꾼다. 실제 데이터를 올리기 전에 필수. 테스트 DB에는 샘플 데이터만.
 4. **역할별 권한**: 지금은 `staff_users`에 있으면 전부 읽기. 역할 9개(학생, 선생님, 체커, 스케줄러, 매니저, 오피스, 관리자, 가드, 에이전시 지점)로 RLS 세분화.
-5. **파트너 포털 마무리**: Cloudflare 두 번째 Pages 프로젝트(`jic-partner`) 배포, 추천 조건표 승인본 입력(관리자 > 추천 규칙), 캠퍼스·코스 내용과 링크 입력(관리자 > 콘텐츠·설정). 결정 대기(견적 미리 채우기, 방문 신청 담당, Agent Hub 관계)는 `docs/partner-portal.md`. 다음은 2차 My Students(지점 계정 `legacy_am_id` ↔ 연수 `tr_am_id`).
+5. **파트너 포털 마무리**: Cloudflare Workers(`jic-partner`, `apps/partner/wrangler.jsonc`) 배포, 추천 조건표 승인본 입력(관리자 > 추천 규칙), 캠퍼스·코스 내용과 링크 입력(관리자 > 콘텐츠·설정). 결정 대기(견적 미리 채우기, 방문 신청 담당, Agent Hub 관계)는 `docs/partner-portal.md`. 다음은 2차 My Students(지점 계정 `legacy_am_id` ↔ 연수 `tr_am_id`).
 6. **학생 앱**: 결석 신청부터. **인트라넷**: 패널티 승인, 가드 외출·귀가.
 7. **서버 작업**: 정기 동기화·알림 같은 예약 작업은 Cloudflare Workers(크론). 화면 배포와 빌드 확인은 이미 연결됨.
 

@@ -77,6 +77,8 @@ export interface StudentDetail {
     invoice: { currency: string; paid: number; pointIn: number; pointOut: number; pointBalance: number } | null;
     dormStay: { type: string; campus: string; from: string; to: string; weeks: number } | null;
     memos: { kind: string; text: string }[];
+    /** 업체 포인트 내역(충전·현지 비용 사용). 원장이 없는 환경에서는 빈 배열 */
+    points: { dt: string; kind: string; item: string; amount: number; staff: string; memo: string }[];
   })[];
 }
 

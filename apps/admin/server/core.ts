@@ -17,7 +17,12 @@ export interface DataInput {
   agents: Raw[];
   /** 업체 포털 입금액 매칭 원장(deposits). 배포 환경(Supabase)에는 아직 없어 비어 있을 수 있다. */
   deposits?: Raw[];
+  /** 업체 포털 포인트 내역(point_history). type D = 충전, U = 사용(현지 비용 항목 ec_name), point = 페소. */
+  pointHistory?: Raw[];
 }
+
+/** 포인트 내역에서 화면에 쓰는 열. 원본 행에는 학생·에이전시 정보가 200여 열 붙어 있어 줄여서 싣는다. */
+export const POINT_HISTORY_COLUMNS = ['tr_id', 'type', 'dt', 'point', 'php', 'ec_name', 'nickname', 'memo', 'campus'];
 
 const CANCELLED = /캔슬|거절|취소|연기|홀드|요청/;
 
@@ -144,6 +149,35 @@ export function createDb(input: DataInput) {
   const dormByTr = new Map(dorms.map((d) => [String(d.tr_id), d]));
   const studentById = new Map(students.map((s) => [String(s.st_id), s]));
 
+  // 포인트: 원장(point_history)이 있으면 원장 합계를 쓴다. D = 충전(항목명 없음), U = 현지 비용 사용(관리비·세탁비·SSP·비자 등).
+  // 원장이 없으면(배포에 아직 안 올린 경우) 인보이스의 sum_pd_point / sum_pu_point 를 쓴다. 추출본에서는 이 값이 대부분 0이다.
+  const hasLedger = (input.pointHistory?.length ?? 0) > 0;
+  const ledgerByTr = new Map<string, { in: number; out: number; items: Raw[] }>();
+  for (const p of input.pointHistory ?? []) {
+    const k = str(p.tr_id);
+    const l = ledgerByTr.get(k) ?? { in: 0, out: 0, items: [] };
+    if (str(p.type).toUpperCase() === 'D') l.in += num(p.point);
+    else l.out += num(p.point);
+    l.items.push(p);
+    ledgerByTr.set(k, l);
+  }
+  const pointsOf = (trId: string, inv?: Raw) => {
+    if (!hasLedger) return { pointIn: num(inv?.sum_pd_point), pointOut: num(inv?.sum_pu_point) };
+    const l = ledgerByTr.get(trId);
+    return { pointIn: l?.in ?? 0, pointOut: l?.out ?? 0 };
+  };
+  const pointItems = (trId: string) =>
+    (ledgerByTr.get(trId)?.items ?? [])
+      .map((p) => ({
+        dt: str(p.dt).slice(0, 16),
+        kind: str(p.type).toUpperCase() === 'D' ? '충전' : '사용',
+        item: str(p.ec_name),
+        amount: num(p.point),
+        staff: str(p.nickname),
+        memo: str(p.memo),
+      }))
+      .sort((a, b) => a.dt.localeCompare(b.dt));
+
   const memoText = (e: Raw) => MEMO_FIELDS.map(([k]) => e[k]).filter(Boolean).join(' ');
 
   // 상태 탭별 기본 정렬: 재학은 졸업일, 입학 예정은 입학일 빠른 순, 졸업·전체는 최근 순.
@@ -266,8 +300,7 @@ export function createDb(input: DataInput) {
         const dorm = dormByTr.get(row.trId);
         // sum_id_amount = 입금 매칭(id_amount) 합계. 인보이스 총액은 추출본에 없어 넣지 않는다.
         const paid = num(inv?.sum_id_amount);
-        const pIn = num(inv?.sum_pd_point);
-        const pOut = num(inv?.sum_pu_point);
+        const { pointIn: pIn, pointOut: pOut } = pointsOf(row.trId, inv);
         return {
           ...row,
           pickType: String(raw.tr_pick_type || ''),
@@ -277,6 +310,7 @@ export function createDb(input: DataInput) {
           invoice: inv ? { currency: String(inv.tr_currency || ''), paid, pointIn: pIn, pointOut: pOut, pointBalance: pIn - pOut } : null,
           dormStay: dorm ? { type: String(dorm.do_name || ''), campus: String(dorm.ca_name || campusName(dorm.ca_code)), from: String(dorm.ic_departure_date || ''), to: String(dorm.ic_return_date || ''), weeks: num(dorm.ic_week) } : null,
           memos: MEMO_FIELDS.filter(([k]) => raw[k]).map(([k, kind]) => ({ kind, text: String(raw[k]) })),
+          points: pointItems(row.trId),
         };
       }),
     };
@@ -478,14 +512,13 @@ export function createDb(input: DataInput) {
   }
 
   // ── 회계: 연수별 인보이스 요약.
-  // sum_id_amount = 입금 매칭 합계, sum_pd_point/sum_pu_point = 포인트 충전/사용.
+  // sum_id_amount = 입금 매칭 합계. 포인트 충전·사용은 pointsOf(포인트 원장 우선, 없으면 sum_pd_point/sum_pu_point).
   // 인보이스 총액은 추출본에 없다(sum_td_amount 는 총액이 아님). 총액·미수금은 만들지 않는다.
   const PAY_NAMES = ['미납', '부분납', '완납'];
   const nationOf = (r: { nation: string }) => r.nation || '미상';
   const invAll = all.map(({ raw, row }) => {
     const inv = invoiceByTr.get(row.trId);
-    const pointIn = num(inv?.sum_pd_point);
-    const pointOut = num(inv?.sum_pu_point);
+    const { pointIn, pointOut } = pointsOf(row.trId, inv);
     return {
       ...row,
       agId: agencyIdOf(raw),
@@ -790,7 +823,7 @@ export function createDb(input: DataInput) {
   return {
     refDate,
     meta: () => ({ source, extractedAt: meta.extracted_at ?? null, refDate }),
-    summary: () => `${source === 'sample' ? '[샘플 데이터] ' : ''}학생 ${students.length} · 연수 ${enrollments.length} · 인보이스 ${invoices.length} · 입금 ${deposits.length} · 기숙사 ${dorms.length} · 에이전시 ${agencies.length} · 담당자 ${agents.length}`,
+    summary: () => `${source === 'sample' ? '[샘플 데이터] ' : ''}학생 ${students.length} · 연수 ${enrollments.length} · 인보이스 ${invoices.length} · 입금 ${deposits.length} · 포인트 내역 ${input.pointHistory?.length ?? 0} · 기숙사 ${dorms.length} · 에이전시 ${agencies.length} · 담당자 ${agents.length}`,
     dashboard,
     listEnrollments,
     studentDetail,
