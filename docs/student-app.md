@@ -16,17 +16,28 @@ npm run student
 | 경로 | 화면 | 데이터 |
 | --- | --- | --- |
 | `/` | 홈: 학생증, 바로가기, 결석 신청 내역(최근 3건), 졸업 전 확인 | 학생·연수(재학 중 → 입학 예정 → 최근 순), 방 정리·포인트 정리 여부 |
-| `/requests` | 신청: 결석·외박 신청 버튼, 결석·외박 신청 내역 | 결석·외박 신청 |
+| `/requests` | 신청: 결석·외박 신청·생활 요청 버튼, 결석·외박 신청과 생활 요청 내역 | 결석·외박 신청, 생활 요청 |
 | `/requests/absence/new` | 결석 신청: 날짜, 종류(병결·공결·개인 사유), 교시(종일 또는 1~8), 사유(500자) | |
 | `/requests/:id` | 결석 신청 상세(담당자 메모 포함), 대기 중이면 취소 | |
 | `/requests/overnight/new` | 외박 신청: 출발일, 복귀일(박 수 표시), 사유(행선지 포함, 500자) | |
 | `/requests/overnight/:id` | 외박 신청 상세(담당자 메모 포함), 대기 중이면 취소 | |
+| `/requests/life/new` | 생활 요청: 종류(시설 수리·방 변경·ID 카드 재발급·서류 발급·기타), 내용(위치와 필요한 것, 500자) | |
+| `/requests/life/:id` | 생활 요청 상세(상태·담당자 답변), 접수 상태면 취소 | |
 | `/me` | 내 정보: 학생 정보(이메일·연락처는 가림), 연수(귀국 항공편 포함), 연수 이력, 로그아웃 | |
 | `/departure` | 귀국 항공편: 출발일, 출발 시각, 항공편명, 공항(마닐라·클락·기타), 공항 이동 차량 요청, 메모 | 귀국 항공편(학생 입력) |
 | `/timetable` | 시간표: 준비 중(추출본에 없음, LMS 연결 후) | |
 
 - 졸업 전 확인은 재학 중인 연수의 종료일이 기준일로부터 14일 이내일 때만 보인다(관리자 앱의 '졸업임박'과 같은 기준). 디자인의 세 번째 줄 '귀국 항공편 등록'은 추출본에 데이터가 없어 학생에게 받는다(아래 '귀국 항공편').
 - 문구는 기획안 P7에 따라 업체와 같은 **6개 언어**(한국어, English, 日本語, 简体中文, 繁體中文, Tiếng Việt)다. 오른쪽 위 선택 목록으로 바꾸고, 고른 언어는 기기에 기억한다. 처음에는 브라우저 언어를 따른다(zh-TW·zh-HK·번체는 繁體中文, 그 밖의 중국어는 简体中文, 목록에 없는 언어는 English). 자세한 내용은 아래 '다국어'.
+
+## 생활 요청
+
+업체 포털의 '요청사항(학생)'(`adm/request/request`)과 'ID 카드 교체'(`adm/academic/exchange`)를 옮긴 것이다(기획안 `nonacademic_requests`, '유지' 항목). 학생이 학업 외 요청을 내고, 인트라넷 '생활 요청'에서 직원이 처리해 답한다. 규칙은 `server/lifeRequests.ts` 한 곳(인트라넷과 같이 씀).
+
+- 종류: 시설 수리, 방 변경, ID 카드 재발급, 서류 발급, 기타. 내용은 500자까지, 위치(방 번호 등)를 적게 안내한다. 방·침대 번호는 추출본에 없어 학생이 적는다.
+- 상태: 접수 → 처리 중 → 완료·반려. 학생은 접수 상태일 때만 취소한다. 반려는 직원이 사유를 적어야 하고, 직원 답변은 학생 상세에 '담당자 답변'으로 보인다. 처리한 직원 이름은 학생에게 보이지 않는다.
+- 재학 중이거나 입학 예정인 연수가 있어야 요청할 수 있고(요청은 그 연수에 붙는다), 처리되지 않은 요청(접수·처리 중)은 5건까지 둘 수 있다(같은 요청을 여러 번 내는 것을 막음).
+- 학생 공지 게시판은 기획안에서 '삭제 후보'(학생 공지는 메신저, C7)라 옮기지 않았다.
 
 ## 귀국 항공편
 
@@ -81,6 +92,9 @@ apps/student/
 | `GET /api/overnights` | 내 외박 신청(박 수 포함), 신청 가능 기간 |
 | `POST /api/overnights` | 외박 신청 `{ from, until, reason }` |
 | `POST /api/overnights/:id/cancel` | 대기 중인 내 외박 신청 취소 |
+| `GET /api/life-requests` | 내 생활 요청(최근 순), 종류 목록, 요청 가능 여부(재학·입학 예정 연수) |
+| `POST /api/life-requests` | 생활 요청 `{ category, content }` |
+| `POST /api/life-requests/:id/cancel` | 접수 상태인 내 생활 요청 취소 |
 | `GET /api/departure` | 이번 연수의 귀국 항공편, 출발일 범위, 공항 목록, 공항 이동 배차 상태 |
 | `PUT /api/departure` | 귀국 항공편 등록·수정 `{ date, time, flight, airport, needsRide, note }` |
 
@@ -152,7 +166,7 @@ npm run student:accounts -- --reset 30095 --apply   # 비밀번호를 잊은 학
 
 ### 설정 순서 (레오 PC의 Claude, 테스트 프로젝트는 샘플 데이터만)
 
-1. Supabase에 마이그레이션 `20261108100000_student_intranet.sql`, `20261108120000_student_request_ids.sql`을 적용한다.
+1. Supabase에 마이그레이션 `20261108100000_student_intranet.sql`, `20261108120000_student_request_ids.sql`, `20261108140000_nonacademic_requests.sql`(생활 요청)을 차례로 적용한다.
 2. 샘플 업체 원본을 올린다(`scripts/upload-to-supabase.mjs`, 이미 올라가 있으면 건너뜀).
 3. 학생 계정을 만든다: `npm run student:accounts -- --apply`(위 '학생 계정과 로그인').
 4. **Workers & Pages → Create → Workers → Import a repository** → `jic-portal`
@@ -190,6 +204,7 @@ npm run student:accounts -- --reset 30095 --apply   # 비밀번호를 잊은 학
 | `overnight_permissions` | 같음(`cancel_overnight_permission`) | 같음(`decide_overnight_permissions`) |
 | `departure_flights` | 자기 연수로 등록·수정, 출발일이 지나면 못 고침, 학생 번호·연수 번호는 못 바꿈 | 읽기 |
 | `airport_rides` | 자기 것 읽기 | 등록·수정(처리자는 본인으로만) |
+| `nonacademic_requests` | 자기 것 읽기, 자기 연수로 접수 상태 등록(열린 요청 5건까지), 취소는 `cancel_nonacademic_request(id)` | 모두 읽기, 처리·답변은 `handle_nonacademic_request(id, 상태, 답변)` |
 | `student_users` | 자기 행 읽기 | 읽기 |
 
 - 코드와 열 이름: `stId` → `student_no`, `trId` → `enrollment_id`, `date` → `absence_date`, `from`/`until` → `leave_date`/`return_date`, `comment` → `staff_comment`, `submittedAt` → `created_at`. 처리자(`decidedBy`)는 DB에 사용자 id를 두고 화면에는 `staff_users.name`을 보여 준다.

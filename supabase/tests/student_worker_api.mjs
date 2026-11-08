@@ -138,6 +138,27 @@ ok('시각을 바꾸면 재확인', x.body.ride.state === 'changed', x.body.ride
 x = await api('GET', '/api/me', tA);
 ok('내 정보에 항공편', x.body.departure?.flight === 'PR 468', x.body.departure);
 
+// ── 생활 요청: 학생 등록·취소 → 직원 처리(함수) → 학생이 답변을 봄
+x = await api('GET', '/api/life-requests', tA);
+ok('생활 요청 목록: 요청 가능, 비어 있음', x.status === 200 && x.body.canRequest === true && x.body.rows.length === 0, x);
+x = await api('POST', '/api/life-requests', tA, { category: 'id_card', content: 'ID 카드를 잃어버렸습니다' });
+ok('생활 요청 등록 201, 번호 UUID, 접수', x.status === 201 && /^[0-9a-f-]{36}$/.test(x.body.id) && x.body.status === 'received' && x.body.trId === trA, x);
+const lifeA = x.body.id;
+x = await api('POST', '/api/life-requests', tA, { category: 'facility', content: '방 전등이 깜빡입니다' });
+const lifeB = x.body.id;
+x = await api('POST', `/api/life-requests/${lifeB}/cancel`, tA, {});
+ok('접수 상태 취소(취소 함수)', x.status === 200 && x.body.status === 'cancelled', x);
+x = await api('POST', '/api/life-requests', tA, { category: 'bogus', content: 'x' });
+ok('없는 종류 400', x.status === 400 && x.body.error === 'invalid_category', x);
+await sql(`select public.handle_nonacademic_request($1, 'done', '사무실에서 새 카드를 받으세요')`, [lifeA], { role: 'authenticated', sub: staff });
+x = await api('GET', '/api/life-requests', tA);
+const lr = x.body.rows.find((r) => r.id === lifeA);
+ok('학생이 완료·답변을 봄, 처리자는 안 보임', lr?.status === 'done' && lr.reply === '사무실에서 새 카드를 받으세요' && lr.handledAt && !lr.handledBy, lr);
+x = await api('POST', `/api/life-requests/${lifeA}/cancel`, tA, {});
+ok('처리된 요청 취소 409', x.status === 409 && x.body.error === 'not_pending', x);
+const ldb = await sql(`select count(*)::int n from public.nonacademic_requests where student_no = $1`, [A]);
+ok('DB: 생활 요청 2건', ldb[0].n === 2, ldb);
+
 // ── 다른 학생에게는 안 보임
 const linked = await sql(`select student_no from public.student_users where student_no <> $1 order by student_no limit 1`, [A]);
 const Bno = linked[0].student_no;
@@ -146,6 +167,10 @@ x = await api('GET', '/api/absences', tB);
 ok('학생B는 A의 신청을 못 봄', x.status === 200 && x.body.rows.every((y) => y.stId === Bno) && !x.body.rows.some((y) => y.id === abs1), x.body.rows);
 x = await api('POST', `/api/absences/${abs1}/cancel`, tB, {});
 ok('학생B가 A의 신청 취소 불가', x.status === 404 || x.body.error === 'not_found', x);
+x = await api('GET', '/api/life-requests', tB);
+ok('학생B는 A의 생활 요청을 못 봄', x.status === 200 && !x.body.rows.some((r) => r.id === lifeA), x.body.rows);
+x = await api('POST', `/api/life-requests/${lifeA}/cancel`, tB, {});
+ok('학생B가 A의 생활 요청 취소 불가', x.status === 404, x);
 
 // ── 본문 검사
 x = await api('POST', '/api/absences', tA, 'x'.repeat(17 * 1024));

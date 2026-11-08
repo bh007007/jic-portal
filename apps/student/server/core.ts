@@ -23,10 +23,22 @@ import {
 } from './requests';
 
 import { AIRPORTS, departureEnrollment, rideState, saveDeparture, type DepartureInput, type DepartureStore, type RideStore } from './departures';
+import {
+  cancelLifeRequest,
+  LIFE_CATEGORIES,
+  LIFE_CONTENT_MAX,
+  LIFE_OPEN_MAX,
+  lifeEnrollment,
+  newLifeRequest,
+  type LifeInput,
+  type LifeRequest,
+  type LifeRequestStore,
+} from './lifeRequests';
 
 export { ABSENCE_KINDS, PERIOD_COUNT, REASON_MAX } from './requests';
 export type { Departure, DepartureStore, Ride, RideState, RideStore } from './departures';
 export type { Absence, AbsenceInput, AbsenceKind, AbsenceStore, Overnight, OvernightInput, OvernightStore, RequestStatus } from './requests';
+export type { LifeCategory, LifeInput, LifeRequest, LifeRequestStore, LifeStatus } from './lifeRequests';
 
 export interface StudentCtx {
   db: Db;
@@ -34,6 +46,8 @@ export interface StudentCtx {
   overnights: OvernightStore;
   departures: DepartureStore;
   rides: RideStore;
+  /** 생활 요청(server/lifeRequests.ts, 인트라넷과 같이 씀) */
+  life: LifeRequestStore;
   /** 로그인한 학생 번호. 없으면 null. */
   stId: string | null;
   /** 학생번호 + 생년월일 로그인(/api/login)을 열지. 로컬 개발 서버에서만 true. */
@@ -157,6 +171,27 @@ async function createOvernight(ctx: StudentCtx, stId: string, input: OvernightIn
   return fromOutcome(out);
 }
 
+/** 생활 요청: 처리한 직원은 학생에게 내보내지 않는다. */
+const forStudent = (r: LifeRequest) => ({ ...r, handledBy: undefined });
+async function listLife(ctx: StudentCtx, stId: string) {
+  const rows = (await ctx.life.listByStudent(stId)).sort(byNewest).map(forStudent);
+  return { categories: LIFE_CATEGORIES, contentMax: LIFE_CONTENT_MAX, openMax: LIFE_OPEN_MAX, canRequest: !!lifeEnrollment(ctx.db, stId), rows };
+}
+export type LifeList = Awaited<ReturnType<typeof listLife>>;
+export type LifeRow = LifeList['rows'][number];
+
+async function createLife(ctx: StudentCtx, stId: string, input: LifeInput): Promise<Result> {
+  const out = newLifeRequest({ ...ctx, stId }, await ctx.life.listByStudent(stId), input);
+  if (out.ok) await ctx.life.put(out.value);
+  return out.ok ? ok(forStudent(out.value), out.status) : fail(out.status, out.error);
+}
+
+async function cancelLife(ctx: StudentCtx, stId: string, id: string): Promise<Result> {
+  const out = cancelLifeRequest(await ctx.life.get(id), stId, ctx.now());
+  if (out.ok) await ctx.life.put(out.value);
+  return out.ok ? ok(forStudent(out.value)) : fail(out.status, out.error);
+}
+
 async function cancelIn<T extends Absence | Overnight>(store: { get(id: string): Promise<T | null>; put(x: T): Promise<void> }, stId: string, id: string, now: Date): Promise<Result> {
   const out = cancelRequest(await store.get(id), stId, now);
   if (out.ok) await store.put(out.value);
@@ -207,6 +242,10 @@ export async function handleStudentApi(ctx: StudentCtx, method: string, pathname
     if (p === '/absences' && method === 'POST') return await createAbsence(ctx, stId, input);
     if (p === '/overnights' && method === 'GET') return ok(await listOvernights(ctx, stId));
     if (p === '/overnights' && method === 'POST') return await createOvernight(ctx, stId, input);
+    if (p === '/life-requests' && method === 'GET') return ok(await listLife(ctx, stId));
+    if (p === '/life-requests' && method === 'POST') return await createLife(ctx, stId, input);
+    const lc = p.match(/^\/life-requests\/([\w-]+)\/cancel$/);
+    if (lc && method === 'POST') return await cancelLife(ctx, stId, lc[1]);
     const m = p.match(/^\/(absences|overnights)\/([\w-]+)\/cancel$/);
     if (m && method === 'POST') {
       return m[1] === 'absences' ? await cancelIn(ctx.store, stId, m[2], ctx.now()) : await cancelIn(ctx.overnights, stId, m[2], ctx.now());

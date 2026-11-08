@@ -5,7 +5,7 @@ import { authMode, signOut } from '../auth';
 import { dateWithDay, localDate } from '../format';
 
 // 디자인 I1(IntranetPenalty.dc.html)의 메뉴. 아직 없는 화면은 '준비 중'으로 연결된다.
-type Badge = 'pending' | 'pendingAbsences' | 'pendingOvernights' | 'followUpDue' | 'unreadNotices' | 'ridePending';
+type Badge = 'pending' | 'pendingAbsences' | 'pendingOvernights' | 'lifePending' | 'followUpDue' | 'unreadNotices' | 'ridePending';
 const MENU: { group?: string; items: { to: string; label: string; badge?: Badge }[] }[] = [
   { items: [{ to: '/', label: '홈' }] },
   { group: '공지·결재', items: [{ to: '/notices', label: '내부 공지', badge: 'unreadNotices' }, { to: '/approvals', label: '전자결재' }, { to: '/forms', label: '양식·자료실' }] },
@@ -29,6 +29,7 @@ const MENU: { group?: string; items: { to: string; label: string; badge?: Badge 
     items: [
       { to: '/requests/absences', label: '결석 신청', badge: 'pendingAbsences' },
       { to: '/requests/overnights', label: '외박 신청', badge: 'pendingOvernights' },
+      { to: '/requests/life', label: '생활 요청', badge: 'lifePending' },
     ],
   },
   { group: '직원', items: [{ to: '/staff', label: '직원·부서' }, { to: '/staff-review', label: 'Staff 평가' }, { to: '/audit', label: '접근 기록' }] },

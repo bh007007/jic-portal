@@ -14,6 +14,7 @@ import type { Plugin } from 'vite';
 import { loadDir } from '../../admin/server/localData';
 import { handleStudentApi } from './core';
 import type { Departure, Ride } from './departures';
+import type { LifeRequest } from './lifeRequests';
 import type { Absence, Overnight, RequestStore } from './requests';
 import { tokenCache, type SupabaseConf } from './supabaseAuth';
 
@@ -63,6 +64,7 @@ export function requestFiles(storeDir: string, source: string) {
     overnights: path.join(storeDir, `overnights-${source}.ndjson`),
     departures: path.join(storeDir, `departures-${source}.ndjson`),
     rides: path.join(storeDir, `rides-${source}.ndjson`),
+    life: path.join(storeDir, `life-requests-${source}.ndjson`),
   };
 }
 
@@ -107,6 +109,7 @@ export function studentLocalPlugin(dataDir: string, storeDir: string, supabase?:
       const overnights = fileStore<Overnight>(files.overnights);
       const departures = fileStore<Departure>(files.departures);
       const rides = fileStore<Ride>(files.rides);
+      const life = fileStore<LifeRequest>(files.life);
       const tokens = supabase ? tokenCache(supabase) : null;
       server.config.logger.info(`[student-local] ${db.summary()} · 기준일 ${db.refDate} · 신청 파일 ${storeDir}${supabase ? ` · 로그인 Supabase(${supabase.url})` : ''}`);
 
@@ -146,7 +149,7 @@ export function studentLocalPlugin(dataDir: string, storeDir: string, supabase?:
           stId = typeof header === 'string' && /^\d+$/.test(header) ? header : null;
         }
         const { status, body: out } = await handleStudentApi(
-          { db, store, overnights, departures, rides, stId, mustChangePassword, localLogin: !tokens, now: () => new Date(), newId: () => crypto.randomUUID() },
+          { db, store, overnights, departures, rides, life, stId, mustChangePassword, localLogin: !tokens, now: () => new Date(), newId: () => crypto.randomUUID() },
           method,
           url.pathname,
           body,

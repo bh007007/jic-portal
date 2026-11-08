@@ -2,11 +2,13 @@
  * /api 호출. 로그인 헤더는 auth.ts 가 붙인다(로컬 개발: X-Student-Id, Supabase: Authorization 토큰).
  */
 import { useCallback, useEffect, useState } from 'react';
-import type { Absence, AbsenceInput, AbsenceList, Departure, DepartureView, OvernightInput, OvernightList, OvernightRow, Profile } from '../server/core';
+import type { Absence, AbsenceInput, AbsenceList, Departure, DepartureView, LifeInput, LifeList, LifeRow, OvernightInput, OvernightList, OvernightRow, Profile } from '../server/core';
 import type { DepartureInput } from '../server/departures';
 import { authHeaders, recheck } from './auth';
 
-export type { Absence, AbsenceList, Departure, DepartureView, OvernightList, OvernightRow, Profile };
+export type { Absence, AbsenceList, Departure, DepartureView, LifeList, LifeRow, OvernightList, OvernightRow, Profile };
+export type LifeCategory = LifeRow['category'];
+export type LifeStatus = LifeRow['status'];
 export type AbsenceKind = Absence['kind'];
 export type AbsenceStatus = Absence['status'];
 
@@ -67,4 +69,6 @@ export const createAbsence = (input: AbsenceInput) => api<Absence>('/api/absence
 export const cancelAbsence = (id: string) => api<Absence>(`/api/absences/${encodeURIComponent(id)}/cancel`, { method: 'POST', body: {} });
 export const createOvernight = (input: OvernightInput) => api<OvernightRow>('/api/overnights', { method: 'POST', body: input });
 export const cancelOvernight = (id: string) => api<OvernightRow>(`/api/overnights/${encodeURIComponent(id)}/cancel`, { method: 'POST', body: {} });
+export const createLife = (input: LifeInput) => api<LifeRow>('/api/life-requests', { method: 'POST', body: input });
+export const cancelLife = (id: string) => api<LifeRow>(`/api/life-requests/${encodeURIComponent(id)}/cancel`, { method: 'POST', body: {} });
 export const saveDeparture = (input: DepartureInput) => api<Departure>('/api/departure', { method: 'PUT', body: input });

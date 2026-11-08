@@ -3,6 +3,7 @@ import { Route, Routes } from 'react-router-dom';
 import { authMode, signOut, useSession } from './auth';
 import Shell from './components/Shell';
 import { useApi } from './api';
+import LifeRequests from './pages/LifeRequests';
 import Login from './pages/Login';
 import Audit from './pages/Audit';
 import Counseling from './pages/Counseling';
@@ -87,6 +88,7 @@ export default function App() {
               <Route path="/curfew" element={<Outings key="curfew" mode="curfew" />} />
               <Route path="/requests/absences" element={<Requests key="absences" kind="absences" />} />
               <Route path="/requests/overnights" element={<Requests key="overnights" kind="overnights" />} />
+              <Route path="/requests/life" element={<LifeRequests />} />
               <Route path="/settings" element={<Settings />} />
               <Route path="/counseling" element={<Counseling />} />
               <Route path="/counseling/new" element={<CounselingForm key="new" />} />

@@ -6,9 +6,10 @@
  * 파일 의존 없음(fetch 만). 로컬 개발 서버는 .local-db 파일 저장소를 쓴다(localData.ts).
  */
 import type { Departure, DepartureStore, Ride, RideStore } from '../../student/server/departures';
+import { isOpen, type LifeRequestStore } from '../../student/server/lifeRequests';
 import type { Absence, Overnight, RequestStore } from '../../student/server/requests';
 import type { SupabaseConf } from '../../student/server/supabaseAuth';
-import { hm, iso, restClient, StoreError, toAbsence, toDeparture, toOvernight, toRide, type Rest, type Row } from '../../student/server/supabaseStores';
+import { hm, iso, restClient, StoreError, toAbsence, toDeparture, toLife, toOvernight, toRide, type Rest, type Row } from '../../student/server/supabaseStores';
 import type { AuditLog, CounselingNote, CounselingRemote } from './counseling';
 import type { DocRepo, Outing, Penalty, PenaltyRules, Repo, Settings, Stores } from './core';
 import type { Notice, NoticeRead } from './notices';
@@ -321,6 +322,29 @@ export function approvedOvernights(url: string, serviceKey: string, fetchFn: typ
   };
 }
 
+// ── 생활 요청: 직원은 모두 읽고, 처리·답변은 handle_nonacademic_request 함수로(처리자는 DB 가 로그인한 직원으로 남김)
+function lifeRequestStore(rest: Rest, names: Names): LifeRequestStore {
+  const withName = async (r: Row) => ({ ...toLife(r), handledBy: await names(r.handled_by) });
+  const get = async (id: string) => {
+    if (!/^[0-9a-f-]{36}$/i.test(id)) return null;
+    const rows = await rest('GET', `nonacademic_requests?select=*&id=eq.${q(id)}`);
+    return rows[0] ? await withName(rows[0]) : null;
+  };
+  return {
+    listAll: async () => Promise.all((await rest('GET', 'nonacademic_requests?select=*&order=created_at.desc')).map(withName)),
+    listByStudent: async (stId) => Promise.all((await rest('GET', `nonacademic_requests?select=*&student_no=eq.${q(stId)}&order=created_at.desc`)).map(withName)),
+    get,
+    async put(x) {
+      const cur = await get(x.id);
+      if (cur && isOpen(cur.status) && (x.status === 'in_progress' || x.status === 'done' || x.status === 'rejected')) {
+        await rest('POST', 'rpc/handle_nonacademic_request', { p_id: x.id, p_status: x.status, p_reply: x.reply });
+        return;
+      }
+      throw new StoreError(409, 'unsupported_update');
+    },
+  };
+}
+
 /** 로그인한 직원(userId = 토큰의 사용자 id)의 토큰으로 core 의 Stores 를 만든다. 가드도 같은 저장소를 쓰고 RLS 가 출입구 범위를 막는다. */
 export function supabaseStores(conf: SupabaseConf, token: string, userId: string, fetchFn: typeof fetch = fetch): Stores {
   const rest = restClient(conf, token, fetchFn);
@@ -337,6 +361,7 @@ export function supabaseStores(conf: SupabaseConf, token: string, userId: string
     reports: reportStore(rest),
     departures: departureStore(rest),
     rides: rideStore(rest, names, userId),
+    lifeRequests: lifeRequestStore(rest, names),
   };
 }
 export type { Departure };

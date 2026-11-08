@@ -164,6 +164,9 @@ button, input, select { font: inherit; }
 textarea { font: inherit; }
 .small { font-size: 12px; }
 .text-primary { color: var(--primary); }
+.life-handle { min-width: 280px; }
+.life-handle .cell-input { width: 100%; }
+.life-actions { display: flex; align-items: center; gap: 4px; margin-top: 4px; flex-wrap: wrap; }
 .page-title { align-items: center; }
 .page-title > span { margin-right: auto; }
 .page-actions { display: flex; flex-wrap: wrap; gap: 6px; }

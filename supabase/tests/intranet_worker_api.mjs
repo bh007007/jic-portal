@@ -188,6 +188,27 @@ ok('Student File: 상담 제목·패널티·신청·항공편', x.status === 200
 x = await api('GET', `/api/students/${sC}`, tP);
 ok('다른 캠퍼스 직원의 Student File에는 상담 제목이 없음', x.status === 200 && x.body.counseling?.length === 0, x.body.counseling);
 
+// ── 생활 요청: 학생이 낸 요청을 직원이 처리(처리자 = 로그인한 직원)
+const lifeId = 'e0000000-0000-4000-8000-000000000001';
+await sb.sql(`insert into public.nonacademic_requests (id, student_no, enrollment_id, category, content) values ($1, $2, $3, 'facility', '302호 에어컨 누수')`, [lifeId, sC, trC], as(U.student));
+x = await api('GET', '/api/requests/life', tC);
+ok('생활 요청 목록(접수 1, 이름·캠퍼스)', x.status === 200 && x.body.counts.received === 1 && x.body.rows[0]?.id === lifeId && x.body.rows[0].campus === 'Challenger', x.body);
+ok('홈 요약 생활 요청 1', (await api('GET', '/api/summary', tC)).body.lifePending === 1);
+x = await api('POST', `/api/requests/life/${lifeId}/handle`, tC, { status: 'rejected', reply: '' });
+ok('반려는 사유 필수 400', x.status === 400 && x.body.error === 'reply_required', x);
+x = await api('POST', `/api/requests/life/${lifeId}/handle`, tC, { status: 'in_progress', reply: '내일 오전 시설팀 방문' });
+ok('처리 중(처리자 이름 직원C)', x.status === 200 && x.body.status === 'in_progress' && x.body.handledBy === '직원C', x);
+x = await api('POST', `/api/requests/life/${lifeId}/handle`, tP, { status: 'done' });
+ok('다른 직원이 완료', x.status === 200 && x.body.status === 'done' && x.body.handledBy === '직원P' && x.body.reply === '내일 오전 시설팀 방문', x);
+const ldb2 = (await sb.sql(`select status, staff_reply, handled_by::text from public.nonacademic_requests where id = $1`, [lifeId]))[0];
+ok('DB: 완료·답변·처리자(직원P 계정)', ldb2.status === 'done' && ldb2.staff_reply === '내일 오전 시설팀 방문' && ldb2.handled_by === U.staffP, ldb2);
+x = await api('POST', `/api/requests/life/${lifeId}/handle`, tC, { status: 'rejected', reply: 'x' });
+ok('끝난 요청 409', x.status === 409 && x.body.error === 'already_closed', x);
+x = await api('GET', `/api/students/${sC}`, tC);
+ok('Student File 에 생활 요청', x.body.lifeRequests?.length === 1 && x.body.lifeRequests[0].status === 'done', x.body.lifeRequests);
+x = await api('GET', '/api/requests/life', tG);
+ok('가드는 생활 요청 403', x.status === 403 && x.body.error === 'guard_forbidden', x);
+
 // ── 가드 리포트 목록(가드가 등록)·본문 검사
 await sb.sql(`insert into public.incident_reports (id, student_no, enrollment_id, campus, kind, note, occurred_at, reported_by) values ('0d000000-0000-4000-8000-000000000001', $1, $2, 'Challenger', 'alcohol', '음주 귀가', now(), '근무자1')`, [sC, trC], as(U.guard));
 x = await api('GET', '/api/reports', tC);
