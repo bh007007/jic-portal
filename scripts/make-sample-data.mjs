@@ -282,7 +282,33 @@ for (let i = 0; i < 8; i++) {
   addDeposit({ date: day('2026-11-07', -Math.floor(rand3() * 30)), name: a.ag_name_en, currency, amount, matched: 0, cnt: 0, memo: rand3() < 0.5 ? '샘플: 송금인 확인 필요' : null });
 }
 
+// ── 포인트 내역(point_history): 실제 추출본과 같은 열(type D=충전, U=현지 비용 사용, point=페소, ec_name=비용 항목).
+// 또 다른 시드를 써서 위 데이터는 그대로 둔다. 입학한 Premium 연수만(실제 추출본도 Premium만 있음).
+let seed4 = 13;
+const rand4 = () => ((seed4 = (seed4 * 1103515245 + 12345) % 2147483648) / 2147483648);
+const pointHistory = [];
+const LOCAL_FEES = [
+  ['SSP (Valid for 6 mon)', 6500], ['Student ID Card', 500], ['Class Materials', 1000], ['Visa', 3800],
+  ['Maintenance (4w basis)', 800], ['Laundry Fee (4w basis)', 1000], ['Utility Bill (4w basis)', 2400], ['Deposit', 3000],
+];
+const STAFF = ['Mia', 'Joy', 'Ken'];
+for (const e of enrollments) {
+  if (e.first_co_ca_code !== 'PREMIUM' || e.tr_start_date > '2026-11-07' || /캔슬|취소/.test(e.tr_state_name)) continue;
+  const at = (n, h) => `${day(e.tr_start_date, n)} ${String(h).padStart(2, '0')}:${String(Math.floor(rand4() * 60)).padStart(2, '0')}:00`;
+  const blocks = Math.max(1, Math.round(Number(e.tr_total_week) / 4));
+  const used = LOCAL_FEES.map(([name, fee]) => [name, /4w basis/.test(name) ? fee * blocks : fee]);
+  const total = used.reduce((s, [, fee]) => s + fee, 0);
+  const charge = Math.ceil((total + Math.round(rand4() * 4) * 1000) / 1000) * 1000; // 쓸 돈보다 조금 넉넉히 충전
+  const base = { tr_id: e.tr_id, tr_st_id: e.tr_st_id, campus: 'Premium' };
+  pointHistory.push({ ...base, staff_id: '1', type: 'D', dt: at(1, 9), point: String(charge), php: String(charge), ec_name: null, nickname: STAFF[0], memo: null });
+  for (const [name, fee] of used) {
+    if (name === 'Visa' && Number(e.tr_total_week) < 4) continue;
+    pointHistory.push({ ...base, staff_id: '2', type: 'U', dt: at(1, 10), point: String(fee), php: String(fee), ec_name: name, nickname: STAFF[1 + Math.floor(rand4() * 2)], memo: null });
+  }
+}
+
 const write = (name, rows) => fs.writeFileSync(path.join(outDir, name + '.ndjson'), rows.map((r) => JSON.stringify(r)).join('\n') + '\n');
+write('point_history', pointHistory);
 write('students', students);
 write('enrollments', enrollments);
 write('invoices', invoices);
@@ -290,7 +316,7 @@ write('dorm_assignments', dorms);
 write('agencies', agencies);
 write('agents', agents);
 write('deposits', deposits);
-const counts = { students: students.length, enrollments: enrollments.length, invoices: invoices.length, dorm_assignments: dorms.length, agencies: agencies.length, agents: agents.length, deposits: deposits.length };
+const counts = { students: students.length, enrollments: enrollments.length, invoices: invoices.length, dorm_assignments: dorms.length, agencies: agencies.length, agents: agents.length, deposits: deposits.length, point_history: pointHistory.length };
 fs.writeFileSync(
   path.join(outDir, 'meta.json'),
   JSON.stringify({ source: 'sample', note: '개발용 가짜 데이터 (scripts/make-sample-data.mjs)', extracted_at: '2026-11-07T02:19:28.663Z', counts }, null, 2),

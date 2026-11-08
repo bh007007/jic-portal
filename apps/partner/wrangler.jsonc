@@ -1,0 +1,12 @@
+// 파트너 포털 배포 설정 (Cloudflare Workers 정적 파일).
+// Cloudflare가 같은 저장소로 Pages 프로젝트를 두 개 만들 수 없게 해서, 파트너 포털은 Workers로 올린다.
+// Workers Builds 설정: 루트 디렉터리 /, 빌드 명령 `npm run partner:build`,
+// 배포 명령 `npx wrangler deploy --config apps/partner/wrangler.jsonc`, 빌드 변수 VITE_SUPABASE_URL·VITE_SUPABASE_ANON_KEY.
+{
+  "name": "jic-partner",
+  "compatibility_date": "2026-10-01",
+  "assets": {
+    "directory": "./dist",
+    "not_found_handling": "single-page-application"
+  }
+}
