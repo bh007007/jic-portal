@@ -2,10 +2,54 @@
 
 업체 포털(jicportal.com)을 대체할 JIC 자체 통합 시스템이다. 구조는 **관리자(인트라넷 포함)·학생·에이전시·강사(LMS) 4개 포털과 Supabase DB 하나**다(`docs/architecture.md`, 11/8). 첫 화면 https://jic-portal-916.pages.dev 에서 포털을 고른다(관리자 포털은 `/admin/`). 지금은 **관리자 화면(대시보드·학생·기숙사·회계·에이전시·기초관리·통계)** 이 동작하고, 나머지 화면은 디자인까지 되어 있다. 이 폴더를 Claude Code로 열면 Claude가 `CLAUDE.md`를 읽고 맥락을 이어받는다.
 
+## 0. 함께 일하기 (주소·계정·공동 개발)
+
+### 주소
+
+| 무엇 | 주소 |
+| --- | --- |
+| 운영 | https://jic-portal-916.pages.dev : 포털 선택 첫 화면, 관리자 포털 `/admin/`, 인트라넷 `/intranet/`, 강사 포털 `/teacher/`(Pages 빌드 명령에 `teacher:portal`을 붙인 뒤) |
+| PR 미리 보기 | `https://<브랜치 이름의 / 를 - 로>.jic-portal-916.pages.dev`. Cloudflare가 브랜치마다 자동으로 만든다(예: `feat/roles` → https://feat-roles.jic-portal-916.pages.dev). PR 화면의 'Cloudflare Pages' 검사에도 링크가 붙는다 |
+| 학생 포털 | https://jic-student.bh007007.workers.dev |
+| 에이전시 포털 | https://jic-partner.bh007007.workers.dev |
+
+### 계정 (레오가 만든다)
+
+1. Supabase → Authentication → Users → **Add user**: 이메일·비밀번호, Auto Confirm.
+2. SQL Editor에서 직원으로 등록한다.
+
+   ```sql
+   insert into public.staff_users (user_id, name) values ('<사용자 id>', '<이름>') on conflict do nothing;
+   ```
+
+3. 역할은 비워 두면 관리자다(모든 화면, 사용자·권한 포함). 보기만 할 사람이면 관리자 포털 → 기초관리 → 사용자·권한에서 '오피스'를 준다(`docs/roles.md`).
+
+- 한 계정으로 관리자 포털·인트라넷·강사 포털을 오간다. 학생·에이전시 포털은 계정이 따로다.
+- Supabase에는 가짜 샘플 데이터만 있다. 실제 데이터는 보안 점검 뒤에 올린다.
+
+### 공동 개발 흐름
+
+1. 레오가 GitHub `bh007007/jic-portal` → Settings → Collaborators에서 **Write** 권한으로 초대한다.
+2. `git clone https://github.com/bh007007/jic-portal.git` 뒤 1장대로 `npm install`, `npm run admin`(샘플 데이터).
+3. Claude Code로 폴더를 열고 브랜치를 만들어 작업한다 → 커밋 → PR.
+4. PR을 올리면 CI(빌드·권한 시험)와 Cloudflare 미리 보기가 자동으로 돈다. 미리 보기 주소를 서로 열어 보고 PR 댓글로 의견을 나눈다.
+5. 머지는 레오가 한다. 머지하면 운영 주소에 자동으로 배포된다.
+6. Supabase 마이그레이션 적용과 Cloudflare 설정은 계정이 있는 레오 PC에서 한다(`docs/leo-todo.md`).
+
+여러 Claude 세션이 같은 저장소에서 일한다. 담당이 겹치지 않게 `docs/collab.md` 담당 표에 썸머 매니저 줄을 더한다.
+
+### 넘기지 않는 것
+
+- `data/`의 실제 추출본(Git 제외, 레오 PC에만 있다)
+- Supabase secret(service_role) 키
+- 업체 포털 비밀번호
+
+샘플 데이터와 자기 계정만으로 모든 화면을 개발할 수 있다.
+
 ## 1. 처음 실행하기 (10분)
 
 1. Node.js 20 이상 설치: https://nodejs.org (LTS) 또는 PowerShell에서 `winget install OpenJS.NodeJS.LTS`
-2. 압축을 원하는 폴더에 푼다 (예: `C:\Users\<이름>\jic-portal`).
+2. GitHub에서 받거나(0장 '공동 개발 흐름' 2번) 압축을 원하는 폴더에 푼다 (예: `C:\Users\<이름>\jic-portal`).
 3. 그 폴더에서 터미널을 열고 실행:
 
    ```powershell
