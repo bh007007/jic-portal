@@ -21,13 +21,17 @@ http://127.0.0.1:5177 을 연다. 가드 태블릿은 http://127.0.0.1:5177/guar
 | `/curfew` | 통금 확인 | 위 화면의 통금 위반 탭 |
 | `/student-file` | Student File 목록 | 재학생별 누적 점수(승인)·경고 단계, 최근 30일 통금 위반, 대기 패널티·신청, 지금 외출 중·외박. 누적 점수순·통금 위반순·이름순 |
 | `/student-file/:stId` | Student File 상세 | 한 학생의 패널티 이력, 외출·귀가 기록(최근 50건), 결석·외박 신청(담당자 메모). 기본 정보·연수·회계·메모는 '통합관리 학생 상세'(관리자 앱) 링크 |
+| `/counseling` | 상담 기록 | 전체 / 확인할 일(후속 조치) 탭, 상담일·캠퍼스·학생·제목·작성자 검색. **목록에는 제목만** 보인다 |
+| `/counseling/new`, `/counseling/:id/edit` | 상담 기록 작성·수정 | 학생번호(이름 확인), 상담일(오늘까지), 제목, 내용(3000자), 후속 조치 기한(선택) |
+| `/counseling/:id` | 상담 기록 상세 | 내용, 후속 조치 완료·되돌리기, 이 기록의 열람·수정 기록. **열 때마다 접근 기록에 '열람'이 남는다** |
+| `/audit` | 접근 기록 | 상담 기록을 누가 언제 열람·작성·수정·후속 조치했는지. 날짜·종류·직원·학생 검색 |
 | `/penalties` | 패널티 승인 | 승인 대기·완료·반려 탭, 발생일·캠퍼스·위반 종류·학생 검색, 한 건씩 또는 선택해서 승인·반려, 경고 단계 기준 |
 | `/penalty-rules` | 패널티 점수표 | 위반별 점수·승인 권한, 경고 단계(1~3단계) 기준 점수 |
 | `/settings` | 통금·근무자 설정 | 통금 시각, 가드 태블릿 근무자 목록 |
 | `/requests/absences` | 결석 신청 처리 | 학생 앱에서 낸 결석 신청. 대기·승인·반려·학생 취소 탭, 결석일·캠퍼스·종류·학생 검색, 처리 메모(학생에게 보임)와 함께 승인·반려 |
 | `/requests/overnights` | 외박 신청 처리 | 학생 앱에서 낸 외박 신청. 같은 방식. 승인하면 그 밤들이 통금 확인에서 빠진다 |
 
-메뉴의 나머지(내부 공지, 전자결재, 상담 기록, 사진 관리, 직원 등)는 '준비 중'이다. 패널티·외출·신청 표의 학생 이름은 Student File 로 이어진다. 디자인의 '논아카데믹 신청'은 '외박 신청'으로 시작했고, 여행 등 다른 종류가 생기면 같은 묶음에 더한다.
+메뉴의 나머지(내부 공지, 전자결재, 사진 관리, 직원·부서, Staff 평가)는 '준비 중'이다. 패널티·외출·신청 표의 학생 이름은 Student File 로 이어진다. 디자인의 '논아카데믹 신청'은 '외박 신청'으로 시작했고, 여행 등 다른 종류가 생기면 같은 묶음에 더한다.
 
 ## 규칙
 
@@ -53,6 +57,15 @@ http://127.0.0.1:5177 을 연다. 가드 태블릿은 http://127.0.0.1:5177/guar
 - 처리 메모(300자)는 학생 앱 신청 상세에 '담당자 메모'로 보인다. 반려 사유를 적는다.
 - 대기 목록은 날짜가 가까운 순(처리할 순서), 처리된 목록은 최근 처리 순이다. 메뉴에 대기 건수가 보인다.
 
+### 상담 기록·접근 기록 (기획안 I5, 권한·보안 '접근 기록')
+
+- 목록·Student File·접근 기록에는 **제목만** 내보낸다. 내용은 상세에서만 보이고, 상세를 열 때마다 '열람'을 남긴다. 같은 직원이 같은 기록을 10초 안에 다시 열면(새로고침 등) 한 번으로 센다.
+- 작성·수정·후속 조치 완료·되돌림도 남긴다. 접근 기록은 추가만 되고 고치거나 지울 수 없다. 상담 기록 삭제 기능은 두지 않았다.
+- 검색은 학생·제목·작성자만 된다. 내용 검색은 사실상 열람이라 넣지 않았다.
+- 후속 조치 기한이 있으면 '확인할 일'에 들어가고, 기한이 지나면 빨갛게 보인다. 메뉴에는 기한이 오늘이거나 지난 건수, 홈에는 열린 건수가 보인다. 기한을 바꾸면 다시 열린 상태가 된다.
+- 처리자: 로컬에는 로그인이 없어 **오른쪽 위에 입력한 직원 이름**(브라우저에 저장)을 쓴다. 이름이 없으면 상담 기록을 열거나 쓸 수 없다. 배포에서는 로그인한 직원으로 바꾼다.
+- 상담 분류(학업·생활 등)와 공개 범위는 정해지지 않아 만들지 않았다. 제목에 자유롭게 쓴다.
+
 ### 패널티
 
 - 통금 위반은 외출 기록에서 **승인 대기 후보로 자동으로 올라간다**(출처: 외출 기록). 같은 외출 기록으로는 한 건만 생긴다.
@@ -66,6 +79,7 @@ http://127.0.0.1:5177 을 연다. 가드 태블릿은 http://127.0.0.1:5177/guar
 ```
 apps/intranet/
 ├─ server/core.ts        /api/* 계산 (파일·네트워크 의존 없음)
+├─ server/counseling.ts  상담 기록·접근 기록 (core 가 학생 이름 찾기만 넘겨 준다)
 ├─ server/core.test.ts   core 시험 (가짜 시계·메모리 저장소). 빌드할 때 함께 돈다
 ├─ server/localData.ts   로컬: Vite 플러그인, 파일 저장 (결석·외박 신청은 학생 앱 파일을 같이 연다)
 └─ src/                  화면 (React + Vite + TypeScript)
@@ -73,7 +87,7 @@ apps/intranet/
 
 - 학생·연수는 관리자 앱의 `createDb`(재학생 명단 `listEnrollments`, 이름 `studentDetail`)와 `loadDir`을 그대로 쓴다.
 - 스타일은 관리자 앱과 같은 값을 `src/styles.css`에 복사해 두었다(공통 UI 패키지가 생기면 옮긴다).
-- 시험: `npm --workspace apps/intranet run test`. 통금 판정 경계(통금 후 외출, 자정 넘어 귀가, 외출 기록 없는 귀가, 미귀가 후 귀가), 점수표 검증, 승인 점수 유지, 통금 변경 시 후보 정리, 외박 승인 시 후보 제외·외박 허용 표시, 결석·외박 승인·반려와 메모, Student File 목록·상세 등 51개 항목.
+- 시험: `npm --workspace apps/intranet run test`. 통금 판정 경계(통금 후 외출, 자정 넘어 귀가, 외출 기록 없는 귀가, 미귀가 후 귀가), 점수표 검증, 승인 점수 유지, 통금 변경 시 후보 정리, 외박 승인 시 후보 제외·외박 허용 표시, 결석·외박 승인·반려와 메모, Student File 목록·상세, 상담 기록(처리자 필수, 목록에 내용 없음, 내용 검색 안 됨, 열람 기록·10초 중복 제외, 수정·후속 조치, 필리핀 날짜 검색) 등 72개 항목.
 
 ### API
 
@@ -88,6 +102,11 @@ apps/intranet/
 | `POST /api/penalties/decide` | `{ ids, approve }` 승인·반려(대기 중인 건만) |
 | `GET·PUT /api/penalty-rules` | 점수표 |
 | `GET·PUT /api/settings` | 통금 시각, 근무자 목록 |
+| `GET /api/counseling?view=all|followup&from=&to=&campus=&q=` | 상담 기록 목록(제목만) |
+| `POST /api/counseling`, `PUT /api/counseling/:id` | 작성 `{ stId, date, title, content, followUpDue }`, 수정 |
+| `GET /api/counseling/:id` | 상세(내용 + 이 기록의 접근 기록). 열람을 남긴다 |
+| `POST /api/counseling/:id/followup` | `{ done }` 후속 조치 완료·되돌림 |
+| `GET /api/audit?from=&to=&action=&q=` | 접근 기록(최근 500건) |
 | `GET /api/students?q=&campus=&sort=score|breaches|name` | Student File 목록(재학생) |
 | `GET /api/students/:stId` | Student File 상세 |
 | `GET /api/requests/absences?tab=&from=&to=&campus=&kind=&q=` | 결석 신청 목록 |
@@ -96,14 +115,15 @@ apps/intranet/
 
 ### 로컬 저장
 
-결석·외박 신청은 학생 앱과 같은 `.local-db/student/` 파일을 쓴다. 나머지는 저장소 루트 `.local-db/intranet/`(Git 제외)에 `outings-<sample|extract>.ndjson`, `penalties-<sample|extract>.ndjson`, `settings.json`, `penalty-rules.json`을 쓴다. 실제 추출본으로 실행하면 학생 번호가 들어가므로 `data/`와 같이 다룬다.
+결석·외박 신청은 학생 앱과 같은 `.local-db/student/` 파일을 쓴다. 상담 기록·접근 기록은 `counseling-<source>.ndjson`, `audit-<source>.ndjson`(실제 데이터로 실행하면 민감 정보). 나머지는 저장소 루트 `.local-db/intranet/`(Git 제외)에 `outings-<sample|extract>.ndjson`, `penalties-<sample|extract>.ndjson`, `settings.json`, `penalty-rules.json`을 쓴다. 실제 추출본으로 실행하면 학생 번호가 들어가므로 `data/`와 같이 다룬다.
 
 ## 배포 전에 필요한 것
 
 1. **계정**: 직원은 `staff_users`(+ 역할별 권한, HANDOFF 6-4), 가드는 계정 방식 결정(근무자별 / 경비실 공용) 후 `is_guard()` 같은 새 함수. 처리자(`decidedBy`, 근무자)를 로그인 사용자로 채운다.
 2. **테이블**: 기획안 데이터 모델의 `outings`, `penalty_rules`, `penalties`(그리고 `keycards`, `overnight_permissions`, `incident_reports`)를 `docs/collab.md` 데이터베이스 규칙대로 새 마이그레이션으로 만든다. 열은 `server/core.ts`의 `Outing`·`Penalty`·`PenaltyRules` 모양을 따른다(snake_case, `student_no`, `enrollment_id`).
-3. **미귀가 확인**: 지금은 화면을 열 때 계산한다. 배포에서는 통금 직후 Cloudflare Workers 크론으로 후보를 만든다.
-4. **태블릿**: 경비실 태블릿에서 배포 주소를 연다(로컬 개발 서버는 이 PC에서만 열린다).
+3. **상담 기록 권한**: 기획안의 `counseling_notes`, `audit_logs`. 내용은 테이블을 직접 읽지 못하게 하고, 열람을 남기면서 내용을 돌려주는 서버 함수(security definer 또는 Workers)로만 읽는다. 접근 기록은 insert만 허용하고 update·delete는 막는다. 누가 어떤 학생의 상담 기록을 볼 수 있는지는 역할별 권한(HANDOFF 6-4)에서 정한다.
+4. **미귀가 확인**: 지금은 화면을 열 때 계산한다. 배포에서는 통금 직후 Cloudflare Workers 크론으로 후보를 만든다.
+5. **태블릿**: 경비실 태블릿에서 배포 주소를 연다(로컬 개발 서버는 이 PC에서만 열린다).
 
 ## 확인이 필요한 것
 
@@ -112,3 +132,4 @@ apps/intranet/
 - 카드키 QR에 들어갈 내용(학생번호만인지, 카드 번호인지)과 태블릿 카메라로 직접 읽을지(지금은 스캐너 입력). 정해지면 `keycards`와 연결한다.
 - 가드 리포트(카드키 미반납, 음주 등)를 태블릿에서 입력할지.
 - 학생 사진: 업체 포털 사진 이관 방식이 정해지면 '사진' 자리에 붙인다.
+- 상담 기록: 누가 어떤 학생의 기록을 볼 수 있는지(담당·캠퍼스·역할), 상담 분류가 필요한지, 보관 기간, 학생·보호자 동의 문구(기획안 미결정 5번, 필리핀 개인정보보호법).

@@ -6,6 +6,19 @@
  * - 시각은 ISO(UTC)로 저장하고, 날짜·통금 판정은 필리핀 시간(UTC+8, 일광절약 없음)으로 한다.
  */
 import type { Db } from '../../admin/server/core';
+import {
+  counselingOf,
+  createCounseling,
+  followUpCounts,
+  listAudit,
+  listCounseling,
+  openCounseling,
+  setFollowUp,
+  updateCounseling,
+  type AuditLog,
+  type CounselingCtx,
+  type CounselingNote,
+} from './counseling';
 import { COMMENT_MAX, decideRequest, nightsBetween, overnightFor, type Absence, type Overnight, type RequestStatus, type RequestStore } from '../../student/server/requests';
 
 // ── 시간
@@ -109,6 +122,9 @@ export interface Stores {
   /** 학생 앱과 같이 쓰는 신청 저장소 */
   absences: RequestStore<Absence>;
   overnights: RequestStore<Overnight>;
+  /** 상담 기록과 접근 기록(추가만) */
+  counseling: Repo<CounselingNote>;
+  audit: Repo<AuditLog>;
 }
 
 export interface IntranetCtx {
@@ -116,6 +132,8 @@ export interface IntranetCtx {
   stores: Stores;
   now: () => Date;
   newId: () => string;
+  /** 처리자 이름: 로컬은 브라우저에 입력한 직원 이름, 배포는 로그인한 직원. 상담 기록 열람·작성과 접근 기록에 쓴다. */
+  actor?: string | null;
 }
 
 type Result = { status: number; body: unknown };
@@ -626,9 +644,25 @@ async function studentFile(ctx: IntranetCtx, stId: string) {
       .filter((o) => o.stId === stId)
       .sort((a, b) => b.from.localeCompare(a.from))
       .map((o) => ({ ...o, nights: nightsBetween(o.from, o.until) })),
+    counseling: await counselingOf(counselingCtx(ctx), stId),
   };
 }
 export type StudentFile = NonNullable<Awaited<ReturnType<typeof studentFile>>>;
+
+function counselingCtx(ctx: IntranetCtx): CounselingCtx {
+  return {
+    stores: ctx.stores,
+    actor: ctx.actor ?? null,
+    now: ctx.now,
+    newId: ctx.newId,
+    today: () => localDate(ctx.now().getTime()),
+    student: (stId) => {
+      const cur = currentIndex(ctx.db).get(stId);
+      if (cur) return { name: cur.name, campus: cur.campus };
+      return ctx.db.studentDetail(stId) ? { name: studentRef(ctx.db, stId).name, campus: studentRef(ctx.db, stId).campus } : null;
+    },
+  };
+}
 
 async function summary(ctx: IntranetCtx) {
   await syncCurfewPenalties(ctx);
@@ -651,6 +685,7 @@ async function summary(ctx: IntranetCtx) {
     pendingAbsences: absences.filter((a) => a.status === 'pending').length,
     pendingOvernights: overnights.filter((o) => o.status === 'pending').length,
     current: currentIndex(ctx.db).size,
+    ...(await followUpCounts(counselingCtx(ctx))),
   };
 }
 export type Summary = Awaited<ReturnType<typeof summary>>;
@@ -666,6 +701,12 @@ export async function handleIntranetApi(ctx: IntranetCtx, method: string, pathna
         const m = ctx.db.meta();
         return ok({ source: m.source, refDate: m.refDate });
       }
+      case 'GET /counseling':
+        return ok(await listCounseling(counselingCtx(ctx), q));
+      case 'POST /counseling':
+        return await createCounseling(counselingCtx(ctx), input);
+      case 'GET /audit':
+        return ok(await listAudit(counselingCtx(ctx), q));
       case 'GET /students':
         return ok(await studentFiles(ctx, q));
       case 'GET /summary':
@@ -705,6 +746,10 @@ export async function handleIntranetApi(ctx: IntranetCtx, method: string, pathna
         return ok(s);
       }
     }
+    const cn = p.match(/^\/counseling\/([\w-]+)(\/followup)?$/);
+    if (cn && method === 'GET' && !cn[2]) return await openCounseling(counselingCtx(ctx), cn[1]);
+    if (cn && method === 'PUT' && !cn[2]) return await updateCounseling(counselingCtx(ctx), cn[1], input);
+    if (cn && method === 'POST' && cn[2]) return await setFollowUp(counselingCtx(ctx), cn[1], input);
     const sf = route.match(/^GET \/students\/(\w+)$/);
     if (sf) {
       const file = await studentFile(ctx, sf[1]);

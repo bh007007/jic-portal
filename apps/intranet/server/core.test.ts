@@ -51,10 +51,22 @@ function memDoc<T>() {
 }
 
 const db = loadDir(path.resolve(process.cwd(), '../../data-sample/tables'));
-const stores: Stores = { outings: memRepo(), penalties: memRepo(), settings: memDoc(), rules: memDoc(), absences: memReq<Absence>(), overnights: memReq<Overnight>() };
+const stores: Stores = {
+  outings: memRepo(),
+  penalties: memRepo(),
+  settings: memDoc(),
+  rules: memDoc(),
+  absences: memReq<Absence>(),
+  overnights: memReq<Overnight>(),
+  counseling: memRepo(),
+  audit: memRepo(),
+};
 let clock = Date.parse('2026-11-05T19:02:00+08:00');
 let n = 0;
-const ctx = { db, stores, now: () => new Date(clock), newId: () => 'o' + ++n };
+let actor: string | null = null;
+const ctx = { db, stores, now: () => new Date(clock), newId: () => 'o' + ++n, get actor() {
+  return actor;
+} };
 const at = (s: string) => { clock = Date.parse(s + '+08:00'); };
 const call = async (m: string, p: string, body: any = null, q = '') => handleIntranetApi(ctx, m, p, new URLSearchParams(q), body);
 let fails = 0;
@@ -220,6 +232,57 @@ const fileC = (await call('GET', '/students/' + C)).body as any;
 expect('C 상세: 외박 이력 1박, 그 밤 외출은 외박 허용', fileC.overnights[0]?.nights === 1 && fileC.outings.some((o: any) => o.overnightUntil === '2026-11-06'), fileC.overnights);
 r = await call('GET', '/students/99999999');
 expect('없는 학생 404', r.status === 404, r);
+
+// ── 상담 기록·접근 기록
+at('2026-11-07T10:00:00');
+r = await call('POST', '/counseling', { stId: B, date: '2026-11-07', title: '통금 위반 면담', content: '귀가 늦은 이유: 친구 생일' });
+expect('처리자 없으면 작성 불가 400', r.status === 400 && (r.body as any).error === 'actor_required', r);
+actor = '김상담';
+r = await call('POST', '/counseling', { stId: '99999999', date: '2026-11-07', title: 't', content: 'c' });
+expect('없는 학생 400', (r.body as any).error === 'unknown_student', r);
+r = await call('POST', '/counseling', { stId: B, date: '2026-11-08', title: 't', content: 'c' });
+expect('미래 상담일 400', (r.body as any).error === 'invalid_date', r);
+r = await call('POST', '/counseling', { stId: B, date: '2026-11-07', title: 't', content: 'c', followUpDue: '2026-11-01' });
+expect('후속 조치 기한이 상담일보다 앞이면 400', (r.body as any).error === 'invalid_followup', r);
+r = await call('POST', '/counseling', { stId: B, date: '2026-11-07', title: '통금 위반 면담', content: '귀가 늦은 이유: 친구 생일', followUpDue: '2026-11-09' });
+expect('상담 기록 작성 201', r.status === 201, r);
+const noteId = (r.body as any).id;
+await call('POST', '/counseling', { stId: A, date: '2026-11-06', title: '수업 적응', content: '레벨 조정 희망', followUpDue: '2026-11-06' });
+let cl = (await call('GET', '/counseling')).body as any;
+expect('목록 2건, 내용은 내보내지 않음', cl.rows.length === 2 && cl.rows.every((x: any) => !('content' in x)), cl.rows);
+expect('확인할 일 2건, 기한 지남 1건(11/06)', cl.counts.followup === 2 && cl.counts.overdue === 1, cl.counts);
+cl = (await call('GET', '/counseling', null, 'q=생일')).body as any;
+expect('내용으로는 검색되지 않음', cl.rows.length === 0, cl.rows.length);
+cl = (await call('GET', '/counseling', null, 'q=김상담')).body as any;
+expect('작성자로 검색 2건', cl.rows.length === 2, cl.rows.length);
+actor = '박매니저';
+let det = (await call('GET', '/counseling/' + noteId)).body as any;
+expect('상세에 내용, 접근 기록(작성·열람)', det.note.content.includes('친구 생일') && det.trail.length === 2 && det.trail[0].action === 'view' && det.trail[0].actor === '박매니저', det.trail);
+det = (await call('GET', '/counseling/' + noteId)).body as any;
+expect('같은 직원이 10초 안에 다시 열면 열람 1번', det.trail.filter((l: any) => l.action === 'view').length === 1, det.trail);
+at('2026-11-07T10:00:11');
+det = (await call('GET', '/counseling/' + noteId)).body as any;
+expect('10초가 지나면 다시 남김', det.trail.filter((l: any) => l.action === 'view').length === 2, det.trail.length);
+actor = null;
+r = await call('GET', '/counseling/' + noteId);
+expect('처리자 없으면 열람 불가', r.status === 400, r);
+actor = '박매니저';
+r = await call('PUT', '/counseling/' + noteId, { date: '2026-11-07', title: '통금 위반 면담(보완)', content: '귀가 늦은 이유: 친구 생일. 보호자 연락함', followUpDue: '2026-11-09' });
+expect('수정 200', r.status === 200, r);
+r = await call('POST', '/counseling/' + noteId + '/followup', { done: true });
+expect('후속 조치 완료', r.status === 200, r);
+det = (await call('GET', '/counseling/' + noteId)).body as any;
+expect('완료 처리자·시각 기록, 수정자 기록', det.note.followUpDone && det.note.followUpDoneBy === '박매니저' && det.note.updatedBy === '박매니저' && det.note.author === '김상담', det.note);
+const au = (await call('GET', '/audit', null, 'q=박매니저')).body as any;
+expect('접근 기록: 박매니저 열람 2(10초 안 재열람은 1번)·수정 1·완료 1', au.rows.filter((x: any) => x.action === 'view').length === 2 && au.rows.some((x: any) => x.action === 'update') && au.rows.some((x: any) => x.action === 'followup_done'), au.rows.map((x: any) => x.action));
+const auView = (await call('GET', '/audit', null, 'action=view&from=2026-11-07&to=2026-11-07')).body as any;
+expect('접근 기록 날짜(필리핀)·종류 검색', auView.total === 2 && auView.rows.every((x: any) => x.title.startsWith('통금 위반 면담')), auView.total);
+const fileB2 = (await call('GET', '/students/' + B)).body as any;
+expect('Student File 에 상담 기록 제목(내용 없음)', fileB2.counseling.length === 1 && !('content' in fileB2.counseling[0]), fileB2.counseling);
+const sm3 = (await call('GET', '/summary')).body as any;
+expect('홈: 열린 후속 조치 1(A), 기한 지남·오늘 1', sm3.followUpOpen === 1 && sm3.followUpDue === 1, sm3);
+r = await call('POST', '/counseling/' + noteId + '/followup', { done: 'yes' });
+expect('완료 값 잘못되면 400', r.status === 400, r);
 
 console.log(fails ? `\n${fails}건 실패` : '\n모두 통과');
 if (fails) process.exit(1);
