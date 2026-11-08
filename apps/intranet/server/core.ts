@@ -21,6 +21,7 @@ import {
   type CounselingRemote,
 } from './counseling';
 import { decideRide, rideState, type Departure, type DepartureStore, type RideState, type RideStore } from '../../student/server/departures';
+import { handleLifeRequest, LIFE_CATEGORIES, LIFE_REPLY_MAX, type LifeRequestStore, type LifeStatus } from '../../student/server/lifeRequests';
 import { PENALTY_KIND_OF, REPORT_KINDS, REPORT_LABEL, REPORT_NOTE_MAX, type IncidentReport, type ReportKind } from './reports';
 import { createNotice, listNotices, noticeSummary, openNotice, updateNotice, type Notice, type NoticeCtx, type NoticeRead } from './notices';
 import { COMMENT_MAX, decideRequest, nightsBetween, overnightFor, type Absence, type Overnight, type RequestStatus, type RequestStore } from '../../student/server/requests';
@@ -136,6 +137,8 @@ export interface Stores {
   noticeReads: Repo<NoticeRead>;
   /** 가드 리포트(사건 리포트) */
   reports: Repo<IncidentReport>;
+  /** 학생 앱과 같이 쓰는 생활 요청(학생이 내고 직원이 처리, 학생 앱 server/lifeRequests.ts) */
+  lifeRequests: LifeRequestStore;
   /** 학생 앱과 같이 쓰는 귀국 항공편과, 직원이 쓰는 공항 이동 배차 */
   departures: DepartureStore;
   rides: RideStore;
@@ -621,7 +624,7 @@ function validSettings(input: Record<string, unknown>): Settings | null {
 type RequestKind = 'absences' | 'overnights';
 const REQUEST_TABS: RequestStatus[] = ['pending', 'approved', 'rejected', 'cancelled'];
 
-function requestRow(ctx: IntranetCtx, r: Absence | Overnight) {
+function requestRow(ctx: IntranetCtx, r: { stId: string }) {
   const s = studentRef(ctx.db, r.stId);
   return { name: s.name, campus: s.campus, current: s.current };
 }
@@ -656,6 +659,33 @@ async function listRequests(ctx: IntranetCtx, kind: RequestKind, q: URLSearchPar
   return { kind, tab, counts, campuses: [...new Set(all.map((o) => o.campus))].sort(), commentMax: COMMENT_MAX, absences: [], overnights: rows };
 }
 export type RequestList = Awaited<ReturnType<typeof listRequests>>;
+
+// ── 생활 요청(업체 '요청사항(학생)'·'ID 카드 교체'): 접수 → 처리 중 → 완료·반려
+const LIFE_TABS: LifeStatus[] = ['received', 'in_progress', 'done', 'rejected', 'cancelled'];
+async function listLifeRequests(ctx: IntranetCtx, q: URLSearchParams) {
+  const tab = (LIFE_TABS as string[]).includes(q.get('tab') ?? '') ? (q.get('tab') as LifeStatus) : 'received';
+  const category = q.get('category') || '';
+  const campus = q.get('campus') || '';
+  const kw = (q.get('q') ?? '').trim().toLowerCase();
+  const all = (await ctx.stores.lifeRequests.listAll()).map((r) => ({ ...r, ...requestRow(ctx, r) }));
+  const counts = Object.fromEntries(LIFE_TABS.map((t) => [t, 0])) as Record<LifeStatus, number>;
+  for (const r of all) counts[r.status]++;
+  const open = tab === 'received' || tab === 'in_progress';
+  const rows = all
+    .filter((r) => r.status === tab && (!category || r.category === category) && (!campus || r.campus === campus))
+    .filter((r) => !kw || r.stId.includes(kw) || r.name.toLowerCase().includes(kw) || r.content.toLowerCase().includes(kw))
+    // 처리할 건은 오래된 순, 끝난 건은 최근 처리 순
+    .sort((a, b) => (open ? a.submittedAt.localeCompare(b.submittedAt) : (b.handledAt ?? b.updatedAt).localeCompare(a.handledAt ?? a.updatedAt)));
+  return { tab, counts, categories: LIFE_CATEGORIES, campuses: [...new Set(all.map((r) => r.campus))].sort(), replyMax: LIFE_REPLY_MAX, rows };
+}
+export type LifeRequestList = Awaited<ReturnType<typeof listLifeRequests>>;
+
+async function handleLifeRequestRoute(ctx: IntranetCtx, id: string, input: Record<string, unknown>): Promise<Result> {
+  const out = handleLifeRequest(await ctx.stores.lifeRequests.get(id), input, ctx.actor ?? null, ctx.now());
+  if (!out.ok) return fail(out.status, out.error);
+  await ctx.stores.lifeRequests.put(out.value);
+  return ok(out.value);
+}
 
 async function decideRequests(ctx: IntranetCtx, kind: RequestKind, input: Record<string, unknown>): Promise<Result> {
   const ids = Array.isArray(input.ids) ? input.ids.map(String) : [];
@@ -799,6 +829,7 @@ async function studentFile(ctx: IntranetCtx, stId: string) {
       .sort((a, b) => b.from.localeCompare(a.from))
       .map((o) => ({ ...o, nights: nightsBetween(o.from, o.until) })),
     counseling: await counselingOf(counselingCtx(ctx), stId),
+    lifeRequests: (await ctx.stores.lifeRequests.listByStudent(stId)).sort((a, b) => b.submittedAt.localeCompare(a.submittedAt)),
     departure: main ? ((await ctx.stores.departures.get(`dep-${main.trId}`)) as Departure | null) : null,
   };
 }
@@ -850,6 +881,7 @@ async function summary(ctx: IntranetCtx) {
     pending: penalties.filter((p) => p.status === 'pending').length,
     pendingAbsences: absences.filter((a) => a.status === 'pending').length,
     pendingOvernights: overnights.filter((o) => o.status === 'pending').length,
+    lifePending: (await ctx.stores.lifeRequests.listAll()).filter((r) => r.status === 'received').length,
     current: currentIndex(ctx.db).size,
     ...(await followUpCounts(counselingCtx(ctx))),
     ...(await noticeSummary(noticeCtx(ctx))),
@@ -916,6 +948,8 @@ export async function handleIntranetApi(ctx: IntranetCtx, method: string, pathna
         return await decideRequests(ctx, 'absences', input);
       case 'POST /requests/overnights/decide':
         return await decideRequests(ctx, 'overnights', input);
+      case 'GET /requests/life':
+        return ok(await listLifeRequests(ctx, q));
       case 'GET /settings':
         return ok(await loadSettings(ctx));
       case 'PUT /settings': {
@@ -925,6 +959,8 @@ export async function handleIntranetApi(ctx: IntranetCtx, method: string, pathna
         return ok(s);
       }
     }
+    const lr = p.match(/^\/requests\/life\/([\w-]+)\/handle$/);
+    if (lr && method === 'POST') return await handleLifeRequestRoute(ctx, lr[1], input);
     const rd = p.match(/^\/departures\/([\w-]+)\/ride$/);
     if (rd && method === 'POST') return await decideDepartureRide(ctx, rd[1], input);
     const nt = p.match(/^\/notices\/([\w-]+)$/);

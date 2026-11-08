@@ -35,6 +35,7 @@ http://127.0.0.1:5177 을 연다. 가드 태블릿은 http://127.0.0.1:5177/guar
 | `/settings` | 통금·근무자 설정 | 통금 시각, 가드 태블릿 근무자 목록 |
 | `/requests/absences` | 결석 신청 처리 | 학생 앱에서 낸 결석 신청. 대기·승인·반려·학생 취소 탭, 결석일·캠퍼스·종류·학생 검색, 처리 메모(학생에게 보임)와 함께 승인·반려 |
 | `/requests/overnights` | 외박 신청 처리 | 학생 앱에서 낸 외박 신청. 같은 방식. 승인하면 그 밤들이 통금 확인에서 빠진다 |
+| `/requests/life` | 생활 요청 처리 | 학생 앱에서 낸 생활 요청(시설 수리·방 변경·ID 카드 재발급·서류 발급·기타). 접수·처리 중·완료·반려·학생 취소 탭, 종류·캠퍼스·이름·내용 검색, 줄마다 답변(학생에게 보임)과 함께 처리 중·완료·반려 |
 
 메뉴의 나머지(전자결재, 양식·자료실, 사진 관리, 직원·부서, Staff 평가)는 '준비 중'이다. 패널티·외출·신청 표의 학생 이름은 Student File 로 이어진다. 디자인의 '논아카데믹 신청'은 '외박 신청'으로 시작했고, 여행 등 다른 종류가 생기면 같은 묶음에 더한다.
 
@@ -68,6 +69,13 @@ http://127.0.0.1:5177 을 연다. 가드 태블릿은 http://127.0.0.1:5177/guar
 - 발생 시각이 지금보다 뒤면 전날로 본다(자정 넘어 쓰는 리포트). 재학생만, 설정에 근무자가 있으면 근무자를 골라야 등록된다.
 - 등록하면 **패널티 승인 대기 후보가 바로 생긴다**(출처: 가드 리포트). 음주는 '음주', 폭력·무단외출·기타는 '기타'로 들어간다(점수표에 따로 없는 종류). 근거는 `가드 리포트(22:40): 음주 — 내용 앞 60자`, 발생일은 통금과 같은 '밤' 기준.
 - 리포트는 고치거나 지우지 않는다. 잘못 쓴 리포트는 패널티를 반려한다(통금 후보 정리는 가드 리포트 패널티를 건드리지 않는다).
+
+### 생활 요청 (업체 '요청사항(학생)'·'ID 카드 교체', 기획안 nonacademic_requests)
+
+- 학생 앱이 쓰는 요청 데이터를 그대로 읽고 처리한다. 모양과 규칙은 `apps/student/server/lifeRequests.ts` 한 곳이다.
+- 접수 → 처리 중 → 완료·반려. 끝난 요청(완료·반려·학생 취소)은 바꾸지 않는다. 반려는 답변에 사유를 적어야 한다. 답변을 비우고 완료하면 지난 답변이 그대로 남는다.
+- 처리할 목록(접수·처리 중)은 오래된 순, 끝난 목록은 최근 처리 순이다. 메뉴·홈에 접수 건수가 보이고, Student File에 그 학생의 요청이 보인다.
+- 처리자는 로컬은 오른쪽 위에 입력한 이름(없으면 비워 둠), 배포는 로그인한 직원이다.
 
 ### 신청 처리 (결석·외박)
 
@@ -149,6 +157,8 @@ apps/intranet/
 | `GET /api/students/:stId` | Student File 상세 |
 | `GET /api/requests/absences?tab=&from=&to=&campus=&kind=&q=` | 결석 신청 목록 |
 | `GET /api/requests/overnights?tab=&from=&to=&campus=&q=` | 외박 신청 목록(기간이 조회 범위와 겹치는 건) |
+| `GET /api/requests/life?tab=&category=&campus=&q=` | 생활 요청 목록(탭: received·in_progress·done·rejected·cancelled) |
+| `POST /api/requests/life/:id/handle` | 생활 요청 처리 `{ status: in_progress·done·rejected, reply }` |
 | `POST /api/requests/{absences,overnights}/decide` | `{ ids, approve, comment }` 승인·반려(대기 중인 건만) |
 
 ### 로컬 저장
@@ -172,7 +182,7 @@ apps/intranet/
 
 ### 설정 순서 (레오 PC의 Claude)
 
-1. Supabase에 마이그레이션 `20261108100000_student_intranet.sql`, `20261108120000_student_request_ids.sql`, `20261108130000_intranet_deploy.sql`을 차례로 적용한다.
+1. Supabase에 마이그레이션 `20261108100000_student_intranet.sql`, `20261108120000_student_request_ids.sql`, `20261108130000_intranet_deploy.sql`, `20261108140000_nonacademic_requests.sql`(생활 요청)을 차례로 적용한다.
 2. 직원 계정은 관리자 앱과 같다(`staff_users`, `docs/setup-cloud.md` 1-4). 이름(`staff_users.name`)을 넣어 둔다(처리자·접근 기록에 남는다). 상담 기록을 볼 직원은 `staff_campuses`에 맡은 캠퍼스를 넣는다(예: `insert into staff_campuses values ('<user_id>', 'Challenger')`).
 3. **Workers & Pages → Create → Workers → Import a repository** → `jic-portal`
 
@@ -219,6 +229,7 @@ apps/intranet/
 | `intranet_settings` | 읽기(통금, 근무자 목록) | 읽기·수정 |
 | `absence_requests`, `overnight_permissions` | - | 읽기, 처리는 `decide_*` 함수 |
 | `departure_flights`, `airport_rides` | - | 항공편 읽기, 배차 등록·수정 |
+| `nonacademic_requests` | - | 읽기, 처리·답변은 `handle_nonacademic_request` 함수(처리자 = 로그인한 직원) |
 | `internal_notices`, `internal_notice_reads` | - | 읽기·쓰기, 읽음은 본인 것만 |
 | `counseling_notes` | - | 테이블 직접 읽기·쓰기 불가, 아래 함수만 |
 | `audit_logs` | - | 맡은 캠퍼스 기록만 읽기, 쓰기·삭제 불가 |

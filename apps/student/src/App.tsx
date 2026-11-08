@@ -6,6 +6,8 @@ import AbsenceNew from './pages/AbsenceNew';
 import Departure from './pages/Departure';
 import Home from './pages/Home';
 import Login, { AuthShell } from './pages/Login';
+import LifeDetail from './pages/LifeDetail';
+import LifeNew from './pages/LifeNew';
 import OvernightDetail from './pages/OvernightDetail';
 import OvernightNew from './pages/OvernightNew';
 import Password from './pages/Password';
@@ -34,6 +36,8 @@ export default function App() {
           <Route path="/requests/absence/new" element={<AbsenceNew />} />
           <Route path="/requests/overnight/new" element={<OvernightNew />} />
           <Route path="/requests/overnight/:id" element={<OvernightDetail />} />
+          <Route path="/requests/life/new" element={<LifeNew />} />
+          <Route path="/requests/life/:id" element={<LifeDetail />} />
           <Route path="/requests/:id" element={<RequestDetail />} />
           <Route path="/me" element={<Profile />} />
           <Route path="/departure" element={<Departure />} />

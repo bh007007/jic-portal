@@ -5,6 +5,7 @@
 import path from 'node:path';
 import { loadDir } from '../../admin/server/localData';
 import type { Departure, Ride } from '../../student/server/departures';
+import { newLifeRequest, type LifeRequest } from '../../student/server/lifeRequests';
 import type { Absence, Overnight, RequestStore } from '../../student/server/requests';
 import { handleIntranetApi, type Stores } from './core';
 
@@ -66,6 +67,7 @@ const stores: Stores = {
   reports: memRepo(),
   departures: memReq<Departure>(),
   rides: memReq<Ride>(),
+  lifeRequests: memReq<LifeRequest>(),
 };
 let clock = Date.parse('2026-11-05T19:02:00+08:00');
 let n = 0;
@@ -425,6 +427,43 @@ r = await call('POST', `/departures/dep-${S1.trId}/ride`, { decision: 'declined'
 expect('다시 처리(불가)하면 덮어씀', (r.body as any).state === 'declined', r);
 const sm6 = (await call('GET', '/summary')).body as any;
 expect('홈 요약 배차 미처리 0', sm6.ridePending === 0, sm6.ridePending);
+
+// ── 생활 요청(학생 앱 lifeRequests.ts): 학생이 낸 요청을 직원이 처리
+const lifeOf = async (stId: string, category: string, content: string) => {
+  const out = newLifeRequest({ db, stId, now: () => new Date(clock), newId: () => 'L' + ++n }, await stores.lifeRequests.listByStudent(stId), { category, content });
+  if (!out.ok) throw new Error(out.error);
+  await stores.lifeRequests.put(out.value);
+  return out.value;
+};
+const L1 = await lifeOf(S1.stId, 'facility', '302호 샤워기 수압이 약합니다');
+clock += 60_000;
+const L2 = await lifeOf(S2.stId, 'id_card', 'ID 카드 분실, 재발급 부탁드립니다');
+let ll = (await call('GET', '/requests/life')).body as any;
+expect('생활 요청 목록: 접수 2건, 오래된 순, 이름·캠퍼스', ll.tab === 'received' && ll.counts.received === 2 && ll.rows[0].id === L1.id && ll.rows[0].name && ll.rows[0].campus && ll.categories.length === 5, ll);
+expect('홈 요약 생활 요청 2', ((await call('GET', '/summary')).body as any).lifePending === 2);
+ll = (await call('GET', '/requests/life', null, 'category=id_card')).body as any;
+expect('종류로 찾기', ll.rows.length === 1 && ll.rows[0].id === L2.id, ll.rows);
+ll = (await call('GET', '/requests/life', null, 'q=샤워기')).body as any;
+expect('내용으로 찾기', ll.rows.length === 1 && ll.rows[0].id === L1.id, ll.rows);
+actor = '오피스 김';
+r = await call('POST', `/requests/life/${L1.id}/handle`, { status: 'rejected', reply: '' });
+expect('반려는 사유 필수 400', r.status === 400 && (r.body as any).error === 'reply_required', r);
+r = await call('POST', `/requests/life/${L1.id}/handle`, { status: 'in_progress', reply: '오늘 오후 시설팀 방문' });
+expect('처리 중 + 답변, 처리자', r.status === 200 && (r.body as any).status === 'in_progress' && (r.body as any).handledBy === '오피스 김', r);
+r = await call('POST', `/requests/life/${L2.id}/handle`, { status: 'done', reply: '사무실에서 새 카드 받으세요(수수료 200페소)' });
+expect('완료', r.status === 200 && (r.body as any).status === 'done', r);
+r = await call('POST', `/requests/life/${L2.id}/handle`, { status: 'rejected', reply: 'x' });
+expect('끝난 요청 409', r.status === 409 && (r.body as any).error === 'already_closed', r);
+r = await call('POST', '/requests/life/nope/handle', { status: 'done' });
+expect('없는 요청 404', r.status === 404, r);
+ll = (await call('GET', '/requests/life', null, 'tab=in_progress')).body as any;
+expect('처리 중 탭', ll.counts.received === 0 && ll.counts.in_progress === 1 && ll.counts.done === 1 && ll.rows[0].reply === '오늘 오후 시설팀 방문', ll);
+expect('홈 요약 생활 요청 0', ((await call('GET', '/summary')).body as any).lifePending === 0);
+actor = null;
+r = await call('POST', `/requests/life/${L1.id}/handle`, { status: 'done' });
+expect('로컬은 이름 없이도 처리(처리자 없음), 답변은 그대로', r.status === 200 && (r.body as any).handledBy === null && (r.body as any).reply === '오늘 오후 시설팀 방문', r);
+const sfL = (await call('GET', `/students/${S1.stId}`)).body as any;
+expect('Student File 에 생활 요청', sfL.lifeRequests.length === 1 && sfL.lifeRequests[0].status === 'done', sfL.lifeRequests);
 
 console.log(fails ? `\n${fails}건 실패` : '\n모두 통과');
 if (fails) process.exit(1);

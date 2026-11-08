@@ -1,5 +1,5 @@
 import { Link } from 'react-router-dom';
-import type { Absence, OvernightRow } from '../api';
+import type { Absence, LifeRow, LifeStatus, OvernightRow } from '../api';
 import { dayOfWeek, md, mdhm } from '../format';
 import { useI18n, type T } from '../i18n';
 
@@ -32,6 +32,36 @@ export function AbsenceRow({ a }: { a: Absence }) {
         <span className="list-sub">{t('abs.submitted', { t: mdhm(a.submittedAt) })}</span>
       </span>
       <StatusText status={a.status} />
+    </Link>
+  );
+}
+
+const LIFE_CLASS: Record<LifeStatus, string> = {
+  received: 'st-pending',
+  in_progress: 'st-progress',
+  done: 'st-approved',
+  rejected: 'st-rejected',
+  cancelled: 'st-cancelled',
+};
+export function LifeStatusText({ status }: { status: LifeStatus }) {
+  const { t } = useI18n();
+  return <span className={'status ' + LIFE_CLASS[status]}>{t(`life.st.${status}`)}</span>;
+}
+
+/** 생활 요청 목록 한 줄: "시설 수리 · 방 에어컨에서…" / "11.07 21:40 제출" / 상태 */
+export function LifeRowLink({ r }: { r: LifeRow }) {
+  const { t } = useI18n();
+  const short = r.content.length > 24 ? r.content.slice(0, 24) + '…' : r.content;
+  return (
+    <Link to={`/requests/life/${r.id}`} className="list-row">
+      <span className="list-main">
+        <span className="list-title">
+          {t(`life.cat.${r.category}`)}
+          <span className="list-extra"> · {short}</span>
+        </span>
+        <span className="list-sub">{t('abs.submitted', { t: mdhm(r.submittedAt) })}</span>
+      </span>
+      <LifeStatusText status={r.status} />
     </Link>
   );
 }

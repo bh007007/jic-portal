@@ -5,6 +5,7 @@
  * 파일 의존 없음(fetch 만). 로컬 개발 서버는 이 대신 .local-db 파일 저장소를 쓴다(localData.ts).
  */
 import type { Departure, DepartureStore, Ride, RideStore } from './departures';
+import type { LifeRequest, LifeRequestStore } from './lifeRequests';
 import type { Absence, AbsenceStore, Overnight, OvernightStore } from './requests';
 import type { SupabaseConf } from './supabaseAuth';
 
@@ -178,8 +179,47 @@ export function rideStore(rest: Rest): RideStore {
   };
 }
 
-/** 학생 토큰으로 네 저장소를 만든다. */
+// ── 생활 요청(nonacademic_requests): 학생은 등록과 취소(취소 함수)만. 처리·답변은 직원(인트라넷)
+export const toLife = (r: Row): LifeRequest => ({
+  id: String(r.id),
+  stId: String(r.student_no),
+  trId: String(r.enrollment_id),
+  category: r.category as LifeRequest['category'],
+  content: String(r.content),
+  status: r.status as LifeRequest['status'],
+  submittedAt: iso(r.created_at)!,
+  updatedAt: iso(r.updated_at)!,
+  handledAt: iso(r.handled_at),
+  handledBy: null, // 처리한 직원은 학생에게 보이지 않는다
+  reply: (r.staff_reply as string | null) ?? null,
+});
+
+export function lifeStore(rest: Rest): LifeRequestStore {
+  const get = async (id: string) => {
+    if (!/^[0-9a-f-]{36}$/i.test(id)) return null;
+    return (await rest('GET', `nonacademic_requests?select=*&id=eq.${q(id)}`)).map(toLife)[0] ?? null;
+  };
+  return {
+    listAll: async () => (await rest('GET', 'nonacademic_requests?select=*&order=created_at.desc')).map(toLife),
+    listByStudent: async (stId) => (await rest('GET', `nonacademic_requests?select=*&student_no=eq.${q(stId)}&order=created_at.desc`)).map(toLife),
+    get,
+    async put(x) {
+      const cur = await get(x.id);
+      if (!cur) {
+        await rest('POST', 'nonacademic_requests', { id: x.id, student_no: x.stId, enrollment_id: x.trId, category: x.category, content: x.content }, 'return=minimal');
+        return;
+      }
+      if (cur.status === 'received' && x.status === 'cancelled') {
+        await rest('POST', 'rpc/cancel_nonacademic_request', { p_id: x.id }, 'return=minimal');
+        return;
+      }
+      throw new StoreError(409, 'unsupported_update');
+    },
+  };
+}
+
+/** 학생 토큰으로 저장소를 만든다. */
 export function supabaseStores(conf: SupabaseConf, token: string, fetchFn: typeof fetch = fetch) {
   const rest = restClient(conf, token, fetchFn);
-  return { store: absenceStore(rest), overnights: overnightStore(rest), departures: departureStore(rest), rides: rideStore(rest) };
+  return { store: absenceStore(rest), overnights: overnightStore(rest), departures: departureStore(rest), rides: rideStore(rest), life: lifeStore(rest) };
 }

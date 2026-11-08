@@ -8,6 +8,7 @@ import { checkNewPassword, initialPassword, planAccounts, studentEmail } from '.
 import { handleStudentApi } from './core';
 import { studentFromToken, tokenCache, tokenSubject } from './supabaseAuth';
 import { decideRide, rideState, type Departure, type Ride } from './departures';
+import { handleLifeRequest, LIFE_OPEN_MAX, type LifeRequest } from './lifeRequests';
 import { decideRequest, overnightFor, type Absence, type Overnight, type RequestStore } from './requests';
 
 function memStore<T extends { id: string; stId: string }>(): RequestStore<T> {
@@ -33,10 +34,11 @@ const store = memStore<Absence>();
 const overnights = memStore<Overnight>();
 const departures = memStore<Departure>();
 const rides = memStore<Ride>();
+const life = memStore<LifeRequest>();
 let n = 0;
 const now = new Date('2026-11-08T02:00:00Z');
 const stId = '30095'; // 샘플: 재학 2026-07-26 ~ 2026-11-13
-const ctx = (who: string | null = stId) => ({ db, store, overnights, departures, rides, stId: who, localLogin: true, now: () => now, newId: () => 'r' + ++n });
+const ctx = (who: string | null = stId) => ({ db, store, overnights, departures, rides, life, stId: who, localLogin: true, now: () => now, newId: () => 'r' + ++n });
 const call = (m: string, p: string, body: unknown = null, who: string | null = stId) => handleStudentApi(ctx(who), m, p, body);
 let fails = 0;
 const expect = (label: string, cond: boolean, extra?: unknown) => {
@@ -197,6 +199,52 @@ r = await handleStudentApi({ ...ctx(null), localLogin: false, mustChangePassword
 expect('meta 는 열림, Supabase 모드에서는 로컬 로그인 없음', r.status === 200 && (r.body as any).localLogin === false && (r.body as any).sampleLogin === null, r);
 r = await handleStudentApi({ ...ctx(null), localLogin: false }, 'POST', '/api/login', { stId, birthday: me.password });
 expect('Supabase 모드에서는 /login 없음', r.status === 404, r);
+
+// ── 생활 요청 (lifeRequests.ts)
+r = await call('GET', '/life-requests');
+expect('생활 요청 목록: 종류 5, 요청 가능', r.status === 200 && (r.body as any).categories.length === 5 && (r.body as any).canRequest === true && (r.body as any).rows.length === 0, r.body);
+r = await call('POST', '/life-requests', { category: 'facility', content: '  방 에어컨에서 물이 샙니다  ' });
+const lifeId = (r.body as any).id;
+expect('생활 요청 등록 201: 접수, 연수 연결, 내용 다듬음', r.status === 201 && (r.body as any).status === 'received' && (r.body as any).trId === '800095' && (r.body as any).content === '방 에어컨에서 물이 샙니다', r.body);
+expect('학생 응답에 처리자 없음', !('handledBy' in (r.body as object)) || (r.body as any).handledBy === undefined);
+expect('종류 확인', err(await call('POST', '/life-requests', { category: 'laundry', content: 'x' })) === 'invalid_category');
+expect('내용 필수', err(await call('POST', '/life-requests', { category: 'other', content: '   ' })) === 'content_required');
+expect('내용 500자', err(await call('POST', '/life-requests', { category: 'other', content: 'x'.repeat(501) })) === 'content_too_long');
+r = await call('POST', '/life-requests', { category: 'id_card', content: '카드 분실' }, '99999999');
+expect('없는 학생은 연수 없음', err(r) === 'no_enrollment', r);
+for (let i = 1; i < LIFE_OPEN_MAX; i++) await call('POST', '/life-requests', { category: 'other', content: `요청 ${i}` });
+r = await call('POST', '/life-requests', { category: 'other', content: '하나 더' });
+expect(`열린 요청 ${LIFE_OPEN_MAX}건이면 409`, r.status === 409 && err(r) === 'too_many_open', r);
+// 직원 처리
+const cur = (await life.get(lifeId))!;
+let lh = handleLifeRequest(cur, { status: 'rejected', reply: '' }, '오피스 김', now);
+expect('반려는 사유 필수', !lh.ok && lh.error === 'reply_required');
+lh = handleLifeRequest(cur, { status: 'bogus' }, '오피스 김', now);
+expect('처리 상태 확인', !lh.ok && lh.error === 'invalid_status');
+lh = handleLifeRequest(cur, { status: 'done', reply: 'x'.repeat(501) }, '오피스 김', now);
+expect('답변 500자', !lh.ok && lh.error === 'reply_too_long');
+lh = handleLifeRequest(cur, { status: 'in_progress', reply: '내일 오전 수리 기사 방문' }, '오피스 김', now);
+expect('처리 중으로', lh.ok && lh.value.status === 'in_progress' && lh.value.handledBy === '오피스 김' && lh.value.reply === '내일 오전 수리 기사 방문', lh);
+if (lh.ok) await life.put(lh.value);
+r = await call('POST', `/life-requests/${lifeId}/cancel`, {});
+expect('처리 중이면 학생 취소 불가', r.status === 409 && err(r) === 'not_pending', r);
+lh = handleLifeRequest((await life.get(lifeId))!, { status: 'in_progress' }, '오피스 김', now);
+expect('이미 처리 중', !lh.ok && lh.error === 'already_in_progress');
+lh = handleLifeRequest((await life.get(lifeId))!, { status: 'done' }, '오피스 박', now);
+expect('완료(답변 그대로 유지)', lh.ok && lh.value.status === 'done' && lh.value.reply === '내일 오전 수리 기사 방문' && lh.value.handledBy === '오피스 박', lh);
+if (lh.ok) await life.put(lh.value);
+lh = handleLifeRequest((await life.get(lifeId))!, { status: 'rejected', reply: 'x' }, '오피스 김', now);
+expect('끝난 요청은 못 바꿈', !lh.ok && lh.error === 'already_closed');
+r = await call('GET', '/life-requests');
+const lr = (r.body as any).rows.find((x: any) => x.id === lifeId);
+expect('학생이 완료·답변을 봄, 처리자는 안 보임', lr.status === 'done' && lr.reply === '내일 오전 수리 기사 방문' && lr.handledBy === undefined, lr);
+const open = (r.body as any).rows.find((x: any) => x.status === 'received');
+r = await call('POST', `/life-requests/${open.id}/cancel`, {});
+expect('접수 상태는 학생 취소', r.status === 200 && (r.body as any).status === 'cancelled', r);
+r = await call('POST', `/life-requests/${open.id}/cancel`, {}, '30140');
+expect('남의 요청 취소 404', r.status === 404, r);
+r = await call('POST', '/life-requests', { category: 'document', content: '재학증명서 1부' });
+expect('취소하면 다시 요청 가능', r.status === 201, r);
 
 console.log(fails ? `\n${fails}건 실패` : '\n모두 통과');
 if (fails) process.exit(1);

@@ -5,9 +5,9 @@
  */
 import { useCallback, useEffect, useState } from 'react';
 import { authHeaders, authMode, onSessionChange, signOut } from './auth';
-import type { DepartureList, GuardView, OutingList, OutingRow, PenaltyList, PenaltyRules, ReportList, RequestList, Settings, StudentFile, StudentFileList, Summary } from '../server/core';
+import type { DepartureList, GuardView, LifeRequestList, OutingList, OutingRow, PenaltyList, PenaltyRules, ReportList, RequestList, Settings, StudentFile, StudentFileList, Summary } from '../server/core';
 
-export type { DepartureList, GuardView, OutingList, OutingRow, PenaltyList, PenaltyRules, ReportList, RequestList, Settings, StudentFile, StudentFileList, Summary };
+export type { DepartureList, GuardView, LifeRequestList, OutingList, OutingRow, PenaltyList, PenaltyRules, ReportList, RequestList, Settings, StudentFile, StudentFileList, Summary };
 export type PenaltyRow = PenaltyList['rows'][number];
 export type { AuditList, CounselingDetail, CounselingList } from '../server/counseling';
 export type { NoticeDetail, NoticeList } from '../server/notices';
@@ -170,6 +170,11 @@ const MESSAGES: Record<string, string> = {
   pickup_after_flight: '기숙사 출발이 비행기 출발보다 늦습니다.',
   reason_required: '배차 불가 사유를 적어 주세요.',
   departure_passed: '출발일이 지난 항공편입니다.',
+  invalid_status: '처리 상태를 고르세요.',
+  reply_required: '반려할 때는 답변에 사유를 적어 주세요.',
+  reply_too_long: '답변은 500자까지 쓸 수 있습니다.',
+  already_closed: '이미 끝난 요청입니다(완료·반려·학생 취소).',
+  already_in_progress: '이미 처리 중인 요청입니다.',
   // 배포(Supabase)
   campus_not_allowed: '맡은 캠퍼스의 학생만 상담 기록을 쓸 수 있습니다. 관리자에게 담당 캠퍼스 등록을 요청하세요.',
   staff_only: '직원이나 가드 계정으로 등록되지 않았습니다.',
