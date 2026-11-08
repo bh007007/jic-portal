@@ -115,7 +115,8 @@
       const s = await post('adm/attendance_v2/regular_sched_load', withParams(reg.form, { s_the_date: d, s_sta_ca_id: c.ca_id, sel_time: '' }));
       await sleep(DELAY_MS);
       if (!Array.isArray(s.list)) { info.errors.push('sched ' + c.ca_id + ' ' + d); continue; }
-      const slots = s.list.filter((x) => x.s_time && Number(x.cnt ?? 1) > 0).map((x) => x.s_time);
+      // sel_time 은 s_time 앞 5자리(7자 "9:00:00" 이면 4자리), 업체 화면 코드와 같다. 없으면 code 1 'Missing information.'
+      const slots = s.list.filter((x) => x.s_time && Number(x.cnt ?? 1) > 0).map((x) => String(x.s_time).slice(0, String(x.s_time).length === 7 ? 4 : 5));
       D.days.push({ ca_id: c.ca_id, date: d, slots: slots.length, close_yn: s.close_yn ?? null });
       for (const t of slots) {
         const r = await post('adm/attendance_v2/regular_load', withParams(reg.form, { s_the_date: d, s_sta_ca_id: c.ca_id, sel_time: t }));
