@@ -14,6 +14,7 @@ export default function Home() {
   const absences = useLoad(() => loadAbsences(), []);
   const current = (students.data ?? []).filter((s) => s.start_date <= today);
   const arriving = (students.data ?? []).filter((s) => s.start_date > today);
+  const nameOf = new Map((students.data ?? []).map((s) => [s.student_no, s.name]));
   const byCampus = new Map<string, number>();
   for (const s of current) byCampus.set(s.campus || '-', (byCampus.get(s.campus || '-') ?? 0) + 1);
   const dayName = new Date(today + 'T00:00:00').toLocaleDateString(lang === 'ko' ? 'ko-KR' : 'en-US', { weekday: 'short' });
@@ -67,7 +68,7 @@ export default function Home() {
           <ul className="rows">
             {(recent.data ?? []).map((r) => (
               <li key={r.id}>
-                <Link to={`/students/${r.student_no}`}>{r.student_no}</Link>
+                <Link to={`/students/${r.student_no}`}>{nameOf.get(r.student_no) || r.student_no}</Link>
                 <span>{r.test_type.toUpperCase()}{r.section ? ` ${r.section}` : ''} <strong>{r.value}</strong></span>
                 <span className="muted small">{fmtDate(r.test_date)} · {r.teacher_name}</span>
               </li>
