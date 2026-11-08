@@ -186,7 +186,7 @@ apps/intranet/
 
 인트라넷은 **JIC 포털(관리자 앱) Cloudflare Pages 프로젝트 안 `/intranet/`**에 올린다(11/8 결정: 포털과 같이 쓰고, 한 번 로그인으로 오간다. Cloudflare·GitHub·Supabase는 지금 쓰는 계정 하나로). 직원 화면과 가드 태블릿(출입구 공용 계정)을 같은 주소에서 쓰고, 로그인한 계정 종류로 나뉜다.
 
-- **빌드**: `npm run portal:build` = 관리자 앱 빌드 + 인트라넷을 `--base /intranet/`로 빌드해 `apps/admin/dist/intranet`에 넣는다(`apps/intranet` 의 `build:portal`).
+- **빌드**: Pages 프로젝트의 원래 빌드 명령 `npm run admin:build`가 관리자 앱 빌드 뒤 인트라넷을 `--base /intranet/`로 빌드해 `apps/admin/dist/intranet`에 넣는다(`apps/intranet` 의 `build:portal`). Cloudflare 빌드 설정은 바꾸지 않는다(`portal:build`는 같은 일의 다른 이름).
 - **화면 주소**: `functions/intranet/[[path]].ts`가 `/intranet/…` 화면 주소에 인트라넷 `index.html`을 준다(새로 고침·바로 열기). 파일(`/intranet/assets/…`)은 그대로.
 - **API**: `/intranet/api/*` = `functions/intranet/api/[[path]].ts`가 인트라넷 서버(`apps/intranet/worker/index.ts`의 `handleApi`)를 그대로 부른다. 관리자 앱의 `/api/*`(`functions/api`)와 따로 돈다. 화면은 `src/base.ts`로 주소 앞에 `/intranet`을 붙인다.
 - **한 번 로그인**: 같은 주소라 관리자 앱과 같은 로그인 저장 키(Supabase 기본값)를 쓴다. 한쪽에서 로그인·로그아웃하면 다른 쪽도 같다. 관리자 앱 위쪽 **인트라넷** 버튼 → `/intranet/`, 인트라넷 **통합관리** 버튼 → `/`.
@@ -207,7 +207,7 @@ apps/intranet/
 
 1. Supabase에 마이그레이션 `20261108100000_student_intranet.sql`, `20261108120000_student_request_ids.sql`, `20261108130000_intranet_deploy.sql`, `20261108140000_nonacademic_requests.sql`(생활 요청), `20261108150000_overnight_travel.sql`(외박·여행 정보), `20261108160000_school_trips.sql`(학교 여행)을 차례로 적용한다.
 2. 직원 계정은 관리자 앱과 같다(`staff_users`, `docs/setup-cloud.md` 1-4). 이름(`staff_users.name`)을 넣어 둔다(처리자·접근 기록에 남는다). 상담 기록을 볼 직원은 `staff_campuses`에 맡은 캠퍼스를 넣는다(예: `insert into staff_campuses values ('<user_id>', 'Challenger')`).
-3. 이미 있는 JIC 포털 Pages 프로젝트(`docs/setup-cloud.md` 2)의 **Settings → Build** 에서 Build command 를 `npm run admin:build` → **`npm run portal:build`** 로 바꾼다(출력 폴더 `apps/admin/dist` 는 그대로). 새 프로젝트는 만들지 않는다.
+3. 빌드 설정은 그대로 둔다. 이미 있는 JIC 포털 Pages 프로젝트(`docs/setup-cloud.md` 2)의 `npm run admin:build`가 인트라넷까지 빌드한다. 새 프로젝트는 만들지 않는다.
 4. 같은 프로젝트의 **Settings → Variables and Secrets** 에 **Secret** `SUPABASE_SERVICE_ROLE_KEY` 하나를 더한다(Production). 가드 태블릿 요청(재학생 명단·승인된 외박)에서만 쓰고, 없으면 가드 요청만 `500 server_config`(직원 화면은 동작). Supabase 주소·anon 키는 관리자 앱이 쓰는 `VITE_SUPABASE_URL`·`VITE_SUPABASE_ANON_KEY` 를 그대로 쓴다.
 5. 다시 배포한 뒤 JIC 포털 주소에서 직원 계정으로 로그인 → 위쪽 **인트라넷** 버튼 → 다시 로그인하지 않고 인트라넷 홈이 보이면 된다. 경비실 태블릿은 `<포털 주소>/intranet/guard` 에서 가드 계정으로 로그인해 둔다.
 6. **가드 공용 계정**(출입구마다 하나): Supabase **Authentication → Users → Add user**(이메일 예: `gate-challenger@…`, 비밀번호, Auto Confirm 켜기)로 만든 뒤 SQL Editor에서 출입구를 잇는다.
