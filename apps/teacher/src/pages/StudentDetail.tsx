@@ -2,6 +2,7 @@ import { Link, useParams } from 'react-router-dom';
 import { useAuth } from '../auth';
 import { cefrOf, loadCefr, loadResults, loadStudents, loadTestTypes, type TestResult } from '../data';
 import ScoreForm from '../ScoreForm';
+import ScoreChart from '../ScoreChart';
 import { supabase } from '../supabase';
 import { Loading, PageHead, Section, fmtDate, useLoad, useSave } from '../ui';
 
@@ -59,6 +60,9 @@ export default function StudentDetail() {
           [...byType].map(([code, rows]) => (
             <div key={code} className="result-block">
               <h3>{typeName(code)}</h3>
+              {types.data?.find((t) => t.code === code) && (
+                <ScoreChart type={types.data.find((t) => t.code === code)!} results={rows} maps={cefr.data ?? []} />
+              )}
               <table className="tbl">
                 <thead>
                   <tr><th>날짜</th><th>영역</th><th className="num">점수</th><th>CEFR</th><th>입력</th><th /></tr>
