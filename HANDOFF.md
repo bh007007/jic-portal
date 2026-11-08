@@ -66,7 +66,7 @@ jic-portal/
 | 관리자 앱: 대시보드, 재학생·입학 예정·졸업생 목록, 학생 상세, 입학 배치별 명단(픽업·항공편), 기숙사 타입별 현황, 에이전시 목록·상세, 담당자 계정, 목록 엑셀(CSV) 다운로드 | 동작 (로컬 데이터 / 배포 주소는 샘플) |
 | 관리자 앱 회계: 인보이스(연수별 통화·납부 상태·입금 매칭 합계·포인트), 입금 매칭(미납·부분납 연수 입학일 순, 입금 원장), 포인트(재학생 잔액, 졸업 예정자 정산) | 동작 (11/8). 입금 원장은 `legacy_deposits`로 배포에도 연결(샘플 재업로드 후 보임) |
 | 관리자 앱 기초관리: 코스·기숙사(캠퍼스별 학생 수), 캠퍼스·배치(배치 일정·캠퍼스별 인원) | 동작 (11/8), 읽기 전용 |
-| 파트너 포털 1차 (`apps/partner`, 사이트맵 0.1~12.7): 공개 대시보드, 로그인·등록 신청·승인, 상담 6단계·학습계획서, 캠퍼스·코스, 견적·공실·등록 링크, 자료실, 공지·프로모션, 방문 신청, JIC 관리자 화면 | 코드 완료 (11/8). Supabase 테이블·권한 반영·시험 완료, 배포 전. `docs/partner-portal.md` |
+| 파트너 포털 1차 (`apps/partner`, 사이트맵 0.1~12.7): 공개 대시보드, 로그인·등록 신청·승인, 상담 6단계·학습계획서, 캠퍼스·코스, 견적·공실·등록 링크, 자료실, 공지·프로모션, 방문 신청, JIC 관리자 화면 | 배포 (11/8): https://jic-partner.bh007007.workers.dev (Cloudflare Workers, main 자동 배포). Supabase 테이블·권한 반영·시험 완료. `docs/partner-portal.md` |
 | 학생 앱 1차 (`apps/student`): 홈, 결석 신청·취소, 신청 내역, 내 정보 (한국어·영어) | 동작 (11/8, 로컬 전용 `npm run student`). 배포는 학생 계정·정규화 스키마 이후. `docs/student-app.md` |
 | 인트라넷 | 디자인만 |
 | Supabase 테이블(`legacy_*` 원본 jsonb)·직원 로그인·Cloudflare Pages 배포 | 동작 중 (11/7): https://jic-portal-916.pages.dev , Supabase `jic-portal`(Singapore). 샘플 데이터만. 계정은 레오에게 요청. 설정 순서 `docs/setup-cloud.md` |
@@ -86,12 +86,12 @@ jic-portal/
    - 재학·입학 예정 연수의 `sum_pd_point`·`sum_pu_point`는 모두 0이고 `tr_point_clear_yn`·`tr_room_clear_yn`이 Y인 연수는 0건이다. 그래서 실제 데이터에서 포인트 > 재학생 잔액은 전부 0, 졸업 예정자 정산은 전원 '미처리'로 나온다.
    - `point_history`(14,439건)를 붙였다(11/8, 학생 상세의 '포인트 내역' 표, 포인트 합계는 원장 우선).
      - `type` D는 항목명 없이 충전, U는 현지 비용 항목(`ec_name`: Maintenance, Laundry, Utility, SSP, Visa, Deposit, pick-up 등) 사용이다. 1포인트는 1페소(`point`=`php`)다.
-     - 다만 추출본의 1,228개 연수는 **모두 졸업생**이고, 1,212건은 충전액과 사용액이 같다. 즉 진행 중인 잔액이 아니라 현지 비용 정산 기록이다.
-     - 재학생 잔액은 이 데이터로 알 수 없다. 업체 화면 Point > Balance의 조회 API를 추출 스크립트에 추가해야 한다. 정산 여부 표시도 같이 확인한다.
+     - 다만 추출본의 1,228개 연수는 졸업생(1,180)과 취소 연수(48)뿐이고, 1,212건은 충전액과 사용액이 같다. 연수별 D 합계 = `sum_pd_point`, U 합계 = `sum_pu_point`(1,227건 모두 일치)라 인보이스 포인트 값과 같은 정보다. 기록은 2024-09~2026-06뿐이다.
+     - 재학생 잔액은 이 데이터로 알 수 없다. 2번 추가 추출의 `point_balance`(Point > Balance)로 붙이고, 6월 이후 기록이 없는 것이 날짜 조건 때문인지는 같은 스크립트의 `point_history_all`로 확인한다. 정산 여부 표시도 같이 확인한다.
    - 입금 원장(`deposits`, 679건)은 `legacy_deposits` 테이블과 `functions/api` 읽기를 추가했다. 업로드 스크립트는 계좌 열(`bk_*`, `*_acct_bank/num/owner`)을 빼고 올린다. `balance`는 업체 포털 값을 그대로 보여 준다(97건은 `dp_amount_total - sum_id_amount`와 다르다, 매칭 통화가 다른 경우로 보임).
    - 코스의 캠퍼스는 연수의 첫 코스 캠퍼스(`first_co_ca_code`) 기준이다. 기숙사는 이름 끝 "(P)" 같은 표시로 캠퍼스를 정한다.
    - 에이전시 담당자 이메일은 지금 가려서 보여 준다. 역할별 권한(4번)이 생기면 관리자에게만 전체 표시.
-2. **추가 추출**: 방·침대 배정(체크인 화면 `checkin_v3_student_rooms`, `room_bed_v2_load`)과 인보이스 상세 금액. 추출 스크립트에 단계 추가 → 기숙사 화면을 디자인(04)의 방·침대 보드로 교체.
+2. **추가 추출 실행** (스크립트 준비됨 11/8, 레오가 실행): `scripts/extract/portal-extract-extra.js`가 포인트 잔액(`point_balance`), 날짜 조건 없는 포인트 이력(`point_history_all`), 방·침대 목록(`rooms`), 오늘 기준 방·침대 배정(`bed_board`)을 받고, 인보이스 상세·방 상태 화면의 조회 주소를 기록한다. 업체 화면의 검색 조건을 직접 볼 수 없어 화면 HTML에서 검색 항목과 주소를 찾아 쓴다(가짜 포털로만 시험함). 실행 후 `docs/data-dictionary-extra.md`를 보고 → 포인트 화면을 `point_balance`로 바꾸고, 기숙사 화면을 디자인(04)의 방·침대 보드로 교체한다. 비는 단계가 있으면 `data/tables/extra_meta.json`의 화면 구조로 검색 조건을 고쳐 다시 받는다. 인보이스 상세 금액은 그다음.
 3. **Supabase 정규화 스키마**: 지금은 `legacy_*`(원본 레코드 jsonb)를 통째로 읽어 계산한다. `docs/plan.md`의 데이터 모델 기준으로 학생·연수(enrollments)·배치·기숙사 테이블을 만들고 `functions/api`를 조건 조회로 바꾼다. 실제 데이터를 올리기 전에 필수. 테스트 DB에는 샘플 데이터만.
 4. **역할별 권한**: 지금은 `staff_users`에 있으면 전부 읽기. 역할 9개(학생, 선생님, 체커, 스케줄러, 매니저, 오피스, 관리자, 가드, 에이전시 지점)로 RLS 세분화.
 5. **파트너 포털 마무리**: Cloudflare Workers(`jic-partner`, `apps/partner/wrangler.jsonc`) 배포, 추천 조건표 승인본 입력(관리자 > 추천 규칙), 캠퍼스·코스 내용과 링크 입력(관리자 > 콘텐츠·설정). 결정 대기(견적 미리 채우기, 방문 신청 담당, Agent Hub 관계)는 `docs/partner-portal.md`. 다음은 2차 My Students(지점 계정 `legacy_am_id` ↔ 연수 `tr_am_id`).

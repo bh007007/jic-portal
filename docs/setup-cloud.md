@@ -99,7 +99,7 @@ Cloudflare는 이미 Pages 프로젝트에 연결된 저장소로 Pages 프로�
    | Deploy command | `npx wrangler deploy --config apps/partner/wrangler.jsonc` |
    | Build variables | `VITE_SUPABASE_URL`, `VITE_SUPABASE_ANON_KEY` (관리자 앱과 같은 값), `NODE_VERSION=22` |
 
-3. 배포되면 `https://jic-partner.<계정>.workers.dev` 주소가 생긴다. 이후 `main`에 머지할 때마다 다시 배포된다.
+3. 배포되면 `https://jic-partner.<계정>.workers.dev` 주소가 생긴다(2026-11-08 만든 주소: `https://jic-partner.bh007007.workers.dev`). 이후 `main`에 머지할 때마다 다시 배포된다.
 
 배포한 뒤 해야 할 일:
 - Supabase **Authentication → URL Configuration → Redirect URLs**에 파트너 포털 주소(`https://jic-partner.….workers.dev/**`)와 `http://127.0.0.1:5175/**`를 추가한다. 이메일 인증과 비밀번호 재설정 링크가 이 주소로 돌아온다.
