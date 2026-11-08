@@ -1,6 +1,6 @@
 # 인트라넷 (`apps/intranet`)
 
-직원용 화면과 경비실 가드 태블릿이다. 디자인은 `docs/design/IntranetPenalty.dc.html`(I1 패널티 승인)과 `GuardTablet.dc.html`(I2 외출·귀가 가드 태블릿, 1180×820)을 따른다. 1차는 **로컬 개발 서버 전용**이다.
+직원용 화면과 경비실 가드 태블릿이다. 디자인은 `docs/design/IntranetPenalty.dc.html`(I1 패널티 승인)과 `GuardTablet.dc.html`(I2 외출·귀가 가드 태블릿, 1180×820)을 따른다. 로컬 개발 서버로 개발하고, 배포는 Cloudflare Workers 하나로 한다(아래 '배포', 직원 화면·가드 태블릿 서버 코드 11/8, Cloudflare 설정 전).
 
 ## 실행
 
@@ -35,6 +35,7 @@ http://127.0.0.1:5177 을 연다. 가드 태블릿은 http://127.0.0.1:5177/guar
 | `/settings` | 통금·근무자 설정 | 통금 시각, 가드 태블릿 근무자 목록 |
 | `/requests/absences` | 결석 신청 처리 | 학생 앱에서 낸 결석 신청. 대기·승인·반려·학생 취소 탭, 결석일·캠퍼스·종류·학생 검색, 처리 메모(학생에게 보임)와 함께 승인·반려 |
 | `/requests/overnights` | 외박 신청 처리 | 학생 앱에서 낸 외박 신청. 같은 방식. 승인하면 그 밤들이 통금 확인에서 빠진다 |
+| `/requests/life` | 생활 요청 처리 | 학생 앱에서 낸 생활 요청(시설 수리·방 변경·ID 카드 재발급·서류 발급·기타). 접수·처리 중·완료·반려·학생 취소 탭, 종류·캠퍼스·이름·내용 검색, 줄마다 답변(학생에게 보임)과 함께 처리 중·완료·반려 |
 
 메뉴의 나머지(전자결재, 양식·자료실, 사진 관리, 직원·부서, Staff 평가)는 '준비 중'이다. 패널티·외출·신청 표의 학생 이름은 Student File 로 이어진다. 디자인의 '논아카데믹 신청'은 '외박 신청'으로 시작했고, 여행 등 다른 종류가 생기면 같은 묶음에 더한다.
 
@@ -68,6 +69,13 @@ http://127.0.0.1:5177 을 연다. 가드 태블릿은 http://127.0.0.1:5177/guar
 - 발생 시각이 지금보다 뒤면 전날로 본다(자정 넘어 쓰는 리포트). 재학생만, 설정에 근무자가 있으면 근무자를 골라야 등록된다.
 - 등록하면 **패널티 승인 대기 후보가 바로 생긴다**(출처: 가드 리포트). 음주는 '음주', 폭력·무단외출·기타는 '기타'로 들어간다(점수표에 따로 없는 종류). 근거는 `가드 리포트(22:40): 음주 — 내용 앞 60자`, 발생일은 통금과 같은 '밤' 기준.
 - 리포트는 고치거나 지우지 않는다. 잘못 쓴 리포트는 패널티를 반려한다(통금 후보 정리는 가드 리포트 패널티를 건드리지 않는다).
+
+### 생활 요청 (업체 '요청사항(학생)'·'ID 카드 교체', 기획안 nonacademic_requests)
+
+- 학생 앱이 쓰는 요청 데이터를 그대로 읽고 처리한다. 모양과 규칙은 `apps/student/server/lifeRequests.ts` 한 곳이다.
+- 접수 → 처리 중 → 완료·반려. 끝난 요청(완료·반려·학생 취소)은 바꾸지 않는다. 반려는 답변에 사유를 적어야 한다. 답변을 비우고 완료하면 지난 답변이 그대로 남는다.
+- 처리할 목록(접수·처리 중)은 오래된 순, 끝난 목록은 최근 처리 순이다. 메뉴·홈에 접수 건수가 보이고, Student File에 그 학생의 요청이 보인다.
+- 처리자는 로컬은 오른쪽 위에 입력한 이름(없으면 비워 둠), 배포는 로그인한 직원이다.
 
 ### 신청 처리 (결석·외박)
 
@@ -109,6 +117,9 @@ apps/intranet/
 ├─ server/notices.ts     내부 공지·읽음
 ├─ server/reports.ts     가드 리포트 종류·패널티 종류 연결
 ├─ server/core.test.ts   core 시험 (가짜 시계·메모리 저장소). 빌드할 때 함께 돈다
+├─ server/supabaseData.ts  배포: 직원 확인, 업체 원본 읽기(직원 토큰)
+├─ server/supabaseStores.ts 배포: Supabase 저장소(직원 토큰, RLS·DB 함수)
+├─ worker/index.ts       배포 서버(Cloudflare Workers), 설정 wrangler.jsonc
 ├─ server/localData.ts   로컬: Vite 플러그인, 파일 저장 (결석·외박 신청은 학생 앱 파일을 같이 연다)
 └─ src/                  화면 (React + Vite + TypeScript)
 ```
@@ -146,23 +157,66 @@ apps/intranet/
 | `GET /api/students/:stId` | Student File 상세 |
 | `GET /api/requests/absences?tab=&from=&to=&campus=&kind=&q=` | 결석 신청 목록 |
 | `GET /api/requests/overnights?tab=&from=&to=&campus=&q=` | 외박 신청 목록(기간이 조회 범위와 겹치는 건) |
+| `GET /api/requests/life?tab=&category=&campus=&q=` | 생활 요청 목록(탭: received·in_progress·done·rejected·cancelled) |
+| `POST /api/requests/life/:id/handle` | 생활 요청 처리 `{ status: in_progress·done·rejected, reply }` |
 | `POST /api/requests/{absences,overnights}/decide` | `{ ids, approve, comment }` 승인·반려(대기 중인 건만) |
 
 ### 로컬 저장
 
 결석·외박 신청은 학생 앱과 같은 `.local-db/student/` 파일을 쓴다. 상담 기록·접근 기록은 `counseling-<source>.ndjson`, `audit-<source>.ndjson`(실제 데이터로 실행하면 민감 정보). 가드 리포트는 `reports-<source>.ndjson`. 귀국 항공편과 공항 이동 배차는 학생 앱 폴더의 `departures-<source>.ndjson`, `rides-<source>.ndjson`을 같이 쓴다. 내부 공지는 학생 데이터와 상관없어 `notices.ndjson`, `notice-reads.ndjson` 하나씩. 나머지는 저장소 루트 `.local-db/intranet/`(Git 제외)에 `outings-<sample|extract>.ndjson`, `penalties-<sample|extract>.ndjson`, `settings.json`, `penalty-rules.json`을 쓴다. 실제 추출본으로 실행하면 학생 번호가 들어가므로 `data/`와 같이 다룬다.
 
-## 배포 전에 필요한 것
+## 배포 (Cloudflare Workers)
 
-테이블과 권한(RLS)은 `supabase/migrations/20261108100000_student_intranet.sql`(11/8, 학생 앱과 같은 파일)에 만들었다. 권한 시험은 `supabase/tests/student_intranet_rls.mjs`.
+인트라넷은 **Workers 한 개**로 올린다(정적 파일 + `/api` 서버 코드, 설정 `apps/intranet/wrangler.jsonc`, 서버 `apps/intranet/worker/index.ts`). 학생 앱·파트너 포털과 같은 방식이다. 직원 화면과 가드 태블릿(출입구 공용 계정)을 같은 주소에서 쓰고, 로그인한 계정 종류로 나뉜다(11/8).
 
-1. **계정**(11/8 결정)
-   - 직원: `staff_users`(+ 역할별 권한, HANDOFF 6-4). 처리자는 로그인한 직원으로 채운다(화면이 보내는 이름은 믿지 않는다).
-   - 가드: 출입구(캠퍼스)마다 공용 계정 하나(`guard_accounts`, `is_guard()`, `current_guard_campus()`). 기록에는 근무자 이름을 고른다(설정의 근무자 목록, `intranet_settings.guards`).
-   - 상담 기록: 같은 캠퍼스 직원만 본다. 직원이 맡는 캠퍼스는 `staff_campuses`에 넣는다(관리자도 넣어야 본다).
-2. **서버(Workers) 연결**: `server/core.ts`의 저장소를 Supabase 구현으로 바꾸고, 상담 기록은 아래 함수로 바꾼다. 로컬의 `X-Staff-Name` 헤더는 쓰지 않는다.
-3. **미귀가 확인**: 지금은 화면을 열 때 계산한다. 배포에서는 통금 직후 Cloudflare Workers 크론(서비스 키)으로 후보를 만든다.
-4. **태블릿**: 경비실 태블릿에서 배포 주소를 연다(로컬 개발 서버는 이 PC에서만 열린다).
+- **로그인**: 이메일·비밀번호(Supabase 계정). `staff_users`에 있으면 직원, `guard_accounts`에 있으면 가드, 둘 다 아니면 안내만 보인다.
+  - 직원: 관리자 앱과 같은 계정. 처리자 이름은 `staff_users.name`이고, 오른쪽 위 이름 입력 칸 대신 로그인한 이름과 로그아웃이 보인다. 가드 주소(`/guard`)는 '가드 계정으로 로그인' 안내만 보인다(직원 계정으로 외출·귀가를 기록하지 않는다).
+  - 가드(출입구 공용 계정, 11/8 결정): 어느 주소로 들어와도 가드 태블릿만 보인다. 캠퍼스는 계정의 출입구로 고정되고(화면이 보낸 값은 서버가 바꿔 씀), 기록에는 근무자 이름을 고른다(설정의 근무자 목록). 가드가 부를 수 있는 API는 `/meta`, `/guard`, `/guard/scan`, `/guard/report`뿐이다(나머지 `403 guard_forbidden`).
+- **학생·연수**: 업체 원본(`legacy_*`, 직원만 읽기)을 읽는다(`server/supabaseData.ts`: 메타, 학생, 연수, 기숙사 배정). 직원 요청은 직원 토큰으로(관리자 앱 `functions/api`와 같은 방식), 가드 요청은 가드가 원본을 못 읽으므로 **서비스 키**로 읽는다. 가드에게는 가드 API의 응답(재학 여부·이름·캠퍼스·외출 기록)으로만 나간다. 같은 Worker 안에서 60초 기억한다.
+- **가드의 승인된 외박**: 가드 화면의 '외박 허용 ~복귀일'과 통금 판정에 쓰는 승인된 외박만 서비스 키로 읽는다(`approvedOvernights`, 사유·담당자 메모·처리자는 읽지 않음). 외출·귀가, 가드 리포트, 패널티 후보 쓰기는 가드 토큰으로 해서 RLS가 출입구 범위를 막는다.
+- **통금 위반 후보**: 가드의 귀가 기록에서는 만들지 않는다(가드 권한 밖). 직원이 홈·패널티·외출 화면을 열 때 정리한다(로컬과 같음). 통금 직후 자동으로 만드는 크론은 남은 일.
+- **저장소**: Supabase 테이블을 직원 토큰으로 읽고 쓴다(`server/supabaseStores.ts`, RLS). 계산은 로컬과 같은 core.
+  - 결석·외박 승인·반려는 `decide_*` 함수, 배차·패널티 처리자는 로그인한 직원 id로 남기고, 화면에는 `staff_directory()`로 이름을 보인다.
+  - 상담 기록은 테이블을 직접 못 읽으므로 `counseling.ts`의 `stores.remote`로 DB 함수(`counseling_open/create/update/followup`)를 쓴다. 목록은 `counseling_list()`(내용 없음, 맡은 캠퍼스만), 접근 기록은 DB 함수가 남긴다. 맡지 않은 캠퍼스 학생의 상담은 쓸 수 없다(`campus_not_allowed`).
+  - 설정(통금·근무자)은 `intranet_settings` 한 행, 점수표는 `penalty_rules`·`penalty_stages`(종류·단계는 고정, 점수·기준만 바꿈).
+
+### 설정 순서 (레오 PC의 Claude)
+
+1. Supabase에 마이그레이션 `20261108100000_student_intranet.sql`, `20261108120000_student_request_ids.sql`, `20261108130000_intranet_deploy.sql`, `20261108140000_nonacademic_requests.sql`(생활 요청)을 차례로 적용한다.
+2. 직원 계정은 관리자 앱과 같다(`staff_users`, `docs/setup-cloud.md` 1-4). 이름(`staff_users.name`)을 넣어 둔다(처리자·접근 기록에 남는다). 상담 기록을 볼 직원은 `staff_campuses`에 맡은 캠퍼스를 넣는다(예: `insert into staff_campuses values ('<user_id>', 'Challenger')`).
+3. **Workers & Pages → Create → Workers → Import a repository** → `jic-portal`
+
+   | 항목 | 값 |
+   | --- | --- |
+   | Project name | `jic-intranet` |
+   | Root directory | `/` (비워 둠) |
+   | Build command | `npm run intranet:build` |
+   | Deploy command | `npx wrangler deploy --config apps/intranet/wrangler.jsonc` |
+   | Build variables | `VITE_SUPABASE_URL`, `VITE_SUPABASE_ANON_KEY`, `VITE_ADMIN_URL`(관리자 앱 주소, '통합관리' 버튼), `NODE_VERSION=22` |
+
+4. Worker의 **Settings → Variables and Secrets**에 `SUPABASE_URL`, `SUPABASE_ANON_KEY`(빌드 변수와 같은 값)와 **Secret** `SUPABASE_SERVICE_ROLE_KEY`를 넣는다. 서비스 키는 가드 요청에서만 쓰고, 없으면 가드 요청만 `500 server_config`(직원 화면은 동작).
+5. 주소(`https://jic-intranet.<계정>.workers.dev`)에서 직원 계정으로 로그인 → 홈이 보이면 된다.
+6. **가드 공용 계정**(출입구마다 하나): Supabase **Authentication → Users → Add user**(이메일 예: `gate-challenger@…`, 비밀번호, Auto Confirm 켜기)로 만든 뒤 SQL Editor에서 출입구를 잇는다.
+
+   ```sql
+   insert into public.guard_accounts (user_id, campus, label)
+   values ('<만든 사용자 id>', 'Challenger', 'Challenger 정문')
+   on conflict (user_id) do update set campus = excluded.campus, label = excluded.label;
+   ```
+
+   캠퍼스 이름은 관리자 앱의 캠퍼스 표시와 같게 쓴다(`Challenger`, `Premium`, `MCO`). 근무자 이름은 직원이 인트라넷 **설정**에서 넣는다. 경비실 태블릿에서 그 계정으로 로그인해 두면 된다.
+
+### 배포 시험
+
+- `supabase/tests/intranet_worker_api.mjs`(73개): 실제 마이그레이션을 올린 PGlite(`pg-supabase.mjs`)에서 직원 두 명(Challenger·Premium 담당)으로 설정·점수표 → 통금 위반 후보·승인(점수표 점수, 처리자) → 결석 반려·외박 승인 → 배차 확정 → 공지·읽음 → 상담 기록(같은 캠퍼스만, 내용은 함수로, 열람 10초 중복 제외, 접근 기록) → Student File → 가드 리포트 목록. 이어서 가드 두 명(Challenger·Premium 정문)으로 출입구 고정, 직원 API 403, 서비스 키 없을 때, 외출·이미 외출 중·귀가·근무자 미선택·재학생 아님, 승인된 외박(복귀일 표시, 사유 안 보임), 리포트 → 직원 패널티 후보, 다른 출입구 기록 안 보임. CI가 함께 돌린다.
+- 11/8 `wrangler dev`(workerd)에 이 Worker를 띄우고 Playwright로 확인: 직원 26개(로그인, 직원 아닌 계정 안내, 메뉴 12개 화면, 상담 작성, 공지 작성, 가드 주소 안내, 로그아웃), 가드 태블릿 14개(가드 로그인 → 태블릿만, 캠퍼스 고정, 외출·귀가 처리, 없는 번호, 사건 리포트 → 직원 패널티 화면에 후보, 로그아웃).
+
+### 남은 것
+
+1. **미귀가 확인**: 지금은 직원 화면을 열 때 계산한다. 배포에서는 통금 직후 Cloudflare Workers 크론으로 후보를 만든다.
+2. **역할별 권한**(HANDOFF 6-4): 지금은 `staff_users`면 모든 직원 화면을 쓴다.
+3. **카드키 QR**: 태블릿 카메라로 직접 읽을지(지금은 스캐너·직접 입력), QR에 들어갈 값('확인이 필요한 것').
+4. 서비스 키를 쓰는 범위(가드의 재학생 명단·승인된 외박)를 보안 점검 때 확인한다. 실제 학생 데이터는 보안 점검 뒤에만 올린다(2026-11-07 결정).
 
 ### 테이블과 권한
 
@@ -175,6 +229,7 @@ apps/intranet/
 | `intranet_settings` | 읽기(통금, 근무자 목록) | 읽기·수정 |
 | `absence_requests`, `overnight_permissions` | - | 읽기, 처리는 `decide_*` 함수 |
 | `departure_flights`, `airport_rides` | - | 항공편 읽기, 배차 등록·수정 |
+| `nonacademic_requests` | - | 읽기, 처리·답변은 `handle_nonacademic_request` 함수(처리자 = 로그인한 직원) |
 | `internal_notices`, `internal_notice_reads` | - | 읽기·쓰기, 읽음은 본인 것만 |
 | `counseling_notes` | - | 테이블 직접 읽기·쓰기 불가, 아래 함수만 |
 | `audit_logs` | - | 맡은 캠퍼스 기록만 읽기, 쓰기·삭제 불가 |

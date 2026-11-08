@@ -1,4 +1,5 @@
-// 학생 앱·인트라넷 마이그레이션(20261108100000_student_intranet.sql)의 권한 시험.
+// 학생 앱·인트라넷 마이그레이션(20261108100000_student_intranet.sql, 20261108120000_student_request_ids.sql,
+// 20261108140000_nonacademic_requests.sql)의 권한 시험.
 // 실제 Postgres(PGlite, WebAssembly)에 Supabase 흉내(auth.uid, anon/authenticated/service_role)를 만들고
 // 마이그레이션을 두 번 실행한 뒤(여러 번 실행 가능 확인) 역할별로 읽기·쓰기를 시험한다. 데이터는 전부 가짜.
 //
@@ -30,6 +31,10 @@ await db.exec(`
 await db.exec(mig('20261107000000_legacy_tables.sql'));
 await db.exec(mig('20261108100000_student_intranet.sql'));
 await db.exec(mig('20261108100000_student_intranet.sql')); // 두 번째 실행
+await db.exec(mig('20261108120000_student_request_ids.sql'));
+await db.exec(mig('20261108120000_student_request_ids.sql'));
+await db.exec(mig('20261108140000_nonacademic_requests.sql'));
+await db.exec(mig('20261108140000_nonacademic_requests.sql'));
 ok('마이그레이션 2회 실행', true);
 
 // ── 가짜 사용자
@@ -80,6 +85,11 @@ const absA = await as(U.stA, async () => {
   const r = await one(`insert into absence_requests (student_no, enrollment_id, absence_date, periods, kind, reason)
                        values ('1001', 'tr1', '2026-11-10', '{1,2}', 'sick', '감기') returning id, status`);
   ok('학생 결석 등록 → 대기', r.status === 'pending');
+  const myId = 'a0000000-0000-4000-8000-000000000001';
+  const withId = await one(`insert into absence_requests (id, student_no, enrollment_id, absence_date, kind, reason)
+                            values ('${myId}', '1001', 'tr1', '2026-11-20', 'personal', '서버가 정한 번호') returning id`);
+  ok('서버가 정한 신청 번호로 등록', withId.id === myId);
+  await q(`select cancel_absence_request('${myId}')`);
   await denied('남의 학생번호로 결석', `insert into absence_requests (student_no, enrollment_id, absence_date, kind, reason) values ('1002', 'tr2', '2026-11-10', 'sick', 'x')`, RLS);
   await denied('남의 연수로 결석', `insert into absence_requests (student_no, enrollment_id, absence_date, kind, reason) values ('1001', 'tr2', '2026-11-10', 'sick', 'x')`, RLS);
   await denied('승인 상태로 등록', `insert into absence_requests (student_no, enrollment_id, absence_date, kind, reason, status) values ('1001', 'tr1', '2026-11-11', 'sick', 'x', 'approved')`, PERM);
@@ -95,13 +105,13 @@ const absB = await as(U.stB, async () => {
   return (await one(`insert into absence_requests (student_no, enrollment_id, absence_date, kind, reason) values ('1002', 'tr2', '2026-11-12', 'personal', '병원') returning id`)).id;
 });
 await as(U.stA, async () => {
-  ok('학생A는 자기 것만', (await count(`select count(*) n from absence_requests`)) === 1);
+  ok('학생A는 자기 것만', (await count(`select count(*) n from absence_requests`)) === 2);
   await q(`select cancel_absence_request('${absA}')`);
   ok('학생 취소', (await one(`select status from absence_requests where id = '${absA}'`)).status === 'cancelled');
   await denied('취소한 건 다시 취소', `select cancel_absence_request('${absA}')`, /not_pending/);
 });
 await as(U.staffC, async () => {
-  ok('직원은 모두 봄', (await count(`select count(*) n from absence_requests`)) === 2);
+  ok('직원은 모두 봄', (await count(`select count(*) n from absence_requests`)) === 3);
   const n = (await one(`select decide_absence_requests(array['${absA}'::uuid, '${absB}'::uuid], true, '확인') n`)).n;
   ok('대기 건만 처리', n === 1, `(처리 ${n})`);
   const b = await one(`select status, decided_by, staff_comment from absence_requests where id = '${absB}'`);
@@ -236,6 +246,48 @@ await as(U.stA, async () => {
   ok('비밀번호 변경 표시', (await one(`select must_change_password m from student_users`)).m === false);
   ok('학생은 직원 캠퍼스 표를 못 봄', (await count(`select count(*) n from staff_campuses`)) === 0);
 });
+
+// ── 생활 요청(nonacademic_requests): 학생은 자기 연수로 접수만, 취소는 접수 상태만, 처리는 직원 함수로
+const nr = await as(U.stA, async () => {
+  const id = 'b0000000-0000-4000-8000-000000000001';
+  await q(`insert into nonacademic_requests (id, student_no, enrollment_id, category, content) values ('${id}', '1001', 'tr1', 'facility', '샤워기 고장')`);
+  ok('학생 생활 요청 등록(접수)', (await one(`select status from nonacademic_requests where id = '${id}'`)).status === 'received');
+  await denied('남의 학생번호로 생활 요청', `insert into nonacademic_requests (student_no, enrollment_id, category, content) values ('1002', 'tr2', 'other', 'x')`, RLS);
+  await denied('남의 연수로 생활 요청', `insert into nonacademic_requests (student_no, enrollment_id, category, content) values ('1001', 'tr2', 'other', 'x')`, RLS);
+  await denied('완료 상태로 등록', `insert into nonacademic_requests (student_no, enrollment_id, category, content, status) values ('1001', 'tr1', 'other', 'x', 'done')`, PERM);
+  await denied('없는 종류', `insert into nonacademic_requests (student_no, enrollment_id, category, content) values ('1001', 'tr1', 'laundry', 'x')`, CHECK);
+  await denied('학생이 직접 답변', `update nonacademic_requests set staff_reply = 'x' where id = '${id}'`, PERM);
+  await denied('학생이 처리 함수', `select handle_nonacademic_request('${id}', 'done', 'x')`, /staff_only/);
+  for (let i = 0; i < 4; i++) await q(`insert into nonacademic_requests (student_no, enrollment_id, category, content) values ('1001', 'tr1', 'other', '요청 ${i}')`);
+  await denied('열린 요청 5건이면 더 못 냄', `insert into nonacademic_requests (student_no, enrollment_id, category, content) values ('1001', 'tr1', 'other', '여섯째')`, RLS);
+  const another = (await one(`select id from nonacademic_requests where content = '요청 0'`)).id;
+  await q(`select cancel_nonacademic_request('${another}')`);
+  ok('학생 취소(접수 상태)', (await one(`select status from nonacademic_requests where id = '${another}'`)).status === 'cancelled');
+  await q(`insert into nonacademic_requests (student_no, enrollment_id, category, content) values ('1001', 'tr1', 'document', '취소 뒤 다시')`);
+  ok('취소하면 다시 낼 수 있음', true);
+  return id;
+});
+await as(U.stB, async () => {
+  ok('학생B는 A 생활 요청을 못 봄', (await count(`select count(*) n from nonacademic_requests`)) === 0);
+  await denied('학생B가 A 요청 취소', `select cancel_nonacademic_request('${nr}')`, /not_pending/);
+});
+await as(U.staffC, async () => {
+  ok('직원은 생활 요청 모두 봄', (await count(`select count(*) n from nonacademic_requests`)) === 6);
+  await denied('반려는 사유 필수', `select handle_nonacademic_request('${nr}', 'rejected', '')`, /reply_required/);
+  await q(`select handle_nonacademic_request('${nr}', 'in_progress', '오늘 오후 수리')`);
+  const x = await one(`select status, staff_reply, handled_by::text from nonacademic_requests where id = '${nr}'`);
+  ok('직원 처리 중 + 답변, 처리자 = 본인', x.status === 'in_progress' && x.staff_reply === '오늘 오후 수리' && x.handled_by === U.staffC, x);
+  await denied('처리 중을 다시 처리 중으로', `select handle_nonacademic_request('${nr}', 'in_progress', null)`, /already_in_progress/);
+  await q(`select handle_nonacademic_request('${nr}', 'done', null)`);
+  ok('완료(답변 그대로)', (await one(`select staff_reply from nonacademic_requests where id = '${nr}'`)).staff_reply === '오늘 오후 수리');
+  await denied('끝난 요청은 못 바꿈', `select handle_nonacademic_request('${nr}', 'rejected', 'x')`, /already_closed/);
+  await denied('직원이 직접 수정', `update nonacademic_requests set status = 'received' where id = '${nr}'`, PERM);
+});
+await as(U.stA, async () => {
+  ok('학생이 완료·답변을 봄', (await one(`select status, staff_reply from nonacademic_requests where id = '${nr}'`)).staff_reply === '오늘 오후 수리');
+  await denied('처리된 요청 취소', `select cancel_nonacademic_request('${nr}')`, /not_pending/);
+});
+await as(U.guardC, async () => ok('가드는 생활 요청을 못 봄', (await count(`select count(*) n from nonacademic_requests`)) === 0));
 
 // ── 익명, 서비스 키
 await as(null, async () => {

@@ -4,6 +4,7 @@
  * - 결석·외박 신청은 storeDir(저장소 루트 .local-db/student, Git 제외)의 NDJSON 파일에 쓴다. 인트라넷도 같은 파일을 쓴다.
  *   샘플 데이터와 실제 추출본을 섞지 않도록 데이터 종류별로 파일을 나눈다.
  * - 로그인한 학생은 X-Student-Id 헤더로 구분한다. 이 PC(127.0.0.1)에서만 열리는 개발 서버 전용이다.
+ *   .env.local 에 Supabase 주소가 있으면 대신 Supabase 학생 계정 토큰으로 구분한다(studentLocalPlugin).
  */
 import fs from 'node:fs';
 import path from 'node:path';
@@ -13,7 +14,9 @@ import type { Plugin } from 'vite';
 import { loadDir } from '../../admin/server/localData';
 import { handleStudentApi } from './core';
 import type { Departure, Ride } from './departures';
+import type { LifeRequest } from './lifeRequests';
 import type { Absence, Overnight, RequestStore } from './requests';
+import { tokenCache, type SupabaseConf } from './supabaseAuth';
 
 /**
  * 신청 파일 하나(결석 또는 외박). 인트라넷 개발 서버도 같은 파일을 열어 승인·반려한다.
@@ -61,6 +64,7 @@ export function requestFiles(storeDir: string, source: string) {
     overnights: path.join(storeDir, `overnights-${source}.ndjson`),
     departures: path.join(storeDir, `departures-${source}.ndjson`),
     rides: path.join(storeDir, `rides-${source}.ndjson`),
+    life: path.join(storeDir, `life-requests-${source}.ndjson`),
   };
 }
 
@@ -90,7 +94,11 @@ function readJson(req: IncomingMessage): Promise<unknown> {
   });
 }
 
-export function studentLocalPlugin(dataDir: string, storeDir: string): Plugin {
+/**
+ * supabase 를 주면(.env.local 의 VITE_SUPABASE_URL·VITE_SUPABASE_ANON_KEY) 로그인은 Supabase 학생 계정 토큰으로 확인하고
+ * 데이터는 그대로 이 PC 파일을 쓴다(배포 전 로그인 시험용). 없으면 학생번호 + 생년월일 로컬 로그인.
+ */
+export function studentLocalPlugin(dataDir: string, storeDir: string, supabase?: SupabaseConf): Plugin {
   return {
     name: 'jic-student-local',
     configureServer(server) {
@@ -101,7 +109,9 @@ export function studentLocalPlugin(dataDir: string, storeDir: string): Plugin {
       const overnights = fileStore<Overnight>(files.overnights);
       const departures = fileStore<Departure>(files.departures);
       const rides = fileStore<Ride>(files.rides);
-      server.config.logger.info(`[student-local] ${db.summary()} · 기준일 ${db.refDate} · 신청 파일 ${storeDir}`);
+      const life = fileStore<LifeRequest>(files.life);
+      const tokens = supabase ? tokenCache(supabase) : null;
+      server.config.logger.info(`[student-local] ${db.summary()} · 기준일 ${db.refDate} · 신청 파일 ${storeDir}${supabase ? ` · 로그인 Supabase(${supabase.url})` : ''}`);
 
       server.middlewares.use('/api', async (req: IncomingMessage, res: ServerResponse) => {
         const send = (status: number, body: unknown) => {
@@ -122,10 +132,24 @@ export function studentLocalPlugin(dataDir: string, storeDir: string): Plugin {
           }
         }
         const url = new URL(req.url ?? '/', 'http://local');
-        const header = req.headers['x-student-id'];
-        const stId = typeof header === 'string' && /^\d+$/.test(header) ? header : null;
+        let stId: string | null = null;
+        let mustChangePassword = false;
+        if (tokens) {
+          const token = req.headers.authorization?.match(/^Bearer\s+(.+)$/i)?.[1];
+          try {
+            const s = token ? await tokens.resolve(token) : null;
+            stId = s?.stId ?? null;
+            mustChangePassword = s?.mustChangePassword ?? false;
+          } catch {
+            send(502, { error: 'network' });
+            return;
+          }
+        } else {
+          const header = req.headers['x-student-id'];
+          stId = typeof header === 'string' && /^\d+$/.test(header) ? header : null;
+        }
         const { status, body: out } = await handleStudentApi(
-          { db, store, overnights, departures, rides, stId, localLogin: true, now: () => new Date(), newId: () => crypto.randomUUID() },
+          { db, store, overnights, departures, rides, life, stId, mustChangePassword, localLogin: !tokens, now: () => new Date(), newId: () => crypto.randomUUID() },
           method,
           url.pathname,
           body,

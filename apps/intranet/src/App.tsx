@@ -1,5 +1,10 @@
+import type { ReactNode } from 'react';
 import { Route, Routes } from 'react-router-dom';
+import { authMode, signOut, useSession } from './auth';
 import Shell from './components/Shell';
+import { useApi } from './api';
+import LifeRequests from './pages/LifeRequests';
+import Login from './pages/Login';
 import Audit from './pages/Audit';
 import Counseling from './pages/Counseling';
 import CounselingDetail from './pages/CounselingDetail';
@@ -20,11 +25,57 @@ import Settings from './pages/Settings';
 import StudentFileDetail from './pages/StudentFileDetail';
 import StudentFiles from './pages/StudentFiles';
 
-export default function App() {
+/**
+ * 배포: 로그인한 계정 종류로 나눈다. 직원은 메뉴 화면, 출입구 가드 공용 계정은 가드 태블릿만,
+ * 둘 다 아니면 안내만 한다.
+ */
+function AccountGate({ children }: { children: ReactNode }) {
+  const { data, error } = useApi<{ role: 'staff' | 'guard' | null }>('/api/meta');
+  if (!data && !error) return <div className="login" />;
+  if (data?.role === 'guard') return <Guard />;
+  if (error !== 'staff_only') return <>{children}</>;
   return (
+    <div className="login">
+      <div className="login-box">
+        <div className="brand">
+          <span className="brand-mark">JIC</span>
+          <span className="brand-name">인트라넷</span>
+        </div>
+        <p className="login-error">직원이나 가드 계정으로 등록되지 않았습니다. 관리자에게 등록을 요청하세요.</p>
+        <button type="button" className="btn" onClick={() => void signOut()}>
+          로그아웃
+        </button>
+      </div>
+    </div>
+  );
+}
+
+/** 배포: 가드 태블릿은 출입구 가드 공용 계정으로 로그인해서 쓴다(직원 계정으로는 외출·귀가를 기록하지 않는다). */
+function GuardForStaff() {
+  return (
+    <div className="login">
+      <div className="login-box">
+        <div className="brand">
+          <span className="brand-mark">JIC</span>
+          <span className="brand-name">가드</span>
+        </div>
+        <p className="login-foot">가드 태블릿은 출입구 가드 계정으로 로그인해서 씁니다. 직원 계정으로는 외출·귀가를 기록하지 않습니다.</p>
+        <a href="/" className="btn">
+          인트라넷 홈
+        </a>
+      </div>
+    </div>
+  );
+}
+
+export default function App() {
+  const session = useSession();
+  if (authMode === 'supabase' && session === 'loading') return <div className="login" />;
+  if (authMode === 'supabase' && !session) return <Login />;
+  const routes = (
     <Routes>
       {/* 가드 태블릿은 메뉴 없이 전체 화면 */}
-      <Route path="/guard" element={<Guard />} />
+      <Route path="/guard" element={authMode === 'supabase' ? <GuardForStaff /> : <Guard />} />
       <Route
         path="*"
         element={
@@ -37,6 +88,7 @@ export default function App() {
               <Route path="/curfew" element={<Outings key="curfew" mode="curfew" />} />
               <Route path="/requests/absences" element={<Requests key="absences" kind="absences" />} />
               <Route path="/requests/overnights" element={<Requests key="overnights" kind="overnights" />} />
+              <Route path="/requests/life" element={<LifeRequests />} />
               <Route path="/settings" element={<Settings />} />
               <Route path="/counseling" element={<Counseling />} />
               <Route path="/counseling/new" element={<CounselingForm key="new" />} />
@@ -58,4 +110,5 @@ export default function App() {
       />
     </Routes>
   );
+  return authMode === 'supabase' ? <AccountGate>{routes}</AccountGate> : routes;
 }

@@ -45,6 +45,13 @@ export default function Home() {
             <small>건 · {data.overnightTonight}명</small>
           </span>
         </Link>
+        <Link to="/requests/life">
+          <span className="label">생활 요청 접수</span>
+          <span className="value">
+            {data.lifePending}
+            <small>건</small>
+          </span>
+        </Link>
         <Link to="/counseling?view=followup">
           <span className="label">확인할 일 (상담 후속 조치)</span>
           <span className="value">

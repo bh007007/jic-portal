@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState, type FormEvent } from 'react';
 import { Link } from 'react-router-dom';
 import { api, ApiError, errorText, useApi, type GuardView, type OutingRow } from '../api';
+import { authMode, signOut } from '../auth';
 import { REPORT_KINDS, REPORT_LABEL, type ReportKind } from '../../server/reports';
 import { duration, hm, md } from '../format';
 
@@ -30,6 +31,9 @@ export default function Guard() {
   const { data, error, reload } = useApi<GuardView>(`/api/guard?campus=${encodeURIComponent(campus)}`, 30000);
 
   if (!data) return <div className="guard-blank">{error ? `불러오지 못했습니다 (${error})` : '불러오는 중…'}</div>;
+  // 배포의 가드 공용 계정은 서버가 출입구 하나만 준다: 고르지 않고 그대로 쓴다
+  const fixed = authMode === 'supabase' && data.campuses.length === 1 ? data.campuses[0] : null;
+  if (fixed) return <GuardScreen view={data} campus={fixed} onCampus={() => undefined} reload={reload} />;
   if (!campus || !data.campuses.includes(campus)) {
     return (
       <div className="guard">
@@ -84,11 +88,15 @@ function GuardHeader({ view, campus, onCampus, guard, setGuard }: { view: GuardV
         <span className="brand-mark-w">JIC</span>
         <span>외출·귀가</span>
       </span>
-      {campus && (
-        <button type="button" className="guard-campus" onClick={onCampus} title="캠퍼스 바꾸기">
-          {campus}
-        </button>
-      )}
+      {campus &&
+        (authMode === 'supabase' ? (
+          // 배포: 가드 계정의 출입구로 고정(바꿀 수 없다)
+          <span className="guard-campus">{campus}</span>
+        ) : (
+          <button type="button" className="guard-campus" onClick={onCampus} title="캠퍼스 바꾸기">
+            {campus}
+          </button>
+        ))}
       <span className="guard-clock">{hm(new Date(now).toISOString())}</span>
       <span className="guard-sub">통금 {view.curfew}</span>
       {setGuard &&
@@ -102,11 +110,18 @@ function GuardHeader({ view, campus, onCampus, guard, setGuard }: { view: GuardV
               ))}
             </select>
           </label>
+        ) : authMode === 'supabase' ? (
+          <span className="guard-sub">근무자 미등록(직원이 설정에서 등록)</span>
         ) : (
           <Link to="/settings" className="guard-sub guard-link">
             근무자 미등록
           </Link>
         ))}
+      {authMode === 'supabase' && (
+        <button type="button" className="guard-sub guard-logout" onClick={() => void signOut()}>
+          로그아웃
+        </button>
+      )}
     </header>
   );
 }

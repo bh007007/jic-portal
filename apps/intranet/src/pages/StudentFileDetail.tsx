@@ -2,6 +2,7 @@ import { Link, useParams } from 'react-router-dom';
 import { useApi, type StudentFile } from '../api';
 import { Loading, PageTitle } from '../components/ui';
 import { duration, md, mdhm } from '../format';
+import { LIFE_CATEGORY, LIFE_STATUS, LIFE_STATUS_CLASS } from '../lifeLabels';
 import { FollowUp } from './Counseling';
 
 // 학생 한 명의 생활 기록. 기본 정보·연수·회계·메모는 관리자 앱 학생 상세에 있다.
@@ -327,6 +328,50 @@ export default function StudentFileDetail() {
           </div>
         </section>
       </div>
+
+      <section className="panel">
+        <div className="panel-head">
+          <h2>
+            생활 요청 <small>({data.lifeRequests.length}건)</small>
+          </h2>
+          <Link to="/requests/life" className="more">
+            생활 요청 처리 &gt;
+          </Link>
+        </div>
+        <div className="panel-body">
+          <table className="tbl center">
+            <thead>
+              <tr>
+                <th>접수</th>
+                <th>종류</th>
+                <th className="left">내용</th>
+                <th>상태</th>
+                <th className="left">답변</th>
+              </tr>
+            </thead>
+            <tbody>
+              {data.lifeRequests.length === 0 ? (
+                <tr className="empty">
+                  <td colSpan={5}>요청이 없습니다.</td>
+                </tr>
+              ) : (
+                data.lifeRequests.map((r) => (
+                  <tr key={r.id}>
+                    <td>{mdhm(r.submittedAt)}</td>
+                    <td>{LIFE_CATEGORY[r.category] ?? r.category}</td>
+                    <td className="left">{r.content}</td>
+                    <td className={LIFE_STATUS_CLASS[r.status]}>{LIFE_STATUS[r.status]}</td>
+                    <td className="left">
+                      {r.reply ?? '-'}
+                      {r.handledBy && <div className="muted small">{r.handledBy}</div>}
+                    </td>
+                  </tr>
+                ))
+              )}
+            </tbody>
+          </table>
+        </div>
+      </section>
     </>
   );
 }

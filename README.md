@@ -57,7 +57,7 @@ npm run admin
 npm run student
 ```
 
-http://127.0.0.1:5176 을 연다. 로그인은 학생번호 + 생년월일 8자리이며, 샘플 데이터로 실행하면 시험용 학생이 로그인 화면에 나온다. 자세한 내용은 [docs/student-app.md](docs/student-app.md), 두 작업 세션의 분담은 [docs/collab.md](docs/collab.md).
+http://127.0.0.1:5176 을 연다. 로그인은 학생번호 + 생년월일 8자리이며, 샘플 데이터로 실행하면 시험용 학생이 로그인 화면에 나온다. Supabase 학생 계정 만들기(`npm run student:accounts`)와 로그인 시험은 docs/student-app.md '학생 계정과 로그인'. 자세한 내용은 [docs/student-app.md](docs/student-app.md), 두 작업 세션의 분담은 [docs/collab.md](docs/collab.md).
 
 ## 인트라넷 실행 (로컬)
 

@@ -1,7 +1,7 @@
 /**
  * 인트라넷 /api/* 계산. 파일·네트워크에 의존하지 않는다.
  * - 학생·연수는 관리자 앱 core(createDb)를 그대로 쓴다(재학생 명단, 이름·캠퍼스).
- * - 외출·귀가 기록, 패널티, 설정은 Stores 로 분리한다. 로컬은 파일(server/localData.ts), 배포는 Supabase(예정, docs/intranet.md).
+ * - 외출·귀가 기록, 패널티, 설정은 Stores 로 분리한다. 로컬은 파일(server/localData.ts), 배포는 Supabase(server/supabaseStores.ts).
  * - 학생 신청(결석·외박)은 학생 앱의 server/requests.ts 모양·규칙을 그대로 쓴다(같은 저장소를 학생 앱과 같이 씀).
  * - 시각은 ISO(UTC)로 저장하고, 날짜·통금 판정은 필리핀 시간(UTC+8, 일광절약 없음)으로 한다.
  */
@@ -18,8 +18,10 @@ import {
   type AuditLog,
   type CounselingCtx,
   type CounselingNote,
+  type CounselingRemote,
 } from './counseling';
 import { decideRide, rideState, type Departure, type DepartureStore, type RideState, type RideStore } from '../../student/server/departures';
+import { handleLifeRequest, LIFE_CATEGORIES, LIFE_REPLY_MAX, type LifeRequestStore, type LifeStatus } from '../../student/server/lifeRequests';
 import { PENALTY_KIND_OF, REPORT_KINDS, REPORT_LABEL, REPORT_NOTE_MAX, type IncidentReport, type ReportKind } from './reports';
 import { createNotice, listNotices, noticeSummary, openNotice, updateNotice, type Notice, type NoticeCtx, type NoticeRead } from './notices';
 import { COMMENT_MAX, decideRequest, nightsBetween, overnightFor, type Absence, type Overnight, type RequestStatus, type RequestStore } from '../../student/server/requests';
@@ -128,11 +130,15 @@ export interface Stores {
   /** 상담 기록과 접근 기록(추가만) */
   counseling: Repo<CounselingNote>;
   audit: Repo<AuditLog>;
+  /** 배포: 상담 기록 열람·작성·수정·후속 조치는 DB 함수로(counseling.ts) */
+  counselingRemote?: CounselingRemote;
   /** 내부 공지와 읽음 */
   notices: Repo<Notice>;
   noticeReads: Repo<NoticeRead>;
   /** 가드 리포트(사건 리포트) */
   reports: Repo<IncidentReport>;
+  /** 학생 앱과 같이 쓰는 생활 요청(학생이 내고 직원이 처리, 학생 앱 server/lifeRequests.ts) */
+  lifeRequests: LifeRequestStore;
   /** 학생 앱과 같이 쓰는 귀국 항공편과, 직원이 쓰는 공항 이동 배차 */
   departures: DepartureStore;
   rides: RideStore;
@@ -145,6 +151,8 @@ export interface IntranetCtx {
   newId: () => string;
   /** 처리자 이름: 로컬은 브라우저에 입력한 직원 이름, 배포는 로그인한 직원. 상담 기록 열람·작성과 접근 기록에 쓴다. */
   actor?: string | null;
+  /** 배포: 로그인한 계정 종류. 가드 공용 계정은 그 출입구(캠퍼스)로 고정한다. 로컬은 없음. */
+  session?: { role: 'staff' | 'guard'; campus?: string | null };
 }
 
 type Result = { status: number; body: unknown };
@@ -280,8 +288,10 @@ export type OutingRow = ReturnType<typeof outingRow>;
 async function guardView(ctx: IntranetCtx, q: URLSearchParams) {
   const settings = await loadSettings(ctx);
   const now = ctx.now().getTime();
-  const campuses = [...new Set([...currentIndex(ctx.db).values()].map((s) => s.campus))].filter((c) => c && c !== '-').sort();
-  const campus = q.get('campus') ?? '';
+  // 가드 공용 계정은 자기 출입구만(화면은 캠퍼스가 하나면 고르지 않고 그대로 쓴다)
+  const guardCampus = ctx.session?.role === 'guard' ? (ctx.session.campus ?? '') : null;
+  const campuses = guardCampus !== null ? [guardCampus] : [...new Set([...currentIndex(ctx.db).values()].map((s) => s.campus))].filter((c) => c && c !== '-').sort();
+  const campus = guardCampus ?? q.get('campus') ?? '';
   const overnights = await ctx.stores.overnights.listAll();
   const outings = (await ctx.stores.outings.all()).filter((o) => !campus || o.campus === campus);
   const rows = outings.map((o) => outingRow(ctx, o, settings.curfew, now, overnights));
@@ -319,7 +329,8 @@ async function guardScan(ctx: IntranetCtx, input: Record<string, unknown>): Prom
     rec = open ? { ...open, inAt: nowIso, inBy: guard } : { id: ctx.newId(), stId, trId: s.trId, campus, outAt: null, outBy: '', inAt: nowIso, inBy: guard };
   }
   await ctx.stores.outings.put(rec);
-  if (mode === 'in') await syncCurfewPenalties(ctx);
+  // 통금 위반 후보 정리는 직원 일이다(직원 화면을 열 때도 정리한다). 배포의 가드 계정은 후보를 쓸 권한이 없어 건너뛴다.
+  if (mode === 'in' && ctx.session?.role !== 'guard') await syncCurfewPenalties(ctx);
   return ok({ mode, row: outingRow(ctx, rec, settings.curfew, ctx.now().getTime(), await ctx.stores.overnights.listAll()) }, mode === 'out' || !open ? 201 : 200);
 }
 
@@ -613,7 +624,7 @@ function validSettings(input: Record<string, unknown>): Settings | null {
 type RequestKind = 'absences' | 'overnights';
 const REQUEST_TABS: RequestStatus[] = ['pending', 'approved', 'rejected', 'cancelled'];
 
-function requestRow(ctx: IntranetCtx, r: Absence | Overnight) {
+function requestRow(ctx: IntranetCtx, r: { stId: string }) {
   const s = studentRef(ctx.db, r.stId);
   return { name: s.name, campus: s.campus, current: s.current };
 }
@@ -648,6 +659,33 @@ async function listRequests(ctx: IntranetCtx, kind: RequestKind, q: URLSearchPar
   return { kind, tab, counts, campuses: [...new Set(all.map((o) => o.campus))].sort(), commentMax: COMMENT_MAX, absences: [], overnights: rows };
 }
 export type RequestList = Awaited<ReturnType<typeof listRequests>>;
+
+// ── 생활 요청(업체 '요청사항(학생)'·'ID 카드 교체'): 접수 → 처리 중 → 완료·반려
+const LIFE_TABS: LifeStatus[] = ['received', 'in_progress', 'done', 'rejected', 'cancelled'];
+async function listLifeRequests(ctx: IntranetCtx, q: URLSearchParams) {
+  const tab = (LIFE_TABS as string[]).includes(q.get('tab') ?? '') ? (q.get('tab') as LifeStatus) : 'received';
+  const category = q.get('category') || '';
+  const campus = q.get('campus') || '';
+  const kw = (q.get('q') ?? '').trim().toLowerCase();
+  const all = (await ctx.stores.lifeRequests.listAll()).map((r) => ({ ...r, ...requestRow(ctx, r) }));
+  const counts = Object.fromEntries(LIFE_TABS.map((t) => [t, 0])) as Record<LifeStatus, number>;
+  for (const r of all) counts[r.status]++;
+  const open = tab === 'received' || tab === 'in_progress';
+  const rows = all
+    .filter((r) => r.status === tab && (!category || r.category === category) && (!campus || r.campus === campus))
+    .filter((r) => !kw || r.stId.includes(kw) || r.name.toLowerCase().includes(kw) || r.content.toLowerCase().includes(kw))
+    // 처리할 건은 오래된 순, 끝난 건은 최근 처리 순
+    .sort((a, b) => (open ? a.submittedAt.localeCompare(b.submittedAt) : (b.handledAt ?? b.updatedAt).localeCompare(a.handledAt ?? a.updatedAt)));
+  return { tab, counts, categories: LIFE_CATEGORIES, campuses: [...new Set(all.map((r) => r.campus))].sort(), replyMax: LIFE_REPLY_MAX, rows };
+}
+export type LifeRequestList = Awaited<ReturnType<typeof listLifeRequests>>;
+
+async function handleLifeRequestRoute(ctx: IntranetCtx, id: string, input: Record<string, unknown>): Promise<Result> {
+  const out = handleLifeRequest(await ctx.stores.lifeRequests.get(id), input, ctx.actor ?? null, ctx.now());
+  if (!out.ok) return fail(out.status, out.error);
+  await ctx.stores.lifeRequests.put(out.value);
+  return ok(out.value);
+}
 
 async function decideRequests(ctx: IntranetCtx, kind: RequestKind, input: Record<string, unknown>): Promise<Result> {
   const ids = Array.isArray(input.ids) ? input.ids.map(String) : [];
@@ -791,6 +829,7 @@ async function studentFile(ctx: IntranetCtx, stId: string) {
       .sort((a, b) => b.from.localeCompare(a.from))
       .map((o) => ({ ...o, nights: nightsBetween(o.from, o.until) })),
     counseling: await counselingOf(counselingCtx(ctx), stId),
+    lifeRequests: (await ctx.stores.lifeRequests.listByStudent(stId)).sort((a, b) => b.submittedAt.localeCompare(a.submittedAt)),
     departure: main ? ((await ctx.stores.departures.get(`dep-${main.trId}`)) as Departure | null) : null,
   };
 }
@@ -809,7 +848,7 @@ function noticeCtx(ctx: IntranetCtx): NoticeCtx {
 
 function counselingCtx(ctx: IntranetCtx): CounselingCtx {
   return {
-    stores: ctx.stores,
+    stores: { counseling: ctx.stores.counseling, audit: ctx.stores.audit, remote: ctx.stores.counselingRemote },
     actor: ctx.actor ?? null,
     now: ctx.now,
     newId: ctx.newId,
@@ -842,6 +881,7 @@ async function summary(ctx: IntranetCtx) {
     pending: penalties.filter((p) => p.status === 'pending').length,
     pendingAbsences: absences.filter((a) => a.status === 'pending').length,
     pendingOvernights: overnights.filter((o) => o.status === 'pending').length,
+    lifePending: (await ctx.stores.lifeRequests.listAll()).filter((r) => r.status === 'received').length,
     current: currentIndex(ctx.db).size,
     ...(await followUpCounts(counselingCtx(ctx))),
     ...(await noticeSummary(noticeCtx(ctx))),
@@ -859,7 +899,8 @@ export async function handleIntranetApi(ctx: IntranetCtx, method: string, pathna
     switch (route) {
       case 'GET /meta': {
         const m = ctx.db.meta();
-        return ok({ source: m.source, refDate: m.refDate });
+        // actor: 배포에서는 로그인한 직원 이름(화면 오른쪽 위), 로컬은 화면이 입력한 이름. role·campus: 배포의 계정 종류(가드는 출입구)
+        return ok({ source: m.source, refDate: m.refDate, actor: ctx.actor ?? null, role: ctx.session?.role ?? null, campus: ctx.session?.campus ?? null });
       }
       case 'GET /notices':
         return ok(await listNotices(noticeCtx(ctx), q));
@@ -907,6 +948,8 @@ export async function handleIntranetApi(ctx: IntranetCtx, method: string, pathna
         return await decideRequests(ctx, 'absences', input);
       case 'POST /requests/overnights/decide':
         return await decideRequests(ctx, 'overnights', input);
+      case 'GET /requests/life':
+        return ok(await listLifeRequests(ctx, q));
       case 'GET /settings':
         return ok(await loadSettings(ctx));
       case 'PUT /settings': {
@@ -916,6 +959,8 @@ export async function handleIntranetApi(ctx: IntranetCtx, method: string, pathna
         return ok(s);
       }
     }
+    const lr = p.match(/^\/requests\/life\/([\w-]+)\/handle$/);
+    if (lr && method === 'POST') return await handleLifeRequestRoute(ctx, lr[1], input);
     const rd = p.match(/^\/departures\/([\w-]+)\/ride$/);
     if (rd && method === 'POST') return await decideDepartureRide(ctx, rd[1], input);
     const nt = p.match(/^\/notices\/([\w-]+)$/);
@@ -932,6 +977,8 @@ export async function handleIntranetApi(ctx: IntranetCtx, method: string, pathna
     }
     return fail(404, 'not_found');
   } catch (e) {
-    return fail(500, (e as Error).message);
+    // 배포 저장소의 오류(StoreError)는 Supabase 상태 코드를 그대로(예: 맡지 않은 캠퍼스의 상담 기록 → 400 campus_not_allowed)
+    const status = (e as { status?: unknown }).status;
+    return fail(typeof status === 'number' && status >= 400 && status < 600 ? status : 500, (e as Error).message);
   }
 }

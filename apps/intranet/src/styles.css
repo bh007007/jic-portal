@@ -164,6 +164,9 @@ button, input, select { font: inherit; }
 textarea { font: inherit; }
 .small { font-size: 12px; }
 .text-primary { color: var(--primary); }
+.life-handle { min-width: 280px; }
+.life-handle .cell-input { width: 100%; }
+.life-actions { display: flex; align-items: center; gap: 4px; margin-top: 4px; flex-wrap: wrap; }
 .page-title { align-items: center; }
 .page-title > span { margin-right: auto; }
 .page-actions { display: flex; flex-wrap: wrap; gap: 6px; }
@@ -208,13 +211,14 @@ textarea { font: inherit; }
 .guard-head { flex: 0 0 auto; min-height: 68px; padding: 8px 24px; background: #1b1f26; color: #fff; display: flex; flex-wrap: wrap; align-items: center; gap: 12px 24px; }
 .guard-brand { display: flex; align-items: baseline; gap: 8px; font-size: 16px; font-weight: 700; }
 .brand-mark-w { font-size: 22px; font-weight: 900; font-style: italic; letter-spacing: -1px; }
-.guard-campus { min-height: 44px; padding: 0 12px; border: 1px solid #4a515c; border-radius: 4px; background: transparent; color: #c3c8d0; font-size: 15px; cursor: pointer; }
+.guard-campus { display: inline-flex; align-items: center; min-height: 44px; padding: 0 12px; border: 1px solid #4a515c; border-radius: 4px; background: transparent; color: #c3c8d0; font-size: 15px; cursor: pointer; }
 .guard-clock { margin-left: auto; font-size: 30px; font-weight: 700; letter-spacing: 1px; }
 .guard-sub { font-size: 14px; color: #c3c8d0; }
 .guard-who { display: flex; align-items: center; gap: 8px; }
 .guard-who select { height: 44px; min-width: 120px; padding: 0 10px; border: 1px solid #4a515c; border-radius: 4px; background: #2a3039; color: #fff; font-size: 15px; }
 .guard-link { color: #f3c98b; }
 .guard-link:hover { color: #fff; }
+.guard-logout { min-height: 44px; padding: 0 12px; border: 1px solid #4a515c; border-radius: 4px; background: transparent; cursor: pointer; }
 .guard-body { flex: 1 1 auto; min-height: 0; display: flex; flex-wrap: wrap; gap: 20px; padding: 20px 24px; }
 .guard-scan { flex: 1 1 520px; display: flex; flex-direction: column; gap: 14px; min-width: 0; }
 .guard-mode { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); border: 1px solid #b8bec8; border-radius: 4px; overflow: hidden; background: #fff; }

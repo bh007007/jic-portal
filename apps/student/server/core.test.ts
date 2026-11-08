@@ -4,8 +4,11 @@
  */
 import path from 'node:path';
 import { loadDir } from '../../admin/server/localData';
+import { checkNewPassword, initialPassword, planAccounts, studentEmail } from './accounts';
 import { handleStudentApi } from './core';
+import { studentFromToken, tokenCache, tokenSubject } from './supabaseAuth';
 import { decideRide, rideState, type Departure, type Ride } from './departures';
+import { handleLifeRequest, LIFE_OPEN_MAX, type LifeRequest } from './lifeRequests';
 import { decideRequest, overnightFor, type Absence, type Overnight, type RequestStore } from './requests';
 
 function memStore<T extends { id: string; stId: string }>(): RequestStore<T> {
@@ -31,10 +34,11 @@ const store = memStore<Absence>();
 const overnights = memStore<Overnight>();
 const departures = memStore<Departure>();
 const rides = memStore<Ride>();
+const life = memStore<LifeRequest>();
 let n = 0;
 const now = new Date('2026-11-08T02:00:00Z');
 const stId = '30095'; // 샘플: 재학 2026-07-26 ~ 2026-11-13
-const ctx = (who: string | null = stId) => ({ db, store, overnights, departures, rides, stId: who, localLogin: true, now: () => now, newId: () => 'r' + ++n });
+const ctx = (who: string | null = stId) => ({ db, store, overnights, departures, rides, life, stId: who, localLogin: true, now: () => now, newId: () => 'r' + ++n });
 const call = (m: string, p: string, body: unknown = null, who: string | null = stId) => handleStudentApi(ctx(who), m, p, body);
 let fails = 0;
 const expect = (label: string, cond: boolean, extra?: unknown) => {
@@ -146,6 +150,101 @@ const changed = { ...depNow, time: '08:00' };
 expect('학생이 시각을 바꾸면 재확인', rideState(changed, (await rides.get('dep-800095'))!) === 'changed');
 expect('학생이 차량 요청을 빼면 요청 취소', rideState({ ...depNow, needsRide: false }, (await rides.get('dep-800095'))!) === 'withdrawn');
 expect('차량 요청 없는 항공편은 처리 불가', (() => { const x = decideRide({ ...depNow, needsRide: false }, { decision: 'declined', note: 'x' }, 'a', now); return !x.ok && x.error === 'no_ride_request'; })());
+
+// ── 학생 계정 (accounts.ts)
+expect('가짜 이메일', studentEmail('30095') === '30095@students.jic.internal' && studentEmail('1', 'X.Example') === '1@x.example');
+expect('첫 비밀번호 = 생년월일 8자리', initialPassword('1995-03-25') === '19950325' && initialPassword('19950325') === '19950325');
+expect('날짜가 아니면 없음', initialPassword('1995-02-30') === null && initialPassword('') === null && initialPassword('950325') === null);
+expect('비밀번호 규칙', checkNewPassword('abc12', 'abc12', 'x') === 'pw_short' && checkNewPassword('abcdefgh', 'abcdefgh', 'x') === 'pw_weak'
+  && checkNewPassword('12345678', '12345678', 'x') === 'pw_weak' && checkNewPassword('abcd1234', 'abcd1234', 'abcd1234') === 'pw_same'
+  && checkNewPassword('abcd1234', 'abcd1235', 'x') === 'pw_mismatch' && checkNewPassword('a1'.repeat(37), 'a1'.repeat(37), 'x') === 'pw_long'
+  && checkNewPassword('abcd1234', 'abcd1234', '19950325') === null);
+const ens = (tab: string) => db.listEnrollments(new URLSearchParams({ tab, all: '1' })).rows;
+const active = new Set([...ens('current'), ...ens('upcoming')].map((x) => x.stId));
+let plan = planAccounts(db, { linked: new Set(), authUsers: new Map() });
+expect('계정 대상 = 재학·입학 예정 학생', plan.counts.targets === active.size && plan.create.length + plan.counts.noBirthday === active.size, plan.counts);
+expect('졸업생은 대상 아님', !plan.create.some((c) => !active.has(c.stNo)));
+const me = plan.create.find((c) => c.stNo === stId)!;
+expect('비밀번호 = 생년월일', !!me && me.password === initialPassword(db.studentDetail(stId)!.student.birthday) && me.email === `${stId}@students.jic.internal`);
+plan = planAccounts(db, { linked: new Set([stId]), authUsers: new Map([[studentEmail(plan.create[1].stNo), 'u-1']]) });
+expect('연결된 학생은 건너뜀, Auth 사용자만 있으면 연결', plan.counts.linked === 1 && plan.link.length === 1 && plan.link[0].userId === 'u-1'
+  && !plan.create.some((c) => c.stNo === stId) && plan.create.length === active.size - 2 - plan.counts.noBirthday, plan.counts);
+
+// ── Supabase 토큰 → 학생 (supabaseAuth.ts)
+const b64 = (o: object) => Buffer.from(JSON.stringify(o)).toString('base64url');
+const uid = '0f9a1c2e-1111-4222-8333-444455556666';
+const tok = `${b64({ alg: 'HS256' })}.${b64({ sub: uid, role: 'authenticated' })}.sig`;
+expect('토큰 sub', tokenSubject(tok) === uid && tokenSubject('x.y.z') === null && tokenSubject(`a.${b64({ sub: "1' or 1=1" })}.c`) === null);
+const seen: string[] = [];
+const fakeFetch = (rows: unknown, status = 200) => (async (url: string | URL | Request, init?: RequestInit) => {
+  seen.push(`${url} ${(init?.headers as Record<string, string>).Authorization}`);
+  return new Response(JSON.stringify(rows), { status });
+}) as typeof fetch;
+const conf = { url: 'https://x.supabase.co/', key: 'anon' };
+let ss = await studentFromToken(conf, tok, fakeFetch([{ student_no: '30095', must_change_password: true }]));
+expect('토큰 사용자 한 명만 조회', ss?.stId === '30095' && ss.mustChangePassword && seen[0] === `https://x.supabase.co/rest/v1/student_users?select=student_no,must_change_password&user_id=eq.${uid} Bearer ${tok}`, seen);
+expect('학생이 아닌 계정', (await studentFromToken(conf, tok, fakeFetch([]))) === null);
+expect('만료된 토큰', (await studentFromToken(conf, tok, fakeFetch({ message: 'JWT expired' }, 401))) === null);
+let calls = 0;
+const counting = (async () => (calls++, new Response(JSON.stringify([{ student_no: '30095', must_change_password: calls === 1 }])))) as typeof fetch;
+const cache = tokenCache(conf, 30_000, counting);
+await cache.resolve(tok, 0);
+await cache.resolve(tok, 1000); // 비밀번호 변경 필요 상태는 기억하지 않음
+await cache.resolve(tok, 2000);
+await cache.resolve(tok, 3000);
+expect('토큰 결과 30초 기억(변경 필요 상태 제외)', calls === 2, calls);
+r = await handleStudentApi({ ...ctx(), localLogin: false, mustChangePassword: true }, 'GET', '/api/me', null);
+expect('비밀번호를 바꾸기 전에는 403', r.status === 403 && err(r) === 'password_change_required', r);
+r = await handleStudentApi({ ...ctx(null), localLogin: false, mustChangePassword: true }, 'GET', '/api/meta', null);
+expect('meta 는 열림, Supabase 모드에서는 로컬 로그인 없음', r.status === 200 && (r.body as any).localLogin === false && (r.body as any).sampleLogin === null, r);
+r = await handleStudentApi({ ...ctx(null), localLogin: false }, 'POST', '/api/login', { stId, birthday: me.password });
+expect('Supabase 모드에서는 /login 없음', r.status === 404, r);
+
+// ── 생활 요청 (lifeRequests.ts)
+r = await call('GET', '/life-requests');
+expect('생활 요청 목록: 종류 5, 요청 가능', r.status === 200 && (r.body as any).categories.length === 5 && (r.body as any).canRequest === true && (r.body as any).rows.length === 0, r.body);
+r = await call('POST', '/life-requests', { category: 'facility', content: '  방 에어컨에서 물이 샙니다  ' });
+const lifeId = (r.body as any).id;
+expect('생활 요청 등록 201: 접수, 연수 연결, 내용 다듬음', r.status === 201 && (r.body as any).status === 'received' && (r.body as any).trId === '800095' && (r.body as any).content === '방 에어컨에서 물이 샙니다', r.body);
+expect('학생 응답에 처리자 없음', !('handledBy' in (r.body as object)) || (r.body as any).handledBy === undefined);
+expect('종류 확인', err(await call('POST', '/life-requests', { category: 'laundry', content: 'x' })) === 'invalid_category');
+expect('내용 필수', err(await call('POST', '/life-requests', { category: 'other', content: '   ' })) === 'content_required');
+expect('내용 500자', err(await call('POST', '/life-requests', { category: 'other', content: 'x'.repeat(501) })) === 'content_too_long');
+r = await call('POST', '/life-requests', { category: 'id_card', content: '카드 분실' }, '99999999');
+expect('없는 학생은 연수 없음', err(r) === 'no_enrollment', r);
+for (let i = 1; i < LIFE_OPEN_MAX; i++) await call('POST', '/life-requests', { category: 'other', content: `요청 ${i}` });
+r = await call('POST', '/life-requests', { category: 'other', content: '하나 더' });
+expect(`열린 요청 ${LIFE_OPEN_MAX}건이면 409`, r.status === 409 && err(r) === 'too_many_open', r);
+// 직원 처리
+const cur = (await life.get(lifeId))!;
+let lh = handleLifeRequest(cur, { status: 'rejected', reply: '' }, '오피스 김', now);
+expect('반려는 사유 필수', !lh.ok && lh.error === 'reply_required');
+lh = handleLifeRequest(cur, { status: 'bogus' }, '오피스 김', now);
+expect('처리 상태 확인', !lh.ok && lh.error === 'invalid_status');
+lh = handleLifeRequest(cur, { status: 'done', reply: 'x'.repeat(501) }, '오피스 김', now);
+expect('답변 500자', !lh.ok && lh.error === 'reply_too_long');
+lh = handleLifeRequest(cur, { status: 'in_progress', reply: '내일 오전 수리 기사 방문' }, '오피스 김', now);
+expect('처리 중으로', lh.ok && lh.value.status === 'in_progress' && lh.value.handledBy === '오피스 김' && lh.value.reply === '내일 오전 수리 기사 방문', lh);
+if (lh.ok) await life.put(lh.value);
+r = await call('POST', `/life-requests/${lifeId}/cancel`, {});
+expect('처리 중이면 학생 취소 불가', r.status === 409 && err(r) === 'not_pending', r);
+lh = handleLifeRequest((await life.get(lifeId))!, { status: 'in_progress' }, '오피스 김', now);
+expect('이미 처리 중', !lh.ok && lh.error === 'already_in_progress');
+lh = handleLifeRequest((await life.get(lifeId))!, { status: 'done' }, '오피스 박', now);
+expect('완료(답변 그대로 유지)', lh.ok && lh.value.status === 'done' && lh.value.reply === '내일 오전 수리 기사 방문' && lh.value.handledBy === '오피스 박', lh);
+if (lh.ok) await life.put(lh.value);
+lh = handleLifeRequest((await life.get(lifeId))!, { status: 'rejected', reply: 'x' }, '오피스 김', now);
+expect('끝난 요청은 못 바꿈', !lh.ok && lh.error === 'already_closed');
+r = await call('GET', '/life-requests');
+const lr = (r.body as any).rows.find((x: any) => x.id === lifeId);
+expect('학생이 완료·답변을 봄, 처리자는 안 보임', lr.status === 'done' && lr.reply === '내일 오전 수리 기사 방문' && lr.handledBy === undefined, lr);
+const open = (r.body as any).rows.find((x: any) => x.status === 'received');
+r = await call('POST', `/life-requests/${open.id}/cancel`, {});
+expect('접수 상태는 학생 취소', r.status === 200 && (r.body as any).status === 'cancelled', r);
+r = await call('POST', `/life-requests/${open.id}/cancel`, {}, '30140');
+expect('남의 요청 취소 404', r.status === 404, r);
+r = await call('POST', '/life-requests', { category: 'document', content: '재학증명서 1부' });
+expect('취소하면 다시 요청 가능', r.status === 201, r);
 
 console.log(fails ? `\n${fails}건 실패` : '\n모두 통과');
 if (fails) process.exit(1);

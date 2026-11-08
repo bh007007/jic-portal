@@ -18,6 +18,10 @@ import Deposits from './pages/Deposits';
 import Points from './pages/Points';
 import Codes from './pages/Codes';
 import Batches from './pages/Batches';
+import StudentCalendar from './pages/StudentCalendar';
+import Registrations from './pages/Registrations';
+import Cancellations from './pages/Cancellations';
+import Memos from './pages/Memos';
 import NotReady from './pages/NotReady';
 
 // undefined = 세션 확인 중, null = 로그인 안 됨
@@ -54,6 +58,10 @@ export default function App() {
         <Route path="/points" element={<Points />} />
         <Route path="/codes" element={<Codes />} />
         <Route path="/batches" element={<Batches />} />
+        <Route path="/stats/calendar" element={<StudentCalendar />} />
+        <Route path="/stats/registrations" element={<Registrations />} />
+        <Route path="/cancellations" element={<Cancellations />} />
+        <Route path="/memos" element={<Memos />} />
         <Route path="*" element={<NotReady />} />
       </Routes>
     </Shell>

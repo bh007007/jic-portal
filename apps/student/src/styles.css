@@ -130,6 +130,7 @@ a.list-row:hover { color: var(--ink); background: #fafbfc; }
 .st-approved { color: var(--blue); }
 .st-rejected { color: var(--red); }
 .st-cancelled { color: var(--ink-3); font-weight: 400; }
+.st-progress { color: var(--primary); }
 
 /* 화면 제목 */
 .page-head { padding: 2px 16px 0; }
@@ -156,6 +157,7 @@ a.list-row:hover { color: var(--ink); background: #fafbfc; }
 .btn-primary:hover { background: var(--primary-dark); color: #fff; }
 .btn-block { width: 100%; }
 .btn-pair { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
+.btn-pair .span-2 { grid-column: 1 / -1; }
 
 /* 입력 양식 */
 .form { margin: 0 12px; padding: 16px 14px; background: #fff; border: 1px solid var(--line); border-radius: 6px; display: flex; flex-direction: column; gap: 18px; }
@@ -208,3 +210,5 @@ a.list-row:hover { color: var(--ink); background: #fafbfc; }
 .login-box label { display: flex; flex-direction: column; gap: 6px; font-size: 13px; font-weight: 500; color: #333; }
 .login-note { margin: 0; font-size: 12px; color: var(--ink-3); }
 .login-note.sample { color: var(--amber); }
+.login-box.in-app { margin-top: 4px; }
+.pad-stack { display: flex; flex-direction: column; gap: 8px; }
