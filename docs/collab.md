@@ -28,6 +28,8 @@
 - 여러 번 실행해도 되게 쓴다(`if not exists`, `drop policy if exists`, `on conflict do nothing`).
 - 프로젝트는 'Automatically expose new tables'가 꺼져 있다. 새 테이블마다 `grant`를 직접 쓰고 RLS를 켠다.
 - 이미 있는 권한 함수는 `is_staff()`(직원)와 `is_partner()`(승인된 에이전시 지점)다. 새 역할은 새 함수로 만든다(예: `is_student()`). 기존 함수의 뜻은 바꾸지 않는다.
+- 학생 앱·인트라넷이 더한 권한 함수: `is_student()`·`current_student_no()`(학생), `is_guard()`·`current_guard_campus()`(가드 공용 계정), `staff_has_campus(캠퍼스)`(직원이 맡은 캠퍼스, `staff_campuses`). `20261108100000_student_intranet.sql`.
+- 권한 시험은 `supabase/tests/*.mjs`에 둔다. PGlite(Postgres WebAssembly)에 Supabase 흉내를 만들어 역할별로 읽기·쓰기를 확인한다(의존성에 넣지 않고 `npm i --no-save`로 임시 설치).
 - `legacy_*`(업체 원본)는 직원만 읽는다. 다른 앱을 위해 이 RLS를 넓히지 않는다. 필요하면 security definer 함수나 그 앱용 테이블을 만든다.
 - `auth.users`에는 `on_partner_signup` 트리거가 있다. 메타데이터 `portal='partner'`일 때만 동작한다. 다른 앱은 다른 `portal` 값을 쓴다.
 - 기획안(`docs/plan.md` 데이터 모델)의 테이블 이름을 따른다(원칙 C10).
@@ -39,5 +41,5 @@
 - 실제 학생 데이터(`data/`)는 레오 PC에만 있다. 다른 곳에서는 `data-sample/`로만 개발한다.
 
 ## 열린 결정 (진행 전에 사용자 확인)
-- 학생 계정 생성 방식(원칙 V4: 학생 번호와 생년월일로 미리 생성, 첫 로그인 때 비밀번호 변경)과 담당자
+- 학생 계정 생성 담당(방식은 11/8 결정: 학생 번호와 생년월일로 미리 생성, 첫 로그인 때 비밀번호 변경, 원칙 V4)
 - 정규화 스키마(`docs/plan.md`)로 옮기는 시점. `core.ts`와 `functions/`를 크게 바꾸므로 관리자 앱 담당이 진행한다.

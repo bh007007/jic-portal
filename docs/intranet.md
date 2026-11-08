@@ -154,12 +154,35 @@ apps/intranet/
 
 ## 배포 전에 필요한 것
 
-1. **계정**: 직원은 `staff_users`(+ 역할별 권한, HANDOFF 6-4), 가드는 계정 방식 결정(근무자별 / 경비실 공용) 후 `is_guard()` 같은 새 함수. 처리자(`decidedBy`, 근무자)를 로그인 사용자로 채운다.
-2. **테이블**: 기획안 데이터 모델의 `outings`, `penalty_rules`, `penalties`, `incident_reports`(가드 리포트)(그리고 `keycards`, `overnight_permissions`)를 `docs/collab.md` 데이터베이스 규칙대로 새 마이그레이션으로 만든다. 열은 `server/core.ts`의 `Outing`·`Penalty`·`PenaltyRules`, `server/reports.ts`의 `IncidentReport` 모양을 따른다(snake_case, `student_no`, `enrollment_id`).
-3. **상담 기록 권한**: 기획안의 `counseling_notes`, `audit_logs`. 내용은 테이블을 직접 읽지 못하게 하고, 열람을 남기면서 내용을 돌려주는 서버 함수(security definer 또는 Workers)로만 읽는다. 접근 기록은 insert만 허용하고 update·delete는 막는다. 누가 어떤 학생의 상담 기록을 볼 수 있는지는 역할별 권한(HANDOFF 6-4)에서 정한다.
-4. **내부 공지**: 기획안의 `internal_notices`와 읽음 테이블. 직원만 읽기, 작성·수정은 역할에 따라.
-5. **미귀가 확인**: 지금은 화면을 열 때 계산한다. 배포에서는 통금 직후 Cloudflare Workers 크론으로 후보를 만든다.
-6. **태블릿**: 경비실 태블릿에서 배포 주소를 연다(로컬 개발 서버는 이 PC에서만 열린다).
+테이블과 권한(RLS)은 `supabase/migrations/20261108100000_student_intranet.sql`(11/8, 학생 앱과 같은 파일)에 만들었다. 권한 시험은 `supabase/tests/student_intranet_rls.mjs`.
+
+1. **계정**(11/8 결정)
+   - 직원: `staff_users`(+ 역할별 권한, HANDOFF 6-4). 처리자는 로그인한 직원으로 채운다(화면이 보내는 이름은 믿지 않는다).
+   - 가드: 출입구(캠퍼스)마다 공용 계정 하나(`guard_accounts`, `is_guard()`, `current_guard_campus()`). 기록에는 근무자 이름을 고른다(설정의 근무자 목록, `intranet_settings.guards`).
+   - 상담 기록: 같은 캠퍼스 직원만 본다. 직원이 맡는 캠퍼스는 `staff_campuses`에 넣는다(관리자도 넣어야 본다).
+2. **서버(Workers) 연결**: `server/core.ts`의 저장소를 Supabase 구현으로 바꾸고, 상담 기록은 아래 함수로 바꾼다. 로컬의 `X-Staff-Name` 헤더는 쓰지 않는다.
+3. **미귀가 확인**: 지금은 화면을 열 때 계산한다. 배포에서는 통금 직후 Cloudflare Workers 크론(서비스 키)으로 후보를 만든다.
+4. **태블릿**: 경비실 태블릿에서 배포 주소를 연다(로컬 개발 서버는 이 PC에서만 열린다).
+
+### 테이블과 권한
+
+| 테이블 | 가드(공용 계정) | 직원 |
+| --- | --- | --- |
+| `outings` | 자기 출입구로 외출·귀가 기록, 귀가는 외출 중인 기록에만, 시각은 지금 앞뒤 몇 분만(나중에 고쳐 쓰지 못함) | 모두 읽기 |
+| `incident_reports` | 자기 출입구로 등록·읽기 | 모두 읽기 |
+| `penalties` | 자기 출입구의 가드 리포트 후보만 대기 상태로 등록, 목록은 못 봄 | 모두(통금 후보 정리·승인·반려) |
+| `penalty_rules`, `penalty_stages` | - | 읽기·수정(점수는 비워 두고 점수표 화면에서 입력) |
+| `intranet_settings` | 읽기(통금, 근무자 목록) | 읽기·수정 |
+| `absence_requests`, `overnight_permissions` | - | 읽기, 처리는 `decide_*` 함수 |
+| `departure_flights`, `airport_rides` | - | 항공편 읽기, 배차 등록·수정 |
+| `internal_notices`, `internal_notice_reads` | - | 읽기·쓰기, 읽음은 본인 것만 |
+| `counseling_notes` | - | 테이블 직접 읽기·쓰기 불가, 아래 함수만 |
+| `audit_logs` | - | 맡은 캠퍼스 기록만 읽기, 쓰기·삭제 불가 |
+
+상담 기록 함수(맡은 캠퍼스만, 처리자 이름은 `staff_users.name`):
+- `counseling_list()`: 목록(내용 없음)
+- `counseling_open(id)`: 내용까지 돌려주고 '열람'을 남긴다(같은 직원이 10초 안에 다시 열면 한 번으로)
+- `counseling_create(학생 번호, 캠퍼스, 날짜, 제목, 내용, 기한)`, `counseling_update(id, 날짜, 제목, 내용, 기한)`(기한을 바꾸면 후속 조치를 다시 연다), `counseling_followup(id, 완료 여부)`: 모두 접근 기록을 남긴다
 
 ## 확인이 필요한 것
 
@@ -169,4 +192,4 @@ apps/intranet/
 - 가드 리포트: 종류(음주·폭력·무단외출·기타)와 패널티 종류 연결(폭력·무단외출을 '기타'로 둘지, 점수표에 종류를 더할지), 사진 첨부가 필요한지.
 - 학생 사진: 업체 포털 사진 이관 방식이 정해지면 '사진' 자리에 붙인다.
 - 내부 공지: 부서·역할 단위 대상이 필요한지(직원·부서 데이터가 아직 없음), 첨부 파일, 로그인 때 띄우는 팝업 공지(업체 포털에 있음).
-- 상담 기록: 누가 어떤 학생의 기록을 볼 수 있는지(담당·캠퍼스·역할), 상담 분류가 필요한지, 보관 기간, 학생·보호자 동의 문구(기획안 미결정 5번, 필리핀 개인정보보호법).
+- 상담 기록: 상담 분류가 필요한지(열람 범위는 11/8 같은 캠퍼스 직원으로 결정), 보관 기간, 학생·보호자 동의 문구(기획안 미결정 5번, 필리핀 개인정보보호법).

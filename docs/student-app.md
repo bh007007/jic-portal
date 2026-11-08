@@ -99,62 +99,27 @@ apps/student/
 
 ## 배포 전에 필요한 것
 
-1. **정규화 스키마**(HANDOFF 6-3): 학생은 `legacy_*`(직원만 읽기)를 읽을 수 없다. 학생 본인 행만 읽히는 `students`·`enrollments` 테이블과 RLS가 있어야 홈·내 정보를 배포에서 보여 줄 수 있다.
-2. **학생 계정**: Supabase Auth 사용자와 학생 번호를 잇는 테이블, 계정 생성은 서버(Worker)에서만, 첫 로그인 때 비밀번호 변경 강제(V4). 로그인 화면과 `src/api.ts`의 헤더를 Supabase 토큰으로 바꾼다.
-3. **결석 신청 테이블**: 아래 초안을 LMS 담당자와 맞춘 뒤 `supabase/migrations`에 새 파일로 넣는다(규칙은 `docs/collab.md` '데이터베이스 규칙'). 학생 계정 방식이 열린 결정이라 초안 단계에서는 넣지 않았다.
+테이블과 권한(RLS)은 `supabase/migrations/20261108100000_student_intranet.sql`(11/8, 인트라넷과 같은 파일)에 만들었다. 권한 시험은 `supabase/tests/student_intranet_rls.mjs`(실제 Postgres인 PGlite에서 역할별로 읽기·쓰기 확인, 실행 방법은 파일 맨 위).
+
+1. **학생 계정**(11/8 결정): 학생번호 + 생년월일로 미리 만들고 첫 로그인 때 비밀번호를 바꾼다(V4).
+   - `student_users`가 Auth 사용자와 학생 번호를 잇는다(`must_change_password` 기본 참). 쓰기는 서비스 키만.
+   - 다음 단계: 계정 생성 스크립트(서비스 키, 재학·입학 예정 학생만, 로그인 아이디는 학생 번호로 만든 가짜 이메일), 로그인·비밀번호 변경 화면. `must_change_password`가 참이면 비밀번호 변경부터 띄우고, 바꾼 뒤 `student_password_changed()`를 부른다. `src/api.ts`의 `X-Student-Id` 헤더는 Supabase 토큰으로 바꾼다.
+2. **학생 정보 읽기**: 학생은 `legacy_*`(직원만 읽기)를 읽을 수 없고, 이 권한은 넓히지 않는다. 정규화 스키마(HANDOFF 6-3) 전까지는 학생 앱 서버(Workers)가 서비스 키로 그 학생 행만 읽어 `studentDetail`을 계산한다.
+3. **서버(Workers) 연결**: `server/core.ts`의 저장소(`RequestStore`, `DepartureStore`, `RideStore`)를 Supabase 구현으로 바꾼다. 쓰기는 학생 토큰으로 해서 RLS가 한 번 더 막게 한다. 신청 기간·중복 같은 규칙은 지금처럼 서버(`requests.ts`, `departures.ts`)가 확인하고, DB는 본인·본인 연수·대기 상태·출발일 같은 최소 조건만 막는다.
 4. **Cloudflare Pages 프로젝트**: 관리자 앱과 별도 프로젝트로 만든다(빌드 `npm run student:build`, 출력 `apps/student/dist`).
 
-### 결석 신청 테이블 초안 (확정 전)
+### 테이블과 권한
 
-설계표 공동 개발 약속(snake_case, `student_no`, `created_at`·`updated_at`·`created_by`)과 기획안의 연수 번호(`enrollment_id`)를 따른다.
+| 테이블 | 학생 | 직원 |
+| --- | --- | --- |
+| `absence_requests` | 자기 것 읽기, 자기 연수로 대기 상태 등록, 취소는 `cancel_absence_request(id)` | 모두 읽기, 승인·반려는 `decide_absence_requests(ids, 승인 여부, 메모)` |
+| `overnight_permissions` | 같음(`cancel_overnight_permission`) | 같음(`decide_overnight_permissions`) |
+| `departure_flights` | 자기 연수로 등록·수정, 출발일이 지나면 못 고침, 학생 번호·연수 번호는 못 바꿈 | 읽기 |
+| `airport_rides` | 자기 것 읽기 | 등록·수정(처리자는 본인으로만) |
+| `student_users` | 자기 행 읽기 | 읽기 |
 
-```sql
--- 학생 계정: Supabase Auth 사용자 ↔ 학생 번호. 쓰기는 서비스 키(Worker)만.
--- staff_users + is_staff(), agency_members + is_partner() 와 같은 방식으로 is_student() / current_student_no() 함수를 둔다.
--- 계정은 서버에서 만든다. 가입 화면을 쓰게 되면 메타데이터 portal='student'로 구분한다(on_partner_signup 트리거는 'partner'만 처리).
-create table if not exists public.student_users (
-  user_id uuid primary key references auth.users (id) on delete cascade,
-  student_no text not null unique,
-  must_change_password boolean not null default true,
-  created_at timestamptz not null default now()
-);
-
-create table if not exists public.absence_requests (
-  id uuid primary key default gen_random_uuid(),
-  student_no text not null,
-  enrollment_id text not null,
-  absence_date date not null,
-  periods smallint[] not null default '{}',            -- 빈 배열 = 종일
-  kind text not null check (kind in ('sick', 'official', 'personal')),
-  reason text not null check (char_length(reason) between 1 and 500),
-  status text not null default 'pending' check (status in ('pending', 'approved', 'rejected', 'cancelled')),
-  decided_at timestamptz,
-  decided_by uuid references auth.users (id),
-  staff_comment text,
-  created_at timestamptz not null default now(),
-  updated_at timestamptz not null default now(),
-  created_by uuid default auth.uid()
-);
--- 외박(기획안 '생활' 그룹 overnight_permissions). 열은 absence_requests 와 같고 날짜만 다르다.
-create table if not exists public.overnight_permissions (
-  id uuid primary key default gen_random_uuid(),
-  student_no text not null,
-  enrollment_id text not null,
-  leave_date date not null,                              -- 첫 밤
-  return_date date not null check (return_date > leave_date),
-  reason text not null check (char_length(reason) between 1 and 500),
-  status text not null default 'pending' check (status in ('pending', 'approved', 'rejected', 'cancelled')),
-  decided_at timestamptz,
-  decided_by uuid references auth.users (id),
-  staff_comment text,
-  created_at timestamptz not null default now(),
-  updated_at timestamptz not null default now(),
-  created_by uuid default auth.uid()
-);
--- RLS: 학생은 자기 student_no 행만 읽기·등록(status='pending'으로만), 취소는 대기 중인 자기 행만(함수로).
---      직원은 is_staff() 로 읽기, 승인·반려는 역할별 권한(HANDOFF 6-4)이 생긴 뒤 담당 역할만.
--- 기간·중복 확인은 enrollments 정규화 테이블이 생긴 뒤 트리거 또는 서버 함수로 옮긴다.
-```
+- 코드와 열 이름: `stId` → `student_no`, `trId` → `enrollment_id`, `date` → `absence_date`, `from`/`until` → `leave_date`/`return_date`, `comment` → `staff_comment`, `submittedAt` → `created_at`. 처리자(`decidedBy`)는 DB에 사용자 id를 두고 화면에는 `staff_users.name`을 보여 준다.
+- 학생이 넣을 수 있는 열만 열어 두었다(상태·처리 열은 학생이 쓸 수 없다). 연수가 그 학생 것인지는 `enrollment_of_student()`가 `legacy_enrollments`의 `tr_st_id`로 확인한다(정규화 테이블로 옮기면 이 함수만 바꾼다).
 
 ## 확인이 필요한 것
 
