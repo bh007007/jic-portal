@@ -160,3 +160,8 @@ label.check input { width: 18px; height: 18px; margin: 0; }
 .att-seg button.att-AB[aria-selected='true'] { background: var(--red); }
 .att-seg button.att-TA[aria-selected='true'] { background: #9a5b00; }
 .holiday { margin: 0 0 6px; color: var(--red); font-size: 12px; }
+
+/* 내부 공지 */
+.notice summary { display: flex; flex-direction: column; gap: 3px; padding: 12px; cursor: pointer; list-style: none; }
+.notice summary::-webkit-details-marker { display: none; }
+.notice-body { margin: 0; padding: 0 12px 12px; white-space: pre-wrap; word-break: break-word; }

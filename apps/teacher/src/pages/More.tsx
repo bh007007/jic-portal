@@ -22,6 +22,7 @@ export default function More() {
       <Section title={t('classSection')}>
         <ul className="menu">
           <li><Link to="/attendance">{t('attendanceMenu')}</Link></li>
+          <li><Link to="/notices">{t('noticesMenu')}</Link></li>
           <li><Link to="/absences">{t('absencesMenu')}</Link></li>
         </ul>
       </Section>

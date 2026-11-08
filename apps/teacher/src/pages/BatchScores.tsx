@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState, type FormEvent } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, Navigate } from 'react-router-dom';
+import { useAuth } from '../auth';
 import { loadResultsOn, loadStudents, loadTestTypes, validScore, type TestType } from '../data';
 import { useT } from '../i18n';
 import { manilaToday, supabase } from '../supabase';
@@ -12,6 +13,7 @@ import { Loading, PageHead, Section, useLoad, useSave } from '../ui';
  */
 export default function BatchScores() {
   const { t } = useT();
+  const { me } = useAuth();
   const types = useLoad(() => loadTestTypes(), []);
   const active = (types.data ?? []).filter((x) => x.active);
   const [code, setCode] = useState('');
@@ -83,6 +85,7 @@ export default function BatchScores() {
   };
 
   if (types.loading) return <Loading />;
+  if (me && !me.canWrite) return <Navigate to="/scores" replace />;
   if (types.error) return <Loading error={types.error} />;
   if (!type) return <div className="state">{t('noTestTypes')}</div>;
 

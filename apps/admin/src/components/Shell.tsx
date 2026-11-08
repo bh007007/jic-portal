@@ -1,7 +1,7 @@
 import type { ReactNode } from 'react';
 import { Link, NavLink } from 'react-router-dom';
 import { useApi } from '../api';
-import { supabase } from '../supabase';
+import { supabase, useIsAdmin } from '../supabase';
 import { PORTALS } from '../portals';
 
 const MENU: { group?: string; items: { to: string; label: string }[] }[] = [
@@ -24,6 +24,8 @@ const MENU: { group?: string; items: { to: string; label: string }[] }[] = [
   { group: '에이전시', items: [{ to: '/agencies', label: '에이전시 목록' }, { to: '/agents', label: '담당자 계정' }] },
   { group: '기초관리', items: [{ to: '/codes', label: '코스·기숙사' }, { to: '/batches', label: '캠퍼스·배치' }, { to: '/holidays', label: '휴일' }, { to: '/users', label: '사용자·권한' }] },
 ];
+// 관리자만 보는 메뉴(docs/roles.md: 사용자·권한은 오피스가 열 수 없다)
+const ADMIN_ONLY = new Set(['/users']);
 
 // 인트라넷: 배포에서는 같은 주소 아래 /intranet/(npm run portal:build, 같은 로그인), 로컬 개발은 인트라넷 개발 서버
 const INTRANET_URL = import.meta.env.VITE_INTRANET_URL ?? (import.meta.env.DEV ? 'http://127.0.0.1:5177' : '/intranet/');
@@ -36,6 +38,7 @@ const todayLabel = `${today.getFullYear()}-${String(today.getMonth() + 1).padSta
 export default function Shell({ children, user }: { children: ReactNode; user?: string }) {
   const { data: meta } = useApi<{ source: 'sample' | 'extract' }>('/api/meta');
   const dataLabel = meta?.source === 'sample' ? '샘플 데이터' : supabase ? '운영 데이터' : '로컬 데이터';
+  const isAdmin = useIsAdmin();
   return (
     <div className="app">
       <header className="topbar">
@@ -70,7 +73,7 @@ export default function Shell({ children, user }: { children: ReactNode; user?: 
           {MENU.map((sec, i) => (
             <div key={i}>
               {sec.group && <span className="nav-group">{sec.group}</span>}
-              {sec.items.map((it) => (
+              {sec.items.filter((it) => isAdmin !== false || !ADMIN_ONLY.has(it.to)).map((it) => (
                 <NavLink
                   key={it.to}
                   to={it.to}

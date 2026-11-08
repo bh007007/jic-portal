@@ -1,14 +1,21 @@
 import { useCallback, useEffect, useState } from 'react';
-import { supabase } from '../supabase';
+import { supabase, useIsAdmin } from '../supabase';
 import { Loading, PageTitle, Panel } from '../components/ui';
 
-// 원칙 C5의 역할 중 강사 포털(LMS) 역할. 학생·에이전시·가드·직원은 각자 계정 표가 따로 있다(docs/architecture.md).
-const LMS_ROLES: [string, string, string][] = [
-  ['teacher', '강사', '학생·성적 입력·자료실'],
-  ['checker', '체커', '출석 입력(시간표 연결 뒤)'],
-  ['scheduler', '스케줄러', '수업 변경·옵션 클래스(시간표 연결 뒤)'],
-  ['manager', '매니저', '강사 포털 관리(시험 종류·강사 목록), 남의 기록 수정'],
+// 원칙 C5의 역할(docs/roles.md, 11/9 승인). 학생·에이전시·가드는 각자 계정 표가 따로 있다(docs/architecture.md).
+// 직원 역할: 관리자 포털 직원(staff_users)에게만 뜻이 있다. 역할이 없으면 관리자다.
+const STAFF_ROLES: [string, string, string][] = [
+  ['admin', '관리자', '모든 화면, 사용자·권한, 회계 쓰기'],
+  ['office', '오피스', '사용자·권한 없음, 회계 읽기만, 강사 포털 읽기만'],
 ];
+// 강사 포털(LMS) 역할
+const LMS_ROLES: [string, string, string][] = [
+  ['teacher', '강사', '학생·성적 입력·자료실, 자기 수업 출석'],
+  ['checker', '체커', '모든 수업 출석 입력(성적·자료 등록 없음)'],
+  ['scheduler', '스케줄러', '수업·출석 행 만들기(성적·자료 등록 없음)'],
+  ['manager', '매니저', '강사 포털 관리(시험 종류·강사 목록·출석 마감·사유 인정), 남의 기록 수정'],
+];
+const ALL_ROLES = [...STAFF_ROLES, ...LMS_ROLES];
 const CAMPUSES = ['', 'Challenger', 'Premium', 'MCO'];
 
 interface Account {
@@ -33,23 +40,29 @@ interface StaffRow {
 
 const roleName = (r: string) => {
   const [role, campus] = r.split(':');
-  return (LMS_ROLES.find(([k]) => k === role)?.[1] ?? role) + (campus ? ` (${campus})` : '');
+  return (ALL_ROLES.find(([k]) => k === role)?.[1] ?? role) + (campus ? ` (${campus})` : '');
 };
 const kinds = (a: Account) =>
   [
-    a.staff_role != null && '관리자 포털 직원',
-    a.roles.length > 0 && '강사 포털',
+    a.staff_role != null && `관리자 포털 직원(${staffLevel(a)})`,
+    a.roles.some((r) => LMS_ROLES.some(([k]) => r.split(':')[0] === k)) && '강사 포털',
     a.agency && '에이전시 포털',
     a.guard_campus && '가드 태블릿',
     a.student_no && '학생 포털',
   ].filter(Boolean) as string[];
 const day = (s: string | null) => (s ? s.slice(0, 10) : '-');
+/** DB is_admin() 과 같은 규칙: office 만 있으면 오피스, 아니면 관리자 */
+function staffLevel(a: Account) {
+  const has = (k: string) => a.roles.some((r) => r.split(':')[0] === k);
+  return has('office') && !has('admin') ? '오피스' : '관리자';
+}
 
 /**
- * 사용자·권한(관리자 포털, 직원만). 로그인 계정과 사용자 종류(4개 포털)를 한눈에 보고, 강사 포털 역할을 주고 회수한다.
+ * 사용자·권한(관리자 포털, 관리자만). 로그인 계정과 사용자 종류(4개 포털)를 한눈에 보고, 직원 역할(관리자·오피스)과 강사 포털 역할을 주고 회수한다.
  * 계정 만들기는 서비스 키가 필요해 아직 Supabase 대시보드(Authentication → Add user)에서 한다.
  */
 export default function Users() {
+  const isAdmin = useIsAdmin();
   const [rows, setRows] = useState<Account[] | null>(null);
   const [staff, setStaff] = useState<StaffRow[]>([]);
   const [error, setError] = useState('');
@@ -80,6 +93,15 @@ export default function Users() {
       <>
         <PageTitle title="사용자·권한" path="홈 > 기초관리 > 사용자·권한" />
         <div className="state-msg">로그인 계정은 Supabase에 있어 배포 주소(로그인한 직원)에서만 보입니다. 로컬 데이터 실행에는 계정이 없습니다.</div>
+      </>
+    );
+  }
+
+  if (isAdmin === false) {
+    return (
+      <>
+        <PageTitle title="사용자·권한" path="홈 > 기초관리 > 사용자·권한" />
+        <div className="state-msg">사용자·권한은 관리자만 엽니다(오피스 역할).</div>
       </>
     );
   }
@@ -123,7 +145,7 @@ export default function Users() {
             <tr><th className="left">포털</th><th className="left">계정 표 · 역할</th><th className="left">주는 곳</th></tr>
           </thead>
           <tbody>
-            <tr><td>관리자 포털(인트라넷 포함)</td><td>직원(staff_users)</td><td className="muted">Supabase(서비스 키). 역할 9개 세분화는 결정 대기(C5)</td></tr>
+            <tr><td>관리자 포털(인트라넷 포함)</td><td>직원(staff_users) · {STAFF_ROLES.map(([, n, d]) => <div key={n}><strong>{n}</strong> <span className="muted">{d}</span></div>)}<span className="muted">역할이 없는 직원은 관리자</span></td><td className="muted">직원 등록은 Supabase(서비스 키), 역할은 이 화면</td></tr>
             <tr><td>강사 포털(LMS)</td><td>{LMS_ROLES.map(([, n, d]) => <div key={n}><strong>{n}</strong> <span className="muted">{d}</span></div>)}</td><td>이 화면</td></tr>
             <tr><td>에이전시 포털</td><td>에이전시 지점(agency_members)</td><td className="muted">가입 신청 → 에이전시 포털 관리자 화면에서 승인</td></tr>
             <tr><td>학생 포털</td><td>학생(student_users, 학생번호 + 생년월일, 첫 로그인 때 변경)</td><td className="muted">npm run student:accounts (서비스 키)</td></tr>
@@ -158,7 +180,7 @@ export default function Users() {
                 <th className="left">이메일</th>
                 <th className="left">쓰는 포털</th>
                 <th className="left">이름</th>
-                <th className="left">강사 포털 역할</th>
+                <th className="left">역할</th>
                 <th className="left">역할 주기</th>
                 <th>가입</th>
                 <th>최근 로그인</th>
@@ -198,7 +220,7 @@ export default function Users() {
                       {!a.student_no && (
                         <>
                           <select aria-label="역할" value={p.role} onChange={(e) => setP({ role: e.target.value })} style={{ fontSize: 12 }}>
-                            {LMS_ROLES.map(([v, n]) => <option key={v} value={v}>{n}</option>)}
+                            {(a.staff_role != null ? ALL_ROLES : LMS_ROLES).map(([v, n]) => <option key={v} value={v}>{n}</option>)}
                           </select>
                           <select aria-label="캠퍼스" value={p.campus} onChange={(e) => setP({ campus: e.target.value })} style={{ fontSize: 12, marginLeft: 4 }}>
                             {CAMPUSES.map((c) => <option key={c} value={c}>{c || '전체 캠퍼스'}</option>)}

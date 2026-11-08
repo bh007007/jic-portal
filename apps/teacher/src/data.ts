@@ -185,3 +185,16 @@ export const markAllPresent = (sessionId: string) => must<number>(supabase.rpc('
 export const loadClosings = (day: string) => must<AttendanceClosing[]>(supabase.from('attendance_closings').select('*').eq('day', day));
 export const closeDay = (day: string, campus: string) => must(supabase.from('attendance_closings').insert({ day, campus }));
 export const reopenDay = (day: string, campus: string) => must(supabase.from('attendance_closings').delete().eq('day', day).eq('campus', campus));
+
+// 내부 공지(인트라넷 internal_notices, 20261109010000_roles.sql 의 lms_notices). 게시 중, 전체 + 내 캠퍼스.
+export interface LmsNotice {
+  id: string;
+  title: string;
+  content: string;
+  campus: string;
+  pinned: boolean;
+  until_date: string | null;
+  author_name: string;
+  created_at: string;
+}
+export const loadNotices = () => must<LmsNotice[]>(supabase.rpc('lms_notices'));
