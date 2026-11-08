@@ -350,6 +350,94 @@ export interface RoomRow {
   memo: string;
 }
 
+export interface CalendarDay {
+  date: string;
+  inSchool: number;
+  arrive: number;
+  leave: number;
+  offsite: number;
+  byCampus: Record<string, number>;
+}
+
+export interface CalendarStudent extends EnrollmentRow {
+  depart: string;
+  ret: string;
+  offsite: boolean;
+}
+
+export interface StudentCalendar {
+  refDate: string;
+  month: string;
+  prev: string;
+  next: string;
+  campus: string;
+  campuses: string[];
+  totals: { arrive: number; leave: number; max: number; min: number };
+  days: CalendarDay[];
+  selected: { date: string; kind: 'in' | 'arrive' | 'leave'; rows: CalendarStudent[] } | null;
+}
+
+export interface RegistrationPeriod {
+  from: string;
+  to: string;
+  label: string;
+}
+
+export interface RegistrationStudent extends EnrollmentRow {
+  basisDate: string;
+  depart: string;
+}
+
+export interface Registrations {
+  refDate: string;
+  basis: 'invoice' | 'departure';
+  unit: 'batch' | 'month';
+  withCancel: boolean;
+  withTrainCancel: boolean;
+  compare: boolean;
+  end: string;
+  prevEnd: string;
+  nextEnd: string;
+  periods: RegistrationPeriod[];
+  campuses: string[];
+  byCampus: Record<string, number[]>;
+  rows: { code: string; nation: string; counts: number[]; total: number; prevTotal: number }[];
+  totals: number[];
+  prevTotals: number[] | null;
+  list: { period: RegistrationPeriod; nation: string; campus: string; rows: RegistrationStudent[] } | null;
+}
+
+export interface StopRow extends EnrollmentRow {
+  stateCode: string;
+  stateLabel: string;
+  stopDate: string;
+  reason: string;
+  depart: string;
+  ret: string;
+}
+
+export interface StopList extends Paged<StopRow> {
+  tab: 'stopped' | 'cancel';
+  tabCounts: { stopped: number; cancel: number };
+  stateCounts: Record<string, number>;
+  facets: { years: string[]; nations: string[]; campuses: string[] };
+}
+
+export interface MemoRow extends EnrollmentRow {
+  depart: string;
+  pickType: string;
+  pickPlace: string;
+  agencyMemo: string;
+  marketingMemo: string;
+  academyMemo: string;
+}
+
+export interface MemoList extends Paged<MemoRow> {
+  tab: string;
+  tabCounts: { upcoming: number; current: number; all: number };
+  facets: { batches: string[]; campuses: string[]; pickTypes: string[] };
+}
+
 export interface RoomList extends Paged<RoomRow> {
   facets: { buildings: string[]; floors: string[]; types: string[]; campuses: string[] };
   totals: { rooms: number; beds: number };

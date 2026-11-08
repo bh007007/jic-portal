@@ -101,6 +101,20 @@
 | 회계 > 현지 인보이스 납부 (`adm/tuition2/payment`) | `payment_load/<페이지>` | `s_branch`, `s_sd_id`, `s_extend_yn`, `s_tr_state[]`, `s_invoice_balance`, `s_local_balance`, `s_term_key`, `s_start_date`, `s_finish_date`, `s_point_balance`, `s_collectible_yn`, `s_st_country[]`, `s_ag_country[]`, `s_current_student`, `s_tr_deposit_state`, `s_tr_ver`, `s_tr_pay_method`, `s_key`, `s_keyword`, `s_total_week`, `s_bk_id`, `s_trg`, `s_order` | 인보이스 상세 금액을 주는 주소는 아직 찾지 못했다 |
 | 기초코드 > 방관리 > 방 상태 (`adm/room/room_state`) | 확인 전 | `kind`, `s_campus`, `s_dorm`, `s_status`, `s_the_date`, `s_type`, `s_building`, `room_number` | - |
 
+## 통계·마케팅 화면과 새 관리자 앱 대조 (2026-11-08)
+
+업체 화면의 검색 항목·표 머리글·응답 구조를 보고, 같은 조건의 **합계 건수**만 받아 관리자 앱 계산과 맞춰 봤다(학생 값은 보지 않음). 기준은 `apps/admin/server/core.ts` 주석에도 적었다.
+
+| 업체 화면 | 조회 주소 | 응답 | 새 화면 · 대조 결과 |
+| --- | --- | --- | --- |
+| 재학생 > 통계 > 학생수(달력형) (`adm/train2/inschool`) | `inschool_load/<YYYY-MM>`, 날짜 칸 명단 `inschool_student_list_load` | `stat[]` = 날짜(`dt`, YYYYMMDD) × 지점 × 칸(`ca_<id>`, `off_<id>` 기숙사 밖, other, nodorm)별 `dep`·`ret`·`stopped`·`postponed`·`expelled`·`inschool` | `/stats/calendar` 학생수 달력. 재원 = `tr_departure_date ≤ 날짜 < tr_return_date`, 캔슬·거절·홀드·요청·연기 제외. 11월 재원 296·294·295·292·288·264(1·7·8·15·22·30일), 입국 52·1·47, 기숙사 밖(`do_type` NONROOM) 14명 모두 일치. 업체 칸은 그날의 기숙사 캠퍼스, 새 화면은 첫 코스 캠퍼스(합계는 같고 캠퍼스별로 몇 명 다를 수 있음) |
+| 재학생·마케팅 > 통계 > Register Stat·등록 현황 (`adm/train2/reg_stat`) | `reg_stat_load/1`, 칸 명단 `reg_stat_student_list` | `periods[]`(2주 배치 또는 월), `country_list[]` = 기간 × 국가(`ct_id`)별 `cnt_11`·`cnt_12`·`cnt_14`·`cnt_none`·`cnt_all`, 작년 비교 `country_list_prev` | `/stats/registrations` 등록 현황. 기준 `s_basis` invoice(첫 인보이스 = `tr_invoice_dt`) / departure(입국일), 국가는 인보이스 국적 `tr_st_country`, 캠퍼스는 `first_co_ca_code`. 기본은 캔슬 제외·연수 중 취소·퇴교·연기 포함(`s_inc_cancel_train` 기본 체크), `s_inc_cancel`이면 캔슬 포함. 6/14~11/14 배치 11개 합계가 세 조건(발행일, 입국일, 캔슬 포함) 모두 일치, 캠퍼스별도 일치 |
+| 마케팅 > 중단/연기 현황 (`adm/train3/canceltrain`) | `canceltrain_load/` | 상태 퇴교·연수중 취소·연기, 사유 `reason` | `/cancellations` 중단·연기 현황(+ 입학 전 캔슬 탭). 사유·처리일은 상태별 `tr_cancel_train_*`·`tr_postpone_*`·`tr_expel_*`·`tr_cancel_*` |
+| 마케팅 > Checking Memo (`adm/train2/checking_memo`) | `checking_memo_load/` (수정 `save_check_memo_train`은 부르지 않음) | Agency Memo `tr_ag_memo`, Marketing Memo `tr_br_memo`, Academy Memo `tr_br_memo_en` | `/memos` 체크 메모(읽기 전용). 메모 이름을 업체와 같게 바꿨다(학생 상세도) |
+| 마케팅 > 연장현황 (`adm/train3/extend`) | `extend_load/` | 연장 기록 `tt_*`(`tt_insert_date_str`, `tt_start_date`, `tt_finish_date`, `tt_week`, `tt_memo`, `tt_etc`) | 추출본에 `tt_` 기록이 없어 아직 못 만든다. 추가 추출 필요 |
+| 재학생 > 신입·연장·복귀·변경 (`adm/academic/freshman`) | `freshman_load/`, `freshman_load_extend/`, `freshman_load_comeback/`, `freshman_load_course/`, `freshman_load_dorm/` | 탭 5개(신입·연장·복귀·코스 변경·기숙사 변경) | 신입은 '입학 배치별 명단'이 대신한다. 나머지는 연장·변경 기록 추출 뒤 |
+| 마케팅 > 통계 > Closing Status·예상 금액 | `adm/register/closing_v2`, `adm/simul/estimate` | 검색 폼 없음(화면 안에서 따로 조회) | 확인 전 |
+
 ## 주의
 
 - 연수 목록 응답의 모든 행에 `token`, `debug_info`, `online_user_id`가 붙어 온다. 저장하지 않는다.
