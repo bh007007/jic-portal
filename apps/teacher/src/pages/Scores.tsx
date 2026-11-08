@@ -27,7 +27,7 @@ export default function Scores() {
 
   return (
     <>
-      <PageHead title={t('enterScores')} />
+      <PageHead title={t('enterScores')} right={<Link to="/scores/batch" className="btn btn-xs">{t('manyAtOnce')}</Link>} />
       <Section title={t('pickStudent')}>
         {chosen ? (
           <div className="picked">

@@ -8,6 +8,7 @@ import Home from './pages/Home';
 import Students from './pages/Students';
 import StudentDetail from './pages/StudentDetail';
 import Scores from './pages/Scores';
+import BatchScores from './pages/BatchScores';
 import Materials from './pages/Materials';
 import More from './pages/More';
 import TestTypes from './pages/TestTypes';
@@ -37,6 +38,7 @@ export default function App() {
         <Route path="/students" element={<Students />} />
         <Route path="/students/:no" element={<StudentDetail />} />
         <Route path="/scores" element={<Scores />} />
+        <Route path="/scores/batch" element={<BatchScores />} />
         <Route path="/materials" element={<Materials />} />
         <Route path="/more" element={<More />} />
         <Route path="/tests" element={me.isManager ? <TestTypes /> : <Navigate to="/more" replace />} />
