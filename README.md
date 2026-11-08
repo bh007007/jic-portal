@@ -45,7 +45,7 @@ npm run admin
 - 로컬에서는 로그인이 없다. 배포 주소(Cloudflare Pages)에서는 Supabase 직원 계정으로 로그인한다.
 - 기준일은 추출 시각(`data/tables/meta.json`)이다. 다시 추출하고 분리하면 서버를 재시작해 반영한다.
 - 추출본에 없는 항목: 방·침대 번호, 인보이스 총액. 추가 추출 후 화면에 붙인다. 회계 화면은 입금 매칭 합계(`sum_id_amount`)와 포인트 충전·사용 합계만 보여 주고 총액·미수금은 만들지 않는다.
-- 입금 원장(`deposits.ndjson`)은 로컬에서만 읽는다. 배포 환경(Supabase)에는 아직 테이블이 없어 입금 매칭 > 입금 원장 탭에 '데이터 없음'이 표시된다.
+- 입금 원장은 로컬에서는 `deposits.ndjson`, 배포에서는 `legacy_deposits`(받는 계좌 열 제외)를 읽는다. 비어 있으면 입금 매칭 > 입금 원장 탭에 '데이터 없음'이 표시된다.
 
 ## 데이터 다시 추출하기
 
@@ -59,6 +59,10 @@ powershell -ExecutionPolicy Bypass -File scripts/split-export.ps1
 ```
 
 `data/tables/*.csv`는 엑셀에서 바로 열린다(UTF-8 BOM). `docs/data-dictionary.md`는 열 이름과 건수만 다시 만든다.
+
+### 추가 추출 (포인트 잔액, 방·침대)
+
+전체 추출에 없는 것만 받는 짧은 스크립트다(3~5분). 같은 방법으로 [scripts/extract/portal-extract-extra.js](scripts/extract/portal-extract-extra.js)를 콘솔에서 실행하고, 받은 `jic_portal_extra_YYYY-MM-DD.json.gz`를 `data/raw/`에 두고 `split-export.ps1`을 실행한다. 기존 표와 `meta.json`(기준일)은 그대로 두고 표만 더하며, 열 목록과 화면 구조는 `docs/data-dictionary-extra.md`에 쓴다. 콘솔에 '일부 단계가 비었습니다'가 나오면 파일은 그대로 두고 Claude에게 알린다(`data/tables/extra_meta.json`에 화면 구조가 남아 있어 다음 수정에 쓴다).
 
 ## 데이터 원칙
 

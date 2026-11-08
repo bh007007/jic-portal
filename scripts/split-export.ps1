@@ -10,14 +10,18 @@
 
   data/ 폴더는 .gitignore로 GitHub에 올라가지 않는다. docs/data-dictionary.md 에는 값이 들어가지 않는다.
 
+  추가 추출 파일(portal-extract-extra.js → jic_portal_extra_*.json.gz)은 meta 대신 extra_meta 를 담는다.
+  이때는 기존 표와 meta.json(기준일)을 그대로 두고 새 표만 더하며, 사전은 docs/data-dictionary-extra.md 에 따로 쓴다.
+
 .EXAMPLE
   powershell -ExecutionPolicy Bypass -File scripts/split-export.ps1
   powershell -ExecutionPolicy Bypass -File scripts/split-export.ps1 -Source data/raw/jic_portal_export_2026-11-07.json.gz
+  powershell -ExecutionPolicy Bypass -File scripts/split-export.ps1 -Source data/raw/jic_portal_extra_2026-11-08.json.gz
 #>
 param(
   [string]$Source = "",
   [string]$OutDir = "data/tables",
-  [string]$DictPath = "docs/data-dictionary.md"
+  [string]$DictPath = ""
 )
 $ErrorActionPreference = 'Stop'
 $root = Split-Path -Parent $PSScriptRoot
@@ -141,9 +145,16 @@ public static class ExportSplitter
 
 Write-Host "원본: $Source"
 $sw = [Diagnostics.Stopwatch]::StartNew()
+$runStart = (Get-Date).AddSeconds(-2)
 $counts = [ExportSplitter]::SplitToNdjson($Source, $OutDir)
 
-$meta = Get-Content -Raw -Encoding UTF8 (Join-Path $OutDir "meta.json") | ConvertFrom-Json
+# 이번 파일에서 extra_meta.json 이 새로 나왔으면 추가 추출이다. meta.json(기준일)과 기본 사전은 건드리지 않는다.
+$extraMetaPath = Join-Path $OutDir "extra_meta.json"
+$isExtra = (Test-Path $extraMetaPath) -and ((Get-Item $extraMetaPath).LastWriteTime -ge $runStart)
+if (-not $DictPath) { $DictPath = if ($isExtra) { "docs/data-dictionary-extra.md" } else { "docs/data-dictionary.md" } }
+if (-not [IO.Path]::IsPathRooted($DictPath)) { $DictPath = Join-Path $root $DictPath }
+$metaPath = if ($isExtra) { $extraMetaPath } else { Join-Path $OutDir "meta.json" }
+$meta = Get-Content -Raw -Encoding UTF8 $metaPath | ConvertFrom-Json
 $problems = @()
 foreach ($k in $counts.Keys) {
   $expected = $meta.counts.$k
@@ -151,9 +162,15 @@ foreach ($k in $counts.Keys) {
 }
 
 $dict = New-Object System.Text.StringBuilder
-[void]$dict.AppendLine("# 데이터 사전 (업체 포털 추출본)")
-[void]$dict.AppendLine("")
-[void]$dict.AppendLine("업체 포털에서 추출한 테이블별 열 이름과, 값이 채워진 레코드 수다. 값은 담지 않는다. ``scripts/split-export.ps1``이 만든다.")
+if ($isExtra) {
+  [void]$dict.AppendLine("# 데이터 사전 — 추가 추출")
+  [void]$dict.AppendLine("")
+  [void]$dict.AppendLine("``scripts/extract/portal-extract-extra.js``로 받은 표의 열 이름과, 값이 채워진 레코드 수다. 값은 담지 않는다. 기본 추출본은 ``docs/data-dictionary.md``.")
+} else {
+  [void]$dict.AppendLine("# 데이터 사전 (업체 포털 추출본)")
+  [void]$dict.AppendLine("")
+  [void]$dict.AppendLine("업체 포털에서 추출한 테이블별 열 이름과, 값이 채워진 레코드 수다. 값은 담지 않는다. ``scripts/split-export.ps1``이 만든다.")
+}
 [void]$dict.AppendLine("")
 [void]$dict.AppendLine("- 추출 시각: $($meta.extracted_at)")
 [void]$dict.AppendLine("- 출처: $($meta.source)")
@@ -179,9 +196,26 @@ foreach ($k in $counts.Keys) {
   Write-Host ("  {0,-18} {1,6} 건  {2,4} 열" -f $k, $counts[$k], $cols.Count)
 }
 [void]$dict.Append($sections.ToString())
+
+# 추가 추출: 화면마다 쓴 조회 주소, 검색 항목 이름, 결과. 다음 추출 때 검색 조건을 맞추는 데 쓴다(값·코드 조각은 extra_meta.json 에만).
+if ($isExtra -and $meta.discovery) {
+  [void]$dict.AppendLine("")
+  [void]$dict.AppendLine("## 화면 구조")
+  [void]$dict.AppendLine("")
+  [void]$dict.AppendLine("| 항목 | 화면 | 조회 주소 | 결과 | 캠퍼스 항목 | 검색 항목 | 화면이 부르는 주소 |")
+  [void]$dict.AppendLine("| --- | --- | --- | --- | --- | --- | --- |")
+  foreach ($p in $meta.discovery.PSObject.Properties) {
+    $d = $p.Value
+    $result = if ($d.error) { "오류: $($d.error)" } elseif ($null -ne $d.rows) { "$($d.rows)건" } else { "-" }
+    $fields = ($d.fields | ForEach-Object { $_.name }) -join ', '
+    $eps = ($d.endpoints) -join ', '
+    [void]$dict.AppendLine("| $($p.Name) | $($d.page) | $($d.url) | $result | $($d.campusParam) | $fields | $eps |")
+  }
+}
 New-Item -ItemType Directory -Force (Split-Path -Parent $DictPath) | Out-Null
-[IO.File]::WriteAllText((Join-Path $root $DictPath), $dict.ToString(), (New-Object Text.UTF8Encoding($false)))
+[IO.File]::WriteAllText($DictPath, $dict.ToString(), (New-Object Text.UTF8Encoding($false)))
 
 $sw.Stop()
 if ($problems.Count) { Write-Warning ("건수 불일치: " + ($problems -join '; ')) } else { Write-Host "건수 검증: 메타 정보와 모두 일치" }
+if ($isExtra) { Write-Host "추가 추출: meta.json(기준일)은 그대로 두고 표를 더했습니다. 사전 → $DictPath" }
 Write-Host ("완료 {0:N0}초 → {1}" -f $sw.Elapsed.TotalSeconds, $OutDir)
