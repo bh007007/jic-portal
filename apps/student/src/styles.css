@@ -27,6 +27,10 @@ body {
   font-family: 'Noto Sans KR', 'Malgun Gothic', 'Apple SD Gothic Neo', sans-serif;
   font-size: 13px;
 }
+:lang(ja) body, body:lang(ja) { font-family: 'Hiragino Sans', 'Hiragino Kaku Gothic ProN', 'Yu Gothic', Meiryo, 'Noto Sans JP', 'Noto Sans KR', sans-serif; }
+:lang(zh-Hans) body, body:lang(zh-Hans) { font-family: 'PingFang SC', 'Microsoft YaHei', 'Noto Sans SC', 'Noto Sans KR', sans-serif; }
+:lang(zh-Hant) body, body:lang(zh-Hant) { font-family: 'PingFang TC', 'Microsoft JhengHei', 'Noto Sans TC', 'Noto Sans KR', sans-serif; }
+:lang(vi) body, body:lang(vi) { font-family: 'Segoe UI', Roboto, 'Helvetica Neue', Arial, 'Noto Sans', sans-serif; }
 a { color: var(--primary); }
 a:hover { color: var(--primary-dark); }
 button, input, select, textarea { font: inherit; color: inherit; }
@@ -70,7 +74,9 @@ h1, h2 { margin: 0; }
 .app-brand-mark { font-size: 21px; font-weight: 900; font-style: italic; letter-spacing: -1px; }
 .app-brand-name { font-size: 13px; font-weight: 500; }
 .sample-tag { align-self: center; margin-left: 4px; padding: 1px 6px; border: 1px solid rgba(255, 255, 255, 0.55); border-radius: 3px; font-size: 11px; }
-.lang-btn { min-width: 44px; height: 44px; padding: 0 8px; border: 0; background: transparent; color: #fff; font-size: 13px; font-weight: 500; cursor: pointer; }
+.lang-select { height: 36px; max-width: 132px; padding: 0 24px 0 10px; border: 1px solid rgba(255, 255, 255, 0.45); border-radius: 4px; background: transparent; color: #fff; font-size: 13px; font-weight: 500; cursor: pointer; appearance: none; background-image: linear-gradient(45deg, transparent 50%, #fff 50%), linear-gradient(135deg, #fff 50%, transparent 50%); background-position: right 12px center, right 7px center; background-size: 5px 5px; background-repeat: no-repeat; }
+.lang-select option { color: #222; background: #fff; }
+.app-header { padding-right: 12px; }
 
 /* 하단 메뉴 */
 .bottom-nav {

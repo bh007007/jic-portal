@@ -1,9 +1,10 @@
 import { useState, type FormEvent } from 'react';
 import { ApiError, login, setStudentId, type Meta } from '../api';
+import { LangSelect } from '../components/Layout';
 import { errorText, useI18n } from '../i18n';
 
 export default function Login({ meta }: { meta: Meta | null }) {
-  const { t, nextLang } = useI18n();
+  const { t } = useI18n();
   const [stId, setStId] = useState('');
   const [birthday, setBirthday] = useState('');
   const [error, setError] = useState<string | null>(null);
@@ -29,9 +30,7 @@ export default function Login({ meta }: { meta: Meta | null }) {
           <span className="app-brand-mark">JIC</span>
           <span className="app-brand-name">{t('app.name')}</span>
         </span>
-        <button type="button" className="lang-btn" aria-label={t('lang.change')} onClick={nextLang}>
-          {t('lang.label')}
-        </button>
+        <LangSelect />
       </header>
       <form className="login-box" onSubmit={submit}>
         <h1>{t('login.title')}</h1>
