@@ -24,6 +24,7 @@ const ko = {
   todayAbsences: '오늘 결석 신청', byDate: '날짜별 보기', noAbsenceToday: '오늘 결석 신청이 없습니다.',
   students: '학생', seeAll: '전체 보기', current: '재학', arriving30: '30일 안 입학',
   recentScores: '최근 입력한 성적', enterScores: '성적 입력', noScores: '아직 입력한 성적이 없습니다.',
+  holidays14: '휴일 (2주 안)', hol_public: '공휴일', hol_school: '학원 휴일',
   // 학생
   people: '{n}명', searchStudent: '이름·학생번호·국적·코스', allCampuses: '전체 캠퍼스', noStudent: '조건에 맞는 학생이 없습니다.',
   notCurrent: '재학·입학 예정 학생이 아닙니다.', studentList: '학생 목록', list: '목록',
@@ -99,6 +100,7 @@ const en: Record<Key, string> = {
   todayAbsences: "Today's absence requests", byDate: 'By date', noAbsenceToday: 'No absence requests today.',
   students: 'Students', seeAll: 'See all', current: 'Current', arriving30: 'Arriving in 30 days',
   recentScores: 'Recently entered scores', enterScores: 'Enter scores', noScores: 'No scores entered yet.',
+  holidays14: 'Holidays (next 2 weeks)', hol_public: 'Public holiday', hol_school: 'School holiday',
   people: '{n}', searchStudent: 'Name, student no., nationality, course', allCampuses: 'All campuses', noStudent: 'No matching students.',
   notCurrent: 'Not a current or upcoming student.', studentList: 'Student list', list: 'List',
   enrollment: 'Enrollment', campus: 'Campus', course: 'Course', dorm: 'Dorm', period: 'Period', batch: 'Batch',
