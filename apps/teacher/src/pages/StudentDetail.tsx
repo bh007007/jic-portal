@@ -75,9 +75,11 @@ export default function StudentDetail() {
         )}
       </Section>
 
-      <Section title={t('enterScores')}>
-        <ScoreForm student={s} types={types.data ?? []} onSaved={results.reload} />
-      </Section>
+      {me?.canWrite && (
+        <Section title={t('enterScores')}>
+          <ScoreForm student={s} types={types.data ?? []} onSaved={results.reload} />
+        </Section>
+      )}
 
       <Section title={t('scoreRecords')} extra={<span className="muted small">{t('cefrNote')}</span>}>
         {results.loading ? (

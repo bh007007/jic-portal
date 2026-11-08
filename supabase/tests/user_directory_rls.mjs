@@ -33,6 +33,11 @@ await db.exec(mig('20261108210000_user_directory.sql'));
 await db.exec(mig('20261108210000_user_directory.sql')); // 두 번째 실행
 await db.exec(mig('20261108230000_holidays.sql'));
 await db.exec(mig('20261108230000_holidays.sql'));
+// 역할별 권한표(11/9): 관리자·오피스 구분, 계정 목록은 관리자만
+for (const f of ['20261109010000_roles.sql', '20261109020000_user_directory_admin.sql']) {
+  await db.exec(mig(f));
+  await db.exec(mig(f)); // 두 번째 실행
+}
 ok('마이그레이션 2회 실행', true);
 
 const U = {
@@ -42,12 +47,16 @@ const U = {
   agent: '00000000-0000-0000-0000-0000000000f1',
   guard: '00000000-0000-0000-0000-0000000000e1',
   fresh: '00000000-0000-0000-0000-0000000000b9', // 역할 없는 새 계정
+  office: '00000000-0000-0000-0000-0000000000c2', // 오피스 직원
+  boss: '00000000-0000-0000-0000-0000000000c3', // 오피스 + 관리자 역할
 };
 await db.exec(`
   insert into auth.users (id, email) values
     ('${U.staff}', 'staff@example.com'), ('${U.teacher}', 'teacher@example.com'), ('${U.student}', '1001@students.jic.internal'),
-    ('${U.agent}', 'agent@example.com'), ('${U.guard}', 'gate@example.com'), ('${U.fresh}', 'new@example.com');
-  insert into public.staff_users (user_id, name) values ('${U.staff}', '직원');
+    ('${U.agent}', 'agent@example.com'), ('${U.guard}', 'gate@example.com'), ('${U.fresh}', 'new@example.com'),
+    ('${U.office}', 'office@example.com'), ('${U.boss}', 'boss@example.com');
+  insert into public.staff_users (user_id, name) values ('${U.staff}', '직원'), ('${U.office}', '오피스'), ('${U.boss}', '실장');
+  insert into public.user_roles (user_id, role) values ('${U.office}', 'office'), ('${U.boss}', 'office'), ('${U.boss}', 'admin');
   insert into public.user_roles (user_id, role) values ('${U.teacher}', 'teacher');
   insert into public.user_roles (user_id, role, campus) values ('${U.teacher}', 'checker', 'Premium');
   insert into public.staff (user_id, name) values ('${U.teacher}', 'Teacher Ann');
@@ -77,17 +86,36 @@ async function denied(name, sql, pattern) {
 await as(U.staff, async () => {
   const rows = await q(`select * from user_directory()`);
   const by = Object.fromEntries(rows.map((r) => [r.email, r]));
-  ok('직원: 학생 뺀 계정 5개', rows.length === 5, JSON.stringify(rows.map((r) => r.email)));
-  ok('직원이 맨 앞', rows[0].email === 'staff@example.com');
+  ok('직원: 학생 뺀 계정 7개', rows.length === 7, JSON.stringify(rows.map((r) => r.email)));
+  ok('직원이 맨 앞', rows[0].staff_name != null && rows[1].staff_name != null && rows[2].staff_name != null);
   ok('강사 역할·캠퍼스·강사 이름', by['teacher@example.com'].roles.join() === 'checker:Premium,teacher' && by['teacher@example.com'].teacher_name === 'Teacher Ann', JSON.stringify(by['teacher@example.com']));
   ok('에이전시 지점', by['agent@example.com'].agency === '샘플유학 · 서울');
   ok('가드 출입구', by['gate@example.com'].guard_campus === 'Challenger');
   ok('역할 없는 새 계정도 보임', by['new@example.com'] && by['new@example.com'].roles.length === 0);
-  ok('학생 넣기 옵션', (await q(`select * from user_directory(true)`)).length === 6);
+  ok('학생 넣기 옵션', (await q(`select * from user_directory(true)`)).length === 8);
   ok('직원이 강사 역할 부여', (await db.query(`insert into user_roles (user_id, role) values ('${U.fresh}', 'manager')`)).affectedRows === 1);
   ok('직원이 역할 회수', (await db.query(`delete from user_roles where user_id = '${U.teacher}' and role = 'checker'`)).affectedRows === 1);
 });
+// ── 오피스: 계정 목록·역할 주기 불가, 휴일은 쓴다. 오피스 + 관리자 역할이면 관리자.
+await as(U.office, async () => {
+  ok('오피스: 관리자 아님', (await q(`select public.is_admin() a`))[0].a === false);
+  ok('오피스: 계정 목록 0', (await q(`select * from user_directory()`)).length === 0);
+  await denied('오피스: 역할 주기 거부', `insert into user_roles (user_id, role) values ('${U.fresh}', 'teacher')`, /row-level security/);
+  ok('오피스: 역할 회수 0행', (await db.query(`delete from user_roles where user_id = '${U.fresh}'`)).affectedRows === 0);
+  await denied('오피스: 스스로 관리자 역할 거부', `insert into user_roles (user_id, role) values ('${U.office}', 'admin')`, /row-level security/);
+  ok('오피스: 휴일 등록', (await db.query(`insert into holidays (day, name) values ('2027-01-02', 'Office test')`)).affectedRows === 1);
+  await db.query(`delete from holidays where day = '2027-01-02'`);
+});
+await as(U.boss, async () => {
+  ok('오피스 + 관리자 역할: 관리자', (await q(`select public.is_admin() a`))[0].a === true);
+  ok('오피스 + 관리자 역할: 계정 목록', (await q(`select * from user_directory()`)).length === 7);
+  ok('관리자: 오피스 역할 주기', (await db.query(`insert into user_roles (user_id, role, campus) values ('${U.staff}', 'office', 'Premium')`)).affectedRows === 1);
+});
+await as(U.staff, async () => ok('오피스 역할을 받은 직원: 관리자 아님', (await q(`select public.is_admin() a`))[0].a === false));
+await as(U.boss, async () => ok('관리자: 오피스 역할 회수', (await db.query(`delete from user_roles where user_id = '${U.staff}' and role = 'office'`)).affectedRows === 1));
+await as(U.staff, async () => ok('역할 없는 직원: 다시 관리자', (await q(`select public.is_admin() a`))[0].a === true));
 await as(U.teacher, async () => {
+  ok('강사: 관리자 아님', (await q(`select public.is_admin() a`))[0].a === false);
   ok('강사는 계정 목록 0', (await q(`select * from user_directory()`)).length === 0);
 });
 await as(U.agent, async () => ok('에이전시는 계정 목록 0', (await q(`select * from user_directory()`)).length === 0));

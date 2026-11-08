@@ -16,6 +16,7 @@ import Staff from './pages/Staff';
 import Absences from './pages/Absences';
 import Attendance from './pages/Attendance';
 import AttendanceSession from './pages/AttendanceSession';
+import Notices from './pages/Notices';
 import NotReady from './pages/NotReady';
 
 export default function App() {
@@ -24,7 +25,15 @@ export default function App() {
   if (!configured) return <div className="state">{t('notConfigured')}</div>;
   if (loading) return <div className="state">{t('loading')}</div>;
   if (!session) return <Login />;
-  if (error) return <div className="state">{t('meFail')}: {error}</div>;
+  // 계정 정보를 못 읽으면(세션 만료·계정 삭제) 막히지 않게 로그아웃 버튼을 같이 둔다
+  if (error) {
+    return (
+      <div className="state">
+        <p>{t('meFail')}: {error}</p>
+        <button type="button" className="btn" onClick={() => supabase.auth.signOut()}>{t('logout')}</button>
+      </div>
+    );
+  }
   if (!me || me.roles.length === 0) {
     return (
       <div className="state">
@@ -48,6 +57,7 @@ export default function App() {
         <Route path="/absences" element={<Absences />} />
         <Route path="/attendance" element={<Attendance />} />
         <Route path="/attendance/:id" element={<AttendanceSession />} />
+        <Route path="/notices" element={<Notices />} />
         <Route path="*" element={<NotReady title={t('noPage')} />} />
       </Routes>
     </Layout>

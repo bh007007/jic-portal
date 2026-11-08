@@ -2,12 +2,15 @@ import { useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { loadRecentResults, loadStudents, loadTestTypes } from '../data';
 import { useT } from '../i18n';
+import { useAuth } from '../auth';
 import ScoreForm from '../ScoreForm';
 import { Loading, PageHead, Section, fmtDate, useLoad } from '../ui';
 
 /** 성적 입력: 학생을 찾아 고른 뒤 바로 입력(휴대폰 기준). 아래에 최근 입력 30건. */
 export default function Scores() {
   const { t } = useT();
+  const { me } = useAuth();
+  const canWrite = Boolean(me?.canWrite);
   const students = useLoad(() => loadStudents(), []);
   const types = useLoad(() => loadTestTypes(), []);
   const recent = useLoad(() => loadRecentResults(30), []);
@@ -27,8 +30,9 @@ export default function Scores() {
 
   return (
     <>
-      <PageHead title={t('enterScores')} right={<Link to="/scores/batch" className="btn btn-xs">{t('manyAtOnce')}</Link>} />
-      <Section title={t('pickStudent')}>
+      <PageHead title={t(canWrite ? 'enterScores' : 'scoreRecords')} right={canWrite ? <Link to="/scores/batch" className="btn btn-xs">{t('manyAtOnce')}</Link> : undefined} />
+      {!canWrite && <p className="muted">{t('scoresReadOnly')}</p>}
+      {canWrite && <Section title={t('pickStudent')}>
         {chosen ? (
           <div className="picked">
             <span><strong>{chosen.name}</strong> <span className="muted small">{chosen.student_no} · {chosen.campus} · {chosen.course}</span></span>
@@ -49,9 +53,9 @@ export default function Scores() {
             </ul>
           </>
         )}
-      </Section>
+      </Section>}
 
-      {chosen && (
+      {canWrite && chosen && (
         <Section title={t('points')}>
           <ScoreForm student={chosen} types={types.data ?? []} onSaved={recent.reload} />
         </Section>

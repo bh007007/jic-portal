@@ -67,7 +67,7 @@ export default function Materials() {
 
   return (
     <>
-      <PageHead title={t('materials')} sub={t('materialsSub')} right={<button type="button" className="btn btn-xs" onClick={() => setOpen((o) => !o)}>{open ? t('close') : t('addMaterial')}</button>} />
+      <PageHead title={t('materials')} sub={t('materialsSub')} right={me?.canWrite ? <button type="button" className="btn btn-xs" onClick={() => setOpen((o) => !o)}>{open ? t('close') : t('addMaterial')}</button> : undefined} />
 
       {open && (
         <Section title={t('addMaterial')}>
@@ -105,7 +105,7 @@ export default function Materials() {
       {loading || error ? (
         <Loading error={error} />
       ) : tree.size === 0 ? (
-        <div className="state">{(data ?? []).length ? t('noMaterialMatch') : t('noMaterial')}</div>
+        <div className="state">{(data ?? []).length ? t('noMaterialMatch') : t(me?.canWrite ? 'noMaterial' : 'noMaterialRead')}</div>
       ) : (
         [...tree].map(([c, books]) => (
           <Section key={c} title={c}>
@@ -120,7 +120,7 @@ export default function Materials() {
                         <li key={m.id}>
                           <span className="tag">{kindName(m.kind)}</span>
                           <a href={m.url} target="_blank" rel="noreferrer noopener">{m.title}</a>
-                          {(m.created_by === me?.session.user.id || me?.isManager) && (
+                          {me?.canWrite && (m.created_by === me.session.user.id || me.isManager) && (
                             <button type="button" className="link-btn" onClick={() => remove(m)} disabled={del.busy}>{t('delete')}</button>
                           )}
                         </li>
