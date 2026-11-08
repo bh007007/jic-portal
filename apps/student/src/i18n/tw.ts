@@ -262,4 +262,10 @@ export const tw: Record<MsgKey, string> = {
   'err.outside_enrollment': '旅行日期不在研修期間內，無法報名。',
   'err.deadline_passed': '已過報名截止日，無法取消。請告訴負責的工作人員。',
   'err.not_applied': '沒有可取消的報名。',
+  'qr.button': '出入QR碼',
+  'qr.title': '出入QR碼',
+  'qr.left': '{s}秒後換成新的QR碼',
+  'qr.hint': '外出或返回時，請對準警衛平板的鏡頭。截圖的QR碼無法使用。',
+  'err.qr_offline': '無法取得QR碼，請檢查網路連線。',
+  'err.keycard_unavailable': '目前無法使用出入QR碼，請聯絡辦公室。',
 };

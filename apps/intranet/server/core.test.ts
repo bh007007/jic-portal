@@ -8,6 +8,7 @@ import type { Departure, Ride } from '../../student/server/departures';
 import { newLifeRequest, type LifeRequest } from '../../student/server/lifeRequests';
 import type { Absence, Overnight, RequestStore } from '../../student/server/requests';
 import { memoryTripStore, signUp } from '../../student/server/trips';
+import { KEYCARD_PERIOD, keycardCode } from '../../student/server/keycard';
 import { handleIntranetApi, type Stores } from './core';
 
 function memRepo<T extends { id: string }>() {
@@ -74,7 +75,8 @@ const stores: Stores = {
 let clock = Date.parse('2026-11-05T19:02:00+08:00');
 let n = 0;
 let actor: string | null = null;
-const ctx = { db, stores, now: () => new Date(clock), newId: () => 'o' + ++n, get actor() {
+const KSECRET = 'k'.repeat(64);
+const ctx = { db, stores, keycardSecret: async () => KSECRET, now: () => new Date(clock), newId: () => 'o' + ++n, get actor() {
   return actor;
 } };
 const at = (s: string) => { clock = Date.parse(s + '+08:00'); };
@@ -548,6 +550,31 @@ expect('없는 여행 404', (await call('GET', '/trips/nope')).status === 404);
 at('2026-11-20T10:00:00');
 trl = (await call('GET', '/trips', null, 'tab=past')).body as any;
 expect('지난 여행 탭', trl.tab === 'past' && trl.counts.past === 1 && trl.rows.length === 1, trl.counts);
+
+// ── 카드키 QR: 학생 앱이 만든 값을 가드 태블릿이 읽는다
+at('2026-11-21T19:00:00');
+await call('PUT', '/settings', { curfew: '23:00', guards: [] });
+const [Q1, Q2] = [...new Set(cur.filter((x) => x.campus === campus && !taken.has(x.stId) && x.stId !== F && x.stId !== G).map((x) => x.stId))];
+const qr1 = (await keycardCode(KSECRET, Q1, clock)).code;
+r = await call('POST', '/guard/scan', { code: qr1, mode: 'out', campus });
+expect('QR 로 외출 201, 찍은 방법 qr', r.status === 201 && (r.body as any).row.stId === Q1 && (r.body as any).row.outVia === 'qr', r);
+clock += 90_000; // 1분 30초 뒤: 직전 창이라 아직 받음
+r = await call('POST', '/guard/scan', { code: qr1, mode: 'in', campus });
+expect('직전 창 QR 로 귀가 200, inVia qr', r.status === 200 && (r.body as any).row.inVia === 'qr', r);
+clock += 60_000; // 2분 넘게 지난 QR
+r = await call('POST', '/guard/scan', { code: qr1, mode: 'out', campus });
+expect('오래된 QR 400 qr_expired', r.status === 400 && (r.body as any).error === 'qr_expired', r);
+r = await call('POST', '/guard/scan', { code: (await keycardCode('x'.repeat(64), Q2, clock)).code, mode: 'out', campus });
+expect('다른 비밀 값으로 만든 QR 400 invalid_qr', r.status === 400 && (r.body as any).error === 'invalid_qr', r);
+r = await call('POST', '/guard/scan', { code: Q2, mode: 'out', campus });
+expect('학생번호 직접 입력 201, 찍은 방법 number', r.status === 201 && (r.body as any).row.outVia === 'number', r);
+r = await handleIntranetApi({ ...ctx, keycardSecret: undefined }, 'POST', '/guard/scan', new URLSearchParams(), { code: (await keycardCode(KSECRET, Q2, clock)).code, mode: 'in', campus });
+expect('비밀 값이 없는 서버는 QR 503', r.status === 503 && (r.body as any).error === 'qr_unavailable', r);
+r = await call('POST', '/guard/report', { code: qr1, campus, kind: 'other', note: 'QR 로 리포트(만료된 QR 도 누구인지는 앎)' });
+expect('리포트는 만료된 QR 로도 학생 확인', r.status === 201 && (r.body as any).report.stId === Q1, r);
+const og = ((await call('GET', '/outings', null, 'date=2026-11-21')).body as any).rows;
+expect('외출 목록에 찍은 방법', og.some((x: any) => x.stId === Q1 && x.outVia === 'qr' && x.inVia === 'qr') && og.some((x: any) => x.stId === Q2 && x.outVia === 'number'), og.map((x: any) => [x.stId, x.outVia, x.inVia]));
+void KEYCARD_PERIOD;
 
 console.log(fails ? `\n${fails}건 실패` : '\n모두 통과');
 if (fails) process.exit(1);

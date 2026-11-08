@@ -25,6 +25,7 @@ import { handleLifeRequest, LIFE_CATEGORIES, LIFE_REPLY_MAX, type LifeRequestSto
 import { PENALTY_KIND_OF, REPORT_KINDS, REPORT_LABEL, REPORT_NOTE_MAX, type IncidentReport, type ReportKind } from './reports';
 import { createNotice, listNotices, noticeSummary, openNotice, updateNotice, type Notice, type NoticeCtx, type NoticeRead } from './notices';
 import { COMMENT_MAX, decideRequest, nightsBetween, overnightFor, type Absence, type Overnight, type RequestStatus, type RequestStore } from '../../student/server/requests';
+import { readKeycard, type KeycardSecret } from '../../student/server/keycard';
 import {
   isAccepting,
   REMOVE_REASON_MAX,
@@ -70,6 +71,9 @@ export interface Outing {
   outBy: string;
   inAt: string | null; // 외출 중이면 null
   inBy: string;
+  /** 찍은 방법: 카드키 QR 또는 학생번호 직접 입력(11/8 전 기록은 없음) */
+  outVia?: 'qr' | 'number' | null;
+  inVia?: 'qr' | 'number' | null;
 }
 
 export type PenaltyStatus = 'pending' | 'approved' | 'rejected';
@@ -170,6 +174,8 @@ export interface IntranetCtx {
   newId: () => string;
   /** 처리자 이름: 로컬은 브라우저에 입력한 직원 이름, 배포는 로그인한 직원. 상담 기록 열람·작성과 접근 기록에 쓴다. */
   actor?: string | null;
+  /** 카드키 QR 서명 비밀 값(학생 앱 server/keycard.ts). 로컬은 파일, 배포는 가드 요청에서 서비스 키로. 없으면 QR 은 받지 않고 번호만 */
+  keycardSecret?: KeycardSecret;
   /** 배포: 로그인한 계정 종류. 가드 공용 계정은 그 출입구(캠퍼스)로 고정한다. 로컬은 없음. */
   session?: { role: 'staff' | 'guard'; campus?: string | null };
 }
@@ -310,6 +316,8 @@ function outingRow(ctx: IntranetCtx, o: Outing, curfew: string, now: number, ove
     breach: curfewBreach(o, curfew, now, overnights),
     overnightUntil: permit?.until ?? null, // 승인된 외박의 복귀일
     overnightTrip: permit?.tripId ? permit.reason : null, // 학교 여행 참가로 허용된 외박이면 여행 이름
+    outVia: o.outVia ?? null, // 카드키 QR('qr') 또는 학생번호 직접 입력('number')
+    inVia: o.inVia ?? null,
   };
 }
 export type OutingRow = ReturnType<typeof outingRow>;
@@ -334,13 +342,14 @@ async function guardView(ctx: IntranetCtx, q: URLSearchParams) {
 export type GuardView = Awaited<ReturnType<typeof guardView>>;
 
 async function guardScan(ctx: IntranetCtx, input: Record<string, unknown>): Promise<Result> {
-  const stId = String(input.code ?? '').replace(/\D/g, '');
+  const read = await readKeycard(ctx.keycardSecret, input.code, ctx.now().getTime());
   const mode = input.mode;
   const campus = typeof input.campus === 'string' ? input.campus.trim() : '';
   const guard = typeof input.guard === 'string' ? input.guard.trim().slice(0, 40) : '';
   if (mode !== 'out' && mode !== 'in') return fail(400, 'invalid_mode');
   if (!campus) return fail(400, 'campus_required');
-  if (!stId) return fail(400, 'code_required');
+  if (!read.ok) return fail(read.error === 'qr_unavailable' ? 503 : 400, read.error);
+  const { stId, via } = read;
   const s = currentIndex(ctx.db).get(stId);
   if (!s) return fail(404, 'not_current');
 
@@ -352,10 +361,10 @@ async function guardScan(ctx: IntranetCtx, input: Record<string, unknown>): Prom
   let rec: Outing;
   if (mode === 'out') {
     if (open) return fail(409, 'already_out', { outAt: open.outAt });
-    rec = { id: ctx.newId(), stId, trId: s.trId, campus, outAt: nowIso, outBy: guard, inAt: null, inBy: '' };
+    rec = { id: ctx.newId(), stId, trId: s.trId, campus, outAt: nowIso, outBy: guard, inAt: null, inBy: '', outVia: via, inVia: null };
   } else {
     // 외출 기록이 없어도 귀가는 남긴다(통금 확인에 필요). 화면에 '외출 기록 없음'으로 보인다.
-    rec = open ? { ...open, inAt: nowIso, inBy: guard } : { id: ctx.newId(), stId, trId: s.trId, campus, outAt: null, outBy: '', inAt: nowIso, inBy: guard };
+    rec = open ? { ...open, inAt: nowIso, inBy: guard, inVia: via } : { id: ctx.newId(), stId, trId: s.trId, campus, outAt: null, outBy: '', inAt: nowIso, inBy: guard, outVia: null, inVia: via };
   }
   await ctx.stores.outings.put(rec);
   // 통금 위반 후보 정리는 직원 일이다(직원 화면을 열 때도 정리한다). 배포의 가드 계정은 후보를 쓸 권한이 없어 건너뛴다.
@@ -368,13 +377,16 @@ async function guardScan(ctx: IntranetCtx, input: Record<string, unknown>): Prom
  * 발생 시각은 'HH:MM'(필리핀 시간)으로 받고, 지금보다 뒤면 전날로 본다(자정 넘어 쓰는 리포트). 없으면 지금.
  */
 async function guardReport(ctx: IntranetCtx, input: Record<string, unknown>): Promise<Result> {
-  const stId = String(input.code ?? '').replace(/\D/g, '');
+  // 학생번호 또는 카드키 QR(시간이 지난 QR 도 그 학생으로 본다: 리포트는 누구인지만 필요하다)
+  const raw = String(input.code ?? '').trim();
+  const read = await readKeycard(ctx.keycardSecret, raw, ctx.now().getTime());
+  const stId = read.ok ? read.stId : read.error === 'qr_expired' ? raw.split('.')[1] : '';
   const campus = typeof input.campus === 'string' ? input.campus.trim() : '';
   const guard = typeof input.guard === 'string' ? input.guard.trim().slice(0, 40) : '';
   const kind = input.kind as ReportKind;
   const note = typeof input.note === 'string' ? input.note.trim() : '';
   if (!campus) return fail(400, 'campus_required');
-  if (!stId) return fail(400, 'code_required');
+  if (!stId) return fail(read.ok ? 400 : read.error === 'qr_unavailable' ? 503 : 400, read.ok ? 'code_required' : read.error);
   const s = currentIndex(ctx.db).get(stId);
   if (!s) return fail(404, 'not_current');
   if (!REPORT_KINDS.includes(kind)) return fail(400, 'invalid_kind');

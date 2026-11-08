@@ -15,7 +15,7 @@ npm run student
 
 | 경로 | 화면 | 데이터 |
 | --- | --- | --- |
-| `/` | 홈: 학생증, 바로가기, 결석 신청 내역(최근 3건), 학교 여행(다가오는 것 3건, 있을 때만), 졸업 전 확인 | 학생·연수(재학 중 → 입학 예정 → 최근 순), 방 정리·포인트 정리 여부 |
+| `/` | 홈: 학생증, 출입 QR 버튼, 바로가기, 결석 신청 내역(최근 3건), 학교 여행(다가오는 것 3건, 있을 때만), 졸업 전 확인 | 학생·연수(재학 중 → 입학 예정 → 최근 순), 방 정리·포인트 정리 여부 |
 | `/requests` | 신청: 결석·외박 신청·생활 요청·학교 여행 버튼, 결석·외박 신청과 생활 요청 내역 | 결석·외박 신청, 생활 요청 |
 | `/requests/absence/new` | 결석 신청: 날짜, 종류(병결·공결·개인 사유), 교시(종일 또는 1~8), 사유(500자) | |
 | `/requests/:id` | 결석 신청 상세(담당자 메모 포함), 대기 중이면 취소 | |
@@ -23,6 +23,7 @@ npm run student
 | `/requests/overnight/:id` | 외박·여행 신청 상세(여행 정보, 담당자 메모), 대기 중이면 취소 | |
 | `/requests/life/new` | 생활 요청: 종류(시설 수리·방 변경·ID 카드 재발급·서류 발급·기타), 내용(위치와 필요한 것, 500자) | |
 | `/requests/life/:id` | 생활 요청 상세(상태·담당자 답변), 접수 상태면 취소 | |
+| `/keycard` | 출입 QR: 1분마다 바뀌는 QR, 이름·학생번호, 남은 초. 가드 태블릿 카메라(또는 스캐너)가 읽는다. 화면이 꺼지지 않게 한다(지원하는 기기) | 서버가 서명한 값 |
 | `/trips` | 학교 여행·액티비티: 다가오는 여행(내 캠퍼스·전체 캠퍼스, 상태: 신청 가능·신청함·정원 마감·신청 마감·명단 제외·여행 취소)과 내가 신청했던 지난 여행 | 학교 여행(직원이 올림), 내 참가 신청 |
 | `/trips/:id` | 여행 상세: 일정·장소·집합·비용·신청 마감·자리·안내, 내 신청(명단에서 빠졌으면 사유), 참가 신청·신청 취소 | |
 | `/me` | 내 정보: 학생 정보(이메일·연락처는 가림), 연수(귀국 항공편 포함), 연수 이력, 로그아웃 | |
@@ -39,6 +40,15 @@ npm run student
 - 행선지(100자)와 비상 연락처(숫자와 + - ( ), 6~30자)는 필수, 숙소(100자)는 선택이다.
 - 같이 가는 학생은 학생번호로 적는다(쉼표·공백 구분, 10명까지, 본인 번호와 중복은 뺀다, 없는 번호면 거절). 각자 자기 신청을 내야 외박이 허용된다. 인트라넷은 같이 가는 학생이 같은 기간에 신청했는지 보여 준다.
 - 11/8 전에 낸 신청에는 여행 정보가 없다(빈 값으로 보인다).
+
+## 출입 QR (카드키 QR)
+
+기획안 I6 '카드키 QR 외출·귀가'(11/8 결정: 1분마다 바뀌는 QR). 홈의 **출입 QR**을 누르면 큰 QR이 보이고, 외출·귀가할 때 가드 태블릿 카메라에 비춘다. 규칙은 `server/keycard.ts` 한 곳(인트라넷과 같이 씀).
+
+- QR 값은 `JIC1.<학생번호>.<1분 창 번호>.<서명>`이다. 서명은 학생번호와 1분 단위 시각을 서버만 아는 비밀 값으로 만든 HMAC-SHA256(16진 20자). 캡처한 QR을 다른 사람에게 보내 대신 찍는 것을 막는다.
+- 가드 태블릿은 지금 창과 직전 창(최대 약 2분)의 QR만 받는다. 학생 앱은 끝나기 3초 전에 새 QR을 받는다. 기기 시계가 달라도 남은 초는 서버 시각으로 맞춘다.
+- 비밀 값: 로컬은 `.local-db/student/keycard-secret.txt`(처음 쓸 때 만들고 학생 앱·인트라넷이 같이 읽음), 배포는 Supabase `keycard_secret` 한 행(서비스 키로만 읽음). 바꾸면 그때 보이던 QR은 바로 못 쓴다.
+- 재학 중이거나 입학 예정인 학생만 받는다. 휴대폰이 없으면 가드가 학생번호를 직접 입력한다(기록에 '번호 입력'으로 남는다).
 
 ## 학교 여행·액티비티
 
@@ -116,6 +126,7 @@ apps/student/
 | `GET /api/life-requests` | 내 생활 요청(최근 순), 종류 목록, 요청 가능 여부(재학·입학 예정 연수) |
 | `POST /api/life-requests` | 생활 요청 `{ category, content }` |
 | `POST /api/life-requests/:id/cancel` | 접수 상태인 내 생활 요청 취소 |
+| `GET /api/keycard` | 출입 QR 값 `{ code, expiresAt, period, now }`(재학·입학 예정만) |
 | `GET /api/trips` | 학교 여행(내 캠퍼스·전체, 다가오는 것 + 내가 신청했던 것), 줄마다 박 수·남은 자리·내 신청·신청 가능 여부(`canApply`, 안 되면 `why`)·취소 가능 여부, 오늘 날짜 |
 | `GET /api/trips/:id` | 여행 하나(같은 모양 + 오늘 날짜) |
 | `POST /api/trips/:id/signup` | 참가 신청 |
@@ -191,7 +202,7 @@ npm run student:accounts -- --reset 30095 --apply   # 비밀번호를 잊은 학
 
 ### 설정 순서 (레오 PC의 Claude, 테스트 프로젝트는 샘플 데이터만)
 
-1. Supabase에 마이그레이션 `20261108100000_student_intranet.sql`, `20261108120000_student_request_ids.sql`, `20261108140000_nonacademic_requests.sql`(생활 요청), `20261108150000_overnight_travel.sql`(외박·여행 정보), `20261108160000_school_trips.sql`(학교 여행)을 차례로 적용한다.
+1. Supabase에 마이그레이션 `20261108100000_student_intranet.sql`, `20261108120000_student_request_ids.sql`, `20261108140000_nonacademic_requests.sql`(생활 요청), `20261108150000_overnight_travel.sql`(외박·여행 정보), `20261108160000_school_trips.sql`(학교 여행), `20261108170000_keycard_qr.sql`(출입 QR)을 차례로 적용한다.
 2. 샘플 업체 원본을 올린다(`scripts/upload-to-supabase.mjs`, 이미 올라가 있으면 건너뜀).
 3. 학생 계정을 만든다: `npm run student:accounts -- --apply`(위 '학생 계정과 로그인').
 4. **Workers & Pages → Create → Workers → Import a repository** → `jic-portal`
@@ -232,6 +243,7 @@ npm run student:accounts -- --reset 30095 --apply   # 비밀번호를 잊은 학
 | `nonacademic_requests` | 자기 것 읽기, 자기 연수로 접수 상태 등록(열린 요청 5건까지), 취소는 `cancel_nonacademic_request(id)` | 모두 읽기, 처리·답변은 `handle_nonacademic_request(id, 상태, 답변)` |
 | `trips` | 읽기(화면은 자기 캠퍼스·전체만) | 읽기, 넣을 수 있는 열만 등록·수정(출발일은 오늘 이후, 취소한 여행은 못 고침), 올린 직원 이름은 DB 기본값 |
 | `trip_signups` | 자기 것 읽기, 신청은 `trip_sign_up(여행, 연수)`(여행 행을 잠가 정원을 넘지 않음, 마감·연수 기간·캠퍼스 확인), 취소는 `trip_cancel_signup(id)`(마감일까지) | 모두 읽기, 명단 제외는 `trip_remove_signup(id, 사유)`. 가드는 참가 신청(applied)만 읽음(외박 허용 판정) |
+| `keycard_secret` | - (서버가 서비스 키로만 읽음) | - |
 | `student_users` | 자기 행 읽기 | 읽기 |
 
 - 코드와 열 이름: `stId` → `student_no`, `trId` → `enrollment_id`, `date` → `absence_date`, `from`/`until` → `leave_date`/`return_date`, `comment` → `staff_comment`, `submittedAt` → `created_at`. 처리자(`decidedBy`)는 DB에 사용자 id를 두고 화면에는 `staff_users.name`을 보여 준다.
