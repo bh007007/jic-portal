@@ -276,6 +276,8 @@ ok('다른 출입구에서 귀가를 찍으면 그 출입구의 새 기록(원�
 
 // ── 학교 여행: 직원 등록·수정 → 학생 신청(함수) → 가드 화면 외박 허용 → 명단 제외(함수) → 취소
 const tplus = (n) => plus(manila, n);
+// 가드의 '오늘 밤'은 마닐라 05시(core NIGHT_CUTOFF_HOUR)까지 전날 밤이다. 00~05시에 돌리면 오늘 출발하는 여행은 아직 오늘 밤에 들지 않는다(CI가 UTC 16~21시에 돌 때)
+const beforeCutoff = (await sb.sql(`select extract(hour from now() at time zone 'Asia/Manila')::int h`))[0].h < 5;
 const fitT = await sb.sql(
   `select data->>'tr_st_id' st, id from public.legacy_enrollments where data->>'first_co_ca_code' = 'CHALLENGER' and left(data->>'tr_start_date', 10) <= $1 and left(data->>'tr_finish_date', 10) >= $2
      and coalesce(data->>'tr_state_name', '') !~ '캔슬|거절|취소|연기|홀드|요청' and data->>'tr_st_id' not in ($3, $4, $5) order by 1 limit 1`,
@@ -305,9 +307,13 @@ x = await api('PUT', `/api/trips/${tripId}`, tC, { ...tripBody, title: '라 우�
 ok('여행 수정', x.status === 200 && x.body.title === '라 우니온 1박 (밴 2대)', x);
 ok('DB: 수정됨', (await sb.sql(`select title, capacity from public.trips where id = $1`, [tripId]))[0].capacity === 12);
 x = await api('GET', '/api/guard', tG);
-ok('가드 화면: 여행 참가자만큼 오늘 밤 외박 허용이 늘어남', x.body.overnightTonight === g0 + 1, [g0, x.body.overnightTonight]);
+ok('가드 화면: 여행 참가자만큼 오늘 밤 외박 허용이 늘어남', x.body.overnightTonight === g0 + (beforeCutoff ? 0 : 1), [g0, x.body.overnightTonight, beforeCutoff]);
 x = await api('POST', '/api/guard/scan', tG, { code: sT, mode: 'out', guard: '근무자1' });
-ok('가드: 여행 참가자 외출에 외박 허용·여행 이름', x.status === 201 && x.body.row?.overnightUntil === tplus(1) && x.body.row.overnightTrip === '라 우니온 1박 (밴 2대)', x.body);
+ok(
+  '가드: 여행 참가자 외출에 외박 허용·여행 이름',
+  x.status === 201 && (beforeCutoff ? x.body.row?.overnightTrip === null : x.body.row?.overnightUntil === tplus(1) && x.body.row.overnightTrip === '라 우니온 1박 (밴 2대)'),
+  x.body,
+);
 x = await api('GET', '/api/trips', tG);
 ok('가드는 여행 화면 403', x.status === 403 && x.body.error === 'guard_forbidden', x);
 x = await api('POST', `/api/trips/signups/${suT}/remove`, tP, { reason: '' });
