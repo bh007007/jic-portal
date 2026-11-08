@@ -21,8 +21,9 @@ PR이 CI를 통과하면 GitHub에서 **Merge pull request**를 누르거나 Cla
 
 말씀만 주시면 Claude가 한다("적용하기", "Cloudflare 바꿔").
 - **Supabase 마이그레이션 적용**(새 테이블·함수만, 순서대로):
-  - `supabase/migrations/20261108200000_teacher_portal.sql`(#39). 권한 시험 38개 통과.
+  - `supabase/migrations/20261108200000_teacher_portal.sql`(#39).
   - `supabase/migrations/20261108210000_user_directory.sql`(#40). 권한 시험 13개 통과.
+  - `supabase/migrations/20261108220000_lms_absences.sql`(#39, 강사용 결석 신청 보기). #39 두 파일의 권한 시험 46개 통과.
 - **Cloudflare Pages 빌드 명령**: `npm run portal:build && npm run teacher:portal --if-present`로 바꾼다(#39 강사 포털을 `/teacher`에 넣음). `--if-present`라 머지 전에 바꿔도 깨지지 않는다.
 - **강사 시험 계정**: 강사 포털을 보려면 Supabase Auth에 강사 계정이 하나 있어야 한다. 직원 계정(레오님)은 역할 없이도 들어가진다. 강사 계정이 필요하면 `docs/teacher-portal.md` '강사 계정 만들기'를 따른다.
 
