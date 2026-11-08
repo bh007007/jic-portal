@@ -1,7 +1,7 @@
 import { Link } from 'react-router-dom';
 import { useApi, type Summary } from '../api';
 import { Loading, PageTitle } from '../components/ui';
-import { dateWithDay } from '../format';
+import { dateWithDay, mdhm } from '../format';
 
 export default function Home() {
   const { data, error, reload } = useApi<Summary>('/api/summary', 60000);
@@ -60,6 +60,42 @@ export default function Home() {
           </span>
         </div>
       </div>
+      <section className="panel">
+        <div className="panel-head">
+          <h2>
+            내부 공지 {data.unreadNotices > 0 && <small className="text-red">안 읽음 {data.unreadNotices}건</small>}
+          </h2>
+          <Link to="/notices" className="more">
+            전체 보기 &gt;
+          </Link>
+        </div>
+        <div className="panel-body">
+          {data.latestNotices.length === 0 ? (
+            <p className="muted">게시 중인 공지가 없습니다.</p>
+          ) : (
+            <table className="tbl">
+              <tbody>
+                {data.latestNotices.map((n) => (
+                  <tr key={n.id}>
+                    <td style={{ width: 48 }}>{n.pinned ? <span className="text-red strong">고정</span> : ''}</td>
+                    <td>
+                      <Link to={`/notices/${n.id}`} className={n.readByMe ? '' : 'strong'}>
+                        {n.title}
+                      </Link>
+                    </td>
+                    <td className="muted" style={{ width: 120 }}>
+                      {n.campus || '전체'}
+                    </td>
+                    <td className="muted nowrap" style={{ width: 120 }}>
+                      {mdhm(n.createdAt)}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          )}
+        </div>
+      </section>
     </>
   );
 }

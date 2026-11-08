@@ -103,6 +103,8 @@ export function intranetLocalPlugin(dataDir: string, storeDir: string, studentSt
         rules: fileDoc(path.join(storeDir, 'penalty-rules.json')),
         counseling: fileRepo(path.join(storeDir, `counseling-${source}.ndjson`)),
         audit: fileRepo(path.join(storeDir, `audit-${source}.ndjson`)),
+        notices: fileRepo(path.join(storeDir, 'notices.ndjson')),
+        noticeReads: fileRepo(path.join(storeDir, 'notice-reads.ndjson')),
       };
       server.config.logger.info(`[intranet-local] ${db.summary()} · 기준일 ${db.refDate} · 저장 폴더 ${storeDir}`);
 

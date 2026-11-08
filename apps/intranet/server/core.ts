@@ -19,6 +19,7 @@ import {
   type CounselingCtx,
   type CounselingNote,
 } from './counseling';
+import { createNotice, listNotices, noticeSummary, openNotice, updateNotice, type Notice, type NoticeCtx, type NoticeRead } from './notices';
 import { COMMENT_MAX, decideRequest, nightsBetween, overnightFor, type Absence, type Overnight, type RequestStatus, type RequestStore } from '../../student/server/requests';
 
 // ── 시간
@@ -125,6 +126,9 @@ export interface Stores {
   /** 상담 기록과 접근 기록(추가만) */
   counseling: Repo<CounselingNote>;
   audit: Repo<AuditLog>;
+  /** 내부 공지와 읽음 */
+  notices: Repo<Notice>;
+  noticeReads: Repo<NoticeRead>;
 }
 
 export interface IntranetCtx {
@@ -649,6 +653,17 @@ async function studentFile(ctx: IntranetCtx, stId: string) {
 }
 export type StudentFile = NonNullable<Awaited<ReturnType<typeof studentFile>>>;
 
+function noticeCtx(ctx: IntranetCtx): NoticeCtx {
+  return {
+    stores: ctx.stores,
+    actor: ctx.actor ?? null,
+    now: ctx.now,
+    newId: ctx.newId,
+    today: () => localDate(ctx.now().getTime()),
+    campuses: () => [...new Set([...currentIndex(ctx.db).values()].map((s) => s.campus))].filter((c) => c && c !== '-').sort(),
+  };
+}
+
 function counselingCtx(ctx: IntranetCtx): CounselingCtx {
   return {
     stores: ctx.stores,
@@ -686,6 +701,7 @@ async function summary(ctx: IntranetCtx) {
     pendingOvernights: overnights.filter((o) => o.status === 'pending').length,
     current: currentIndex(ctx.db).size,
     ...(await followUpCounts(counselingCtx(ctx))),
+    ...(await noticeSummary(noticeCtx(ctx))),
   };
 }
 export type Summary = Awaited<ReturnType<typeof summary>>;
@@ -701,6 +717,10 @@ export async function handleIntranetApi(ctx: IntranetCtx, method: string, pathna
         const m = ctx.db.meta();
         return ok({ source: m.source, refDate: m.refDate });
       }
+      case 'GET /notices':
+        return ok(await listNotices(noticeCtx(ctx), q));
+      case 'POST /notices':
+        return await createNotice(noticeCtx(ctx), input);
       case 'GET /counseling':
         return ok(await listCounseling(counselingCtx(ctx), q));
       case 'POST /counseling':
@@ -746,6 +766,9 @@ export async function handleIntranetApi(ctx: IntranetCtx, method: string, pathna
         return ok(s);
       }
     }
+    const nt = p.match(/^\/notices\/([\w-]+)$/);
+    if (nt && method === 'GET') return await openNotice(noticeCtx(ctx), nt[1]);
+    if (nt && method === 'PUT') return await updateNotice(noticeCtx(ctx), nt[1], input);
     const cn = p.match(/^\/counseling\/([\w-]+)(\/followup)?$/);
     if (cn && method === 'GET' && !cn[2]) return await openCounseling(counselingCtx(ctx), cn[1]);
     if (cn && method === 'PUT' && !cn[2]) return await updateCounseling(counselingCtx(ctx), cn[1], input);

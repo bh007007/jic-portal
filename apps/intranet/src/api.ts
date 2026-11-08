@@ -8,6 +8,7 @@ import type { GuardView, OutingList, OutingRow, PenaltyList, PenaltyRules, Reque
 export type { GuardView, OutingList, OutingRow, PenaltyList, PenaltyRules, RequestList, Settings, StudentFile, StudentFileList, Summary };
 export type PenaltyRow = PenaltyList['rows'][number];
 export type { AuditList, CounselingDetail, CounselingList } from '../server/counseling';
+export type { NoticeDetail, NoticeList } from '../server/notices';
 
 const STAFF_KEY = 'jic-staff-name';
 let staffMemory = '';
@@ -121,10 +122,12 @@ const MESSAGES: Record<string, string> = {
   actor_required: '오른쪽 위에 직원 이름을 먼저 입력하세요. 상담 기록은 누가 보고 썼는지 남깁니다.',
   unknown_student: '학생번호를 확인하세요.',
   invalid_date: '상담일을 확인하세요(오늘 이후는 안 됩니다).',
-  invalid_title: '제목을 입력하세요(100자까지).',
-  invalid_content: '내용을 입력하세요(3000자까지).',
+  invalid_title: '제목을 입력하세요.',
+  invalid_content: '내용을 입력하세요(글자 수 제한을 넘지 않게).',
   invalid_followup: '후속 조치 기한은 상담일과 같거나 뒤여야 합니다.',
   no_followup: '후속 조치 기한이 없는 기록입니다.',
   not_found: '찾을 수 없습니다.',
+  invalid_campus: '대상 캠퍼스를 다시 고르세요.',
+  invalid_until: '게시 종료일을 확인하세요(새 공지는 오늘 이후).',
 };
 export const errorText = (code: string) => MESSAGES[code] ?? `처리하지 못했습니다 (${code}).`;
