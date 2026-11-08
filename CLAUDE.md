@@ -16,7 +16,8 @@
 - 학생 앱: `apps/student` (모바일, 로컬 전용). 실행 `npm run student` → http://127.0.0.1:5176, 검증 `npm run student:build`. 학생·연수는 관리자 core의 `studentDetail`을 가져다 쓰고 학생에게 보일 항목만 고른다. 결석·외박 신청 규칙은 `server/requests.ts`, 귀국 항공편·공항 이동 배차는 `server/departures.ts`(둘 다 인트라넷과 같이 씀, 항공편은 학생이·배차는 직원이 씀). 문구는 6개 언어 `src/i18n/*.ts`(키 기준 `ko.ts`, jp·ch·tw·vi는 원어민 검토 전 초안). 설명 `docs/student-app.md`.
 - 인트라넷: `apps/intranet` (가드 태블릿 외출·귀가, 통금 확인, 패널티 승인·점수표, 결석·외박 신청 처리, Student File, 상담 기록·접근 기록, 내부 공지, 가드 리포트, 귀국 일정, 로컬 전용). 상담 내용은 목록에 내보내지 않고 상세를 열 때마다 접근 기록을 남긴다. 실행 `npm run intranet` → http://127.0.0.1:5177, 검증 `npm run intranet:build`(core 시험 포함). 점수·경고 기준은 코드에 넣지 않고 점수표 화면에서 입력한다. 설명 `docs/intranet.md`.
 - 연수(enrollment, 업체 `tr_`)와 학생(`st_`)은 다르다. 한 학생에 연수가 여러 건일 수 있다. 상태 분류(재학/입학 예정/졸업/취소)는 `core.ts`의 `statusOf`.
-- 추출본에 없는 것: 방·침대 번호, 인보이스 총액(`sum_td_amount`는 총액이 아님). 화면에 추정값을 넣지 않는다.
+- 추출본에 없는 것: 침대 배정(업체 포털에 기록 없음), 인보이스 항목별 상세 금액. 화면에 추정값을 넣지 않는다.
+- 인보이스 금액(2026-11-08 건수로 확인): 해외 총액 `sum_ic_price`, 입금 매칭 `sum_id_amount`, 현지 청구·납부 `sum_tc_price`·`sum_td_amount`(통화 열 없음, 페소로 보임). `sum_td_amount`는 해외 총액이 아니다. 미입금은 총액 − 입금 매칭을 미납·부분납에만 계산한다(`core.ts` invAll).
 - 디자인 원본: `docs/design/*.dc.html` (캔버스 형식, 텍스트로 읽어 참고). 스타일: Noto Sans KR 13px, 주색 #24427A, 로고 #D52B1E, 회색 검색 박스 + 표 위 진한 선. AI 느낌의 카드·배지·설명 문구는 쓰지 않는다.
 
 ## 환경

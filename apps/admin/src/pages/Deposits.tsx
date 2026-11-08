@@ -26,7 +26,9 @@ const UNPAID_COLUMNS: Column<InvoiceRow>[] = [
   ['구분', (r) => STATUS_LABEL[r.status] ?? r.status],
   ['통화', (r) => r.currency],
   ['납부 상태', (r) => r.pay],
+  ['인보이스 총액', (r) => r.total],
   ['입금 매칭 합계', (r) => r.paid],
+  ['미입금', (r) => r.remaining],
   ['납부 기한', (r) => r.dueDate],
 ];
 
@@ -168,7 +170,11 @@ function Unpaid({ sf }: { sf: SearchForm }) {
                 {data.totals.byPay.map((p) => `${p.name} ${fmt(p.count)}`).join(' · ')}
                 {' · '}
                 <span className={data.totals.overdue ? 'text-red' : ''}>납부 기한 지남 {fmt(data.totals.overdue)}</span>
-                {' · '}입금 매칭 합계 {currencyText(data.totals.paidByCurrency)}
+              </span>
+              <span className="muted" style={{ display: 'block', marginTop: 2, fontSize: 12 }}>
+                입금 매칭 {currencyText(data.totals.paidByCurrency)}
+                {' · '}
+                <span className="text-red">미입금 {currencyText(data.totals.remainingByCurrency)}</span>
               </span>
             </span>
             <span className="toolbar-right">
@@ -178,7 +184,7 @@ function Unpaid({ sf }: { sf: SearchForm }) {
           </div>
 
           <div className="grid-box">
-            <table className="tbl center big" style={{ minWidth: 1320 }}>
+            <table className="tbl center big" style={{ minWidth: 1460 }}>
               <thead>
                 <tr>
                   <th style={{ width: 52 }}>No</th>
@@ -192,13 +198,15 @@ function Unpaid({ sf }: { sf: SearchForm }) {
                   <th>구분</th>
                   <th>통화</th>
                   <th>납부</th>
+                  <th className="num">인보이스 총액</th>
                   <th className="num">입금 매칭 합계</th>
+                  <th className="num">미입금</th>
                   <th>납부 기한</th>
                 </tr>
               </thead>
               <tbody>
                 {data.rows.length === 0 && (
-                  <tr className="empty"><td colSpan={13}>조건에 맞는 미납·부분납 연수가 없습니다.</td></tr>
+                  <tr className="empty"><td colSpan={15}>조건에 맞는 미납·부분납 연수가 없습니다.</td></tr>
                 )}
                 {data.rows.map((r, i) => (
                   <tr key={r.trId}>
@@ -213,7 +221,9 @@ function Unpaid({ sf }: { sf: SearchForm }) {
                     <td className="nowrap">{STATUS_LABEL[r.status] ?? r.status}</td>
                     <td>{r.currency || '-'}</td>
                     <td className="nowrap"><PayText pay={r.pay} /></td>
+                    <td className={'num' + (r.total ? '' : ' muted')}>{r.hasInvoice ? fmt(r.total) : '-'}</td>
                     <td className={'num' + (r.paid ? '' : ' muted')}>{r.hasInvoice ? fmt(r.paid) : '-'}</td>
+                    <td className={'num' + (r.remaining ? ' text-red' : ' muted')}>{r.hasInvoice ? fmt(r.remaining) : '-'}</td>
                     <td className={'nowrap' + (r.dueDate && r.dueDate < data.refDate ? ' text-red' : '')}>{r.dueDate || '-'}</td>
                   </tr>
                 ))}

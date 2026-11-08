@@ -282,6 +282,21 @@ for (let i = 0; i < 8; i++) {
   addDeposit({ date: day('2026-11-07', -Math.floor(rand3() * 30)), name: a.ag_name_en, currency, amount, matched: 0, cnt: 0, memo: rand3() < 0.5 ? '샘플: 송금인 확인 필요' : null });
 }
 
+// ── 인보이스 총액과 현지 인보이스: 실제 추출본과 같은 열. 별도 시드(seed7)라 위 값은 그대로다.
+// sum_ic_price = 해외 인보이스 총액. 입금 매칭 합계(sum_id_amount)를 만든 같은 단가(주당 금액 × 주)라
+// 완납은 입금 = 총액, 부분납은 총액의 40%, 미납은 0이 된다(실제 추출본도 완납 91%가 입금 = 총액).
+// sum_tc_price / sum_td_amount = 현지 인보이스 청구 / 현지 납부(페소로 보임). 입학한 연수 일부, 거의 다 낸다.
+let seed7 = 19;
+const rand7 = () => ((seed7 = (seed7 * 1103515245 + 12345) % 2147483648) / 2147483648);
+const WEEK_RATE = { KRW: 350000, JPY: 38000, USD: 280 };
+for (const inv of invoices) {
+  const e = enrollmentByTr.get(inv.tr_id);
+  inv.sum_ic_price = String(Number(e.tr_total_week) * (WEEK_RATE[inv.tr_currency] ?? 280));
+  const local = e.tr_start_date <= '2026-11-07' && rand7() < 0.35 ? 6500 + Math.round(rand7() * 4) * 1000 : 0;
+  inv.sum_tc_price = String(local);
+  inv.sum_td_amount = String(local && rand7() < 0.1 ? Math.round(local / 2) : local);
+}
+
 // ── 포인트 내역(point_history): 실제 추출본과 같은 열(type D=충전, U=현지 비용 사용, point=페소, ec_name=비용 항목).
 // 또 다른 시드를 써서 위 데이터는 그대로 둔다. 입학한 Premium 연수만(실제 추출본도 Premium만 있음).
 let seed4 = 13;

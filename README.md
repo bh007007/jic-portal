@@ -46,7 +46,7 @@ npm run admin
 - `/api/*` 계산은 `apps/admin/server/core.ts` 한 곳이다. 로컬은 `server/localData.ts`가 파일을, 배포는 `functions/api/[[path]].ts`가 Supabase를 읽어 같은 core에 넘긴다.
 - 로컬에서는 로그인이 없다. 배포 주소(Cloudflare Pages)에서는 Supabase 직원 계정으로 로그인한다.
 - 기준일은 추출 시각(`data/tables/meta.json`)이다. 다시 추출하고 분리하면 서버를 재시작해 반영한다.
-- 추출본에 없는 항목: 방·침대 번호, 인보이스 총액. 추가 추출 후 화면에 붙인다. 회계 화면은 입금 매칭 합계(`sum_id_amount`)와 포인트 충전·사용 합계만 보여 주고 총액·미수금은 만들지 않는다.
+- 추출본에 없는 항목: 침대 배정(업체 포털에 기록 없음), 인보이스 항목별 상세 금액. 회계 화면의 인보이스 총액은 `sum_ic_price`, 입금 매칭은 `sum_id_amount`이고, 미입금(총액 − 입금 매칭)은 미납·부분납에만 보여 준다. 현지 인보이스 청구·납부(`sum_tc_price`·`sum_td_amount`)는 통화 열이 없어 엑셀 다운로드에만 넣는다.
 - 입금 원장은 로컬에서는 `deposits.ndjson`, 배포에서는 `legacy_deposits`(받는 계좌 열 제외)를 읽는다. 비어 있으면 입금 매칭 > 입금 원장 탭에 '데이터 없음'이 표시된다.
 
 ## 학생 앱 실행 (로컬)
