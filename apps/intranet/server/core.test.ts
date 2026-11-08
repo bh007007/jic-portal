@@ -4,6 +4,7 @@
  */
 import path from 'node:path';
 import { loadDir } from '../../admin/server/localData';
+import type { Departure } from '../../student/server/departures';
 import type { Absence, Overnight, RequestStore } from '../../student/server/requests';
 import { handleIntranetApi, type Stores } from './core';
 
@@ -63,6 +64,7 @@ const stores: Stores = {
   notices: memRepo(),
   noticeReads: memRepo(),
   reports: memRepo(),
+  departures: memReq<Departure>(),
 };
 let clock = Date.parse('2026-11-05T19:02:00+08:00');
 let n = 0;
@@ -379,6 +381,26 @@ const rlK = (await call('GET', '/reports', null, 'kind=alcohol&from=2026-11-07&t
 expect('리포트 종류·날짜(필리핀) 검색', rlK.rows.length === 1 && rlK.rows[0].id === rep1.id, rlK.rows.length);
 const synced = (await call('GET', '/penalties', null, 'tab=rejected&q=' + D)).body as any;
 expect('통금 후보 정리가 가드 리포트 패널티를 건드리지 않음', synced.rows.some((x: any) => x.source === 'guard'), synced.rows.length);
+
+// ── 귀국 일정 (지금 11/08 00:20 필리핀 → 오늘 11/08, 14일 뒤 11/22)
+const curRows = [...new Map(cur.map((x) => [x.stId, x] as const)).values()];
+const soonRows = curRows.filter((x) => x.end >= '2026-11-08' && x.end <= '2026-11-22');
+const [S1, S2] = soonRows;
+const dep = (row: (typeof curRows)[number], date: string, time: string, needsRide: boolean) =>
+  ({ id: `dep-${row.trId}`, stId: row.stId, trId: row.trId, date, time, flight: 'PR 468', airport: 'MANILA', needsRide, note: '', createdAt: '2026-11-07T00:00:00.000Z', updatedAt: '2026-11-07T00:00:00.000Z' }) as Departure;
+await stores.departures.put(dep(S1, '2026-11-15', '09:40', true));
+await stores.departures.put(dep(S2, '2026-11-14', '13:05', false));
+let dl = (await call('GET', '/departures')).body as any;
+expect('귀국 일정: 기본 기간 오늘~14일, 등록 2건, 날짜·시각 순', dl.from === '2026-11-08' && dl.to === '2026-11-22' && dl.registered.length === 2 && dl.registered[0].stId === S2.stId && dl.registered[0].end === S2.end, dl.registered.map((x: any) => [x.stId, x.date]));
+expect('졸업 14일 이내 미등록 = 졸업임박 재학생 - 등록 2명', dl.counts.missing === soonRows.length - 2 && !dl.missing.some((x: any) => x.stId === S1.stId), [dl.counts.missing, soonRows.length]);
+dl = (await call('GET', '/departures', null, 'ride=1')).body as any;
+expect('차량 요청만 1건', dl.registered.length === 1 && dl.registered[0].stId === S1.stId, dl.registered.length);
+dl = (await call('GET', '/departures', null, 'from=2026-11-15&to=2026-11-15')).body as any;
+expect('기간 검색 1건', dl.registered.length === 1, dl.registered.length);
+const sfDep = (await call('GET', '/students/' + S1.stId)).body as any;
+expect('Student File 에 귀국 항공편', sfDep.departure?.date === '2026-11-15', sfDep.departure);
+const sm5 = (await call('GET', '/summary')).body as any;
+expect('홈: 귀국 미등록 수', sm5.departureMissing === soonRows.length - 2, sm5.departureMissing);
 
 console.log(fails ? `\n${fails}건 실패` : '\n모두 통과');
 if (fails) process.exit(1);

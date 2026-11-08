@@ -1,4 +1,4 @@
-import { useNavigate } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { setStudentId, useApi, type Profile as ProfileData } from '../api';
 import { LoadError, Loading, Section } from '../components/Layout';
 import { ymd } from '../format';
@@ -89,6 +89,16 @@ export default function Profile() {
                 <th>{t('me.batch')}</th>
                 <td>{dash(e.batch)}</td>
               </tr>
+              {(e.status === 'current' || e.status === 'upcoming') && (
+                <tr>
+                  <th>{t('dep.title')}</th>
+                  <td>
+                    <Link to="/departure">
+                      {data.departure ? `${ymd(data.departure.date)} ${data.departure.time} · ${data.departure.flight}` : t('dep.register')}
+                    </Link>
+                  </td>
+                </tr>
+              )}
             </tbody>
           </table>
         </Section>

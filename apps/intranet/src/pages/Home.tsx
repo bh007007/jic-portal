@@ -52,6 +52,13 @@ export default function Home() {
             <small>건 · 기한 지남·오늘 {data.followUpDue}건</small>
           </span>
         </Link>
+        <Link to="/departures?view=missing">
+          <span className="label">귀국 항공편 미등록 (졸업 14일 이내)</span>
+          <span className="value">
+            {data.departureMissing}
+            <small>명</small>
+          </span>
+        </Link>
         <div>
           <span className="label">재학생</span>
           <span className="value">

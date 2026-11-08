@@ -3,9 +3,9 @@
  * 상담 기록 작성·열람자와 접근 기록에 남길 직원 이름은 이 브라우저에 입력해 두고 X-Staff-Name 헤더로 보낸다(로컬 전용).
  */
 import { useCallback, useEffect, useState } from 'react';
-import type { GuardView, OutingList, OutingRow, PenaltyList, PenaltyRules, ReportList, RequestList, Settings, StudentFile, StudentFileList, Summary } from '../server/core';
+import type { DepartureList, GuardView, OutingList, OutingRow, PenaltyList, PenaltyRules, ReportList, RequestList, Settings, StudentFile, StudentFileList, Summary } from '../server/core';
 
-export type { GuardView, OutingList, OutingRow, PenaltyList, PenaltyRules, ReportList, RequestList, Settings, StudentFile, StudentFileList, Summary };
+export type { DepartureList, GuardView, OutingList, OutingRow, PenaltyList, PenaltyRules, ReportList, RequestList, Settings, StudentFile, StudentFileList, Summary };
 export type PenaltyRow = PenaltyList['rows'][number];
 export type { AuditList, CounselingDetail, CounselingList } from '../server/counseling';
 export type { NoticeDetail, NoticeList } from '../server/notices';

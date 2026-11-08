@@ -5,6 +5,7 @@
 import path from 'node:path';
 import { loadDir } from '../../admin/server/localData';
 import { handleStudentApi } from './core';
+import type { Departure } from './departures';
 import { decideRequest, overnightFor, type Absence, type Overnight, type RequestStore } from './requests';
 
 function memStore<T extends { id: string; stId: string }>(): RequestStore<T> {
@@ -28,10 +29,11 @@ function memStore<T extends { id: string; stId: string }>(): RequestStore<T> {
 const db = loadDir(path.resolve(process.cwd(), '../../data-sample/tables'));
 const store = memStore<Absence>();
 const overnights = memStore<Overnight>();
+const departures = memStore<Departure>();
 let n = 0;
 const now = new Date('2026-11-08T02:00:00Z');
 const stId = '30095'; // 샘플: 재학 2026-07-26 ~ 2026-11-13
-const ctx = (who: string | null = stId) => ({ db, store, overnights, stId: who, localLogin: true, now: () => now, newId: () => 'r' + ++n });
+const ctx = (who: string | null = stId) => ({ db, store, overnights, departures, stId: who, localLogin: true, now: () => now, newId: () => 'r' + ++n });
 const call = (m: string, p: string, body: unknown = null, who: string | null = stId) => handleStudentApi(ctx(who), m, p, body);
 let fails = 0;
 const expect = (label: string, cond: boolean, extra?: unknown) => {
@@ -93,6 +95,34 @@ expect('11/08 밤 외박 허용', overnightFor(all, stId, '2026-11-08')?.id === 
 expect('11/09 밤 외박 허용', overnightFor(all, stId, '2026-11-09')?.id === ovId);
 expect('복귀일(11/10) 밤은 허용 아님', overnightFor(all, stId, '2026-11-10') === null);
 expect('대기 중 외박은 허용 아님', overnightFor(all, stId, '2026-11-12') === null);
+
+// 귀국 항공편 (지금 2026-11-08 10:00 필리핀, 연수 종료 11/13, 출발일은 종료 30일 뒤 12/13까지)
+r = await call('GET', '/departure');
+const dv = r.body as any;
+expect('귀국 항공편: 등록 전, 연수 종료 11/13, 마지막 12/13, 오늘 11/08', dv.departure === null && dv.enrollment.end === '2026-11-13' && dv.enrollment.latest === '2026-12-13' && dv.today === '2026-11-08', dv);
+const good = { date: '2026-11-14', time: '10:30', flight: 'pr 468', airport: 'MANILA', needsRide: true, note: '' };
+r = await call('PUT', '/departure', { ...good, date: '2026-11-07' });
+expect('지난 날짜 400', err(r) === 'date_out_of_range', r);
+r = await call('PUT', '/departure', { ...good, date: '2026-12-14' });
+expect('연수 종료 30일 뒤를 넘으면 400', err(r) === 'date_out_of_range', r);
+r = await call('PUT', '/departure', { ...good, time: '24:00' });
+expect('시각 확인', err(r) === 'invalid_time', r);
+r = await call('PUT', '/departure', { ...good, flight: '!' });
+expect('항공편명 확인', err(r) === 'invalid_flight', r);
+r = await call('PUT', '/departure', { ...good, airport: 'OTHER' });
+expect('기타 공항이면 메모 필수', err(r) === 'note_required', r);
+r = await call('PUT', '/departure', good);
+expect('등록 201, 편명 대문자', r.status === 201 && (r.body as Departure).flight === 'PR 468' && (r.body as Departure).id === 'dep-800095', r);
+r = await call('PUT', '/departure', { ...good, time: '11:15', needsRide: false });
+expect('수정 200, 같은 건', r.status === 200 && (r.body as Departure).time === '11:15' && !(r.body as Departure).needsRide && (await departures.listAll()).length === 1, r);
+r = await call('GET', '/me');
+expect('내 정보에 귀국 항공편', (r.body as any).departure?.flight === 'PR 468', (r.body as any).departure);
+const passed = { ...(await departures.get('dep-800095'))!, date: '2026-11-07' };
+await departures.put(passed);
+r = await call('PUT', '/departure', good);
+expect('출발일이 지난 항공편은 수정 불가 409', err(r) === 'departure_passed', r);
+r = await call('PUT', '/departure', good, null);
+expect('로그인 없이 401', r.status === 401, r);
 
 console.log(fails ? `\n${fails}건 실패` : '\n모두 통과');
 if (fails) process.exit(1);

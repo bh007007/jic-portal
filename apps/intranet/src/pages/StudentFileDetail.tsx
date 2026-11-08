@@ -10,6 +10,7 @@ const STATUS: Record<string, string> = { pending: '대기', approved: '승인', 
 const STATUS_CLASS: Record<string, string> = { pending: 'text-amber', approved: 'text-blue', rejected: 'text-red', cancelled: 'muted' };
 const ENROLL: Record<string, string> = { current: '재학', upcoming: '입학 예정', graduated: '졸업', cancelled: '취소', other: '기타' };
 const KIND: Record<string, string> = { sick: '병결', official: '공결', personal: '개인 사유' };
+const AIRPORT: Record<string, string> = { MANILA: '마닐라', CLARK: '클락', OTHER: '기타' };
 const Status = ({ s }: { s: string }) => <span className={STATUS_CLASS[s]}>{STATUS[s] ?? s}</span>;
 
 export default function StudentFileDetail() {
@@ -55,6 +56,19 @@ export default function StudentFileDetail() {
                 <th>코스 / 기간</th>
                 <td>
                   {s.course || '-'} / {s.start} ~ {s.end}
+                </td>
+              </tr>
+              <tr>
+                <th>귀국 항공편</th>
+                <td colSpan={3}>
+                  {data.departure ? (
+                    <>
+                      {data.departure.date} {data.departure.time} · {data.departure.flight} · {AIRPORT[data.departure.airport] ?? data.departure.airport}
+                      {data.departure.needsRide && <span className="text-amber"> · 공항 이동 차량 요청</span>}
+                    </>
+                  ) : (
+                    <span className="muted">학생 앱에서 미등록</span>
+                  )}
                 </td>
               </tr>
             </tbody>

@@ -3,7 +3,7 @@ import { useApi, type AbsenceList, type Profile } from '../api';
 import { AbsenceRow } from '../components/absence';
 import { IconCalendar, IconForm, IconList, IconUser } from '../components/icons';
 import { LoadError, Loading, Section } from '../components/Layout';
-import { ymd } from '../format';
+import { md, ymd } from '../format';
 import { useI18n } from '../i18n';
 
 export default function Home() {
@@ -95,6 +95,16 @@ export default function Home() {
             <span>{t('home.pointClear')}</span>
             <span className={checkout.pointClear ? 'text-blue' : 'muted'}>{checkout.pointClear ? t('home.done') : t('home.notDone')}</span>
           </div>
+          <Link to="/departure" className="list-row plain">
+            <span>{t('home.departure')}</span>
+            {me.data.departure ? (
+              <span className="text-blue">
+                {md(me.data.departure.date)} {me.data.departure.time} &gt;
+              </span>
+            ) : (
+              <span className="muted">{t('home.notRegistered')} &gt;</span>
+            )}
+          </Link>
         </Section>
       )}
     </>
