@@ -4,7 +4,9 @@
  */
 import path from 'node:path';
 import { loadDir } from '../../admin/server/localData';
+import { checkNewPassword, initialPassword, planAccounts, studentEmail } from './accounts';
 import { handleStudentApi } from './core';
+import { studentFromToken, tokenCache, tokenSubject } from './supabaseAuth';
 import { decideRide, rideState, type Departure, type Ride } from './departures';
 import { decideRequest, overnightFor, type Absence, type Overnight, type RequestStore } from './requests';
 
@@ -146,6 +148,55 @@ const changed = { ...depNow, time: '08:00' };
 expect('학생이 시각을 바꾸면 재확인', rideState(changed, (await rides.get('dep-800095'))!) === 'changed');
 expect('학생이 차량 요청을 빼면 요청 취소', rideState({ ...depNow, needsRide: false }, (await rides.get('dep-800095'))!) === 'withdrawn');
 expect('차량 요청 없는 항공편은 처리 불가', (() => { const x = decideRide({ ...depNow, needsRide: false }, { decision: 'declined', note: 'x' }, 'a', now); return !x.ok && x.error === 'no_ride_request'; })());
+
+// ── 학생 계정 (accounts.ts)
+expect('가짜 이메일', studentEmail('30095') === '30095@students.jic.internal' && studentEmail('1', 'X.Example') === '1@x.example');
+expect('첫 비밀번호 = 생년월일 8자리', initialPassword('1995-03-25') === '19950325' && initialPassword('19950325') === '19950325');
+expect('날짜가 아니면 없음', initialPassword('1995-02-30') === null && initialPassword('') === null && initialPassword('950325') === null);
+expect('비밀번호 규칙', checkNewPassword('abc12', 'abc12', 'x') === 'pw_short' && checkNewPassword('abcdefgh', 'abcdefgh', 'x') === 'pw_weak'
+  && checkNewPassword('12345678', '12345678', 'x') === 'pw_weak' && checkNewPassword('abcd1234', 'abcd1234', 'abcd1234') === 'pw_same'
+  && checkNewPassword('abcd1234', 'abcd1235', 'x') === 'pw_mismatch' && checkNewPassword('a1'.repeat(37), 'a1'.repeat(37), 'x') === 'pw_long'
+  && checkNewPassword('abcd1234', 'abcd1234', '19950325') === null);
+const ens = (tab: string) => db.listEnrollments(new URLSearchParams({ tab, all: '1' })).rows;
+const active = new Set([...ens('current'), ...ens('upcoming')].map((x) => x.stId));
+let plan = planAccounts(db, { linked: new Set(), authUsers: new Map() });
+expect('계정 대상 = 재학·입학 예정 학생', plan.counts.targets === active.size && plan.create.length + plan.counts.noBirthday === active.size, plan.counts);
+expect('졸업생은 대상 아님', !plan.create.some((c) => !active.has(c.stNo)));
+const me = plan.create.find((c) => c.stNo === stId)!;
+expect('비밀번호 = 생년월일', !!me && me.password === initialPassword(db.studentDetail(stId)!.student.birthday) && me.email === `${stId}@students.jic.internal`);
+plan = planAccounts(db, { linked: new Set([stId]), authUsers: new Map([[studentEmail(plan.create[1].stNo), 'u-1']]) });
+expect('연결된 학생은 건너뜀, Auth 사용자만 있으면 연결', plan.counts.linked === 1 && plan.link.length === 1 && plan.link[0].userId === 'u-1'
+  && !plan.create.some((c) => c.stNo === stId) && plan.create.length === active.size - 2 - plan.counts.noBirthday, plan.counts);
+
+// ── Supabase 토큰 → 학생 (supabaseAuth.ts)
+const b64 = (o: object) => Buffer.from(JSON.stringify(o)).toString('base64url');
+const uid = '0f9a1c2e-1111-4222-8333-444455556666';
+const tok = `${b64({ alg: 'HS256' })}.${b64({ sub: uid, role: 'authenticated' })}.sig`;
+expect('토큰 sub', tokenSubject(tok) === uid && tokenSubject('x.y.z') === null && tokenSubject(`a.${b64({ sub: "1' or 1=1" })}.c`) === null);
+const seen: string[] = [];
+const fakeFetch = (rows: unknown, status = 200) => (async (url: string | URL | Request, init?: RequestInit) => {
+  seen.push(`${url} ${(init?.headers as Record<string, string>).Authorization}`);
+  return new Response(JSON.stringify(rows), { status });
+}) as typeof fetch;
+const conf = { url: 'https://x.supabase.co/', key: 'anon' };
+let ss = await studentFromToken(conf, tok, fakeFetch([{ student_no: '30095', must_change_password: true }]));
+expect('토큰 사용자 한 명만 조회', ss?.stId === '30095' && ss.mustChangePassword && seen[0] === `https://x.supabase.co/rest/v1/student_users?select=student_no,must_change_password&user_id=eq.${uid} Bearer ${tok}`, seen);
+expect('학생이 아닌 계정', (await studentFromToken(conf, tok, fakeFetch([]))) === null);
+expect('만료된 토큰', (await studentFromToken(conf, tok, fakeFetch({ message: 'JWT expired' }, 401))) === null);
+let calls = 0;
+const counting = (async () => (calls++, new Response(JSON.stringify([{ student_no: '30095', must_change_password: calls === 1 }])))) as typeof fetch;
+const cache = tokenCache(conf, 30_000, counting);
+await cache.resolve(tok, 0);
+await cache.resolve(tok, 1000); // 비밀번호 변경 필요 상태는 기억하지 않음
+await cache.resolve(tok, 2000);
+await cache.resolve(tok, 3000);
+expect('토큰 결과 30초 기억(변경 필요 상태 제외)', calls === 2, calls);
+r = await handleStudentApi({ ...ctx(), localLogin: false, mustChangePassword: true }, 'GET', '/api/me', null);
+expect('비밀번호를 바꾸기 전에는 403', r.status === 403 && err(r) === 'password_change_required', r);
+r = await handleStudentApi({ ...ctx(null), localLogin: false, mustChangePassword: true }, 'GET', '/api/meta', null);
+expect('meta 는 열림, Supabase 모드에서는 로컬 로그인 없음', r.status === 200 && (r.body as any).localLogin === false && (r.body as any).sampleLogin === null, r);
+r = await handleStudentApi({ ...ctx(null), localLogin: false }, 'POST', '/api/login', { stId, birthday: me.password });
+expect('Supabase 모드에서는 /login 없음', r.status === 404, r);
 
 console.log(fails ? `\n${fails}건 실패` : '\n모두 통과');
 if (fails) process.exit(1);

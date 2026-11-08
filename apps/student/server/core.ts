@@ -38,6 +38,8 @@ export interface StudentCtx {
   stId: string | null;
   /** 학생번호 + 생년월일 로그인(/api/login)을 열지. 로컬 개발 서버에서만 true. */
   localLogin: boolean;
+  /** Supabase 계정이 첫 비밀번호를 아직 바꾸지 않았으면 true: /meta 말고는 막는다(accounts.ts). */
+  mustChangePassword?: boolean;
   now: () => Date;
   newId: () => string;
 }
@@ -193,6 +195,7 @@ export async function handleStudentApi(ctx: StudentCtx, method: string, pathname
 
     const stId = ctx.stId;
     if (!stId) return fail(401, 'unauthorized');
+    if (ctx.mustChangePassword) return fail(403, 'password_change_required');
 
     if (p === '/departure' && method === 'GET') return ok(await departureView(ctx, stId));
     if (p === '/departure' && method === 'PUT') return await putDeparture(ctx, stId, input);

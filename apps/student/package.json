@@ -8,9 +8,11 @@
     "build": "tsc --noEmit && npm run test && vite build",
     "typecheck": "tsc --noEmit",
     "preview": "vite preview",
-    "test": "esbuild server/core.test.ts server/i18n.test.ts --bundle --platform=node --format=esm --outdir=node_modules/.cache/test --log-level=warning && node node_modules/.cache/test/core.test.js && node node_modules/.cache/test/i18n.test.js"
+    "test": "esbuild server/core.test.ts server/i18n.test.ts --bundle --platform=node --format=esm --outdir=node_modules/.cache/test --log-level=warning && node node_modules/.cache/test/core.test.js && node node_modules/.cache/test/i18n.test.js",
+    "accounts": "esbuild scripts/accounts.ts --bundle --platform=node --format=esm --outfile=node_modules/.cache/accounts.mjs --log-level=warning && node node_modules/.cache/accounts.mjs"
   },
   "dependencies": {
+    "@supabase/supabase-js": "^2.119.0",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
     "react-router-dom": "^6.26.2"

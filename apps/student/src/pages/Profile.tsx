@@ -1,5 +1,6 @@
 import { Link, useNavigate } from 'react-router-dom';
-import { setStudentId, useApi, type Profile as ProfileData } from '../api';
+import { useApi, type Profile as ProfileData } from '../api';
+import { authMode, signOut } from '../auth';
 import { LoadError, Loading, Section } from '../components/Layout';
 import { ymd } from '../format';
 import { useI18n, type MsgKey } from '../i18n';
@@ -14,7 +15,7 @@ export default function Profile() {
   const logout = () => {
     // 다음 사람이 로그인하면 홈부터 보이게 주소도 되돌린다.
     navigate('/', { replace: true });
-    setStudentId(null);
+    void signOut();
   };
   if (error) return <LoadError onRetry={reload} />;
   if (!data) return <Loading />;
@@ -122,7 +123,12 @@ export default function Profile() {
         </Section>
       )}
 
-      <div className="pad">
+      <div className="pad pad-stack">
+        {authMode === 'supabase' && (
+          <Link to="/password" className="btn btn-block">
+            {t('me.password')}
+          </Link>
+        )}
         <button type="button" className="btn btn-block" onClick={logout}>
           {t('me.logout')}
         </button>

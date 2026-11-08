@@ -1,22 +1,27 @@
 import { Navigate, Route, Routes } from 'react-router-dom';
-import { useApi, useStudentId, type Meta } from './api';
-import { BottomNav, Header } from './components/Layout';
+import { useApi, type Meta } from './api';
+import { authMode, useAuth } from './auth';
+import { BottomNav, Header, Loading } from './components/Layout';
 import AbsenceNew from './pages/AbsenceNew';
 import Departure from './pages/Departure';
 import Home from './pages/Home';
-import Login from './pages/Login';
+import Login, { AuthShell } from './pages/Login';
 import OvernightDetail from './pages/OvernightDetail';
 import OvernightNew from './pages/OvernightNew';
+import Password from './pages/Password';
 import Profile from './pages/Profile';
 import RequestDetail from './pages/RequestDetail';
 import Requests from './pages/Requests';
 import Timetable from './pages/Timetable';
 
 export default function App() {
-  const stId = useStudentId();
+  const auth = useAuth();
   const { data: meta } = useApi<Meta>('/api/meta');
 
-  if (!stId) return <Login meta={meta} />;
+  if (auth.status === 'loading') return <AuthShell><Loading /></AuthShell>;
+  if (auth.status === 'out') return <Login meta={meta} notice={auth.notice} />;
+  // 첫 비밀번호(생년월일)를 바꾸기 전에는 다른 화면을 열지 않는다(서버도 403).
+  if (auth.mustChangePassword) return <Password forced />;
 
   return (
     <div className="app">
@@ -32,6 +37,7 @@ export default function App() {
           <Route path="/requests/:id" element={<RequestDetail />} />
           <Route path="/me" element={<Profile />} />
           <Route path="/departure" element={<Departure />} />
+          {authMode === 'supabase' && <Route path="/password" element={<Password />} />}
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
       </main>

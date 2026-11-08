@@ -9,7 +9,7 @@ npm install
 npm run student
 ```
 
-브라우저에서 http://127.0.0.1:5176 을 연다(관리자 앱은 5173). 휴대폰 폭으로 보려면 개발자 도구의 기기 모드를 쓴다. 샘플 데이터로 실행하면 로그인 화면 아래에 시험용 학생번호·생년월일이 나온다.
+브라우저에서 http://127.0.0.1:5176 을 연다(관리자 앱은 5173). 휴대폰 폭으로 보려면 개발자 도구의 기기 모드를 쓴다. 샘플 데이터로 실행하면 로그인 화면 아래에 시험용 학생번호·생년월일이 나온다. Supabase 학생 계정으로 로그인을 시험하려면 아래 '학생 계정과 로그인'.
 
 ## 화면
 
@@ -53,10 +53,13 @@ apps/student/
 ├─ server/core.ts        /api/* 계산 (파일·네트워크 의존 없음)
 ├─ server/requests.ts    결석·외박 신청의 모양과 규칙 (인트라넷이 승인·반려에 같이 씀)
 ├─ server/departures.ts  귀국 항공편 (인트라넷 '귀국 일정'이 같이 씀)
+├─ server/accounts.ts    학생 계정 규칙: 대상 학생, 가짜 이메일, 첫 비밀번호, 새 비밀번호 규칙 (스크립트와 화면이 같이 씀)
+├─ server/supabaseAuth.ts  Supabase 토큰 → 학생 번호 (로컬 개발 서버, 배포 서버가 같이 씀)
 ├─ server/core.test.ts   core 시험 (가짜 시계·메모리 저장소). 빌드할 때 함께 돈다
 ├─ server/i18n.test.ts   문구 시험 (6개 언어 키·자리 표시, 브라우저 언어)
 ├─ server/localData.ts   로컬: Vite 플러그인, 신청 파일 저장 (인트라넷도 같은 파일을 연다)
-└─ src/                  화면 (React + Vite + TypeScript), 문구 src/i18n/
+├─ scripts/accounts.ts   학생 계정 만들기·비밀번호 초기화 (서비스 키, npm run student:accounts)
+└─ src/                  화면 (React + Vite + TypeScript), 로그인 src/auth.ts, 문구 src/i18n/
 ```
 
 - 학생·연수 정보는 관리자 앱의 `apps/admin/server/core.ts`(`createDb` → `studentDetail`)와 `localData.ts`(`loadDir`)를 그대로 가져다 쓴다. 상태 분류(재학/입학 예정/졸업)가 관리자 앱과 같게 유지된다. 관리자 쪽에서 이 함수의 응답 모양을 바꾸면 `npm run student:build`가 타입 오류로 알려 준다.
@@ -95,7 +98,45 @@ apps/student/
 
 - 결석·외박 신청은 저장소 루트 `.local-db/student/absences-sample.ndjson`, `overnights-sample.ndjson`(실제 추출본으로 실행하면 `-extract`)에 쓴다. 귀국 항공편은 `departures-<source>.ndjson`, 공항 이동 배차(직원이 씀)는 `rides-<source>.ndjson`. 인트라넷 개발 서버도 같은 파일을 열어 승인·반려하고 귀국 일정을 읽는다. `.local-db/`는 Git에서 빠진다. 실제 데이터로 실행하면 학생 번호와 사유가 들어가므로 `data/`와 같이 다룬다.
 - 승인·반려 화면을 보고 싶으면 이 파일에서 `status`를 `approved`/`rejected`로, `decidedAt`·`comment`를 채우면 된다(읽을 때마다 파일을 다시 읽는다).
-- 로그인은 학생번호 + 생년월일(기획안 V4의 초기 비밀번호)로 확인하고, 학생 번호를 이 탭(sessionStorage)에 두고 `X-Student-Id` 헤더로 보낸다. **127.0.0.1에서만 열리는 개발 서버용 방식이다.** 배포 빌드에는 `/api`가 없어 이 로그인이 나가지 않는다.
+- 로그인(`src/auth.ts`)은 두 방식이다. `apps/student/.env.local`에 Supabase 주소가 없으면 학생번호 + 생년월일(기획안 V4의 초기 비밀번호)을 개발 서버에서 확인하고, 학생 번호를 이 탭(sessionStorage)에 두고 `X-Student-Id` 헤더로 보낸다. **127.0.0.1에서만 열리는 개발 서버용 방식이다.** 주소가 있으면 Supabase 학생 계정으로 로그인한다(아래).
+
+## 학생 계정과 로그인
+
+11/8 결정(기획안 V4): 학생번호 + 생년월일로 계정을 미리 만들고, 첫 로그인 때 비밀번호를 바꿔야 앱을 쓸 수 있다.
+
+### 계정 만들기 (`scripts/accounts.ts`, 서비스 키)
+
+```powershell
+$env:SUPABASE_URL = "https://xxxx.supabase.co"
+$env:SUPABASE_SERVICE_ROLE_KEY = "서비스 키 (Supabase > Project Settings > API)"
+npm run student:accounts                    # 미리보기: 건수만 보여 주고 아무것도 바꾸지 않는다
+npm run student:accounts -- --apply         # 만든다. 이미 있는 계정은 건너뛰어 여러 번 실행해도 된다
+npm run student:accounts -- --reset 30095 --apply   # 비밀번호를 잊은 학생: 생년월일로 되돌리고 다시 바꾸게 한다
+```
+
+- 대상은 재학·입학 예정 연수가 있는 학생이다(`server/accounts.ts`의 `planAccounts`). 생년월일이 없거나 날짜가 아니면 건너뛰고 건수로 알린다.
+- Supabase Auth는 이메일로 로그인하므로 `학생번호@students.jic.internal` 가짜 주소를 쓴다(메일은 보내지 않음, `email_confirm`). 도메인을 바꾸면 `STUDENT_EMAIL_DOMAIN`과 학생 앱의 `VITE_STUDENT_EMAIL_DOMAIN`을 같이 바꾼다. 메타데이터는 `portal='student'`(파트너 가입 트리거는 `'partner'`만 처리).
+- 데이터는 기본이 `data-sample/tables`이다. 실제 추출본은 보안 점검 전까지 쓰지 않는다(2026-11-07 결정, 꼭 필요하면 `--dir data/tables --allow-real`).
+- 화면에는 건수만 나온다. 학생별 실패는 `.local-db/student/accounts-failed-*.json`(Git 제외)에 남는다. 계정만 만들어지고 연결이 끊긴 학생은 다시 실행하면 연결만 한다.
+- Supabase 비밀번호 정책을 '영문+숫자'처럼 강하게 바꾸면 생년월일(숫자 8자리) 계정이 만들어지지 않는다. 기본(6자 이상)으로 둔다. 새 비밀번호 규칙은 앱이 확인한다.
+- 졸업생 계정 정리(로그인 막기·삭제)는 아직 없다. 운영 전에 기준을 정한다.
+
+### 로그인과 비밀번호 변경
+
+- 로그인 화면: 학생번호 + 비밀번호. 처음에는 생년월일 8자리라고 안내한다.
+- 첫 로그인(`must_change_password` 참)이면 비밀번호 변경 화면만 보인다. 서버도 `/api/meta` 말고는 `403 password_change_required`로 막는다.
+- 비밀번호 변경: 지금 비밀번호를 다시 확인하고(로그인으로 확인), 새 비밀번호를 정한 뒤 `student_password_changed()`를 부른다. 규칙은 8~72자, 영문과 숫자를 함께, 지금 비밀번호와 다르게(`checkNewPassword`). 내 정보 화면에서도 바꿀 수 있다.
+- 학생이 아닌 계정(직원·에이전시)으로 로그인하면 '학생 계정이 아닙니다'로 돌려보낸다. 토큰이 만료·폐기되면 조용히 로그인 화면으로 간다.
+- 변경 필요 표시는 학생 본인이 끌 수 있는 값이다(`student_password_changed()`). 생년월일 비밀번호로 계속 쓰려는 학생 본인만 위험해지므로 서버 확인은 이 정도로 둔다.
+- 서버는 토큰으로 학생을 찾는다(`server/supabaseAuth.ts`: 토큰의 사용자 id로 `student_users` 한 행을 그 토큰으로 읽음, 30초 기억). 배포 서버(Workers)도 같은 함수를 쓴다.
+
+### 로그인 시험 (로컬)
+
+1. 테스트 프로젝트(샘플 데이터만)에 `20261108100000_student_intranet.sql`을 적용한다.
+2. 위 스크립트로 샘플 학생 계정을 만든다.
+3. `apps/student/.env.example`을 `apps/student/.env.local`로 복사하고 `npm run student`.
+
+이때 로그인만 Supabase이고 학생·연수 데이터와 신청 파일은 로컬 그대로다(테스트 계정과 맞추려고 데이터는 샘플로 고정). 샘플 학생의 생년월일은 `.env.local` 없이 실행했을 때 로그인 화면 아래 안내나 `data-sample/tables/students.ndjson`에서 본다.
 
 ## 배포 전에 필요한 것
 
@@ -103,7 +144,7 @@ apps/student/
 
 1. **학생 계정**(11/8 결정): 학생번호 + 생년월일로 미리 만들고 첫 로그인 때 비밀번호를 바꾼다(V4).
    - `student_users`가 Auth 사용자와 학생 번호를 잇는다(`must_change_password` 기본 참). 쓰기는 서비스 키만.
-   - 다음 단계: 계정 생성 스크립트(서비스 키, 재학·입학 예정 학생만, 로그인 아이디는 학생 번호로 만든 가짜 이메일), 로그인·비밀번호 변경 화면. `must_change_password`가 참이면 비밀번호 변경부터 띄우고, 바꾼 뒤 `student_password_changed()`를 부른다. `src/api.ts`의 `X-Student-Id` 헤더는 Supabase 토큰으로 바꾼다.
+   - 계정 생성 스크립트와 로그인·비밀번호 변경 화면은 11/8 완료(위 '학생 계정과 로그인'). 남은 것은 계정 생성 담당·시점(HANDOFF 7)과 졸업생 계정 정리 기준.
 2. **학생 정보 읽기**: 학생은 `legacy_*`(직원만 읽기)를 읽을 수 없고, 이 권한은 넓히지 않는다. 정규화 스키마(HANDOFF 6-3) 전까지는 학생 앱 서버(Workers)가 서비스 키로 그 학생 행만 읽어 `studentDetail`을 계산한다.
 3. **서버(Workers) 연결**: `server/core.ts`의 저장소(`RequestStore`, `DepartureStore`, `RideStore`)를 Supabase 구현으로 바꾼다. 쓰기는 학생 토큰으로 해서 RLS가 한 번 더 막게 한다. 신청 기간·중복 같은 규칙은 지금처럼 서버(`requests.ts`, `departures.ts`)가 확인하고, DB는 본인·본인 연수·대기 상태·출발일 같은 최소 조건만 막는다.
 4. **Cloudflare Pages 프로젝트**: 관리자 앱과 별도 프로젝트로 만든다(빌드 `npm run student:build`, 출력 `apps/student/dist`).
