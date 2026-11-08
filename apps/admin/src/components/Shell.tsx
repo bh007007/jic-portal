@@ -14,6 +14,8 @@ const MENU: { group?: string; items: { to: string; label: string }[] }[] = [
       { to: '/arrivals', label: '입학 배치별 명단' },
       { to: '/students?tab=graduated', label: '졸업생' },
       { to: '/cancellations', label: '중단·연기 현황' },
+      { to: '/extensions', label: '연장 현황' },
+      { to: '/changes', label: '변경 이력' },
       { to: '/memos', label: '체크 메모' },
       { to: '/requests', label: '변경 요청' },
     ],
