@@ -150,7 +150,12 @@ jic-portal/
    - 인보이스 금액(PR #24, 회계 세션 담당): 인보이스 총액은 기존 추출본의 `sum_ic_price`에 있다(완납 594건 중 541건이 입금 매칭 합계 = 총액). 현지 청구·납부는 `sum_tc_price`·`sum_td_amount`다.
      - 항목별 금액(PR #38, 11/8 추출): 업체 '현지 인보이스 납부'의 `payment_select`로 연수 2,286건을 받았다(`scripts/extract/portal-extract-invoice-items.js`, 열은 `docs/data-dictionary-invoice.md`).
      - 학생 가격(`inv_invoice_cost_st`) − 에이전시 공제(`inv_invoice_cost_ag`) = 해외 총액 `sum_ic_price`가 98% 맞는다. 현지 비용 항목(`inv_etc`, PHP) 합계 = `sum_tc_price`는 99% 맞는다. 학생 상세 '인보이스 항목' 표로 붙였다(로컬 전용, 배포·Supabase는 아직).
-     - 받는 계좌 열이 있는 `inv_invoice_deposit`은 앱에서 읽지 않는다. 남은 것: 배포용 Supabase 테이블, Check Balance·Payment Report 화면 조사.
+     - 받는 계좌 열이 있는 `inv_invoice_deposit`은 앱에서 읽지 않는다. 남은 것: 인보이스 항목의 배포용 Supabase 테이블.
+     - Check Balance·Payment Report 조사(11/9, 회계 세션):
+       - 업체 Check Balance 재학생 295명 중 294명이 우리(연장 반영, #45)와 같고, 연장 횟수는 5,004건 모두 같다.
+       - 연장하지 않은 연수는 업체 cost = `sum_ic_price` 96%, payment = `sum_id_amount` 99%. 연장한 연수의 cost는 한 가지 식으로 설명되지 않아(94/224) 미입금에 연장분을 더하지 않는다.
+       - Payment Report(`report_load`)는 `s_tr_state[]`를 하나 이상 넣어야 오류(500)가 나지 않는다.
+       - 변경요청(`reqchg_load`)은 전체 8건(2024년)뿐이라 관리자 '변경 요청' 화면은 옮길 데이터가 사실상 없다. 새 시스템 기능으로 정한다.
    - 연장·변경 추출 완료(11/9, 회계 세션): 연장 기록(`extend_load`, `tt_*`) 412건, 신입·연장·복귀·변경 탭(`freshman_load_*`). 관리자 포털 '연장 현황'·'변경 이력'은 `feat/admin-extend`(PR 대기). 업체는 연장해도 `tr_finish_date`를 그대로 두므로 종료일은 마지막 연장 종료일로 계산한다(core `finishOf`, 재학 281 → 295명). 남은 일: 배포용 `legacy_extend`(tt_* 열만) 업로드와 `functions/api` 읽기, 강사 포털 `lms_students()` 종료일. 추출 스크립트는 `scripts/extract/portal-extract-extend.js`(복귀 탭은 빈 쪽이 나올 때까지 넘기고, 기숙사 변경은 한 달씩 받아야 한다).
 3. **Supabase 정규화 스키마**: 지금은 `legacy_*`(원본 레코드 jsonb)를 통째로 읽어 계산한다. `docs/plan.md`의 데이터 모델 기준으로 학생·연수(enrollments)·배치·기숙사 테이블을 만들고 `functions/api`를 조건 조회로 바꾼다. 실제 데이터를 올리기 전에 필수. 테스트 DB에는 샘플 데이터만.
 4. **역할별 권한**: 지금은 `staff_users`에 있으면 전부 읽기. 역할 9개(학생, 선생님, 체커, 스케줄러, 매니저, 오피스, 관리자, 가드, 에이전시 지점)로 RLS 세분화.
