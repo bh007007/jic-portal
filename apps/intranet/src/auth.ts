@@ -2,6 +2,7 @@
  * 로그인. 두 가지 방식이 있다.
  * - 로컬 개발(VITE_SUPABASE_URL 없음): 로그인 없이 이 PC 의 데이터로 동작하고, 처리자 이름은 오른쪽 위에 입력한다(X-Staff-Name).
  * - 배포(환경변수 있음): Supabase 직원 계정(이메일·비밀번호, 관리자 앱과 같은 계정)으로 로그인하고 토큰을 보낸다.
+ *   JIC 포털 주소 아래(/intranet)에서 관리자 앱과 같은 로그인 저장 키(Supabase 기본값)를 써서, 한쪽에서 로그인하면 다른 쪽도 로그인된다.
  *   처리자 이름은 서버가 staff_users 에서 읽는다(화면이 보내는 이름은 쓰지 않는다).
  */
 import { createClient, type Session } from '@supabase/supabase-js';
@@ -9,7 +10,7 @@ import { useEffect, useState } from 'react';
 
 const url = import.meta.env.VITE_SUPABASE_URL;
 const key = import.meta.env.VITE_SUPABASE_ANON_KEY;
-const supabase = url && key ? createClient(url, key, { auth: { storageKey: 'jic-intranet-auth' } }) : null;
+const supabase = url && key ? createClient(url, key) : null;
 export const authMode: 'local' | 'supabase' = supabase ? 'supabase' : 'local';
 
 type SessionState = 'loading' | Session | null;

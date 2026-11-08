@@ -1,3 +1,4 @@
+import { BASE } from './base';
 import type { ReactNode } from 'react';
 import { Route, Routes } from 'react-router-dom';
 import { authMode, signOut, useSession } from './auth';
@@ -63,7 +64,7 @@ function GuardForStaff() {
           <span className="brand-name">가드</span>
         </div>
         <p className="login-foot">가드 태블릿은 출입구 가드 계정으로 로그인해서 씁니다. 직원 계정으로는 외출·귀가를 기록하지 않습니다.</p>
-        <a href="/" className="btn">
+        <a href={BASE} className="btn">
           인트라넷 홈
         </a>
       </div>

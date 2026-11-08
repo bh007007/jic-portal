@@ -182,9 +182,15 @@ apps/intranet/
 
 결석·외박 신청, 생활 요청, 학교 여행(`trips-<source>.ndjson`, `trip-signups-<source>.ndjson`)은 학생 앱과 같은 `.local-db/student/` 파일을 쓴다. 상담 기록·접근 기록은 `counseling-<source>.ndjson`, `audit-<source>.ndjson`(실제 데이터로 실행하면 민감 정보). 가드 리포트는 `reports-<source>.ndjson`. 귀국 항공편과 공항 이동 배차는 학생 앱 폴더의 `departures-<source>.ndjson`, `rides-<source>.ndjson`을 같이 쓴다. 내부 공지는 학생 데이터와 상관없어 `notices.ndjson`, `notice-reads.ndjson` 하나씩. 나머지는 저장소 루트 `.local-db/intranet/`(Git 제외)에 `outings-<sample|extract>.ndjson`, `penalties-<sample|extract>.ndjson`, `settings.json`, `penalty-rules.json`을 쓴다. 실제 추출본으로 실행하면 학생 번호가 들어가므로 `data/`와 같이 다룬다.
 
-## 배포 (Cloudflare Workers)
+## 배포 (JIC 포털 주소 아래 /intranet)
 
-인트라넷은 **Workers 한 개**로 올린다(정적 파일 + `/api` 서버 코드, 설정 `apps/intranet/wrangler.jsonc`, 서버 `apps/intranet/worker/index.ts`). 학생 앱·파트너 포털과 같은 방식이다. 직원 화면과 가드 태블릿(출입구 공용 계정)을 같은 주소에서 쓰고, 로그인한 계정 종류로 나뉜다(11/8).
+인트라넷은 **JIC 포털(관리자 앱) Cloudflare Pages 프로젝트 안 `/intranet/`**에 올린다(11/8 결정: 포털과 같이 쓰고, 한 번 로그인으로 오간다. Cloudflare·GitHub·Supabase는 지금 쓰는 계정 하나로). 직원 화면과 가드 태블릿(출입구 공용 계정)을 같은 주소에서 쓰고, 로그인한 계정 종류로 나뉜다.
+
+- **빌드**: `npm run portal:build` = 관리자 앱 빌드 + 인트라넷을 `--base /intranet/`로 빌드해 `apps/admin/dist/intranet`에 넣는다(`apps/intranet` 의 `build:portal`).
+- **화면 주소**: `functions/intranet/[[path]].ts`가 `/intranet/…` 화면 주소에 인트라넷 `index.html`을 준다(새로 고침·바로 열기). 파일(`/intranet/assets/…`)은 그대로.
+- **API**: `/intranet/api/*` = `functions/intranet/api/[[path]].ts`가 인트라넷 서버(`apps/intranet/worker/index.ts`의 `handleApi`)를 그대로 부른다. 관리자 앱의 `/api/*`(`functions/api`)와 따로 돈다. 화면은 `src/base.ts`로 주소 앞에 `/intranet`을 붙인다.
+- **한 번 로그인**: 같은 주소라 관리자 앱과 같은 로그인 저장 키(Supabase 기본값)를 쓴다. 한쪽에서 로그인·로그아웃하면 다른 쪽도 같다. 관리자 앱 위쪽 **인트라넷** 버튼 → `/intranet/`, 인트라넷 **통합관리** 버튼 → `/`.
+- 로컬 개발은 그대로 따로 띄운다(관리자 5173, 인트라넷 5177, 버튼은 서로의 개발 서버로). Workers 단독 배포 설정(`apps/intranet/wrangler.jsonc`)도 남아 있지만 쓰지 않는다.
 
 - **로그인**: 이메일·비밀번호(Supabase 계정). `staff_users`에 있으면 직원, `guard_accounts`에 있으면 가드, 둘 다 아니면 안내만 보인다.
   - 직원: 관리자 앱과 같은 계정. 처리자 이름은 `staff_users.name`이고, 오른쪽 위 이름 입력 칸 대신 로그인한 이름과 로그아웃이 보인다. 가드 주소(`/guard`)는 '가드 계정으로 로그인' 안내만 보인다(직원 계정으로 외출·귀가를 기록하지 않는다).
@@ -197,22 +203,13 @@ apps/intranet/
   - 상담 기록은 테이블을 직접 못 읽으므로 `counseling.ts`의 `stores.remote`로 DB 함수(`counseling_open/create/update/followup`)를 쓴다. 목록은 `counseling_list()`(내용 없음, 맡은 캠퍼스만), 접근 기록은 DB 함수가 남긴다. 맡지 않은 캠퍼스 학생의 상담은 쓸 수 없다(`campus_not_allowed`).
   - 설정(통금·근무자)은 `intranet_settings` 한 행, 점수표는 `penalty_rules`·`penalty_stages`(종류·단계는 고정, 점수·기준만 바꿈).
 
-### 설정 순서 (레오 PC의 Claude)
+### 설정 순서 (레오 PC의 Claude, 지금 쓰는 Cloudflare·Supabase 계정)
 
 1. Supabase에 마이그레이션 `20261108100000_student_intranet.sql`, `20261108120000_student_request_ids.sql`, `20261108130000_intranet_deploy.sql`, `20261108140000_nonacademic_requests.sql`(생활 요청), `20261108150000_overnight_travel.sql`(외박·여행 정보), `20261108160000_school_trips.sql`(학교 여행)을 차례로 적용한다.
 2. 직원 계정은 관리자 앱과 같다(`staff_users`, `docs/setup-cloud.md` 1-4). 이름(`staff_users.name`)을 넣어 둔다(처리자·접근 기록에 남는다). 상담 기록을 볼 직원은 `staff_campuses`에 맡은 캠퍼스를 넣는다(예: `insert into staff_campuses values ('<user_id>', 'Challenger')`).
-3. **Workers & Pages → Create → Workers → Import a repository** → `jic-portal`
-
-   | 항목 | 값 |
-   | --- | --- |
-   | Project name | `jic-intranet` |
-   | Root directory | `/` (비워 둠) |
-   | Build command | `npm run intranet:build` |
-   | Deploy command | `npx wrangler deploy --config apps/intranet/wrangler.jsonc` |
-   | Build variables | `VITE_SUPABASE_URL`, `VITE_SUPABASE_ANON_KEY`, `VITE_ADMIN_URL`(관리자 앱 주소, '통합관리' 버튼), `NODE_VERSION=22` |
-
-4. Worker의 **Settings → Variables and Secrets**에 `SUPABASE_URL`, `SUPABASE_ANON_KEY`(빌드 변수와 같은 값)와 **Secret** `SUPABASE_SERVICE_ROLE_KEY`를 넣는다. 서비스 키는 가드 요청에서만 쓰고, 없으면 가드 요청만 `500 server_config`(직원 화면은 동작).
-5. 주소(`https://jic-intranet.<계정>.workers.dev`)에서 직원 계정으로 로그인 → 홈이 보이면 된다.
+3. 이미 있는 JIC 포털 Pages 프로젝트(`docs/setup-cloud.md` 2)의 **Settings → Build** 에서 Build command 를 `npm run admin:build` → **`npm run portal:build`** 로 바꾼다(출력 폴더 `apps/admin/dist` 는 그대로). 새 프로젝트는 만들지 않는다.
+4. 같은 프로젝트의 **Settings → Variables and Secrets** 에 **Secret** `SUPABASE_SERVICE_ROLE_KEY` 하나를 더한다(Production). 가드 태블릿 요청(재학생 명단·승인된 외박)에서만 쓰고, 없으면 가드 요청만 `500 server_config`(직원 화면은 동작). Supabase 주소·anon 키는 관리자 앱이 쓰는 `VITE_SUPABASE_URL`·`VITE_SUPABASE_ANON_KEY` 를 그대로 쓴다.
+5. 다시 배포한 뒤 JIC 포털 주소에서 직원 계정으로 로그인 → 위쪽 **인트라넷** 버튼 → 다시 로그인하지 않고 인트라넷 홈이 보이면 된다. 경비실 태블릿은 `<포털 주소>/intranet/guard` 에서 가드 계정으로 로그인해 둔다.
 6. **가드 공용 계정**(출입구마다 하나): Supabase **Authentication → Users → Add user**(이메일 예: `gate-challenger@…`, 비밀번호, Auto Confirm 켜기)로 만든 뒤 SQL Editor에서 출입구를 잇는다.
 
    ```sql
@@ -225,7 +222,7 @@ apps/intranet/
 
 ### 배포 시험
 
-- `supabase/tests/intranet_worker_api.mjs`(73개): 실제 마이그레이션을 올린 PGlite(`pg-supabase.mjs`)에서 직원 두 명(Challenger·Premium 담당)으로 설정·점수표 → 통금 위반 후보·승인(점수표 점수, 처리자) → 결석 반려·외박 승인 → 배차 확정 → 공지·읽음 → 상담 기록(같은 캠퍼스만, 내용은 함수로, 열람 10초 중복 제외, 접근 기록) → Student File → 가드 리포트 목록. 이어서 가드 두 명(Challenger·Premium 정문)으로 출입구 고정, 직원 API 403, 서비스 키 없을 때, 외출·이미 외출 중·귀가·근무자 미선택·재학생 아님, 승인된 외박(복귀일 표시, 사유 안 보임), 리포트 → 직원 패널티 후보, 다른 출입구 기록 안 보임. CI가 함께 돌린다.
+- `supabase/tests/intranet_worker_api.mjs`(102개): 실제 마이그레이션을 올린 PGlite(`pg-supabase.mjs`)에서 직원 두 명(Challenger·Premium 담당)으로 설정·점수표 → 통금 위반 후보·승인(점수표 점수, 처리자) → 결석 반려·외박 승인 → 배차 확정 → 공지·읽음 → 상담 기록(같은 캠퍼스만, 내용은 함수로, 열람 10초 중복 제외, 접근 기록) → Student File → 가드 리포트 목록. 이어서 가드 두 명(Challenger·Premium 정문)으로 출입구 고정, 직원 API 403, 서비스 키 없을 때, 외출·이미 외출 중·귀가·근무자 미선택·재학생 아님, 승인된 외박(복귀일 표시, 사유 안 보임), 리포트 → 직원 패널티 후보, 다른 출입구 기록 안 보임. CI가 함께 돌린다.
 - 11/8 `wrangler dev`(workerd)에 이 Worker를 띄우고 Playwright로 확인: 직원 26개(로그인, 직원 아닌 계정 안내, 메뉴 12개 화면, 상담 작성, 공지 작성, 가드 주소 안내, 로그아웃), 가드 태블릿 14개(가드 로그인 → 태블릿만, 캠퍼스 고정, 외출·귀가 처리, 없는 번호, 사건 리포트 → 직원 패널티 화면에 후보, 로그아웃).
 
 ### 남은 것

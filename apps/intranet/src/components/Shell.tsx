@@ -1,3 +1,4 @@
+import { ADMIN_HOME } from '../base';
 import { useState, type FormEvent, type ReactNode } from 'react';
 import { Link, NavLink } from 'react-router-dom';
 import { setStaffName, useApi, useStaffName, useSummaryChanged, type Summary } from '../api';
@@ -36,7 +37,6 @@ const MENU: { group?: string; items: { to: string; label: string; badge?: Badge 
   { group: '직원', items: [{ to: '/staff', label: '직원·부서' }, { to: '/staff-review', label: 'Staff 평가' }, { to: '/audit', label: '접근 기록' }] },
 ];
 
-const ADMIN_URL = import.meta.env.VITE_ADMIN_URL ?? 'http://127.0.0.1:5173';
 
 export default function Shell({ children }: { children: ReactNode }) {
   const { data: meta } = useApi<{ source: 'sample' | 'extract'; actor: string | null }>('/api/meta');
@@ -53,7 +53,7 @@ export default function Shell({ children }: { children: ReactNode }) {
           <span>{dateWithDay(localDate(Date.now()))}</span>
           {authMode === 'supabase' ? <LoggedIn name={meta?.actor ?? null} /> : <StaffName />}
           <span className={'data-badge' + (meta?.source === 'sample' ? ' sample' : '')}>{meta?.source === 'sample' ? '샘플 데이터' : authMode === 'supabase' ? '업체 데이터' : '로컬 데이터'}</span>
-          <a href={ADMIN_URL} className="btn btn-xs">
+          <a href={ADMIN_HOME} className="btn btn-xs">
             통합관리
           </a>
         </div>

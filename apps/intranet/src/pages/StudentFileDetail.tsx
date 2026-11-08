@@ -1,3 +1,4 @@
+import { ADMIN_URL } from '../base';
 import { Link, useParams } from 'react-router-dom';
 import { useApi, type StudentFile } from '../api';
 import { Loading, PageTitle } from '../components/ui';
@@ -7,7 +8,6 @@ import { SIGNUP_STATUS, SIGNUP_STATUS_CLASS, TRIP_STATUS, tripDates } from '../t
 import { FollowUp } from './Counseling';
 
 // 학생 한 명의 생활 기록. 기본 정보·연수·회계·메모는 관리자 앱 학생 상세에 있다.
-const ADMIN_URL = import.meta.env.VITE_ADMIN_URL ?? 'http://127.0.0.1:5173';
 const STATUS: Record<string, string> = { pending: '대기', approved: '승인', rejected: '반려', cancelled: '학생 취소' };
 const STATUS_CLASS: Record<string, string> = { pending: 'text-amber', approved: 'text-blue', rejected: 'text-red', cancelled: 'muted' };
 const ENROLL: Record<string, string> = { current: '재학', upcoming: '입학 예정', graduated: '졸업', cancelled: '취소', other: '기타' };

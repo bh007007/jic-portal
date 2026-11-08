@@ -5,6 +5,7 @@
  */
 import { useCallback, useEffect, useState } from 'react';
 import { authHeaders, authMode, onSessionChange, signOut } from './auth';
+import { apiUrl } from './base';
 import type { DepartureList, GuardView, LifeRequestList, OutingList, OutingRow, PenaltyList, PenaltyRules, ReportList, RequestList, Settings, StudentFile, StudentFileList, Summary, TripDetail, TripList } from '../server/core';
 
 export type { DepartureList, GuardView, LifeRequestList, OutingList, OutingRow, PenaltyList, PenaltyRules, ReportList, RequestList, Settings, StudentFile, StudentFileList, Summary, TripDetail, TripList };
@@ -88,7 +89,7 @@ export async function api<T>(path: string, init?: { method?: string; body?: unkn
       const staff = getStaffName();
       if (staff) headers['X-Staff-Name'] = encodeURIComponent(staff); // 한글은 헤더에 그대로 못 넣는다
     }
-    res = await fetch(path, {
+    res = await fetch(apiUrl(path), {
       method: init?.method ?? 'GET',
       headers,
       body: init?.body === undefined ? undefined : JSON.stringify(init.body),
