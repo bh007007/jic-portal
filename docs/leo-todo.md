@@ -6,6 +6,10 @@ Claude가 대신할 수 없는 일(키·비밀번호 입력, 계정 만들기, �
 
 PR이 CI를 통과하면 GitHub에서 **Merge pull request**를 누르거나 Claude에게 "머지"라고 말씀해 주세요. 머지하면 Cloudflare가 자동으로 배포한다.
 
+머지 전에 미리 보기:
+- 첫 화면 https://feat-portal-hub.jic-portal-916.pages.dev/ (#37).
+- 강사 포털 미리 보기 `/teacher/`는 Pages 빌드 명령을 바꾼 뒤에 열린다(아래 '머지할 때 같이 할 일').
+
 | PR | 내용 | 순서 |
 | --- | --- | --- |
 | [#37](https://github.com/bh007007/jic-portal/pull/37) | JIC 포털 첫 화면(4개 포털 선택), 관리자 포털 `/admin`, 구조 문서, 이 목록 | 1 |

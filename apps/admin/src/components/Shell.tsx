@@ -2,6 +2,7 @@ import type { ReactNode } from 'react';
 import { Link, NavLink } from 'react-router-dom';
 import { useApi } from '../api';
 import { supabase } from '../supabase';
+import { PORTALS } from '../portals';
 
 const MENU: { group?: string; items: { to: string; label: string }[] }[] = [
   { items: [{ to: '/', label: '대시보드' }] },
@@ -26,6 +27,8 @@ const MENU: { group?: string; items: { to: string; label: string }[] }[] = [
 
 // 인트라넷: 배포에서는 같은 주소 아래 /intranet/(npm run portal:build, 같은 로그인), 로컬 개발은 인트라넷 개발 서버
 const INTRANET_URL = import.meta.env.VITE_INTRANET_URL ?? (import.meta.env.DEV ? 'http://127.0.0.1:5177' : '/intranet/');
+// 강사 포털(LMS): 배포는 같은 주소 아래 /teacher/(같은 로그인), 로컬 개발은 강사 포털 개발 서버
+const TEACHER_URL = PORTALS.find((p) => p.key === 'teacher')?.url ?? '/teacher/';
 
 const today = new Date();
 const todayLabel = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')} (${'일월화수목금토'[today.getDay()]})`;
@@ -51,6 +54,9 @@ export default function Shell({ children, user }: { children: ReactNode; user?: 
           </a>
           <a href={INTRANET_URL} className="btn btn-xs">
             인트라넷
+          </a>
+          <a href={TEACHER_URL} className="btn btn-xs">
+            강사 포털
           </a>
           {supabase && (
             <button type="button" className="btn btn-xs" onClick={() => supabase?.auth.signOut()}>
