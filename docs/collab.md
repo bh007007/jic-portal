@@ -10,6 +10,8 @@
 | 배포용 서버 | `functions/` (`functions/intranet/`은 인트라넷 담당) | 레오 PC의 Claude |
 | 학생 앱 | `apps/student` | 다른 계정의 Claude |
 | 인트라넷 | `apps/intranet` | 다른 계정의 Claude (11/8 사용자 진행 요청) |
+| 강사 포털(LMS) | `apps/teacher`, `functions/teacher/` | 레오 PC의 Claude (11/8) |
+| JIC 포털 첫 화면 | `apps/admin/src/pages/Hub.tsx`, `apps/admin/src/portals.ts` | 레오 PC의 Claude |
 | DB 변경 | `supabase/migrations/` | 각자 자기 앱용 **새 파일만** 추가 |
 | Supabase 적용, Cloudflare 배포, 업체 포털 추출 | 대시보드·레오 PC | 레오 PC의 Claude (계정 접근이 있는 쪽) |
 
@@ -21,6 +23,7 @@
 - **`data-sample/`**: `scripts/make-sample-data.mjs`로만 바꾼다. 새 필드는 별도 시드로 만들어 기존 학생·연수 값이 바뀌지 않게 한다.
 - **학생 신청 공용 모듈**: 결석·외박 신청의 모양과 규칙은 `apps/student/server/requests.ts`, 생활 요청은 `apps/student/server/lifeRequests.ts`, 학교 여행은 `apps/student/server/trips.ts` 한 곳이다. 인트라넷이 승인·반려에 같이 쓰고, 로컬에서는 같은 파일(`.local-db/student`)을 연다. LMS가 결석 승인을 맡게 되면 같은 모듈을 쓴다.
 - **학생 앱·인트라넷의 관리자 core 의존**: `apps/student`와 `apps/intranet`은 `apps/admin/server/core.ts`의 `createDb`·`studentDetail`과 `server/localData.ts`의 `loadDir`을 가져다 쓴다. 이 응답 모양을 바꾸면 `npm run student:build`도 확인한다(CI가 함께 빌드한다).
+- **포털 구조(11/8 사용자 결정)**: 관리자(인트라넷 포함)·학생·에이전시·강사(LMS) 4개 포털, DB는 Supabase 하나. `docs/architecture.md`. 주소 `/` = JIC 포털 첫 화면(포털 선택), `/admin/` = 관리자 포털(11/8 옮김, 예전 주소 `/students` 등은 `/admin/…`로 넘어감), `/intranet/` = 인트라넷, `/teacher/` = 강사 포털 예정. 인트라넷의 '통합관리'(`/`)와 학생 상세 링크(`/students/…`)는 첫 화면·넘김으로 그대로 동작한다. 바로 가려면 `/admin/`으로 바꾼다.
 - **인트라넷은 포털 주소 아래(`/intranet`)**: 루트 `admin:build`가 관리자 앱 빌드 뒤 인트라넷을 `apps/admin/dist/intranet`에 넣는다(11/8, Cloudflare 빌드 설정을 바꾸지 않으려고 인트라넷 담당이 이 줄에 더함). 관리자 앱의 출력 폴더나 `/intranet` 경로를 바꾸면 인트라넷 담당에게 알린다. 로그인 저장 키는 두 앱 모두 Supabase 기본값(같은 주소라 한 번 로그인).
 - **개발 서버 포트**: 관리자 5173(샘플 데이터 실행 5174), 파트너 5175, 학생 5176, 인트라넷 5177. 새 앱은 5178부터.
 
@@ -29,7 +32,10 @@
 - 여러 번 실행해도 되게 쓴다(`if not exists`, `drop policy if exists`, `on conflict do nothing`).
 - 프로젝트는 'Automatically expose new tables'가 꺼져 있다. 새 테이블마다 `grant`를 직접 쓰고 RLS를 켠다.
 - 이미 있는 권한 함수는 `is_staff()`(직원)와 `is_partner()`(승인된 에이전시 지점)다. 새 역할은 새 함수로 만든다(예: `is_student()`). 기존 함수의 뜻은 바꾸지 않는다.
-- 학생 앱·인트라넷이 더한 권한 함수: `is_student()`·`current_student_no()`(학생), `is_guard()`·`current_guard_campus()`(가드 공용 계정), `staff_has_campus(캠퍼스)`(직원이 맡은 캠퍼스, `staff_campuses`). `20261108100000_student_intranet.sql`. 직원끼리 이름을 보는 `staff_directory()`(`20261108130000_intranet_deploy.sql`, `staff_users` RLS 는 그대로). 학생 계정 만들기·초기화 접근 기록 `student_account_audit()`(`20261108180000_student_account_admin.sql`).
+- 학생 앱·인트라넷이 더한 권한 함수: `is_student()`·`current_student_no()`(학생), `is_guard()`·`current_guard_campus()`(가드 공용 계정), `staff_has_campus(캠퍼스)`(직원이 맡은 캠퍼스, `staff_campuses`). `20261108100000_student_intranet.sql`. 직원끼리 이름을 보는 `staff_directory()`(`20261108130000_intranet_deploy.sql`, `staff_users` RLS 는 그대로). 학생 계정 만들기·초기화 접근 기록 `student_account_audit()`(`20261108180000_student_account_admin.sql`), 가드 계정 접근 기록 `guard_account_audit()`(`20261108190000_guard_account_admin.sql`). `audit_logs` 종류 목록은 두 파일이 같은 목록을 쓴다(어느 쪽을 다시 실행해도 지워지지 않게).
+- 강사 포털(LMS)이 더한 권한 함수: `has_role(역할[])`, `is_lms_user()`(강사·체커·스케줄러·매니저 또는 직원), `is_lms_manager()`(매니저 또는 직원), `my_roles()`, `current_lms_name()`, 강사용 학생 목록 `lms_students(날짜)`(`legacy_*` 권한은 그대로), 강사용 결석 신청 보기 `lms_absences(시작, 끝)`(사유 글 제외, `20261108220000_lms_absences.sql`). 역할 표 `user_roles`(기획안 이름). `20261108200000_teacher_portal.sql`. 성적 `test_results`는 학생 본인도 읽는다(학생 포털에서 쓸 수 있음).
+- 관리자 포털 '사용자·권한' 화면: `user_directory(학생 포함 여부)`(직원만, 로그인 계정과 사용자 종류별 표를 한 줄로). `20261108210000_user_directory.sql`.
+- 휴일 `holidays`(업체 기초코드관리 > 휴일): 관리자 포털 직원만 쓰고 로그인한 모든 포털이 읽는다. 캠퍼스 `''` = 모든 캠퍼스. 출석·달력에서 쉬는 날을 볼 때 이 표를 쓴다. `20261108230000_holidays.sql`.
 - 권한 시험은 `supabase/tests/*.mjs`에 둔다. PGlite(Postgres WebAssembly)에 Supabase 흉내를 만들어 역할별로 읽기·쓰기를 확인한다(의존성에 넣지 않고 `npm i --no-save`로 임시 설치). CI가 함께 돌리므로 `legacy_tables`처럼 시험이 쓰는 마이그레이션을 바꾸면 결과를 확인한다. `pg-supabase.mjs`는 Supabase Auth·REST를 흉내 내는 시험 서버다.
 - `legacy_*`(업체 원본)는 직원만 읽는다. 다른 앱을 위해 이 RLS를 넓히지 않는다. 필요하면 security definer 함수나 그 앱용 테이블을 만든다.
 - `auth.users`에는 `on_partner_signup` 트리거가 있다. 메타데이터 `portal='partner'`일 때만 동작한다. 다른 앱은 다른 `portal` 값을 쓴다.

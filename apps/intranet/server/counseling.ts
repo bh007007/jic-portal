@@ -23,14 +23,14 @@ export interface CounselingNote {
   followUpDoneBy: string | null;
 }
 
-export type AuditAction = 'view' | 'create' | 'update' | 'followup_done' | 'followup_reopen' | 'account_create' | 'password_reset';
+export type AuditAction = 'view' | 'create' | 'update' | 'followup_done' | 'followup_reopen' | 'account_create' | 'password_reset' | 'guard_create' | 'guard_password' | 'guard_delete';
 export interface AuditLog {
   id: string;
   at: string;
   actor: string;
   action: AuditAction;
-  /** counseling 상담 기록 · student_account 학생 계정(만들기·비밀번호 초기화) */
-  target: 'counseling' | 'student_account';
+  /** counseling 상담 기록 · student_account 학생 계정(만들기·비밀번호 초기화) · guard_account 가드 계정(targetId = 출입구 이름) */
+  target: 'counseling' | 'student_account' | 'guard_account';
   targetId: string;
   stId: string;
 }
