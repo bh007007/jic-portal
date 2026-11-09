@@ -17,6 +17,11 @@ const LMS_ROLES: [string, string, string][] = [
 ];
 const ALL_ROLES = [...STAFF_ROLES, ...LMS_ROLES];
 const CAMPUSES = ['', 'Challenger', 'Premium', 'MCO'];
+const NAME_ERRORS: Record<string, string> = {
+  bad_name: '이름은 1~40자로 넣어 주세요',
+  not_staff: '관리자 포털 직원(staff_users)이 아닌 계정입니다',
+  not_allowed: '관리자만 고칠 수 있습니다',
+};
 
 interface Account {
   user_id: string;
@@ -58,7 +63,7 @@ function staffLevel(a: Account) {
 }
 
 /**
- * 사용자·권한(관리자 포털, 관리자만). 로그인 계정과 사용자 종류(4개 포털)를 한눈에 보고, 직원 역할(관리자·오피스)과 강사 포털 역할을 주고 회수한다.
+ * 사용자·권한(관리자 포털, 관리자만). 로그인 계정과 사용자 종류(4개 포털)를 한눈에 보고, 직원 역할(관리자·오피스)과 강사 포털 역할을 주고 회수한다. 직원 이름도 여기서 고친다.
  * 계정 만들기는 서비스 키가 필요해 아직 Supabase 대시보드(Authentication → Add user)에서 한다.
  */
 export default function Users() {
@@ -71,6 +76,7 @@ export default function Users() {
   const [withStudents, setWithStudents] = useState(false);
   const [kw, setKw] = useState('');
   const [pick, setPick] = useState<Record<string, { role: string; campus: string }>>({});
+  const [editing, setEditing] = useState<{ user_id: string; name: string } | null>(null);
 
   const load = useCallback(async () => {
     if (!supabase) return;
@@ -111,9 +117,10 @@ export default function Users() {
     setMsg('');
     const { error: err } = await fn();
     setBusy(false);
-    if (err) setMsg(`${label} 실패: ${err.message}`);
+    if (err) setMsg(`${label} 실패: ${NAME_ERRORS[err.message] ?? err.message}`);
     else {
       setMsg(`${label} 완료`);
+      setEditing(null);
       load();
     }
   };
@@ -125,6 +132,12 @@ export default function Users() {
     const [role, campus = ''] = r.split(':');
     if (!window.confirm(`${a.email}의 '${roleName(r)}' 역할을 회수할까요?`)) return;
     run(`${a.email} ${roleName(r)} 회수`, () => supabase!.from('user_roles').delete().eq('user_id', a.user_id).eq('role', role).eq('campus', campus));
+  };
+  /** 직원 이름(staff_users.name): 인트라넷 처리자·상담 작성자, 강사 포털 '체크한 사람'으로 남는다(20261109120000_staff_name.sql, 관리자만) */
+  const saveName = (a: Account) => {
+    const name = (editing?.name ?? '').trim();
+    if (!name || name === a.staff_name) return setEditing(null);
+    run(`${a.email} 이름 '${name}'`, () => supabase!.rpc('staff_set_name', { p_user: a.user_id, p_name: name }));
   };
   const linkStaff = (a: Account, staffId: string) => {
     if (!staffId) return;
@@ -145,7 +158,7 @@ export default function Users() {
             <tr><th className="left">포털</th><th className="left">계정 표 · 역할</th><th className="left">주는 곳</th></tr>
           </thead>
           <tbody>
-            <tr><td>관리자 포털(인트라넷 포함)</td><td>직원(staff_users) · {STAFF_ROLES.map(([, n, d]) => <div key={n}><strong>{n}</strong> <span className="muted">{d}</span></div>)}<span className="muted">역할이 없는 직원은 관리자</span></td><td className="muted">직원 등록은 Supabase(서비스 키), 역할은 이 화면</td></tr>
+            <tr><td>관리자 포털(인트라넷 포함)</td><td>직원(staff_users) · {STAFF_ROLES.map(([, n, d]) => <div key={n}><strong>{n}</strong> <span className="muted">{d}</span></div>)}<span className="muted">역할이 없는 직원은 관리자</span></td><td className="muted">직원 등록은 Supabase(서비스 키), 이름·역할은 이 화면</td></tr>
             <tr><td>강사 포털(LMS)</td><td>{LMS_ROLES.map(([, n, d]) => <div key={n}><strong>{n}</strong> <span className="muted">{d}</span></div>)}</td><td>이 화면</td></tr>
             <tr><td>에이전시 포털</td><td>에이전시 지점(agency_members)</td><td className="muted">가입 신청 → 에이전시 포털 관리자 화면에서 승인</td></tr>
             <tr><td>학생 포털</td><td>학생(student_users, 학생번호 + 생년월일, 첫 로그인 때 변경)</td><td className="muted">npm run student:accounts (서비스 키)</td></tr>
@@ -196,7 +209,21 @@ export default function Users() {
                     <td className="left nowrap">{a.email}</td>
                     <td className="left" style={{ fontSize: 12 }}>{kinds(a).join(', ') || <span className="muted">없음</span>}</td>
                     <td className="left">
-                      {a.staff_name || a.teacher_name || a.agency || (a.guard_campus ? `${a.guard_campus} 정문` : '') || a.student_no || '-'}
+                      {editing?.user_id === a.user_id ? (
+                        <form className="nowrap" onSubmit={(e) => { e.preventDefault(); saveName(a); }}>
+                          <input aria-label="직원 이름" autoFocus maxLength={40} value={editing.name} onChange={(e) => setEditing({ user_id: a.user_id, name: e.target.value })}
+                            onKeyDown={(e) => e.key === 'Escape' && setEditing(null)} style={{ width: 120, height: 24, fontSize: 12 }} />
+                          <button type="submit" className="btn btn-xs" style={{ marginLeft: 4 }} disabled={busy}>저장</button>
+                          <button type="button" className="btn btn-xs" style={{ marginLeft: 2 }} onClick={() => setEditing(null)}>취소</button>
+                        </form>
+                      ) : (
+                        <>
+                          {a.staff_name || a.teacher_name || a.agency || (a.guard_campus ? `${a.guard_campus} 정문` : '') || a.student_no || (a.staff_role != null ? <span className="text-red">이름 없음</span> : '-')}
+                          {a.staff_role != null && (
+                            <button type="button" className="btn btn-xs" style={{ marginLeft: 4, height: 22 }} disabled={busy} onClick={() => setEditing({ user_id: a.user_id, name: a.staff_name ?? '' })} aria-label={`${a.email} 직원 이름 고치기`}>이름</button>
+                          )}
+                        </>
+                      )}
                       {a.roles.length > 0 && !a.teacher_name && unlinked.length > 0 && (
                         <select aria-label="강사 목록 연결" defaultValue="" onChange={(e) => linkStaff(a, e.target.value)} disabled={busy} style={{ marginLeft: 6, fontSize: 12 }}>
                           <option value="">강사 목록 연결…</option>
