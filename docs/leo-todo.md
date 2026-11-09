@@ -34,7 +34,7 @@ Claude가 대신할 수 없는 일(키·비밀번호 입력, 계정 만들기, �
 | 5 | 에이전시 가입 허용 | Supabase → Authentication → Sign In / Providers → **Allow new users to sign up** 켜기 | 에이전시 포털 등록 신청 |
 | 6 | 학생 포털 로그인 시험 | https://jic-student.bh007007.workers.dev 에서 샘플 학생번호 + 생년월일 8자리로 로그인한다. 값은 `data-sample/tables/students.ndjson`의 `st_id`·`st_birthday`(가짜 데이터). 1번을 마친 뒤 한다 | 첫 로그인 → 비밀번호 변경 → 홈 |
 | 7 | 업체 포털 출석 추출 | 업체 포털(jicportal.com)에 관리자로 로그인한 브라우저의 Console에 `scripts/extract/portal-extract-attendance.js`를 붙여 넣는다(지난 90일, 5~15분, 읽기 전용, 비밀번호·급여·계좌·메모 열은 받지 않음). 받은 파일은 `data/raw/`로 옮긴다 | 강사 포털 출석을 업체 기록으로 이어 가려면(교사·교실·출석·마감). LMS 구조 조사는 11/9 회계 세션이 마쳤다 |
-| 8 | **학원 공식 계정으로 옮기고 썸머 매니저가 이어 개발**(11/9 요청) | `docs/accounts.md` 순서대로: 학원 이메일로 GitHub·Supabase·Cloudflare·Claude 계정 → GitHub 조직에 저장소 이전 → Supabase 프로젝트 이전 → Cloudflare 새로 연결 → 썸머 매니저 초대(직원 계정·GitHub) | 썸머 매니저가 주 개발, 레오님은 개인 계정으로 항목별 PR. 실제 데이터·secret 키는 넘기지 않는다 |
+| 8 | **학원 공식 계정으로 옮기기**(11/9 결정: 소유 = JIC 어학원·레오님 Owner, 주 개발 = 썸머 매니저, 보조 = 레오님 개인 계정) | `docs/accounts.md` 5장 순서대로: 어학원 공용 이메일로 계정 → GitHub 조직에 저장소 이전 → Supabase 운영 프로젝트 이전 + 개발용 프로젝트 새로 → Cloudflare 새로 연결(Preview = 개발용 DB) → 썸머 매니저 초대 | 서비스가 어학원에 남고, 레오님 개인 계정은 운영 키·실제 데이터에 손대지 않는다 |
 
 ## 결정할 것
 
