@@ -1,7 +1,7 @@
 /**
  * 인트라넷 배포 서버(Workers)의 로그인 확인과 학생·연수 데이터.
  * - 계정: 토큰의 사용자 id 로 staff_users(직원) 또는 guard_accounts(출입구 가드 공용 계정)의 본인 행을 그 토큰으로 읽는다.
- *   직원 이름은 처리자로, 가드는 출입구(캠퍼스)로 쓴다.
+ *   직원 이름은 처리자로, 직원 역할(user_roles: 관리자·오피스, 캠퍼스)은 권한 확인에, 가드는 출입구(캠퍼스)로 쓴다.
  * - 학생·연수: 업체 원본(legacy_*, 직원만 읽기)을 읽어 관리자 core 의 createDb 에 넣는다. 인트라넷이 쓰는 것만 읽는다(메타, 학생, 연수, 기숙사 배정).
  *   직원 요청은 직원 토큰으로(관리자 앱 functions/api 와 같은 방식), 가드 요청은 가드가 원본을 못 읽으므로 서비스 키로 읽는다.
  *   가드에게는 가드 API(재학 여부·이름·캠퍼스)로만 내보낸다(worker/index.ts 가 가드 경로만 연다).
@@ -9,9 +9,12 @@
  */
 import { createDb, type Raw } from '../../admin/server/core';
 import { tokenSubject, type SupabaseConf } from '../../student/server/supabaseAuth';
+import type { StaffRole } from './core';
 
 type Db = ReturnType<typeof createDb>;
-export type Account = { role: 'staff'; userId: string; name: string } | { role: 'guard'; userId: string; campus: string; label: string };
+export type Account =
+  | { role: 'staff'; userId: string; name: string; staffRole: StaffRole; campuses: string[] | null }
+  | { role: 'guard'; userId: string; campus: string; label: string };
 
 const PAGE = 1000;
 const base = (url: string) => `${url.replace(/\/+$/, '')}/rest/v1`;
@@ -26,13 +29,27 @@ async function firstRow<T>(conf: SupabaseConf, token: string, path: string, fetc
   return ((await r.json()) as T[])[0] ?? null;
 }
 
-/** 직원이면 이름, 가드면 출입구. 둘 다 아니면 null(토큰 만료·위조, 학생·에이전시 계정). */
+/**
+ * 직원 역할(docs/roles.md): DB 의 is_admin() 과 같게, admin 역할이 있거나 office 역할이 없으면 관리자다(역할을 주기 전에는 모든 직원이 관리자).
+ * 오피스의 캠퍼스는 office 역할 행의 캠퍼스(빈칸이 있으면 모든 캠퍼스). user_roles 는 본인 행을 읽을 수 있다(20261108200000_teacher_portal.sql).
+ */
+export function staffRoleFrom(rows: { role: string; campus: string | null }[]): { staffRole: StaffRole; campuses: string[] | null } {
+  const office = rows.filter((r) => r.role === 'office');
+  if (rows.some((r) => r.role === 'admin') || !office.length) return { staffRole: 'admin', campuses: null };
+  return { staffRole: 'office', campuses: office.some((r) => !r.campus) ? null : [...new Set(office.map((r) => r.campus!))].sort() };
+}
+
+/** 직원이면 이름·역할, 가드면 출입구. 둘 다 아니면 null(토큰 만료·위조, 학생·에이전시 계정). */
 export async function accountFromToken(conf: SupabaseConf, token: string, fetchFn: typeof fetch = fetch): Promise<Account | null> {
   const sub = tokenSubject(token);
   if (!sub) return null;
   const staff = await firstRow<{ name: string | null }>(conf, token, `staff_users?select=name&user_id=eq.${sub}`, fetchFn);
   if (staff === 'denied') return null;
-  if (staff) return { role: 'staff', userId: sub, name: staff.name?.trim() || sub };
+  if (staff) {
+    const r = await fetchFn(`${base(conf.url)}/user_roles?select=role,campus&user_id=eq.${sub}`, { headers: userHeaders(conf, token) });
+    if (!r.ok) throw new Error(`supabase_${r.status}`);
+    return { role: 'staff', userId: sub, name: staff.name?.trim() || sub, ...staffRoleFrom((await r.json()) as { role: string; campus: string | null }[]) };
+  }
   const guard = await firstRow<{ campus: string; label: string }>(conf, token, `guard_accounts?select=campus,label&user_id=eq.${sub}`, fetchFn);
   if (guard && guard !== 'denied') return { role: 'guard', userId: sub, campus: guard.campus, label: guard.label };
   return null;

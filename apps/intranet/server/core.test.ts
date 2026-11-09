@@ -739,5 +739,35 @@ console.warn = warn;
 expect('출석을 못 읽어도 패널티·홈은 열리고 대기 후보는 그대로', r.status === 200 && smX.status === 200 && (r.body as any).rows.some((x: any) => x.stId === W4 && x.source === 'attendance'), r.status);
 delete stores.attendance;
 
+// ── 직원 역할(docs/roles.md): 점수표 쓰기·접근 기록은 관리자만, 오피스의 Student File 은 맡은 캠퍼스만
+const otherSt = cur.find((x) => x.campus !== campus)!;
+const asRole = (staffRole: 'admin' | 'office', campuses: string[] | null) => {
+  const rctx = { ...ctx, session: { role: 'staff' as const, staffRole, campuses } };
+  return (m: string, p: string, body: any = null, q = ''): Promise<any> => handleIntranetApi(rctx, m, p, new URLSearchParams(q), body);
+};
+const asOffice = asRole('office', [campus]);
+let rr: any;
+const asAdmin = asRole('admin', null);
+let mo = (await asOffice('GET', '/meta')).body;
+expect('meta: 오피스·맡은 캠퍼스', mo.staffRole === 'office' && mo.campuses.join() === campus, mo);
+const metaLocal = (await call('GET', '/meta')).body as any;
+expect('meta: 로컬(로그인 없음)은 관리자', metaLocal.staffRole === 'admin' && metaLocal.campuses === null, metaLocal);
+const rulesNow = (await asOffice('GET', '/penalty-rules')).body;
+expect('오피스: 점수표 읽기', Array.isArray(rulesNow.kinds));
+rr = await asOffice('PUT', '/penalty-rules', rulesNow);
+expect('오피스: 점수표 저장 403 admin_only', rr.status === 403 && rr.body.error === 'admin_only', rr);
+expect('관리자: 점수표 저장 200', (await asAdmin('PUT', '/penalty-rules', rulesNow)).status === 200);
+rr = await asOffice('GET', '/audit');
+expect('오피스: 접근 기록 403', rr.status === 403 && rr.body.error === 'admin_only', rr);
+expect('관리자: 접근 기록 200', (await asAdmin('GET', '/audit')).status === 200);
+const sfo = (await asOffice('GET', '/students')).body;
+expect('오피스: Student File 목록은 맡은 캠퍼스만', sfo.rows.length > 0 && sfo.rows.every((x: any) => x.campus === campus) && sfo.campuses.join() === campus, sfo.campuses);
+expect('관리자: 모든 캠퍼스', (await asAdmin('GET', '/students')).body.campuses.length > 1);
+rr = await asOffice('GET', `/students/${otherSt.stId}`);
+expect('오피스: 다른 캠퍼스 학생 상세 403', rr.status === 403 && rr.body.error === 'campus_forbidden', [rr.status, otherSt.campus]);
+expect('오피스: 맡은 캠퍼스 학생 상세 200', (await asOffice('GET', `/students/${sfo.rows[0].stId}`)).status === 200);
+expect('오피스(모든 캠퍼스): 다른 캠퍼스도 200', (await asRole('office', null)('GET', `/students/${otherSt.stId}`)).status === 200);
+expect('오피스: 패널티 승인·외출 목록은 그대로', (await asOffice('GET', '/penalties')).status === 200 && (await asOffice('GET', '/outings')).status === 200);
+
 console.log(fails ? `\n${fails}건 실패` : '\n모두 통과');
 if (fails) process.exit(1);

@@ -421,6 +421,39 @@ ok('가드 화면은 그대로(가드는 결석을 읽지 않음)', x.status ===
 await sb.sql(`update public.attendance set excused = true where session_id = $1`, [sess]);
 ok('사유 인정 → 대기 후보 지워짐', (await absenceRows()).length === 0 && (await sb.sql(`select count(*)::int n from public.penalties where source = 'attendance'`))[0].n === 0);
 
+// ── 직원 역할(docs/roles.md): 오피스(Challenger)는 점수표 저장·접근 기록 403, Student File 은 맡은 캠퍼스만. 역할 없는 직원은 관리자
+const officeId = '00000000-0000-4000-8000-0000000000c3';
+await sb.addUser({ id: officeId, email: 'o@staff.example', password: 'staffpass1' });
+await sb.sql(`insert into public.staff_users (user_id, name) values ($1, '오피스O')`, [officeId]);
+await sb.sql(`insert into public.user_roles (user_id, role, campus) values ($1, 'office', 'Challenger')`, [officeId]);
+const tO = await login('o@staff.example', 'staffpass1');
+x = await api('GET', '/api/meta', tO);
+ok('오피스: meta 에 역할·맡은 캠퍼스', x.status === 200 && x.body.staffRole === 'office' && x.body.campuses?.join() === 'Challenger', x.body);
+x = await api('GET', '/api/meta', tC);
+ok('역할 없는 직원은 관리자(모든 캠퍼스)', x.body.staffRole === 'admin' && x.body.campuses === null, x.body);
+const rulesO = (await api('GET', '/api/penalty-rules', tO)).body;
+ok('오피스: 점수표 읽기', Array.isArray(rulesO.kinds) && rulesO.kinds.length === 4, rulesO);
+x = await api('PUT', '/api/penalty-rules', tO, rulesO);
+ok('오피스: 점수표 저장 403 admin_only', x.status === 403 && x.body.error === 'admin_only', x);
+const direct = await fetch(`${sb.url}/rest/v1/penalty_rules?code=eq.curfew`, {
+  method: 'PATCH',
+  headers: { apikey: 'anon-key', Authorization: `Bearer ${tO}`, 'Content-Type': 'application/json', Prefer: 'return=representation' },
+  body: JSON.stringify({ score: 99 }),
+});
+ok('오피스: 화면을 거치지 않고 REST 로 고쳐도 DB 가 막음', (await direct.json()).length === 0 && (await sb.sql(`select score from public.penalty_rules where code = 'curfew'`))[0].score !== 99);
+x = await api('GET', '/api/audit', tO);
+ok('오피스: 접근 기록 403', x.status === 403 && x.body.error === 'admin_only', x);
+x = await api('GET', '/api/audit', tC);
+ok('관리자: 접근 기록 200', x.status === 200, x.status);
+x = await api('GET', '/api/students?size=200', tO);
+ok('오피스: Student File 은 Challenger 만', x.status === 200 && x.body.rows.length > 0 && x.body.rows.every((s) => s.campus === 'Challenger'), x.body.campuses);
+x = await api('GET', `/api/students/${sP}`, tO);
+ok('오피스: 다른 캠퍼스 학생 상세 403', x.status === 403 && x.body.error === 'campus_forbidden', x);
+x = await api('GET', `/api/students/${sC}`, tO);
+ok('오피스: 맡은 캠퍼스 학생 상세 200', x.status === 200, x.status);
+x = await api('GET', '/api/penalties?tab=pending', tO);
+ok('오피스: 패널티 승인 목록은 그대로', x.status === 200, x.status);
+
 await sb.close();
 console.log(fails ? `${fails}건 실패` : '모두 통과');
 process.exit(fails ? 1 : 0);
