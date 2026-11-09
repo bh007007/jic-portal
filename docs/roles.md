@@ -117,6 +117,7 @@
   - 출석 입력·수업 만들기는 출석 PR(#42) 규칙 그대로다(오피스는 읽기만).
 - **강사 포털 내부 공지**: 더보기 › 내부 공지. 인트라넷 표 권한은 그대로 두고 `lms_notices()`(게시 중, 전체 + 내 캠퍼스)로만 읽는다.
 - **권한 시험**: `supabase/tests/roles_rls.mjs`(50개)와 `user_directory_rls.mjs`(오피스·관리자 13개 추가, 35개).
+- **직원 이름**(11/9 추가): 사용자·권한의 직원 줄 '이름'으로 `staff_users.name`을 고친다. 관리자만(`staff_set_name()`, `20261109120000_staff_name.sql`), `staff_users` 쓰기 권한은 넓히지 않았다. 인트라넷 처리자·상담 작성자·강사 포털 '체크한 사람'에 이 이름이 남는다. 담당 캠퍼스(`staff_campuses`)는 `user_roles.campus`와 합칠지 결정 뒤에 화면을 만든다. 시험 `user_directory_rls.mjs` 46개.
 
 ### 인트라넷 담당에게 넘길 것
 

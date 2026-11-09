@@ -1,7 +1,9 @@
 import { useState } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
 import { loadAttendanceSummary, loadStudentAttendance, loadStudents, type AttendanceSummaryRow, type LmsStudent, type StudentAttendanceRow } from '../data';
+import { useAuth } from '../auth';
 import { useT, type Key } from '../i18n';
+import { canUseIntranet, intranetUrl } from '../links';
 
 type T = ReturnType<typeof useT>['t'];
 import { manilaToday } from '../supabase';
@@ -59,6 +61,7 @@ function Detail({ no, from, to, issuesOnly }: { no: string; from: string; to: st
  * 학생을 누르면 수업별 결석·지각이 펼쳐진다. 무단결석의 패널티 승인은 인트라넷에서 한다(무단결석 패널티 후보).
  */
 export default function AttendanceSummary() {
+  const { me } = useAuth();
   const { t } = useT();
   const [params, setParams] = useSearchParams();
   const today = manilaToday();
@@ -103,7 +106,10 @@ export default function AttendanceSummary() {
           {t('unexcusedOnly')}
         </label>
       </div>
-      <p className="muted small">{t('unexcusedDef')}</p>
+      <p className="muted small">
+        {t('unexcusedDef')}
+        {canUseIntranet(me) && <> <a href={intranetUrl('penalties')}>{t('penaltiesInIntranet')}</a></>}
+      </p>
 
       {summary.loading || summary.error ? (
         <Loading error={summary.error} />
