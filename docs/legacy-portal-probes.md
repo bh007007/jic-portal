@@ -95,7 +95,7 @@
 | 기초코드 > 코스비용 (`adm/basic/cc_setting`) | `cc_setting_load` | 1(= course_cost_setting_list) |
 | 기초코드 > 기타비용 (`adm/basic/etc_cost`) | `etc_cost_load` | 74(ec_type 22종: BOOK·PROMO·PICKUP·VISA·SSP 등, 4개 통화, 포인트 구분 `ec_point_flag` P·PI) |
 | 유학원관리 > Commission (`adm/agency/comm`) | `acr_load` | 3(acr_level ACADEMY·COUNTRY·AGENCY, acr_type BASE·EXTEND, 주 수 범위, `acr_rate` 0.28 = 28%) |
-| 기초코드 > 환율 (`adm/basic/exchange`) | `exchange_load` | 부르지 않음(주소 이름의 'change' 때문에 안전 규칙이 막음) |
+| 기초코드 > 환율 (`adm/basic/exchange`) | `exchange_load` | 106(11/10, 주소 하나만 허용해 조회). 통화쌍 `er_type` 5종: USDKRW 86·USDJPY 12·PHPKRW 6·USDPHP 1·PHPJPY 1. 적용 시작일 `er_start_date`만 있고 끝은 없다. TTB·TTS는 모두 비어 있다 |
 | 마케팅 > 통계 > Closing Status (`adm/register/closing_v2`) | `closing_v2_list`·`closing_v2_finish_list`·`closing_v2_check_stay` | `_load`가 아니라 부르지 않았다 |
 
 **알아 둘 점**
@@ -103,6 +103,7 @@
 - 기간별 값(`cs_1w`~`cs_8w`, `cs_1w_more`)은 4주가 100인 값이다(11/9: 40·65·85·100·125·150·175·200, 8주 넘으면 1주마다 25).
 - 사용 중인 코스 39개 중 13개는 가격 줄이 없다(업체 그대로).
 - 프로모션 `campus_code`는 'CHALLENGER,PREMIUM'처럼 쉼표로 이어진다.
+- 환율 `er_rate`는 앞 통화 1단위당 뒤 통화다(USDKRW 1508.23 = 1달러당 1,508.23원). 관리자 '가격표 > 환율'은 같은 통화쌍의 다음 시작일 전날을 끝으로 보고, 기준일에 적용되는 것(통화쌍마다 하나)을 지금 적용분으로 보인다. USDKRW만 꾸준히 바뀌고(2026-07-08이 마지막), 나머지 넷은 2024~2025년 값이 그대로다.
 
 ## 연장·변경 추출 (`portal-extract-extend.js`)
 

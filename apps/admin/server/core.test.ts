@@ -134,6 +134,7 @@ const base = (over: Partial<DataInput> = {}): DataInput => ({
   expect('샘플: 변경 이력 세 탭 모두 있음', (() => { const c = db.changes(new URLSearchParams('')); return c.tabCounts.course > 0 && c.tabCounts.dorm > 0 && c.tabCounts.comeback > 0; })());
   const pr = db.prices(new URLSearchParams(''));
   expect('샘플: 가격표 코스·기숙사·기타비용·커미션이 있고 가격 없는 코스 1개(TOEIC)', pr.hasData && pr.tabCounts.course > 0 && pr.tabCounts.dorm > 0 && pr.tabCounts.etc > 0 && pr.tabCounts.comm === 3 && pr.coursesWithoutPrice === 1, { counts: pr.tabCounts, without: pr.coursesWithoutPrice });
+  expect('샘플: 환율은 통화쌍 3개가 지금 적용(기준일 뒤 USDKRW 는 아직 아님), 전체 8줄', pr.tabCounts.exchange === 3 && db.prices(new URLSearchParams('tab=exchange&current=0')).total === 8, pr.tabCounts);
 }
 
 // ── 7. 가격표(/api/prices)
@@ -163,6 +164,15 @@ const base = (over: Partial<DataInput> = {}): DataInput => ({
       { acr_id: '1', acr_level: 'ACADEMY', acr_type: 'BASE', acr_rate: '0.2800', is_now: '1' },
       { acr_id: '2', acr_level: 'ACADEMY', acr_type: 'EXTEND', acr_rate: '0.2000', is_now: '0' },
     ],
+    // 기준일 2026-11-07. USDKRW: 7/8 적용 중, 12/1 은 아직. 같은 날 두 줄이면 번호가 큰 쪽.
+    exchange_rate: [
+      { er_id: '10', er_start_date: '2026-06-15', er_type: 'USDKRW', er_rate: '1513.2000' },
+      { er_id: '12', er_start_date: '2026-12-01', er_type: 'USDKRW', er_rate: '1420.0000' },
+      { er_id: '11', er_start_date: '2026-07-08', er_type: 'USDKRW', er_rate: '1508.2300' },
+      { er_id: '5', er_start_date: '2024-01-23', er_type: 'PHPJPY', er_rate: '2.6300' },
+      { er_id: '6', er_start_date: '2024-05-07', er_type: 'USDJPY', er_rate: '159.2300' },
+      { er_id: '7', er_start_date: '2024-05-07', er_type: 'USDJPY', er_rate: '160.0000' },
+    ],
   };
   const db = createDb(base({ prices }));
   const c = db.prices(new URLSearchParams(''));
@@ -178,6 +188,11 @@ const base = (over: Partial<DataInput> = {}): DataInput => ({
   const m = db.prices(new URLSearchParams('tab=comm&current=0'));
   expect('커미션: 학원 전체가 먼저, 비율은 %(28·20·25)', m.rows.map((r) => `${r.level}-${r.kind}-${r.rate}`).join() === '학원 전체-기본-28,학원 전체-연장-20,에이전시-기본-25', m.rows.map((r) => [r.level, r.kind, r.rate]));
   expect('커미션: is_now=0 은 지금 적용분에서 빠짐', db.prices(new URLSearchParams('tab=comm')).total === 2);
+  const x = db.prices(new URLSearchParams('tab=exchange'));
+  expect('환율: 통화쌍마다 기준일에 적용되는 1줄(USD/KRW 1508.23, USD/JPY 같은 날이면 번호 큰 160, PHP/JPY)', x.total === 3 && x.rows.map((r) => `${r.name}=${r.rate}`).join() === 'USD/KRW=1508.23,USD/JPY=160,PHP/JPY=2.63', x.rows.map((r) => [r.name, r.rate]));
+  const xa = db.prices(new URLSearchParams('tab=exchange&current=0&kind=USDKRW'));
+  expect('환율: 끝 = 다음 시작일 전날, 마지막은 비어 있음, 최근 것부터', xa.rows.map((r) => `${r.start}~${r.end}`).join() === '2026-12-01~,2026-07-08~2026-11-30,2026-06-15~2026-07-07', xa.rows.map((r) => [r.start, r.end]));
+  expect('환율: 통화쌍 목록(종류)', JSON.stringify([...x.facets.kinds].sort()) === '["PHPJPY","USDJPY","USDKRW"]', x.facets.kinds);
   expect('가격표가 없으면 hasData false', createDb(base()).prices(new URLSearchParams('')).hasData === false);
   expect('/api/prices 200', handleApi(db, '/api/prices', new URLSearchParams('tab=etc')).status === 200);
 }

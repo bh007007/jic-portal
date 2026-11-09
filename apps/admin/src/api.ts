@@ -156,8 +156,8 @@ export interface ChangeList extends Paged<ChangeRow> {
   facets: { years: string[]; nations: string[]; campuses: string[] };
 }
 
-export type PriceTab = 'course' | 'dorm' | 'etc' | 'promo' | 'comm';
-/** 가격표 한 줄. 탭마다 쓰는 칸이 다르다(코스: weeks·weekOnly, 기숙사: gender·max, 기타비용: point·order·memo, 프로모션: target·currency·showStart…, 커미션: level·rate·minWeek…). */
+export type PriceTab = 'course' | 'dorm' | 'etc' | 'promo' | 'comm' | 'exchange';
+/** 가격표 한 줄. 탭마다 쓰는 칸이 다르다(코스: weeks·weekOnly, 기숙사: gender·max, 기타비용: point·order·memo, 프로모션: target·currency·showStart…, 커미션: level·rate·minWeek…, 환율: kind(통화쌍)·rate·ttb·tts). */
 export interface PriceRow {
   key: string;
   campus: string;
@@ -190,6 +190,8 @@ export interface PriceRow {
   minWeek?: number;
   maxWeek?: number;
   rate?: number;
+  ttb?: number;
+  tts?: number;
 }
 export interface PriceList {
   refDate: string;

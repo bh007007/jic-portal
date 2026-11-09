@@ -5,6 +5,7 @@
 - 추출 시각: 2026-11-09T02:06:01.923Z
 - 출처: jicportal.com admin (가격표: 예상 금액 화면 코드, course_load, dorm_load, etc_cost_load, acr_load)
 - 제외한 필드: 
+- 환율(`exchange_rate`)은 2026-11-10에 `exchange_load`만 따로 받아 이 사전에 손으로 더했다. 다음 추출부터는 스크립트가 같이 받는다.
 
 | 테이블 | 레코드 | 열 |
 | --- | ---: | ---: |
@@ -16,6 +17,7 @@
 | dorm_code | 27 | 13 |
 | price_etc | 74 | 14 |
 | comm_rule | 3 | 14 |
+| exchange_rate | 106 | 6 |
 
 ## price_course
 
@@ -176,6 +178,19 @@
 | `acr_memo` | 1 |
 | `is_now` | 3 |
 
+## exchange_rate
+
+레코드 106건, 열 6개. 접두어가 업체 원본 테이블을 가리킨다(st 학생, tr 연수, am 에이전트, ag 에이전시, sd 배치 등).
+
+| 열 | 값 있음 |
+| --- | ---: |
+| `er_id` | 106 |
+| `er_start_date` | 106 |
+| `er_type` | 106 |
+| `er_rate` | 106 |
+| `er_ttb` | 0 |
+| `er_tts` | 0 |
+
 ## 화면 구조
 
 | 항목 | 화면 | 조회 주소 | 결과 | 캠퍼스 항목 | 검색 항목 | 화면이 부르는 주소 |
@@ -188,3 +203,4 @@
 | dorm_code |  | adm/basic/dorm_load | - |  |  |  |
 | price_etc |  | adm/basic/etc_cost_load | - |  |  |  |
 | comm_rule |  | adm/agency/acr_load | - |  |  |  |
+| exchange_rate |  | adm/basic/exchange_load | - |  |  |  |
