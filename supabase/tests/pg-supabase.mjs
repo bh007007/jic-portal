@@ -1,6 +1,6 @@
 // 시험용 Supabase 흉내: Auth(메모리, auth.users 와 맞춤) + REST(PGlite 위 실제 마이그레이션, 역할·RLS 그대로). 데이터는 가짜 샘플만.
 // 학생 앱·인트라넷 코드가 쓰는 REST 형식만 SQL 로 옮긴다: GET 필터(col=eq.v, data->>k=eq.v)·select·order·limit·offset,
-// POST(insert), PATCH(update, return=representation), 행 지우기, rpc/함수(값 하나 또는 표). 서비스 키 'service-key', anon 키 'anon-key'.
+// POST(insert, upsert: Prefer resolution=merge-duplicates·on_conflict), PATCH(update, return=representation), 행 지우기, rpc/함수(값 하나 또는 표). 서비스 키 'service-key', anon 키 'anon-key'.
 //
 // 직접 띄우기(화면 시험용): node supabase/tests/pg-supabase.mjs 54321
 // 시험 코드에서: const sb = await startPgSupabase(); … sb.url, sb.sql(), sb.addUser(), sb.close()
@@ -145,7 +145,15 @@ export async function startPgSupabase({ port = 0 } = {}) {
     const cols = Object.keys(Array.isArray(body) ? body[0] ?? {} : body).map(ident);
     if (req.method === 'POST') {
       const fn = Array.isArray(body) ? 'json_populate_recordset' : 'json_populate_record';
-      const ins = `insert into ${table} (${cols.join(', ')}) select ${cols.join(', ')} from ${fn}(null::${table}, $1::json)`;
+      // upsert()는 PostgREST 처럼 on_conflict 열(없으면 기본 키)로 겹치면 고친다(ignore-duplicates 면 그대로 둔다). 에이전시 포털 콘텐츠·링크 설정 저장
+      let conflict = '';
+      const resolution = prefer.match(/resolution=(merge|ignore)-duplicates/);
+      if (resolution) {
+        const target = params.get('on_conflict')?.split(',').map(ident) ?? (await db.query(`select a.attname from pg_index i join pg_attribute a on a.attrelid = i.indrelid and a.attnum = any(i.indkey) where i.indrelid = $1::regclass and i.indisprimary`, [table])).rows.map((r) => ident(r.attname));
+        const set = cols.filter((c) => !target.includes(c));
+        conflict = ` on conflict (${target.join(', ')}) do ` + (resolution[1] === 'ignore' || !set.length ? 'nothing' : `update set ${set.map((c) => `${c} = excluded.${c}`).join(', ')}`);
+      }
+      const ins = `insert into ${table} (${cols.join(', ')}) select ${cols.join(', ')} from ${fn}(null::${table}, $1::json)${conflict}`;
       // insert().select() 처럼 return=representation 이면 넣은 행을 돌려준다(PostgREST 와 같게)
       if (prefer.includes('return=representation')) {
         const rows = (await db.query(`with i as (${ins} returning *) select coalesce(json_agg(i), '[]'::json) as j from i`, [JSON.stringify(body)])).rows[0].j;

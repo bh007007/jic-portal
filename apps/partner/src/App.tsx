@@ -22,13 +22,7 @@ import Resources from './pages/Resources';
 import Notices from './pages/Notices';
 import NoticeDetail from './pages/NoticeDetail';
 import Visit from './pages/Visit';
-import AdminLayout from './pages/admin/AdminLayout';
 import AdminMoved from './pages/admin/AdminMoved';
-import AdminRules from './pages/admin/AdminRules';
-import AdminContent from './pages/admin/AdminContent';
-import AdminResources from './pages/admin/AdminResources';
-import AdminNotices from './pages/admin/AdminNotices';
-import AdminSettings from './pages/admin/AdminSettings';
 
 /** 승인된 파트너 또는 JIC 직원만. 로그인 전이면 로그인으로, 승인 전이면 대기 화면. */
 function Member({ children }: { children: ReactNode }) {
@@ -40,12 +34,13 @@ function Member({ children }: { children: ReactNode }) {
   return <>{children}</>;
 }
 
+/** 관리자 화면은 11/10 모두 관리자 포털로 옮겼다. 예전 주소로 들어온 직원에게 옮긴 곳을 알려 준다 */
 function Staff({ children }: { children: ReactNode }) {
   const { session, staff } = useAuth();
   if (session === undefined) return <Loading />;
   if (!session) return <Navigate to="/login?next=/admin" replace />;
   if (!staff) return <Loading error="JIC 관리자만 볼 수 있습니다." />;
-  return <AdminLayout>{children}</AdminLayout>;
+  return <>{children}</>;
 }
 
 function Root() {
@@ -83,15 +78,7 @@ export default function App() {
         <Route path="/notices/:id" element={<Member><NoticeDetail /></Member>} />
         <Route path="/visit" element={<Member><Visit /></Member>} />
         <Route path="/students" element={<Preparing title="My Students" />} />
-        <Route path="/admin" element={<Staff><AdminMoved /></Staff>} />
-        <Route path="/admin/members" element={<Staff><AdminMoved /></Staff>} />
-        <Route path="/admin/rules" element={<Staff><AdminRules /></Staff>} />
-        <Route path="/admin/content" element={<Staff><AdminContent /></Staff>} />
-        <Route path="/admin/resources" element={<Staff><AdminResources /></Staff>} />
-        <Route path="/admin/notices" element={<Staff><AdminNotices /></Staff>} />
-        <Route path="/admin/visits" element={<Staff><AdminMoved /></Staff>} />
-        <Route path="/admin/stats" element={<Staff><AdminMoved /></Staff>} />
-        <Route path="/admin/settings" element={<Staff><AdminSettings /></Staff>} />
+        <Route path="/admin/*" element={<Staff><AdminMoved /></Staff>} />
         <Route path="*" element={<Preparing title="페이지를 찾을 수 없습니다" />} />
       </Routes>
     </Layout>

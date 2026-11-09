@@ -1,10 +1,10 @@
 import { useState } from 'react';
 import { fmtSize, today, useLoad, type Resource } from '../data';
+import { RESOURCE_BUCKET, RESOURCE_CATEGORIES } from '../shared';
 import { t } from '../i18n';
 import { errText, must, supabase } from '../supabase';
 import { Box, Loading, Msg, PageHead } from '../ui';
 
-export const RESOURCE_CATEGORIES = ['가격표', '코스 브로슈어', '시설·수업 사진·영상', '등록 서류', '학사·생활 규정'];
 const NEW_DAYS = 14;
 
 const daysAgo = (d: string) => (Date.parse(today()) - Date.parse(d)) / 864e5;
@@ -22,7 +22,7 @@ export default function Resources() {
     setErr('');
     if (r.link_url) return void window.open(r.link_url, '_blank', 'noopener');
     if (!r.file_path) return;
-    const { data: signed, error: e } = await supabase.storage.from('partner-resources').createSignedUrl(r.file_path, 300, { download: r.file_name ?? true });
+    const { data: signed, error: e } = await supabase.storage.from(RESOURCE_BUCKET).createSignedUrl(r.file_path, 300, { download: r.file_name ?? true });
     if (e || !signed) return setErr(errText(e));
     window.location.href = signed.signedUrl;
   };
