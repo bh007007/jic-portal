@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState, type FormEvent } from 'react';
 import { Link, Navigate } from 'react-router-dom';
 import { useAuth } from '../auth';
-import { loadResultsOn, loadStudents, loadTestTypes, validScore, type TestType } from '../data';
+import { loadAttendance, loadResultsOn, loadSessions, loadStudents, loadTestTypes, validScore, type TestType } from '../data';
 import { useT } from '../i18n';
 import { manilaToday, supabase } from '../supabase';
 import { Loading, PageHead, Section, useLoad, useSave } from '../ui';
@@ -21,11 +21,14 @@ export default function BatchScores() {
   const [date, setDate] = useState(manilaToday());
   const [section, setSection] = useState('');
   const [campus, setCampus] = useState('');
+  const [sessionId, setSessionId] = useState(''); // 수업으로 고르기(그 수업 학생만)
   const [kw, setKw] = useState('');
   const [values, setValues] = useState<Record<string, string>>({});
   const [note, setNote] = useState('');
   const [saved, setSaved] = useState(0);
   const students = useLoad(() => loadStudents(date), [date]);
+  const sessions = useLoad(() => loadSessions(date), [date]);
+  const roster = useLoad(() => (sessionId ? loadAttendance(sessionId) : Promise.resolve(null)), [sessionId]);
   const existing = useLoad(() => (type ? loadResultsOn(type.code, date) : Promise.resolve([])), [type?.code, date]);
   const { busy, error, setError, run } = useSave();
 
@@ -34,6 +37,7 @@ export default function BatchScores() {
     setValues({});
     setSaved(0);
   }, [type?.code, section, date]);
+  useEffect(() => setSessionId(''), [date]);
   useEffect(() => {
     if (type && section && !type.sections.includes(section)) setSection('');
   }, [type, section]);
@@ -42,11 +46,14 @@ export default function BatchScores() {
   const campuses = useMemo(() => [...new Set(onDate.map((s) => s.campus).filter(Boolean))].sort(), [onDate]);
   const list = useMemo(() => {
     const k = kw.trim().toLowerCase();
+    const inClass = roster.data ? new Set(roster.data.map((r) => r.student_no)) : null;
     return onDate
+      .filter((s) => !inClass || inClass.has(s.student_no))
       .filter((s) => !campus || s.campus === campus)
       .filter((s) => !k || `${s.name} ${s.student_no} ${s.course}`.toLowerCase().includes(k))
       .sort((a, b) => a.name.localeCompare(b.name));
-  }, [onDate, campus, kw]);
+  }, [onDate, campus, kw, roster.data]);
+  const classes = useMemo(() => [...(sessions.data ?? [])].sort((a, b) => Number(b.mine) - Number(a.mine) || a.start_time.localeCompare(b.start_time)), [sessions.data]);
   const had = useMemo(() => {
     const m = new Map<string, number[]>();
     for (const r of existing.data ?? []) {
@@ -122,6 +129,14 @@ export default function BatchScores() {
         </Section>
 
         <Section title={<>{t('studentsOn', { date })} <span className="muted small">{t('people', { n: list.length })}</span></>}>
+          {classes.length > 0 && (
+            <select className="full" style={{ marginBottom: 8 }} value={sessionId} onChange={(e) => setSessionId(e.target.value)} aria-label={t('byClass')}>
+              <option value="">{t('byClass')} · {t('allStudentsOn')}</option>
+              {classes.map((c) => (
+                <option key={c.id} value={c.id}>{c.mine ? '★ ' : ''}{c.start_time.slice(0, 5)} · {[c.room, c.teacher_name, c.subject].filter(Boolean).join(' · ')} ({c.students})</option>
+              ))}
+            </select>
+          )}
           <div className="filters">
             <input type="search" placeholder={t('searchStudent')} value={kw} onChange={(e) => setKw(e.target.value)} aria-label={t('searchStudent')} />
             <select value={campus} onChange={(e) => setCampus(e.target.value)} aria-label={t('campus')}>

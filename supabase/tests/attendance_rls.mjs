@@ -224,6 +224,33 @@ await as(U.student, async () => {
 await as(U.nobody, async () => ok('역할 없음: 합계 0', (await q(`select * from public.lms_attendance_summary('${Y}', '${Y}')`)).length === 0));
 await as(null, () => denied('익명: 합계 거부', `select * from public.lms_attendance_summary('${Y}', '${Y}')`, PERM));
 
+// ── 수업 복사(20261109090000_schedule_copy.sql): 휴일·마감된 날 건너뛰기, 그날 재학생만, 같은 수업 두 번 안 만들기
+await db.exec(mig('20261108230000_holidays.sql'));
+await db.exec(mig('20261109090000_schedule_copy.sql'));
+await db.exec(mig('20261109090000_schedule_copy.sql')); // 두 번째 실행
+const D1 = plus(today, 2), D2 = plus(today, 3), D3 = plus(today, 4), D4 = plus(today, 5);
+await db.exec(`
+  insert into public.legacy_enrollments (id, data) values
+    ('tr1', '{"tr_st_id":"1001","st_name":"KIM A","first_co_ca_code":"PREMIUM","tr_start_date":"${plus(today, -30)}","tr_finish_date":"${plus(today, 30)}","tr_state_name":"인보이스승인"}'),
+    ('tr2', '{"tr_st_id":"1002","st_name":"LEE B","first_co_ca_code":"PREMIUM","tr_start_date":"${plus(today, -30)}","tr_finish_date":"${D1}","tr_state_name":"인보이스승인"}')
+  on conflict (id) do update set data = excluded.data;
+  insert into public.holidays (day, campus, name) values ('${D2}', 'Premium', '가짜 휴일');
+  insert into public.attendance_closings (day, campus, closed_name) values ('${D4}', 'Premium', '시험');
+`);
+const copy = (days) => `select public.lms_copy_sessions('${Y}', array[${days.map((d) => `'${d}'`).join(',')}]::date[], 'Premium') as n`;
+await as(U.teacher2, () => denied('강사: 수업 복사 거부', copy([D1]), /not_allowed/));
+await as(U.scheduler, async () => {
+  ok('스케줄러: 복사 2개(휴일·마감 건너뜀)', Number((await one(copy([D1, D2, D3, D4]))).n) === 2);
+  ok('스케줄러: 다시 복사하면 0(같은 수업 있음)', Number((await one(copy([D1, D3]))).n) === 0);
+  await denied('스케줄러: 32일 넘게 거부', `select public.lms_copy_sessions('${Y}', array(select generate_series('${D1}'::date, '${D1}'::date + 31, '1 day')::date), '') `, /bad_range/);
+});
+const roster = async (d) => (await q(`select a.student_no from public.attendance a join public.class_sessions s on s.id = a.session_id where s.day = '${d}' order by 1`)).map((r) => r.student_no).join(',');
+ok('복사: D1 학생 = 그날 재학생(1001, 1002)', (await roster(D1)) === '1001,1002', await roster(D1));
+ok('복사: D3 학생 = 1001(1002는 연수 끝)', (await roster(D3)) === '1001', await roster(D3));
+ok('복사: 휴일·마감된 날은 수업 없음', (await roster(D2)) === '' && (await roster(D4)) === '');
+const copied = await one(`select s.subject, s.teacher_id, a.result, a.excused from public.class_sessions s join public.attendance a on a.session_id = s.id where s.day = '${D1}' and a.student_no = '1001'`);
+ok('복사: 과목·강사는 옮기고 결과·사유 인정은 비움', copied.subject === 'Grammar' && copied.teacher_id === TA && copied.result === null && copied.excused === false, JSON.stringify(copied));
+
 // ── 퇴직한 강사(강사 목록 active = false)는 자기 수업도 못 고친다
 await db.exec(`update public.staff set active = false where id = '${TA}'`);
 await as(U.teacher, async () => ok('퇴직 강사: 0행', (await affected(mark(S1, '1002', `result = 'AB'`))) === 0));
