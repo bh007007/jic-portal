@@ -165,3 +165,7 @@ label.check input { width: 18px; height: 18px; margin: 0; }
 .notice summary { display: flex; flex-direction: column; gap: 3px; padding: 12px; cursor: pointer; list-style: none; }
 .notice summary::-webkit-details-marker { display: none; }
 .notice-body { margin: 0; padding: 0 12px 12px; white-space: pre-wrap; word-break: break-word; }
+
+/* 출석 확인 */
+.card-btn { width: 100%; border: 0; background: none; text-align: left; font: inherit; cursor: pointer; }
+.att-detail { padding: 0 12px 4px; }

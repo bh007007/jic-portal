@@ -1,6 +1,7 @@
 import { Link, useParams } from 'react-router-dom';
 import { useAuth } from '../auth';
-import { cefrOf, loadAbsences, loadCefr, loadResults, loadStudents, loadTestTypes, type TestResult } from '../data';
+import { cefrOf, loadAbsences, loadCefr, loadResults, loadStudentAttendance, loadStudents, loadTestTypes, type TestResult } from '../data';
+import { AttendanceRows } from './AttendanceSummary';
 import { useT, type Key } from '../i18n';
 import ScoreForm from '../ScoreForm';
 import ScoreChart from '../ScoreChart';
@@ -20,6 +21,9 @@ export default function StudentDetail() {
   const today = manilaToday();
   const shift = (n: number) => new Date(Date.parse(today) + n * 864e5).toISOString().slice(0, 10);
   const absences = useLoad(() => loadAbsences(shift(-23), shift(7)), [today]);
+  // 출석: 최근 4주(수업 × 학생). 결석·지각만 줄로 보이고 합계는 위에
+  const attendance = useLoad(() => loadStudentAttendance(no, shift(-27), today), [no, today]);
+  const att = attendance.data ?? [];
   const del = useSave();
 
   const mine = (students.data ?? []).filter((s) => s.student_no === no).sort((a, b) => b.start_date.localeCompare(a.start_date));
@@ -53,6 +57,23 @@ export default function StudentDetail() {
           <dt>{t('period')}</dt><dd>{fmtDate(s.start_date)} ~ {fmtDate(s.end_date)}</dd>
           <dt>{t('batch')}</dt><dd>{s.batch || '-'}</dd>
         </dl>
+      </Section>
+
+      <Section title={t('attendance4w')} extra={<Link to="/attendance/summary" className="more">{t('seeSummary')}</Link>}>
+        {attendance.loading ? (
+          <p className="muted">{t('loading')}</p>
+        ) : attendance.error ? (
+          <p className="err">{attendance.error}</p>
+        ) : att.length === 0 ? (
+          <p className="muted">{t('noAttendance')}</p>
+        ) : (
+          <>
+            <p className={att.some((r) => r.result === 'AB' && !r.excused && !(r.request_kind && r.request_status === 'approved')) ? 'err' : 'muted'}>
+              {t('sumLine', { at: att.filter((r) => r.result === 'AT').length, ab: att.filter((r) => r.result === 'AB').length, ta: att.filter((r) => r.result === 'TA').length })}
+            </p>
+            <AttendanceRows rows={att.slice(0, 40)} issuesOnly />
+          </>
+        )}
       </Section>
 
       <Section title={t('absencesNear')} extra={<Link to="/absences" className="more">{t('byDate')}</Link>}>

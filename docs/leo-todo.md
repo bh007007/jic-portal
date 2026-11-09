@@ -13,7 +13,9 @@ Claude가 대신할 수 없는 일(키·비밀번호 입력, 계정 만들기, �
 
 ## 지금 할 일
 
-- **샘플 다시 올리기**: `scripts/upload-sample.ps1`(secret 키는 창에만 입력). 연장·변경·청구 합계 샘플이 들어가 배포 관리자 포털의 연장 현황·회계 합계가 채워진다.
+- **Supabase 마이그레이션 적용**: `supabase/migrations/20261109080000_attendance_summary.sql`(출석 확인·무단결석 목록 PR, 읽기 함수 2개만). "적용하기"라고 말씀하시면 Claude가 한다.
+
+- **샘플 새 표 올림(11/9)**: 연장 29·코스 변경 13·기숙사 변경 11·복귀 8·Check Balance 239건(가짜 샘플)을 Claude가 Supabase에 직접 넣었다(secret 키 없이). 인보이스별 합계(inv_summary)는 넣지 않았다(없으면 Check Balance로 계산). 전부 다시 올리려면 `scripts/upload-sample.ps1`(secret 키는 창에만 입력).
 - **강사 시험 계정**: 강사 포털을 보려면 Supabase Auth에 강사 계정이 하나 있어야 한다. 직원 계정(레오님)은 역할 없이도 들어가진다. 강사 계정이 필요하면 `docs/teacher-portal.md` '강사 계정 만들기'를 따른다.
 
 ## 직접 해 주셔야 하는 일
@@ -28,6 +30,7 @@ Claude가 대신할 수 없는 일(키·비밀번호 입력, 계정 만들기, �
 | 5 | 에이전시 가입 허용 | Supabase → Authentication → Sign In / Providers → **Allow new users to sign up** 켜기 | 에이전시 포털 등록 신청 |
 | 6 | 학생 포털 로그인 시험 | https://jic-student.bh007007.workers.dev 에서 샘플 학생번호 + 생년월일 8자리로 로그인한다. 값은 `data-sample/tables/students.ndjson`의 `st_id`·`st_birthday`(가짜 데이터). 1번을 마친 뒤 한다 | 첫 로그인 → 비밀번호 변경 → 홈 |
 | 7 | 업체 포털 출석 추출 | 업체 포털(jicportal.com)에 관리자로 로그인한 브라우저의 Console에 `scripts/extract/portal-extract-attendance.js`를 붙여 넣는다(지난 90일, 5~15분, 읽기 전용, 비밀번호·급여·계좌·메모 열은 받지 않음). 받은 파일은 `data/raw/`로 옮긴다 | 강사 포털 출석을 업체 기록으로 이어 가려면(교사·교실·출석·마감). LMS 구조 조사는 11/9 회계 세션이 마쳤다 |
+| 7-2 | 썸머 매니저 초대 메일 수락 | 썸머 매니저가 Supabase 초대 메일 링크로 비밀번호를 정한다. 직원 등록(관리자)은 11/9 Claude가 했다 | 그 뒤 https://jic-portal-916.pages.dev/ 에서 관리자 포털·인트라넷·강사 포털에 들어간다 |
 | 8 | **학원 공식 계정으로 옮기기**(11/9 결정: 소유 = JIC 어학원·레오님 Owner, 주 개발 = 썸머 매니저, 보조 = 레오님 개인 계정) | `docs/accounts.md` 5장 순서대로: 어학원 공용 이메일로 계정 → GitHub 조직에 저장소 이전 → Supabase 운영 프로젝트 이전 + 개발용 프로젝트 새로 → Cloudflare 새로 연결(Preview = 개발용 DB) → 썸머 매니저 초대 | 서비스가 어학원에 남고, 레오님 개인 계정은 운영 키·실제 데이터에 손대지 않는다 |
 
 ## 결정할 것
