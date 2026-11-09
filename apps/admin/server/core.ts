@@ -469,6 +469,12 @@ export function createDb(input: DataInput) {
     const batch = q.get('batch');
     const kw = (q.get('q') ?? '').trim().toLowerCase();
     const field = q.get('field') ?? 'name';
+    // 연수 번호 여러 개(tr=a,b): 변경 요청 목록이 학생 이름·연수 기간을 붙일 때 쓴다
+    const trs = (q.get('tr') ?? '').split(',').map((s) => s.trim()).filter(Boolean);
+    if (trs.length) {
+      const want = new Set(trs);
+      list = list.filter((r) => want.has(r.trId));
+    }
     if (campus) list = list.filter((r) => r.campus === campus);
     if (nation) list = list.filter((r) => r.nation === nation);
     if (pay) list = list.filter((r) => r.pay === pay);

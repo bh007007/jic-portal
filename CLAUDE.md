@@ -11,7 +11,7 @@
   - 예외(2026-11-10 레오 허용): Closing Status 조회 `adm/register/closing_v2_list`·`closing_v2_finish_list`·`closing_v2_check_stay`(등록 가능 여부 집계, 개인정보 없음). 구조는 `docs/legacy-portal-probes.md` 'Closing Status'.
 
 ## 코드
-- 관리자 앱: `apps/admin` (React 18 + Vite 5 + TypeScript, npm workspaces). 실행 `npm run admin` → http://127.0.0.1:5173, 검증 `npm run admin:build`(core 시험 `server/core.test.ts` 포함: 연장 종료일, 청구 합계, 연장·변경 목록).
+- 관리자 앱: `apps/admin` (React 18 + Vite 5 + TypeScript, npm workspaces). 실행 `npm run admin` → http://127.0.0.1:5173, 검증 `npm run admin:build`(core 시험 `server/core.test.ts` 포함: 연장 종료일, 청구 합계, 연장·변경 목록). Supabase에 쓰는 화면(휴일·사용자·권한·변경 요청 `change_requests`)은 배포 주소에서만 동작한다. 변경 요청은 `docs/change-requests.md`(1단계 직원 입력·처리, 학생·에이전시 신청은 다음 단계).
 - 파트너 포털: `apps/partner`. 실행 `npm run partner` → http://127.0.0.1:5175 (`apps/partner/.env.example`을 `.env.local`로 복사), 검증 `npm run partner:build`. 데이터는 전부 Supabase(테이블 이름은 기획안 '파트너' 그룹). 학생 정보는 저장하지 않는다(P3). 화면 문구는 `src/i18n.ts`. 기준 문서 `docs/partner-portal.md`.
 - `/api/*` 계산은 `apps/admin/server/core.ts` 한 곳(파일·네트워크 의존 없음). 로컬은 `server/localData.ts`(Vite 플러그인, 데이터 폴더 우선순위 `JIC_DATA_DIR` → `data/tables` → `data-sample/tables`), 배포는 저장소 루트 `functions/api/[[path]].ts`(Cloudflare Pages Function, Supabase `legacy_*` 조회)가 같은 core를 쓴다. 화면은 두 환경에서 같은 응답을 받는다.
 - 클라우드: Cloudflare Pages(루트에서 `npm run admin:build`, 출력 `apps/admin/dist`) + Supabase(Auth, `staff_users` + RLS). 설정 순서는 `docs/setup-cloud.md`. `VITE_SUPABASE_URL`이 없으면(로컬) 로그인 없이 동작한다. DB 변경은 `supabase/migrations`에 여러 번 실행해도 되는 SQL로 추가한다.

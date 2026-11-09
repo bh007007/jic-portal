@@ -131,6 +131,10 @@ const base = (over: Partial<DataInput> = {}): DataInput => ({
   const extTr = new Set(ext.rows.map((r) => r.trId));
   const ended = db.listEnrollments(new URLSearchParams('tab=all&all=1')).rows.filter((r) => extTr.has(r.trId));
   expect('샘플: 연장 연수의 종료일 = 마지막 연장 종료일', ended.every((r) => r.end === ext.rows.filter((x) => x.trId === r.trId).reduce((m, x) => (x.extEnd > m ? x.extEnd : m), '')), ended.slice(0, 3));
+  const allTr = db.listEnrollments(new URLSearchParams('tab=all&all=1')).rows.map((r) => r.trId);
+  const pickTr = [allTr[0], allTr[allTr.length - 1], 'tr_none'];
+  const byTr = db.listEnrollments(new URLSearchParams(`tab=all&all=1&tr=${pickTr.join(',')}`)).rows;
+  expect('샘플: 연수 번호로 찾기(tr=a,b, 없는 번호는 빠짐, 변경 요청 목록용)', byTr.length === 2 && byTr.every((r) => pickTr.includes(r.trId)), byTr.map((r) => r.trId));
   expect('샘플: 변경 이력 세 탭 모두 있음', (() => { const c = db.changes(new URLSearchParams('')); return c.tabCounts.course > 0 && c.tabCounts.dorm > 0 && c.tabCounts.comeback > 0; })());
   const pr = db.prices(new URLSearchParams(''));
   expect('샘플: 가격표 코스·기숙사·기타비용·커미션이 있고 가격 없는 코스 1개(TOEIC)', pr.hasData && pr.tabCounts.course > 0 && pr.tabCounts.dorm > 0 && pr.tabCounts.etc > 0 && pr.tabCounts.comm === 3 && pr.coursesWithoutPrice === 1, { counts: pr.tabCounts, without: pr.coursesWithoutPrice });
