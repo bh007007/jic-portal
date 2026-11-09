@@ -51,6 +51,7 @@ export const PRICE_COLUMNS = {
   dorm_code: ['do_id', 'do_ca_id', 'do_name', 'do_name_short', 'do_type', 'do_gender', 'do_max', 'do_include', 'do_order', 'do_use_yn', 'do_start_date', 'do_finish_date', 'ca_code'],
   price_etc: ['ec_id', 'ec_br_id', 'ec_name', 'ec_type', 'ec_won', 'ec_usd', 'ec_yen', 'ec_peso', 'ec_start_date', 'ec_finish_date', 'ec_use_yn', 'ec_point_flag', 'ec_order', 'ec_memo'],
   comm_rule: ['acr_id', 'acr_level', 'acr_type', 'acr_ag_id', 'ag_name', 'acr_country', 'country_name', 'acr_min_week', 'acr_max_week', 'acr_start_date', 'acr_finish_date', 'acr_rate', 'acr_memo', 'is_now'],
+  exchange_rate: ['er_id', 'er_start_date', 'er_type', 'er_rate', 'er_ttb', 'er_tts'],
 } as const;
 export type PriceTable = keyof typeof PRICE_COLUMNS;
 
@@ -1465,7 +1466,7 @@ export function createDb(input: DataInput) {
     return { refDate, hasData: tabCounts.course + tabCounts.dorm + tabCounts.comeback > 0, tab, tabCounts, facets, ...paginate<ChangeRow>(list, q) };
   }
 
-  // ── 기초관리 > 가격표: 업체 '예상 금액' 화면 코드의 가격표, 기초코드 > 기타비용, 유학원관리 > Commission.
+  // ── 기초관리 > 가격표: 업체 '예상 금액' 화면 코드의 가격표, 기초코드 > 기타비용·환율, 유학원관리 > Commission.
   // 값은 업체 그대로 보여 준다. 코스 가격은 cc_week 주 기준(대부분 4주)이고, 기간별 값(cs_*)은 4주가 100인 비율이다(11/9 추출본).
   const priceRows = (k: PriceTable) => input.prices?.[k] ?? [];
   const courseCodeById = new Map(priceRows('course_code').map((c) => [str(c.co_id), c]));
@@ -1479,6 +1480,30 @@ export function createDb(input: DataInput) {
   const COMM_LEVEL: Record<string, string> = { ACADEMY: '학원 전체', COUNTRY: '국가', AGENCY: '에이전시' };
   const COMM_TYPE: Record<string, string> = { BASE: '기본', EXTEND: '연장' };
   const LEVEL_ORDER = ['ACADEMY', 'COUNTRY', 'AGENCY'];
+  // 환율: 업체는 통화쌍(er_type, 예: USDKRW = 1달러당 원)마다 적용 시작일만 둔다. 같은 통화쌍의 다음 시작일 전날을 끝으로 보고,
+  // 기준일에 적용되는 것(시작일이 기준일 이전인 것 가운데 마지막, 통화쌍마다 하나)을 '지금 적용'으로 본다.
+  const PAIR_ORDER = ['USDKRW', 'USDJPY', 'USDPHP', 'PHPKRW', 'PHPJPY'];
+  const pairRank = (p: string) => (PAIR_ORDER.includes(p) ? PAIR_ORDER.indexOf(p) : PAIR_ORDER.length);
+  const exchangeRows = () => {
+    const byPair = new Map<string, Raw[]>();
+    for (const r of priceRows('exchange_rate')) {
+      const pair = str(r.er_type).toUpperCase();
+      if (!byPair.has(pair)) byPair.set(pair, []);
+      byPair.get(pair)!.push(r);
+    }
+    return [...byPair.entries()].flatMap(([pair, rows]) => {
+      const sorted = [...rows].sort((a, b) => day10(a.er_start_date).localeCompare(day10(b.er_start_date)) || num(a.er_id) - num(b.er_id));
+      const current = sorted.reduce((at, r, i) => (day10(r.er_start_date) <= refDate ? i : at), -1);
+      return sorted.map((r, i) => {
+        const start = day10(r.er_start_date);
+        const next = sorted[i + 1] ? day10(sorted[i + 1].er_start_date) : '';
+        return {
+          key: `x${str(r.er_id)}`, campus: '', name: pair.length === 6 ? `${pair.slice(0, 3)}/${pair.slice(3)}` : pair, kind: pair,
+          rate: num(r.er_rate), ttb: num(r.er_ttb), tts: num(r.er_tts), start, end: next ? (next > start ? addDays(next, -1) : start) : '', active: i === current,
+        };
+      });
+    });
+  };
   const priceLists = {
     course: priceRows('price_course').map((r) => {
       const c = courseCodeById.get(str(r.cc_co_id));
@@ -1511,6 +1536,7 @@ export function createDb(input: DataInput) {
       country: str(r.country_name || r.acr_country), minWeek: num(r.acr_min_week), maxWeek: num(r.acr_max_week), rate: Math.round(num(r.acr_rate) * 10000) / 100, memo: str(r.acr_memo),
       start: day10(r.acr_start_date), end: day10(r.acr_finish_date), active: str(r.is_now) ? str(r.is_now) === '1' : activeOn(r.acr_start_date, r.acr_finish_date),
     })),
+    exchange: exchangeRows(),
   };
   type PriceTab = keyof typeof priceLists;
   type AnyPriceRow = (typeof priceLists)[PriceTab][number] & Raw;
@@ -1520,10 +1546,11 @@ export function createDb(input: DataInput) {
     etc: (a, b) => a.kind.localeCompare(b.kind) || a.order - b.order || a.name.localeCompare(b.name),
     promo: (a, b) => b.start.localeCompare(a.start) || a.name.localeCompare(b.name),
     comm: (a, b) => LEVEL_ORDER.indexOf(a.levelCode) - LEVEL_ORDER.indexOf(b.levelCode) || a.kind.localeCompare(b.kind) || a.name.localeCompare(b.name),
+    exchange: (a, b) => pairRank(a.kind) - pairRank(b.kind) || a.kind.localeCompare(b.kind) || b.start.localeCompare(a.start),
   };
 
   function prices(q: URLSearchParams) {
-    const tab: PriceTab = (['dorm', 'etc', 'promo', 'comm'] as const).find((t) => t === q.get('tab')) ?? 'course';
+    const tab: PriceTab = (['dorm', 'etc', 'promo', 'comm', 'exchange'] as const).find((t) => t === q.get('tab')) ?? 'course';
     const current = q.get('current') !== '0';
     const inScope = (l: readonly AnyPriceRow[]) => (current ? l.filter((r) => r.active) : [...l]);
     let list = inScope(priceLists[tab] as AnyPriceRow[]);

@@ -131,7 +131,7 @@ powershell -ExecutionPolicy Bypass -File scripts/split-export.ps1 -Source data/r
 
 ### 가격표 추출
 
-[scripts/extract/portal-extract-prices.js](scripts/extract/portal-extract-prices.js)를 같은 방법으로 실행한다(1분 안쪽, 읽기 전용, 개인정보 없음). 업체 '예상 금액' 화면 코드에 들어 있는 코스·기숙사 가격표(원·달러·엔·페소)·기간별 값·프로모션과, 기초코드 코스·기숙사·기타비용, 유학원 커미션 규칙을 받는다. 관리자 포털 기초관리 '가격표'가 읽는다.
+[scripts/extract/portal-extract-prices.js](scripts/extract/portal-extract-prices.js)를 같은 방법으로 실행한다(1분 안쪽, 읽기 전용, 개인정보 없음). 업체 '예상 금액' 화면 코드에 들어 있는 코스·기숙사 가격표(원·달러·엔·페소)·기간별 값·프로모션과, 기초코드 코스·기숙사·기타비용·환율, 유학원 커미션 규칙을 받는다. 관리자 포털 기초관리 '가격표'가 읽는다.
 
 ```powershell
 powershell -ExecutionPolicy Bypass -File scripts/split-export.ps1 -Source data/raw/jic_portal_prices_YYYY-MM-DD.json.gz -DictPath docs/data-dictionary-prices.md

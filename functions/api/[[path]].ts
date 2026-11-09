@@ -101,7 +101,7 @@ async function loadDb(c: Conf): Promise<Db> {
     readOptional(c, 'legacy_balances'),
     readOptional(c, 'legacy_prices'),
   ]);
-  // 가격표: 표 하나(legacy_prices)에 data._table 로 담긴 8개 표를 다시 나눈다
+  // 가격표: 표 하나(legacy_prices)에 data._table 로 담긴 9개 표(환율 포함)를 다시 나눈다
   const prices: Partial<Record<PriceTable, Raw[]>> = {};
   for (const r of priceRows) {
     const { _table, ...row } = r as Raw & { _table?: string };

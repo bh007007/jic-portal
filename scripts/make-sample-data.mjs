@@ -526,6 +526,13 @@ write('price_setting', priceSetting);
 write('price_etc', priceEtc);
 write('promo', promoRows);
 write('comm_rule', commRule);
+// 환율(기초코드 > 환율): 통화쌍마다 시작일만 둔다. 시험용으로 기준일(11/7) 뒤에 시작하는 USDKRW 1줄.
+const EXCHANGE = [
+  ['USDKRW', '2025-01-06', '1450.0000'], ['USDKRW', '2025-07-01', '1380.0000'], ['USDKRW', '2026-03-02', '1470.0000'], ['USDKRW', '2026-12-01', '1420.0000'],
+  ['USDJPY', '2024-04-01', '152.0000'], ['USDJPY', '2025-01-06', '157.5000'],
+  ['PHPKRW', '2024-01-02', '23.7000'], ['PHPKRW', '2025-05-29', '25.8000'],
+];
+write('exchange_rate', EXCHANGE.map(([type, start, rate], i) => ({ er_id: String(500 + i), er_start_date: start, er_type: type, er_rate: rate, er_ttb: null, er_tts: null })));
 
 write('point_history', pointHistory);
 write('students', students);

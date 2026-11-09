@@ -11,6 +11,7 @@
  *                  예상 금액 화면의 목록은 지금 고를 수 있는 코스(39개)뿐이라, 지난 코스 가격의 이름을 찾으려고 전체 목록을 받는다.
  *   price_etc      기타비용(ec_*: SSP·비자 같은 현지 비용 4개 통화)             ← 기초코드 > 기타비용 etc_cost_load
  *   comm_rule      에이전시 커미션 규칙(acr_*: 학원·국가·에이전시 단위, 비율)    ← 유학원관리 > Commission acr_load
+ *   exchange_rate  환율(er_*: 통화쌍, 적용 시작일, 환율, TTB·TTS)                ← 기초코드 > 환율 exchange_load
  * 예상 금액 화면은 서버를 부르지 않고 화면 코드(GET)에 가격표를 넣어 둔다. 그 목록을 읽고, 나머지는 읽기 전용 *_load 만 부른다.
  *
  * 사용법: 업체 포털 관리자로 로그인한 Edge/Chrome에서 F12 → Console에 붙여 넣고 Enter.
@@ -22,7 +23,7 @@
   const csrf = () => (document.cookie.match(/csrf_cookie_name=([^;]+)/) || [])[1];
   const log = (...a) => console.log('[JIC 가격표]', ...a);
   const today = new Date(Date.now() - new Date().getTimezoneOffset() * 60000).toISOString().slice(0, 10);
-  const ALLOW_POST = /^adm\/(basic\/(etc_cost_load|course_load|dorm_load)|agency\/acr_load)\/\d+$/;
+  const ALLOW_POST = /^adm\/(basic\/(etc_cost_load|course_load|dorm_load|exchange_load)|agency\/acr_load)\/\d+$/;
   // 남길 열. 다국어 이름·설명, 입력자, 첨부 파일 목록은 빼고 화면에 쓰는 것만.
   const KEEP = {
     price_course: ['cc_co_id', 'cc_week', 'cc_won', 'cc_usd', 'cc_yen', 'cc_peso', 'cc_start_date', 'cc_finish_date'],
@@ -33,6 +34,7 @@
     dorm_code: ['do_id', 'do_ca_id', 'do_name', 'do_name_short', 'do_type', 'do_gender', 'do_max', 'do_include', 'do_order', 'do_use_yn', 'do_start_date', 'do_finish_date', 'ca_code'],
     price_etc: ['ec_id', 'ec_br_id', 'ec_name', 'ec_type', 'ec_won', 'ec_usd', 'ec_yen', 'ec_peso', 'ec_start_date', 'ec_finish_date', 'ec_use_yn', 'ec_point_flag', 'ec_order', 'ec_memo'],
     comm_rule: ['acr_id', 'acr_level', 'acr_type', 'acr_ag_id', 'ag_name', 'acr_country', 'country_name', 'acr_min_week', 'acr_max_week', 'acr_start_date', 'acr_finish_date', 'acr_rate', 'acr_memo', 'is_now'],
+    exchange_rate: ['er_id', 'er_start_date', 'er_type', 'er_rate', 'er_ttb', 'er_tts'],
   };
   const pick = (name, rows) => rows.map((r) => Object.fromEntries(KEEP[name].map((k) => [k, k === 'conditions' && r[k] != null && typeof r[k] === 'object' ? JSON.stringify(r[k]) : r[k] ?? null])));
 
@@ -65,7 +67,7 @@
     log(table, rows.length + '건', g.error ? '오류: ' + g.error : '');
   }
 
-  // 2) 코스·기숙사·기타비용·커미션 목록(읽기 전용 *_load). patch: 검색 폼에서 바꿀 값(사용 안 함까지 받기).
+  // 2) 코스·기숙사·기타비용·커미션·환율 목록(읽기 전용 *_load). patch: 검색 폼에서 바꿀 값(사용 안 함까지 받기).
   async function list(url, page, form, patch = {}) {
     const rows = [];
     let total = null, error = null;
@@ -94,6 +96,7 @@
     ['dorm_code', 'adm/basic/dorm_load', 'adm/basic/dorm', 'frm_search', { s_do_use_yn: '', s_do_show_reg_yn: '' }],
     ['price_etc', 'adm/basic/etc_cost_load', 'adm/basic/etc_cost', 'frm_search', {}],
     ['comm_rule', 'adm/agency/acr_load', 'adm/agency/comm', 'frm_search', {}],
+    ['exchange_rate', 'adm/basic/exchange_load', 'adm/basic/exchange', 'frm_search', {}],
   ];
   for (const [table, url, page, form, patch] of LISTS) {
     const r = await list(url, page, form, patch);
@@ -102,7 +105,7 @@
     log(table, r.rows.length + '건', r.total != null ? '(전체 ' + r.total + ')' : '', r.error ? '오류: ' + r.error : '');
   }
 
-  const meta = { source: 'jicportal.com admin (가격표: 예상 금액 화면 코드, course_load, dorm_load, etc_cost_load, acr_load)', extracted_at: new Date().toISOString(), counts: Object.fromEntries(Object.entries(D).map(([k, v]) => [k, v.length])), discovery: info };
+  const meta = { source: 'jicportal.com admin (가격표: 예상 금액 화면 코드, course_load, dorm_load, etc_cost_load, acr_load, exchange_load)', extracted_at: new Date().toISOString(), counts: Object.fromEntries(Object.entries(D).map(([k, v]) => [k, v.length])), discovery: info };
   const json = '{"extra_meta":' + JSON.stringify(meta) + Object.keys(D).map((k) => ',"' + k + '":' + JSON.stringify(D[k])).join('') + '}';
   const blob = await new Response(new Blob([json]).stream().pipeThrough(new CompressionStream('gzip'))).blob();
   const a = document.createElement('a');

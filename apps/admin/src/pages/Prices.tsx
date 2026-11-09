@@ -5,16 +5,20 @@ import { useSearchForm } from '../useSearchForm';
 
 const KEYS = ['campus', 'kind', 'q'] as const;
 
-// 업체 포털: 마케팅 > 통계 > 예상 금액(가격표), 기초코드 > 기타비용, 유학원관리 > Commission.
+// 업체 포털: 마케팅 > 통계 > 예상 금액(가격표), 기초코드 > 기타비용·환율, 유학원관리 > Commission.
 const TABS: [PriceTab, string][] = [
   ['course', '코스'],
   ['dorm', '기숙사'],
   ['etc', '기타비용'],
   ['promo', '프로모션'],
   ['comm', '커미션'],
+  ['exchange', '환율'],
 ];
 
 const money = (n?: number) => (n ? fmt(n) : '');
+const rateText = (n?: number) => (n ? n.toLocaleString('ko-KR', { maximumFractionDigits: 4 }) : '');
+/** 통화쌍 코드(USDKRW) → USD/KRW */
+const pairLabel = (k: string) => (k.length === 6 ? `${k.slice(0, 3)}/${k.slice(3)}` : k);
 const period = (r: { start: string; end: string }) => (r.start || r.end ? `${r.start || '…'} ~ ${r.end?.startsWith('2099') ? '' : r.end || ''}` : '');
 const PRICE_COLS: Column<PriceRow>[] = [
   ['원(KRW)', (r) => r.krw ?? ''],
@@ -28,6 +32,7 @@ const COLUMNS: Record<PriceTab, Column<PriceRow>[]> = {
   etc: [['종류', (r) => r.kind], ['이름', (r) => r.name], ...PRICE_COLS, ['포인트', (r) => r.point ?? ''], ['순서', (r) => r.order ?? ''], ['적용 시작', (r) => r.start], ['적용 끝', (r) => r.end], ['메모', (r) => r.memo ?? '']],
   promo: [['이름', (r) => r.name], ['종류', (r) => r.kind], ['대상', (r) => r.target ?? ''], ['통화', (r) => r.currency ?? ''], ['캠퍼스', (r) => r.campus], ['국가', (r) => r.country ?? ''], ['등록 시작', (r) => r.start], ['등록 끝', (r) => r.end], ['노출 시작', (r) => r.showStart ?? ''], ['노출 끝', (r) => r.showEnd ?? ''], ['중복 허용', (r) => (r.stacking ? 'Y' : 'N')], ['우선순위', (r) => r.priority ?? ''], ['설명', (r) => r.note ?? '']],
   comm: [['단위', (r) => r.level ?? ''], ['구분', (r) => r.kind], ['국가', (r) => r.country ?? ''], ['에이전시', (r) => r.name], ['최소 주', (r) => r.minWeek || ''], ['최대 주', (r) => r.maxWeek || ''], ['비율(%)', (r) => r.rate ?? ''], ['적용 시작', (r) => r.start], ['적용 끝', (r) => r.end], ['메모', (r) => r.memo ?? '']],
+  exchange: [['통화쌍', (r) => r.name], ['환율', (r) => r.rate ?? ''], ['TTB', (r) => r.ttb || ''], ['TTS', (r) => r.tts || ''], ['적용 시작', (r) => r.start], ['적용 끝', (r) => r.end]],
 };
 
 function PriceCells({ r }: { r: PriceRow }) {
@@ -58,7 +63,9 @@ export default function Prices() {
   const ready = data && data.tab === tab;
   const tabLabel = TABS.find(([k]) => k === tab)![1];
   const showCampus = tab === 'course' || tab === 'dorm' || tab === 'promo';
-  const showKind = tab === 'etc' || tab === 'course';
+  const showKind = tab === 'etc' || tab === 'course' || tab === 'exchange';
+  // 업체 환율 표의 TTB·TTS 는 지금 모두 비어 있어 값이 있을 때만 칸을 보인다.
+  const showSpread = ready && tab === 'exchange' && data.rows.some((r) => r.ttb || r.tts);
 
   return (
     <>
@@ -86,10 +93,10 @@ export default function Prices() {
           )}
           {showKind && (
             <label className="field">
-              <span>종류</span>
+              <span>{tab === 'exchange' ? '통화쌍' : '종류'}</span>
               <select value={form.kind} onChange={set('kind')}>
                 <option value="">전체</option>
-                {ready && data.facets.kinds.map((k) => <option key={k}>{k}</option>)}
+                {ready && data.facets.kinds.map((k) => <option key={k} value={k}>{tab === 'exchange' ? pairLabel(k) : k}</option>)}
               </select>
             </label>
           )}
@@ -148,13 +155,14 @@ export default function Prices() {
           )}
 
           <div className="grid-box">
-            <table className="tbl center big" style={{ minWidth: 1100 }}>
+            <table className="tbl center big" style={{ minWidth: tab === 'exchange' ? 640 : 1100 }}>
               <thead>
                 {tab === 'course' && <tr><th>캠퍼스</th><th className="left">코스</th><th>종류</th><th>기준 주 수</th>{PRICE_HEADS}<th>적용 기간</th></tr>}
                 {tab === 'dorm' && <tr><th>캠퍼스</th><th className="left">기숙사</th><th>성별</th><th>정원</th>{PRICE_HEADS}<th>적용 기간</th></tr>}
                 {tab === 'etc' && <tr><th>종류</th><th className="left">이름</th>{PRICE_HEADS}<th>포인트</th><th>적용 기간</th><th className="left">메모</th></tr>}
                 {tab === 'promo' && <tr><th className="left">이름</th><th>종류</th><th>대상</th><th>통화</th><th>캠퍼스</th><th>등록 기간</th><th>노출 기간</th><th>중복</th><th className="left">설명</th></tr>}
                 {tab === 'comm' && <tr><th>단위</th><th>구분</th><th>국가</th><th className="left">에이전시</th><th>주 수</th><th className="num">비율</th><th>적용 기간</th><th className="left">메모</th></tr>}
+                {tab === 'exchange' && <tr><th>통화쌍</th><th className="num">환율</th>{showSpread && <><th className="num">TTB</th><th className="num">TTS</th></>}<th>적용 기간</th></tr>}
               </thead>
               <tbody>
                 {data.rows.length === 0 && (
@@ -215,6 +223,19 @@ export default function Prices() {
                         <td className="num">{r.rate}%</td>
                         <td className="nowrap" style={{ fontSize: 12 }}>{period(r)}</td>
                         <td className="left memo-text" style={{ fontSize: 12 }}>{r.memo || <span className="muted">-</span>}</td>
+                      </>
+                    )}
+                    {tab === 'exchange' && (
+                      <>
+                        <td>{r.name}</td>
+                        <td className="num">{rateText(r.rate)}</td>
+                        {showSpread && (
+                          <>
+                            <td className="num">{rateText(r.ttb) || '-'}</td>
+                            <td className="num">{rateText(r.tts) || '-'}</td>
+                          </>
+                        )}
+                        <td className="nowrap" style={{ fontSize: 12 }}>{period(r)}</td>
                       </>
                     )}
                   </tr>
