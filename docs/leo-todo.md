@@ -15,7 +15,7 @@ Claude가 대신할 수 없는 일(키·비밀번호 입력, 계정 만들기, �
 
 - **Supabase 마이그레이션 적용**: `supabase/migrations/20261109070000_attendance_summary.sql`(출석 확인·무단결석 목록 PR, 읽기 함수 2개만). "적용하기"라고 말씀하시면 Claude가 한다.
 
-- **샘플 다시 올리기**: `scripts/upload-sample.ps1`(secret 키는 창에만 입력). 연장·변경·청구 합계 샘플이 들어가 배포 관리자 포털의 연장 현황·회계 합계가 채워진다.
+- **샘플 새 표 올림(11/9)**: 연장 29·코스 변경 13·기숙사 변경 11·복귀 8·Check Balance 239건(가짜 샘플)을 Claude가 Supabase에 직접 넣었다(secret 키 없이). 인보이스별 합계(inv_summary)는 넣지 않았다(없으면 Check Balance로 계산). 전부 다시 올리려면 `scripts/upload-sample.ps1`(secret 키는 창에만 입력).
 - **강사 시험 계정**: 강사 포털을 보려면 Supabase Auth에 강사 계정이 하나 있어야 한다. 직원 계정(레오님)은 역할 없이도 들어가진다. 강사 계정이 필요하면 `docs/teacher-portal.md` '강사 계정 만들기'를 따른다.
 
 ## 직접 해 주셔야 하는 일
