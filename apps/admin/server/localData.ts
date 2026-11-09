@@ -6,7 +6,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import type { IncomingMessage, ServerResponse } from 'node:http';
 import type { Plugin } from 'vite';
-import { BALANCE_COLUMNS, CHANGE_COLUMNS, createDb, EXTENSION_COLUMNS, handleApi, INVOICE_ITEM_COLUMNS, INVOICE_SUMMARY_COLUMNS, LOCAL_COST_COLUMNS, POINT_HISTORY_COLUMNS, PRICE_COLUMNS, type PriceTable, type Raw } from './core';
+import { BALANCE_COLUMNS, CHANGE_COLUMNS, createDb, type DataInput, EXTENSION_COLUMNS, handleApi, INVOICE_ITEM_COLUMNS, INVOICE_SUMMARY_COLUMNS, LOCAL_COST_COLUMNS, POINT_HISTORY_COLUMNS, PRICE_COLUMNS, type PriceTable, type Raw } from './core';
 
 const pick = (cols: string[]) => (r: Raw) => Object.fromEntries(cols.map((c) => [c, r[c] ?? null]));
 
@@ -20,8 +20,13 @@ function readNdjson(file: string): Raw[] {
 }
 
 export function loadDir(dataDir: string) {
+  return createDb(readDir(dataDir));
+}
+
+/** 데이터 폴더를 core 입력으로 읽는다(정규화 어댑터 시험이 일부 표만 바꿔 넣을 때 쓴다). */
+export function readDir(dataDir: string): DataInput {
   const metaFile = path.join(dataDir, 'meta.json');
-  return createDb({
+  return {
     meta: fs.existsSync(metaFile) ? JSON.parse(fs.readFileSync(metaFile, 'utf8')) : { counts: {}, extracted_at: null },
     enrollments: readNdjson(path.join(dataDir, 'enrollments.ndjson')),
     students: readNdjson(path.join(dataDir, 'students.ndjson')),
@@ -46,7 +51,7 @@ export function loadDir(dataDir: string) {
     balances: readNdjson(path.join(dataDir, 'balance.ndjson')).map(pick(BALANCE_COLUMNS)),
     // 가격표(portal-extract-prices.js): 표 이름이 곧 파일 이름이다.
     prices: Object.fromEntries((Object.keys(PRICE_COLUMNS) as PriceTable[]).map((t) => [t, readNdjson(path.join(dataDir, t + '.ndjson')).map(pick([...PRICE_COLUMNS[t]]))])),
-  });
+  };
 }
 
 export function localDataPlugin(dataDir: string): Plugin {

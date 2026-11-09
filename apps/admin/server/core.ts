@@ -90,6 +90,11 @@ const campusName = (code?: unknown) => {
 
 const yes = (v: unknown) => String(v ?? '').toUpperCase() === 'Y';
 const str = (v: unknown) => (v == null ? '' : String(v).trim());
+/** 업체 날짜·시각 글자. '0000-00-00'(날짜 없음, 실제 추출본에 있음)은 빈 값으로(정규화 표는 null 로 둔다). */
+const when = (v: unknown, len: number) => {
+  const s = str(v).slice(0, len);
+  return s.startsWith('0000-00-00') ? '' : s;
+};
 const num = (v: unknown) => {
   const n = Number(String(v ?? '').replace(/,/g, ''));
   return Number.isFinite(n) ? n : 0;
@@ -732,7 +737,7 @@ export function createDb(input: DataInput) {
         terminal: str(raw.tr_pick_terminal),
         airline: str(raw.tr_pick_flight),
         flight: str(raw.tr_pick_flight_num),
-        arrival: str(raw.tr_pick_flight_arrival).slice(0, 16),
+        arrival: when(raw.tr_pick_flight_arrival, 16),
         remark: str(raw.tr_pick_remark),
       }))
       .sort((a, b) => (a.arrival || '9').localeCompare(b.arrival || '9') || a.name.localeCompare(b.name));
@@ -806,7 +811,7 @@ export function createDb(input: DataInput) {
       pointIn,
       pointOut,
       pointBalance: pointIn - pointOut,
-      dueDate: str(raw.tr_deposit_due_date).slice(0, 10),
+      dueDate: when(raw.tr_deposit_due_date, 10),
       pointClear: yes(raw.tr_point_clear_yn),
       roomClear: yes(raw.tr_room_clear_yn),
     };
