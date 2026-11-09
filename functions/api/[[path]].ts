@@ -61,7 +61,7 @@ async function readAll(c: Conf, table: string): Promise<Raw[]> {
   return out;
 }
 
-// 나중에 더한 표(연장·변경 20261109030000_legacy_extend.sql, 청구 합계 20261109060000_legacy_invoice_summary.sql, 가격표 20261109130000_legacy_prices.sql)는 마이그레이션 전에도 나머지 화면이 동작하도록 표가 없으면 빈 목록으로 본다.
+// 나중에 더한 표(연장·변경 20261109030000_legacy_extend.sql, 청구 합계 20261109060000_legacy_invoice_summary.sql, 가격표 20261109130000_legacy_prices.sql, 인보이스 항목 20261110090000_legacy_invoice_items.sql)는 마이그레이션 전에도 나머지 화면이 동작하도록 표가 없으면 빈 목록으로 본다.
 async function readOptional(c: Conf, table: string): Promise<Raw[]> {
   try {
     return await readAll(c, table);
@@ -69,6 +69,16 @@ async function readOptional(c: Conf, table: string): Promise<Raw[]> {
     if (e instanceof HttpError && /Supabase 404|PGRST205|does not exist/.test(e.message)) return [];
     throw e;
   }
+}
+
+// 여러 표를 한 표에 담은 legacy_prices·legacy_invoice_items 를 data._table 별로 다시 나눈다(_table 은 떼고).
+function byTable(rows: Raw[]): Record<string, Raw[]> {
+  const out: Record<string, Raw[]> = {};
+  for (const r of rows) {
+    const { _table, ...row } = r as Raw & { _table?: string };
+    if (_table) (out[_table] ??= []).push(row);
+  }
+  return out;
 }
 
 // 화면을 옮길 때마다 전체를 다시 읽지 않도록 같은 토큰의 결과를 1분간 보관한다(토큰별이라 사용자끼리 섞이지 않음).
@@ -82,7 +92,7 @@ async function loadDb(c: Conf): Promise<Db> {
   const staff = await rest<boolean>(c, 'rpc/is_staff', { method: 'POST', body: '{}' });
   if (staff !== true) throw new HttpError(403, '직원 계정으로 등록되지 않았습니다. 관리자에게 등록을 요청하세요.');
 
-  const [metaRows, enrollments, students, invoices, dorms, agencies, agents, deposits, pointHistory, rooms, extensions, courseChanges, dormChanges, comebacks, invoiceSummary, balances, priceRows] = await Promise.all([
+  const [metaRows, enrollments, students, invoices, dorms, agencies, agents, deposits, pointHistory, rooms, extensions, courseChanges, dormChanges, comebacks, invoiceSummary, balances, priceRows, itemRows] = await Promise.all([
     rest<{ data: Raw }[]>(c, 'legacy_meta?select=data&id=eq.current'),
     readAll(c, 'legacy_enrollments'),
     readAll(c, 'legacy_students'),
@@ -100,14 +110,12 @@ async function loadDb(c: Conf): Promise<Db> {
     readOptional(c, 'legacy_invoice_summary'),
     readOptional(c, 'legacy_balances'),
     readOptional(c, 'legacy_prices'),
+    readOptional(c, 'legacy_invoice_items'),
   ]);
   // 가격표: 표 하나(legacy_prices)에 data._table 로 담긴 9개 표(환율 포함)를 다시 나눈다
-  const prices: Partial<Record<PriceTable, Raw[]>> = {};
-  for (const r of priceRows) {
-    const { _table, ...row } = r as Raw & { _table?: string };
-    if (!_table) continue;
-    (prices[_table as PriceTable] ??= []).push(row);
-  }
+  const prices = byTable(priceRows) as Partial<Record<PriceTable, Raw[]>>;
+  // 인보이스 항목: 표 하나(legacy_invoice_items)에 학생 가격·에이전시 공제·현지 비용 3개 표
+  const items = byTable(itemRows);
   const db = createDb({
     meta: metaRows[0]?.data ?? { counts: {}, extracted_at: null },
     enrollments,
@@ -126,6 +134,9 @@ async function loadDb(c: Conf): Promise<Db> {
     invoiceSummary,
     balances,
     prices,
+    invoiceItems: items.inv_invoice_cost_st ?? [],
+    invoiceAgencyItems: items.inv_invoice_cost_ag ?? [],
+    localCosts: items.inv_etc ?? [],
   });
 
   for (const [k, v] of cache) if (now - v.at >= TTL) cache.delete(k);
