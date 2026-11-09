@@ -199,7 +199,7 @@ export interface LmsNotice {
 }
 export const loadNotices = () => must<LmsNotice[]>(supabase.rpc('lms_notices'));
 
-// 출석 확인·사유별 합계(20261109070000_attendance_summary.sql). 결석 사유: 사유 인정 / 그날 승인된 결석 신청(종류) / 무단.
+// 출석 확인·사유별 합계(20261109080000_attendance_summary.sql). 결석 사유: 사유 인정 / 그날 승인된 결석 신청(종류) / 무단.
 export interface AttendanceSummaryRow {
   student_no: string;
   campus: string;

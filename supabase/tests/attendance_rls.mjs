@@ -186,9 +186,9 @@ await as(null, async () => {
   await denied('익명: 수업 거부', `select * from public.class_sessions`, PERM);
 });
 
-// ── 출석 확인·사유별 합계(20261109070000_attendance_summary.sql): 사유 인정 / 그날 승인된 결석 신청 / 무단
-await db.exec(mig('20261109070000_attendance_summary.sql'));
-await db.exec(mig('20261109070000_attendance_summary.sql')); // 두 번째 실행
+// ── 출석 확인·사유별 합계(20261109080000_attendance_summary.sql): 사유 인정 / 그날 승인된 결석 신청 / 무단
+await db.exec(mig('20261109080000_attendance_summary.sql'));
+await db.exec(mig('20261109080000_attendance_summary.sql')); // 두 번째 실행
 const Y = plus(today, -1);
 const S4 = '10000000-0000-0000-0000-000000000004';
 await db.exec(`

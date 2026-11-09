@@ -69,7 +69,7 @@ JIC 포털 4개 포털 중 네 번째다(`docs/architecture.md`). 11/8 사용자
 - `attendance_mark_all(수업)`: 미체크 학생을 모두 출석으로. 권한·마감은 표의 RLS·트리거가 그대로 막는다.
 - `can_mark_attendance(수업)`: 출석 입력자 판단. 결정 #5가 바뀌면 이 함수만 고친다.
 - `current_lms_name()`: 기록자 이름. 강사 목록 이름 → 직원 이름 → 로그인 이메일 → 계정 id.
-- `lms_attendance_summary(시작, 끝, 캠퍼스)`·`lms_student_attendance(학생, 시작, 끝)`(`20261109070000_attendance_summary.sql`): 출석 확인 화면용. 결석 사유는 사유 인정 / 그날 승인된 결석 신청 / 무단(인트라넷 무단결석 패널티 후보와 같은 기준). 신청의 교시와 수업 시각은 아직 맞추지 않는다. 사유 글은 주지 않는다. 기간 92일 안.
+- `lms_attendance_summary(시작, 끝, 캠퍼스)`·`lms_student_attendance(학생, 시작, 끝)`(`20261109080000_attendance_summary.sql`): 출석 확인 화면용. 결석 사유는 사유 인정 / 그날 승인된 결석 신청 / 무단(인트라넷 무단결석 패널티 후보와 같은 기준). 신청의 교시와 수업 시각은 아직 맞추지 않는다. 사유 글은 주지 않는다. 기간 92일 안.
 
 권한 시험은 `supabase/tests/attendance_rls.mjs`(71개)이고 CI가 돌린다.
 
