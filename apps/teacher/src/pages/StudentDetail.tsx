@@ -1,6 +1,7 @@
 import { Link, useParams } from 'react-router-dom';
 import { useAuth } from '../auth';
-import { cefrOf, loadAbsences, loadCefr, loadResults, loadStudentAttendance, loadStudents, loadTestTypes, type TestResult } from '../data';
+import { cefrOf, loadAbsences, loadCefr, loadCourseTimeline, loadResults, loadStudentAttendance, loadStudents, loadTestTypes, type TestResult } from '../data';
+import CefrGrowth from '../CefrGrowth';
 import { AttendanceRows } from './AttendanceSummary';
 import { useT, type Key } from '../i18n';
 import ScoreForm from '../ScoreForm';
@@ -17,6 +18,7 @@ export default function StudentDetail() {
   const types = useLoad(() => loadTestTypes(), []);
   const cefr = useLoad(() => loadCefr(), []);
   const results = useLoad(() => loadResults(no), [no]);
+  const timeline = useLoad(() => loadCourseTimeline(no), [no]);
   // 결석 신청: 지난 3주 ~ 다음 1주(lms_absences 는 31일까지). 사유 글은 함수가 주지 않는다(원칙 L4)
   const today = manilaToday();
   const shift = (n: number) => new Date(Date.parse(today) + n * 864e5).toISOString().slice(0, 10);
@@ -108,7 +110,9 @@ export default function StudentDetail() {
         ) : byType.size === 0 ? (
           <p className="muted">{t('noRecords')}</p>
         ) : (
-          [...byType].map(([code, rows]) => {
+          <>
+          <CefrGrowth results={results.data ?? []} maps={cefr.data ?? []} types={types.data ?? []} events={timeline.data ?? []} />
+          {[...byType].map(([code, rows]) => {
             const type = typeOf(code);
             return (
               <div key={code} className="result-block">
@@ -137,7 +141,8 @@ export default function StudentDetail() {
                 </table>
               </div>
             );
-          })
+          })}
+          </>
         )}
         {del.error && <p className="err">{del.error}</p>}
       </Section>
