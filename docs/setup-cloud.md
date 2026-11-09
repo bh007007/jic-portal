@@ -134,6 +134,26 @@ Cloudflare는 이미 Pages 프로젝트에 연결된 저장소로 Pages 프로�
 
 `apps/admin/.env.example`을 `apps/admin/.env.local`로 복사해 URL과 anon 키를 채우고 `npm run admin`. 로그인 화면은 나오지만 데이터는 여전히 이 PC의 파일에서 읽는다. Supabase 조회까지 시험하려면 `npm run admin:build` 후 `npx wrangler pages dev apps/admin/dist`.
 
+## 보안 진단 (Supabase Advisors)
+
+Supabase 대시보드 **Advisors → Security Advisor**(또는 Claude의 Supabase 도구 `get_advisors`)로 본다. 마이그레이션을 더한 뒤와 실제 데이터를 올리기 전에 다시 돌린다.
+
+**2026-11-10 결과(운영 프로젝트)**
+- **표 RLS**: 모든 표에 RLS가 켜져 있다. 정책 없는 표 2개(`counseling_notes`, `keycard_secret`)는 일부러 막아 둔 것이다(상담은 DB 함수로만, 카드키 비밀값은 서비스 키로만).
+- **역할 없는 가입자(에이전시 가입을 열면 생김)**가 읽을 수 있는 것: 캠퍼스 카드(`campuses`)와 휴일 날짜(`holidays`)뿐이다. 나머지 정책은 직원·강사·학생·가드·지점 확인 함수를 거친다(정책 식을 운영 DB에서 확인).
+- **SECURITY DEFINER 함수**(로그인 사용자 실행 가능 60여 개): 함수 안에서 역할을 확인한다. 확인 없는 것은 다음 다섯 개다.
+  - `attendance_closed`(그날 출석 마감 여부), `counseling_actor_name`(내 이름): 알려져도 되는 값이다.
+  - `enrollment_of_student(연수, 학생번호)`: 둘이 맞는지만 참·거짓으로 돌려준다. 학생 신청 정책(WITH CHECK)이 써서 실행 권한을 거둘 수 없다. 실제 데이터를 올리기 전에 함수 안에 '본인·직원·강사만' 확인을 넣을지 학생 앱·인트라넷 담당과 정한다.
+  - 트리거 함수 `handle_partner_signup`·`rls_auto_enable`: 아래에서 실행 권한을 거뒀다.
+- **트리거 함수 실행 권한**: `20261110131500_trigger_fn_privileges.sql`이 트리거 함수 5개의 실행 권한을 PUBLIC·anon·authenticated에서 거둔다. 트리거는 그대로 돈다(시험 `attendance_rls.mjs`·`partner_reco_rls.mjs`).
+- **유출 비밀번호 검사 꺼짐**: Authentication → Sign In / Providers → Email의 'Prevent use of leaked passwords'(HaveIBeenPwned). Pro 요금제 기능이라 학원 계정 이전 때 켠다(`docs/leo-todo.md` 9).
+
+**성능 진단(같은 날, 지금 규모에서는 급하지 않음)**: 실제 데이터를 올리기 전에 각 담당이 자기 표를 정리한다.
+- 인덱스 없는 외래 키 25개(대부분 처리한 사람 `*_by` 열).
+- 정책에서 `auth.uid()`를 행마다 다시 계산하는 곳 20개: `(select auth.uid())`로 바꾼다.
+- 같은 역할·동작에 허용 정책이 여러 개인 표 31곳: 직원용 `*_staff_all`과 본인용 정책을 하나로 합칠 수 있다.
+- 한 번도 안 쓴 인덱스 13개: 샘플 규모라 안 쓰인 것이라 지우지 않는다.
+
 ## 알려진 한계
 
 - `functions/api`는 요청마다 `legacy_*` 전체를 읽어 계산한다(같은 사용자는 1분 캐시). 샘플 규모용이다. 실제 데이터(학생 5천 명대)를 올리기 전에 정규화 테이블과 조건 조회로 바꾼다.

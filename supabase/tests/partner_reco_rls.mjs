@@ -22,6 +22,13 @@ await db.exec(`
   grant usage on schema public, auth, storage to anon, authenticated, service_role;
 `);
 for (const f of ['20261107000000_legacy_tables.sql', '20261107010000_partner_portal.sql']) await db.exec(mig(f));
+// 트리거 함수 실행 권한을 먼저 거둔다(20261110131500_trigger_fn_privileges.sql). 아래 끝의 가입 신청·지점 계정 시험이 트리거가 그대로 도는지 본다
+await db.exec(mig('20261110131500_trigger_fn_privileges.sql'));
+await db.exec(mig('20261110131500_trigger_fn_privileges.sql')); // 두 번째 실행
+for (const fn of ['handle_partner_signup()', 'guard_member_update()']) {
+  const r = (await db.query(`select has_function_privilege('anon', 'public.${fn}', 'execute') a, has_function_privilege('authenticated', 'public.${fn}', 'execute') u`)).rows[0];
+  ok(`트리거 함수 ${fn}: 로그인 전·후 직접 실행 불가`, !r.a && !r.u, JSON.stringify(r));
+}
 // 관리자가 Speaking Course 단계 내용을 이미 넣었다면 덮어쓰지 않는지 보려고 하나 넣어 둔다
 await db.exec(`update public.courses set levels = '[{"name":"STARTER","lessons":"관리자 입력"}]' where id = 'p-speaking'`);
 await db.exec(mig('20261109153000_partner_reco_v21.sql'));
@@ -76,6 +83,22 @@ await as(null, async () => {
     ok('익명: 규칙 못 읽음', /permission denied/.test(e.message));
   }
 });
+
+// 권한을 거둔 뒤에도 트리거는 돈다: 등록 신청(가입 시 신청 행), 지점 계정(연락처만 본인이, 상태는 직원만)
+const NEW = '00000000-0000-0000-0000-0000000000f3';
+await db.exec(`insert into auth.users (id, email, raw_user_meta_data) values ('${NEW}', 'new@example.com', '{"portal":"partner","agency_name":"새유학","branch":"부산"}')`);
+ok('가입하면 등록 신청이 생김(트리거)', (await q(`select agency_name, branch, status from public.agency_requests where user_id = '${NEW}'`))[0]?.agency_name === '새유학');
+await as(U.partner, async () => {
+  ok('에이전시: 연락처 고침', (await db.query(`update public.agency_members set contact_name = '김담당' where user_id = '${U.partner}'`)).affectedRows === 1);
+  try {
+    await db.query(`update public.agency_members set agency_name = '바꾼이름' where user_id = '${U.partner}'`);
+    fails.push('에이전시: 에이전시명 막혀야 함');
+  } catch (e) {
+    ok('에이전시: 에이전시명 못 고침(트리거)', /연락처와 화면 설정만/.test(e.message), e.message);
+  }
+});
+await as(U.staff, async () => ok('직원: 지점 정지', (await db.query(`update public.agency_members set status = 'suspended' where user_id = '${U.partner}'`)).affectedRows === 1));
+ok('고친 시각을 트리거가 넣음', (await q(`select updated_at from public.agency_members where user_id = '${U.partner}'`))[0]?.updated_at != null);
 
 console.log(`파트너 추천 조건표 v2.1 시험: 통과 ${pass}, 실패 ${fails.length}`);
 for (const f of fails) console.log('  실패:', f);

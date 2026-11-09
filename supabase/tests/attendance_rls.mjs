@@ -27,6 +27,13 @@ for (const f of ['20261107000000_legacy_tables.sql', '20261108100000_student_int
 await db.exec(mig('20261109000000_attendance.sql'));
 await db.exec(mig('20261109000000_attendance.sql')); // 두 번째 실행
 ok('마이그레이션 2회 실행', true);
+// 트리거 함수 실행 권한을 먼저 거둔다(20261110131500_trigger_fn_privileges.sql). 아래 출석 입력·마감 시험이 트리거가 그대로 도는지 같이 본다
+await db.exec(mig('20261110131500_trigger_fn_privileges.sql'));
+await db.exec(mig('20261110131500_trigger_fn_privileges.sql')); // 두 번째 실행
+for (const fn of ['attendance_guard()', 'attendance_closing_stamp()']) {
+  const r = (await db.query(`select has_function_privilege('anon', 'public.${fn}', 'execute') a, has_function_privilege('authenticated', 'public.${fn}', 'execute') u`)).rows[0];
+  ok(`트리거 함수 ${fn}: 로그인 전·후 직접 실행 불가`, !r.a && !r.u, JSON.stringify(r));
+}
 
 const U = {
   teacher: '00000000-0000-0000-0000-0000000000a1',
