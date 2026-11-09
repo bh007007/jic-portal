@@ -11,7 +11,7 @@ import { memoryTripStore, signUp } from '../../student/server/trips';
 import { KEYCARD_PERIOD, keycardCode } from '../../student/server/keycard';
 import { AccountAdminError, type AccountAdmin, type LinkedAccount } from '../../student/server/accountAdmin';
 import type { GuardAccount, GuardAdmin } from './guardAccounts';
-import { handleIntranetApi, type AbsenceMark, type AttendanceRow, type Stores } from './core';
+import { handleIntranetApi, scheduledChecks, type AbsenceMark, type AttendanceRow, type Stores } from './core';
 
 function memRepo<T extends { id: string }>() {
   const m = new Map<string, T>();
@@ -716,6 +716,15 @@ expect('반려된 신청은 후보 + 근거에 반려', w3?.basis === '수업 �
 expect('처리 전 신청이 있으면 처리될 때까지 후보 없음', !ar.some((x: any) => x.stId === W4), ar);
 expect('학교 여행 참가 날은 후보 없음(취소한 신청은 상관없음), 기간 밖 결석도 없음', !ar.some((x: any) => x.stId === W5), ar);
 expect('여러 번 불러도 같은 결과', (await absRows()).length === 2 && ar.length === 2);
+// 자동 확인(크론, 11/9 결정 I3): 화면을 열지 않아도 같은 후보를 만든다. 업체 원본(db) 없이, 여러 번 돌려도 같은 결과
+const penSnap = async () => JSON.stringify((await stores.penalties.all()).map((p) => [p.id, p.basis, p.status, p.campus]).sort());
+const snapBefore = await penSnap();
+await stores.penalties.remove(`absence-${W1}-2026-11-24`);
+const sc = await scheduledChecks({ stores, now: ctx.now, newId: ctx.newId });
+const pendingNow = (await stores.penalties.all()).filter((p) => p.status === 'pending');
+expect('자동 확인: 지운 후보를 다시 만들고 화면과 같은 결과', (await penSnap()) === snapBefore, sc);
+expect('자동 확인: 대기 중 자동 후보 수', sc.absence === 2 && sc.curfew === pendingNow.filter((p) => p.source === 'outing').length, sc);
+expect('자동 확인: 여러 번 돌려도 같은 결과', JSON.stringify(await scheduledChecks({ stores, now: ctx.now, newId: ctx.newId })) === JSON.stringify(sc) && (await penSnap()) === snapBefore);
 r = await call('POST', '/requests/absences/decide', { ids: ['abW4'], approve: false, comment: '진단서 없음' });
 expect('신청을 반려하면 후보가 생김', r.status === 200 && (await absRows()).some((x: any) => x.stId === W4 && x.basis.endsWith('결석 신청 반려')), r);
 marks = marks.map((m) => (m.stId === W1 && m.time === '10:00' ? { ...m, excused: true } : m));

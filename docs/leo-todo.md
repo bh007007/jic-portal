@@ -67,6 +67,7 @@ Claude가 대신할 수 없는 일(키·비밀번호 입력, 계정 만들기, �
 | --- | --- | --- | --- |
 | 1 | **학생 포털 서비스 키** | Cloudflare → Workers → `jic-student` → Settings → Variables and Secrets → Add → Secret. 이름 `SUPABASE_SERVICE_ROLE_KEY`, 값은 Supabase → Project Settings → API Keys의 secret 키 | 없으면 학생 포털 `/api`가 `server_config` 오류를 낸다. 11/8 밤 기준으로 아직 빠져 있다 |
 | 2 | **JIC 포털(Pages) 서비스 키** | Cloudflare → Workers & Pages → `jic-portal`(Pages) → Settings → Variables and secrets → Add. Type은 **Secret**, 이름은 위와 같다 | 가드 태블릿(`/intranet/guard`)이 쓴다 |
+| 2-3 | `jic-intranet` 자동 확인(크론) 켜졌는지 보기(크론 PR 머지·적용 뒤) | Cloudflare → Workers → `jic-intranet` → Settings → Trigger Events에 `30 * * * *`가 보이면 된다. 없으면 Settings → Build에서 저장소를 잇는다(`docs/intranet.md` '자동 확인'). 변수 `SUPABASE_URL`·Secret `SUPABASE_SERVICE_ROLE_KEY`가 있어야 한다(11/8 기록상 들어 있음) | 화면을 아무도 열지 않아도 매시 30분에 통금 위반·무단결석 후보가 생긴다 |
 | 3 | 가드 공용 계정 | 인트라넷 → 직원 → 가드 계정(관리자만, 11/9 I4)에서 출입구마다 만든다. 2번 서비스 키가 먼저 있어야 한다 | 경비실 태블릿이 그 계정으로 로그인한다 |
 | 4 | 직원 이름·담당 캠퍼스 | 이름은 관리자 포털 → 기초관리 → 사용자·권한 → 직원 줄 '이름'(11/9 #67). 담당 캠퍼스는 Supabase SQL Editor 또는 Claude에게 알려 준다(`user_roles.campus`와 합칠지 결정 대기) | 처리자 이름(`staff_users.name`)과 상담 기록 열람 범위(`staff_campuses`)에 쓴다 |
 | 4-1 | 오피스 직원 역할 주기(역할 PR 적용 뒤) | 관리자 포털 → 기초관리 → 사용자·권한 → 그 직원 줄에서 '오피스' 주기(캠퍼스 선택) | 권한표대로 오피스는 사용자·권한을 못 열고 강사 포털은 읽기만 한다. 주지 않으면 모든 직원이 관리자다 |
@@ -106,7 +107,7 @@ Claude가 대신할 수 없는 일(키·비밀번호 입력, 계정 만들기, �
 
 지금은 '지금 이렇게 해 둠'대로 동작한다. 정해지면 Claude가 바꾼다. 위에 있을수록 먼저 정하면 좋은 것이다.
 
-**정함(11/9 밤, 레오님)**: I1 하루당 한 건 그대로. I3 `jic-intranet` Worker를 지우지 않고 자동 확인(크론) 전용으로 쓴다(크론은 Claude가 다음 PR에서 붙인다). I4 학생 계정은 오피스도, 가드 계정은 관리자만. I5 매니저의 무단결석 승인은 맡은 캠퍼스만. I4·I5는 마이그레이션 `20261109170000_intranet_decisions.sql`(머지 뒤 적용).
+**정함(11/9 밤, 레오님)**: I1 하루당 한 건 그대로. I3 `jic-intranet` Worker를 지우지 않고 자동 확인(크론) 전용으로 쓴다(매시 30분 자동 확인, `20261109180000_intranet_cron.sql` 적용 뒤 켜짐). I4 학생 계정은 오피스도, 가드 계정은 관리자만. I5 매니저의 무단결석 승인은 맡은 캠퍼스만. I4·I5는 마이그레이션 `20261109170000_intranet_decisions.sql`(머지 뒤 적용).
 
 | # | 결정 | 지금 이렇게 해 둠 | Claude 제안 |
 | --- | --- | --- | --- |

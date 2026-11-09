@@ -1,5 +1,6 @@
 // 무단결석 패널티 후보 마이그레이션(20261109050000_absence_penalties.sql)의 권한 시험.
-// 인트라넷이 강사 포털 출석의 결석을 읽는 함수(intranet_absence_marks)는 직원만 받고, 패널티 출처에 'attendance'가 생긴다. 데이터는 전부 가짜.
+// 인트라넷이 강사 포털 출석의 결석을 읽는 함수(intranet_absence_marks)는 직원만 받고, 패널티 출처에 'attendance'가 생긴다.
+// 자동 확인(크론)용 intranet_absence_marks_service(20261109180000_intranet_cron.sql)는 서비스 키만 받는다. 데이터는 전부 가짜.
 //
 // 실행(저장소 루트, 의존성에 추가하지 않고 임시로 설치):
 //   npm i --no-save @electric-sql/pglite@0.3
@@ -26,6 +27,8 @@ await db.exec(`
 for (const f of ['20261107000000_legacy_tables.sql', '20261108100000_student_intranet.sql', '20261108200000_teacher_portal.sql', '20261109000000_attendance.sql', '20261109010000_roles.sql']) await db.exec(mig(f));
 await db.exec(mig('20261109050000_absence_penalties.sql'));
 await db.exec(mig('20261109050000_absence_penalties.sql')); // 두 번째 실행
+await db.exec(mig('20261109180000_intranet_cron.sql'));
+await db.exec(mig('20261109180000_intranet_cron.sql')); // 두 번째 실행(자동 확인용 서비스 키 전용 함수)
 ok('마이그레이션 2회 실행', true);
 
 const U = {
@@ -99,6 +102,19 @@ await as(U.guard, async () => ok('가드: 빈 결과', (await marks()).length ==
 await as(U.student, async () => ok('학생: 빈 결과', (await marks()).length === 0));
 await as(U.nobody, async () => ok('역할 없는 로그인: 빈 결과', (await marks()).length === 0));
 await as(null, async () => denied('익명은 실행 불가', `select * from intranet_absence_marks('2026-11-01', '2026-11-30')`, /permission denied/));
+
+// ── 자동 확인(jic-intranet Worker 크론)용 intranet_absence_marks_service: 서비스 키(service_role)만, 결과는 직원 함수와 같음
+const svc = `select student_no, day::text, start_time, campus, subject, excused, closed from intranet_absence_marks_service('2026-11-01', '2026-11-30')`;
+const staffRows = await as(U.admin, () => marks());
+await db.exec(`reset role; set role service_role;`);
+const svcRows = (await db.query(svc)).rows;
+const svcLong = (await db.query(`select * from intranet_absence_marks_service('2026-09-01', '2026-11-30')`)).rows;
+await db.exec(`reset role;`);
+ok('서비스 키: 직원 함수와 같은 결과', JSON.stringify(svcRows) === JSON.stringify(staffRows) && svcRows.length === 4, JSON.stringify(svcRows));
+ok('서비스 키: 기간이 62일을 넘으면 빈 결과', svcLong.length === 0);
+await as(U.admin, async () => denied('직원 토큰은 서비스 키 함수 실행 불가', svc, /permission denied/));
+await as(U.teacher, async () => denied('강사는 서비스 키 함수 실행 불가', svc, /permission denied/));
+await as(null, async () => denied('익명은 서비스 키 함수 실행 불가', svc, /permission denied/));
 
 const fn = (await q(`select prosecdef, proconfig from pg_proc where proname = 'intranet_absence_marks'`))[0];
 ok('security definer, search_path 고정', fn?.prosecdef === true && (fn.proconfig ?? []).some((c) => c.startsWith('search_path=')), JSON.stringify(fn));

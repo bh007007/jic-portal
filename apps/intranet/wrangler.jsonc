@@ -1,19 +1,17 @@
-// 인트라넷 배포 설정 (Cloudflare Workers: 정적 파일 + /api 서버 코드). 설명은 docs/intranet.md '배포'.
-// Workers Builds 설정: 루트 디렉터리 /, 빌드 명령 `npm run intranet:build`,
-// 배포 명령 `npx wrangler deploy --config apps/intranet/wrangler.jsonc`,
-// 빌드 변수 VITE_SUPABASE_URL·VITE_SUPABASE_ANON_KEY(화면의 로그인), NODE_VERSION=22.
-// 실행 변수(Settings → Variables and Secrets): SUPABASE_URL, SUPABASE_ANON_KEY. 서비스 키는 쓰지 않는다.
+// jic-intranet Worker: 인트라넷 자동 확인(크론) 전용(11/9 결정 I3). 인트라넷 화면·/api 는 JIC 포털 Pages 의 /intranet(functions/intranet)이다.
+// 매시 30분(필리핀 시각도 30분, UTC+8)에 통금 위반·무단결석 후보를 정리한다(apps/intranet/worker/cron.ts). 설명은 docs/intranet.md '자동 확인'.
+// Workers Builds 설정: 루트 디렉터리 /, 빌드 명령 `npm run intranet:build`, 배포 명령 `npx wrangler deploy --config apps/intranet/wrangler.jsonc`, NODE_VERSION=22.
+// 실행 변수(Settings → Variables and Secrets): SUPABASE_URL, 비밀 변수 SUPABASE_SERVICE_ROLE_KEY(Secret). 키는 이 파일에 넣지 않는다.
 {
   "name": "jic-intranet",
-  "main": "./worker/index.ts",
+  "main": "./worker/cron.ts",
   "compatibility_date": "2026-10-01",
   // 대시보드에서 넣은 실행 변수를 배포할 때 지우지 않는다.
   "keep_vars": true,
-  "assets": {
-    "directory": "./dist",
-    "binding": "ASSETS",
-    "not_found_handling": "single-page-application",
-    // /api 는 정적 파일보다 서버 코드가 먼저 받는다.
-    "run_worker_first": ["/api/*"]
+  "triggers": {
+    "crons": ["30 * * * *"]
+  },
+  "observability": {
+    "enabled": true
   }
 }

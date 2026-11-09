@@ -511,6 +511,25 @@ async function syncPenalties(ctx: IntranetCtx) {
   await syncAbsencePenalties(ctx);
 }
 
+/** 자동 확인에는 업체 원본(학생·연수)이 없다. 후보 규칙이 그것을 읽기 시작하면 시험에서 바로 드러나게 한다. */
+const NO_DB = new Proxy({}, {
+  get: () => {
+    throw new Error('scheduled_checks_no_db');
+  },
+}) as Db;
+
+/**
+ * 자동 확인(11/9 결정 I3, jic-intranet Worker 크론 apps/intranet/worker/cron.ts): 화면을 열지 않아도 통금 위반·무단결석 후보를 정리한다.
+ * 화면을 열 때와 같은 규칙(syncPenalties, 관리자 범위)이고 여러 번 돌려도 같은 결과다. 승인·반려는 하지 않는다.
+ * 후보 규칙은 외출·출석·신청·여행 기록만 보므로 업체 원본은 읽지 않는다. 돌려준 값은 대기 중인 자동 후보 수(기록용).
+ */
+export async function scheduledChecks(c: Pick<IntranetCtx, 'stores' | 'now' | 'newId'>) {
+  const ctx: IntranetCtx = { ...c, db: NO_DB };
+  await syncPenalties(ctx);
+  const pending = (await ctx.stores.penalties.all()).filter((p) => p.status === 'pending');
+  return { curfew: pending.filter((p) => p.source === 'outing').length, absence: pending.filter((p) => p.source === 'attendance').length };
+}
+
 // ── 가드 태블릿
 function outingRow(ctx: IntranetCtx, o: Outing, curfew: string, now: number, overnights: Overnight[]) {
   const s = studentRef(ctx.db, o.stId);

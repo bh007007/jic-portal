@@ -58,7 +58,7 @@
    - 썸머 매니저를 Administrator로 초대한다.
 7. 새 주소에서 첫 화면·관리자·인트라넷·학생·에이전시·강사 포털 로그인을 확인한다. 썸머 매니저 직원 계정은 `HANDOFF.md` 0장대로 만든다.
 8. 문서의 주소·저장소 이름을 바꾼다: `HANDOFF.md` 0장, `docs/architecture.md`, `docs/setup-cloud.md`, `README.md`, `docs/leo-todo.md`.
-9. 개인 계정의 옛 Cloudflare 프로젝트와 `jic-intranet` Worker를 지운다(결정 #1, 되돌릴 수 없다).
+9. 학원 계정에도 `jic-intranet` Worker(인트라넷 자동 확인 크론, `apps/intranet/wrangler.jsonc`, 변수 `SUPABASE_URL`·`SUPABASE_SERVICE_ROLE_KEY`)를 만든 뒤, 개인 계정의 옛 Cloudflare 프로젝트와 `jic-intranet` Worker를 지운다(되돌릴 수 없다).
 
 ## 6. 일하는 방식 (옮긴 뒤)
 

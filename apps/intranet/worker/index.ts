@@ -1,5 +1,6 @@
 /**
- * 인트라넷 배포 서버 (Cloudflare Workers: 정적 파일 + /api). 설정은 apps/intranet/wrangler.jsonc, 설명은 docs/intranet.md '배포'.
+ * 인트라넷 배포 서버(/api). JIC 포털 Pages 의 functions/intranet 이 handleApi 를 부른다. 설명은 docs/intranet.md '배포'.
+ * (jic-intranet Worker 는 11/9 부터 자동 확인 크론 전용이다: worker/cron.ts, apps/intranet/wrangler.jsonc. 아래 default 는 정적 파일 + /api 를 함께 내는 예전 형태)
  * - 로그인: Supabase 계정 토큰(Authorization). 직원(staff_users)은 직원 화면(관리자·오피스, docs/roles.md), 출입구 가드 공용 계정(guard_accounts)은
  *   가드 태블릿 API 만 쓴다. 가드의 캠퍼스는 계정의 출입구로 고정한다(RLS 도 같은 범위만 허용). 강사 포털 매니저(user_roles manager)는
  *   인트라넷 일부(core 의 MANAGER_ROUTES)만 쓴다.
