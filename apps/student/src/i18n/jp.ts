@@ -143,6 +143,7 @@ export const jp: Record<MsgKey, string> = {
   'err.duplicate': '同じ日付・時限の申請がすでにあります。',
   'err.overnight_duplicate': '期間が重なる外泊申請がすでにあります。',
   'err.invalid_range': '帰寮日は出発日より後にしてください。',
+  'err.too_old': '過去の日付は3日前まで申請できます。',
   'err.too_late': '出発日は明日以降を選んでください（前日までに申請）。',
   'err.too_many_nights': '外泊は1回{n}泊まで申請できます。',
   'err.guardian_consent_required': '保護者の同意を得たことを確認してください。',

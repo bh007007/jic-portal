@@ -4,6 +4,10 @@ import { api, ApiError, errorText, notifySummaryChanged, useAccess, useStaffName
 import { Loading, PageTitle } from '../components/ui';
 import { mdhm, ymdhm } from '../format';
 
+/** 대상: 캠퍼스(전체) · 역할(11/10 결정 I14, 비우면 모든 역할) */
+const ROLE_LABEL: Record<string, string> = { admin: '관리자', office: '오피스', manager: '매니저' };
+const audience = (n: { campus: string; roles: string[] }) => [n.campus || '전체', ...n.roles.map((r) => ROLE_LABEL[r] ?? r)].join(' · ');
+
 /** 열면 이 직원의 읽음이 남는다(직원마다 처음 한 번). */
 export default function NoticeDetail() {
   const { id = '' } = useParams();
@@ -45,7 +49,7 @@ export default function NoticeDetail() {
             <tbody>
               <tr>
                 <th>대상</th>
-                <td>{data.campus || '전체'}</td>
+                <td>{audience(data)}</td>
                 <th>게시</th>
                 <td>
                   {data.author} {ymdhm(data.createdAt)}

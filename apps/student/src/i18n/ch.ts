@@ -143,6 +143,7 @@ export const ch: Record<MsgKey, string> = {
   'err.duplicate': '同一日期、同一节次已有申请。',
   'err.overnight_duplicate': '已有日期重叠的外宿申请。',
   'err.invalid_range': '返回日期必须晚于出发日期。',
+  'err.too_old': '过去的日期最多可申请到3天前。',
   'err.too_late': '出发日期须为明天或以后（请提前一天申请）。',
   'err.too_many_nights': '每次最多可申请{n}晚。',
   'err.guardian_consent_required': '请确认已获得监护人同意。',

@@ -33,7 +33,8 @@ export default function AbsenceNew() {
 
 function AbsenceForm({ list, onDone }: { list: AbsenceList; onDone: (id: string) => void }) {
   const { t } = useI18n();
-  const min = list.windows[0].from;
+  // 지난 날짜는 3일 전까지(11/10 결정 I10)
+  const min = list.windows[0].from > list.minDate ? list.windows[0].from : list.minDate;
   const max = list.windows[list.windows.length - 1].to;
   const today = localToday();
   const [date, setDate] = useState(list.windows.some((w) => w.from <= today && today <= w.to) ? today : '');

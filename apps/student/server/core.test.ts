@@ -63,6 +63,11 @@ r = await call('POST', '/absences', { date: '2026-11-20', kind: 'sick', reason: 
 expect('연수 기간 밖 400', err(r) === 'date_out_of_range', r);
 r = await call('POST', '/absences', { date: '2026-02-30', kind: 'sick', reason: 'x' });
 expect('없는 날짜 400', err(r) === 'invalid_date', r);
+r = await call('POST', '/absences', { date: '2026-11-04', kind: 'sick', periods: [], reason: '4일 전' });
+expect('지난 날짜 4일 전은 400 too_old(11/10 결정 I10)', err(r) === 'too_old', r);
+r = await call('POST', '/absences', { date: '2026-11-05', kind: 'sick', periods: [], reason: '3일 전' });
+expect('지난 날짜 3일 전은 됨', r.status === 201, r);
+expect('결석 화면 정보: 날짜는 3일 전부터', ((await call('GET', '/absences')).body as any).minDate === '2026-11-05');
 r = await call('GET', '/absences', null, null);
 expect('로그인 없이 401', r.status === 401, r);
 

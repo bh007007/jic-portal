@@ -143,6 +143,7 @@ export const vi: Record<MsgKey, string> = {
   'err.duplicate': 'Đã có đơn cho cùng ngày và tiết này.',
   'err.overnight_duplicate': 'Đã có đơn ngủ ngoài trùng thời gian.',
   'err.invalid_range': 'Ngày về phải sau ngày đi.',
+  'err.too_old': 'Chỉ có thể đăng ký cho ngày đã qua tối đa 3 ngày trước.',
   'err.too_late': 'Ngày đi phải từ ngày mai trở đi (đăng ký trước ít nhất một ngày).',
   'err.too_many_nights': 'Mỗi lần chỉ có thể đăng ký tối đa {n} đêm.',
   'err.guardian_consent_required': 'Vui lòng xác nhận đã có sự đồng ý của phụ huynh hoặc người giám hộ.',

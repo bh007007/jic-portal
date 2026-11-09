@@ -183,6 +183,7 @@ const MESSAGES: Record<string, string> = {
   no_followup: '후속 조치 기한이 없는 기록입니다.',
   not_found: '찾을 수 없습니다.',
   invalid_campus: '대상 캠퍼스를 다시 고르세요.',
+  invalid_roles: '대상 역할을 다시 고르세요.',
   invalid_until: '게시 종료일을 확인하세요(새 공지는 오늘 이후).',
   invalid_kind: '종류를 고르세요.',
   invalid_note: '내용을 입력하세요(500자까지).',

@@ -314,6 +314,7 @@ function noticeStores(rest: Rest): { notices: Repo<Notice>; noticeReads: Repo<No
           title: String(r.title),
           content: String(r.content),
           campus: String(r.campus ?? ''),
+          roles: ((r.roles as string[] | null) ?? []) as Notice['roles'],
           pinned: r.pinned === true,
           until: (r.until_date as string | null) ?? null,
           author: String(r.author_name),
@@ -322,7 +323,7 @@ function noticeStores(rest: Rest): { notices: Repo<Notice>; noticeReads: Repo<No
           updatedBy: String(r.updated_by ?? ''),
         })),
       async put(x) {
-        const fields = { title: x.title, content: x.content, campus: x.campus, pinned: x.pinned, until_date: x.until, updated_by: x.updatedBy };
+        const fields = { title: x.title, content: x.content, campus: x.campus, roles: x.roles ?? [], pinned: x.pinned, until_date: x.until, updated_by: x.updatedBy };
         await upsert(rest, 'internal_notices', 'id', x.id, { id: x.id, author_name: x.author, ...fields }, { ...fields, updated_at: x.updatedAt });
       },
       remove: readOnly,

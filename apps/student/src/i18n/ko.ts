@@ -141,6 +141,7 @@ export const ko = {
   'err.duplicate': '같은 날짜·교시에 이미 신청한 내역이 있습니다.',
   'err.overnight_duplicate': '기간이 겹치는 외박 신청이 있습니다.',
   'err.invalid_range': '복귀일은 출발일보다 뒤여야 합니다.',
+  'err.too_old': '지난 날짜는 3일 전까지 신청할 수 있습니다.',
   'err.too_late': '출발일은 내일부터 고를 수 있습니다(하루 전까지 신청).',
   'err.too_many_nights': '외박은 한 번에 {n}박까지 신청할 수 있습니다.',
   'err.guardian_consent_required': '보호자 동의를 받았는지 표시해 주세요.',

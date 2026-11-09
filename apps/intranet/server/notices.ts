@@ -1,6 +1,7 @@
 /**
  * 인트라넷 내부 공지(기획안 I10, 업체 게시판 → 내부 공지). 파일·네트워크에 의존하지 않는다.
- * - 대상은 전체 또는 캠퍼스 하나. 상단 고정, 게시 종료일(지나면 '지난 공지').
+ * - 대상은 전체 또는 캠퍼스 하나, 그리고 역할(11/10 결정 I14: 비우면 모든 역할). 상단 고정, 게시 종료일(지나면 '지난 공지').
+ *   역할 대상은 보여 주는 범위다(비밀 범위가 아님): 관리자는 모든 공지를 보고, 오피스·매니저는 대상 역할이 비었거나 자기 역할이 든 공지를 본다.
  * - 직원이 공지를 열면 읽음(누가·언제)을 남긴다. 직원마다 한 번만.
  * - 작성자·읽은 사람은 로컬에서는 브라우저에 입력한 직원 이름, 배포에서는 로그인한 직원이다.
  */
@@ -10,6 +11,7 @@ export interface Notice {
   title: string;
   content: string;
   campus: string; // '' = 전체
+  roles: NoticeRole[]; // 빈 배열 = 모든 역할(11/10 결정 I14)
   pinned: boolean;
   until: string | null; // 게시 종료일(이날까지 게시 중)
   author: string;
@@ -25,6 +27,9 @@ export interface NoticeRead {
   at: string;
 }
 
+export const NOTICE_ROLES = ['admin', 'office', 'manager'] as const;
+export type NoticeRole = (typeof NOTICE_ROLES)[number];
+export const NOTICE_ROLE_LABEL: Record<NoticeRole, string> = { admin: '관리자', office: '오피스', manager: '매니저' };
 export const NOTICE_TITLE_MAX = 120;
 export const NOTICE_CONTENT_MAX = 5000;
 
@@ -40,7 +45,11 @@ export interface NoticeCtx {
   today: () => string;
   /** 대상으로 고를 수 있는 캠퍼스 */
   campuses: () => string[];
+  /** 보는 사람의 역할(관리자는 모든 공지, 없으면 관리자로 본다) */
+  viewerRole?: NoticeRole | null;
 }
+/** 이 사람에게 보이는 공지인지(관리자는 모두) */
+const visible = (ctx: NoticeCtx, n: Notice) => !ctx.viewerRole || ctx.viewerRole === 'admin' || !n.roles?.length || n.roles.includes(ctx.viewerRole);
 
 type Result = { status: number; body: unknown };
 const ok = (body: unknown, status = 200): Result => ({ status, body });
@@ -64,6 +73,7 @@ function row(n: Notice, reads: NoticeRead[], actor: string | null, today: string
     id: n.id,
     title: n.title,
     campus: n.campus,
+    roles: n.roles ?? [],
     pinned: n.pinned,
     until: n.until,
     author: n.author,
@@ -82,7 +92,7 @@ export async function listNotices(ctx: NoticeCtx, q: URLSearchParams) {
   const campus = q.get('campus') || '';
   const kw = (q.get('q') ?? '').trim().toLowerCase();
   const reads = await readMap(ctx);
-  const all = await ctx.stores.notices.all();
+  const all = (await ctx.stores.notices.all()).filter((n) => visible(ctx, n));
   const rows = all
     .filter((n) => (view === 'current' ? isCurrent(n, today) : !isCurrent(n, today)))
     // 캠퍼스를 고르면 그 캠퍼스 공지와 전체 공지
@@ -94,6 +104,7 @@ export async function listNotices(ctx: NoticeCtx, q: URLSearchParams) {
     view,
     counts: { current: all.filter((n) => isCurrent(n, today)).length, past: all.filter((n) => !isCurrent(n, today)).length },
     campuses: ctx.campuses(),
+    roles: NOTICE_ROLES.map((code) => ({ code, label: NOTICE_ROLE_LABEL[code] })),
     rows,
   };
 }
@@ -102,7 +113,7 @@ export type NoticeList = Awaited<ReturnType<typeof listNotices>>;
 /** 상세. 직원 이름이 있으면 읽음을 남긴다(직원마다 처음 한 번). */
 export async function openNotice(ctx: NoticeCtx, id: string): Promise<Result> {
   const n = (await ctx.stores.notices.all()).find((x) => x.id === id);
-  if (!n) return fail(404, 'not_found');
+  if (!n || !visible(ctx, n)) return fail(404, 'not_found');
   if (ctx.actor) {
     const rid = `${id}:${ctx.actor}`;
     if (!(await ctx.stores.noticeReads.all()).some((r) => r.id === rid)) {
@@ -118,6 +129,7 @@ interface NoticeInput {
   title?: unknown;
   content?: unknown;
   campus?: unknown;
+  roles?: unknown;
   pinned?: unknown;
   until?: unknown;
 }
@@ -129,8 +141,12 @@ function validate(ctx: NoticeCtx, input: NoticeInput) {
   if (!title || title.length > NOTICE_TITLE_MAX) return { error: 'invalid_title' } as const;
   if (!content || content.length > NOTICE_CONTENT_MAX) return { error: 'invalid_content' } as const;
   if (campus && !ctx.campuses().includes(campus)) return { error: 'invalid_campus' } as const;
+  const rolesIn = input.roles === undefined || input.roles === null ? [] : input.roles;
+  if (!Array.isArray(rolesIn) || rolesIn.some((r) => !(NOTICE_ROLES as readonly string[]).includes(String(r)))) return { error: 'invalid_roles' } as const;
+  // 순서는 NOTICE_ROLES 대로, 셋 다 고르면 '모든 역할'과 같아 비운다
+  const roles = NOTICE_ROLES.filter((r) => rolesIn.includes(r));
   if (until !== null && !isDate(until)) return { error: 'invalid_until' } as const;
-  return { title, content, campus, pinned: input.pinned === true, until: until as string | null };
+  return { title, content, campus, roles: roles.length === NOTICE_ROLES.length ? [] : roles, pinned: input.pinned === true, until: until as string | null };
 }
 
 export async function createNotice(ctx: NoticeCtx, input: NoticeInput): Promise<Result> {
@@ -148,7 +164,7 @@ export async function createNotice(ctx: NoticeCtx, input: NoticeInput): Promise<
 export async function updateNotice(ctx: NoticeCtx, id: string, input: NoticeInput): Promise<Result> {
   if (!ctx.actor) return fail(400, 'actor_required');
   const n = (await ctx.stores.notices.all()).find((x) => x.id === id);
-  if (!n) return fail(404, 'not_found');
+  if (!n || !visible(ctx, n)) return fail(404, 'not_found');
   const v = validate(ctx, input);
   if ('error' in v) return fail(400, v.error!);
   await ctx.stores.notices.put({ ...n, ...v, updatedAt: ctx.now().toISOString(), updatedBy: ctx.actor });
@@ -159,7 +175,7 @@ export async function updateNotice(ctx: NoticeCtx, id: string, input: NoticeInpu
 export async function noticeSummary(ctx: NoticeCtx) {
   const today = ctx.today();
   const reads = await readMap(ctx);
-  const current = (await ctx.stores.notices.all()).filter((n) => isCurrent(n, today)).sort(order);
+  const current = (await ctx.stores.notices.all()).filter((n) => isCurrent(n, today) && visible(ctx, n)).sort(order);
   const rows = current.map((n) => row(n, reads.get(n.id) ?? [], ctx.actor, today));
   return { unreadNotices: ctx.actor ? rows.filter((r) => !r.readByMe).length : 0, latestNotices: rows.slice(0, 5) };
 }

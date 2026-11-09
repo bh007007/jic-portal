@@ -1253,6 +1253,7 @@ function noticeCtx(ctx: IntranetCtx): NoticeCtx {
     newId: ctx.newId,
     today: () => localDate(ctx.now().getTime()),
     campuses: () => [...new Set([...currentIndex(ctx.db).values()].map((s) => s.campus))].filter((c) => c && c !== '-').sort(),
+    viewerRole: ((a) => (a === 'guard' ? null : a))(accessOf(ctx)), // 공지 대상 역할(11/10 결정 I14)
   };
 }
 
