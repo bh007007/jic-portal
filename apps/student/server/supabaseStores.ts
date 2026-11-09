@@ -21,9 +21,13 @@ export class StoreError extends Error {
 }
 
 export function restClient(conf: SupabaseConf, token: string, fetchFn: typeof fetch = fetch) {
-  const base = `${conf.url.replace(/\/+$/, '')}/rest/v1`;
+  return restWithHeaders(conf.url, { apikey: conf.key, Authorization: `Bearer ${token}` }, fetchFn);
+}
+/** auth: 인증 헤더(로그인한 계정의 토큰, 또는 서비스 키 — 인트라넷 자동 확인) */
+export function restWithHeaders(url: string, auth: Record<string, string>, fetchFn: typeof fetch = fetch) {
+  const base = `${url.replace(/\/+$/, '')}/rest/v1`;
   return async function rest<T = Row[]>(method: string, path: string, body?: unknown, prefer?: string): Promise<T> {
-    const headers: Record<string, string> = { apikey: conf.key, Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' };
+    const headers: Record<string, string> = { ...auth, 'Content-Type': 'application/json' };
     if (prefer) headers.Prefer = prefer;
     const r = await fetchFn(`${base}/${path}`, { method, headers, body: body === undefined ? undefined : JSON.stringify(body) });
     if (!r.ok) {

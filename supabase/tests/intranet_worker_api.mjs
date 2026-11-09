@@ -2,7 +2,8 @@
 // 직원 두 명(Challenger·Premium 담당)으로: 설정·점수표 → 통금 위반 후보·승인 → 결석·외박 처리 → 배차 → 공지·읽음
 // → 상담 기록(같은 캠퍼스만, 내용은 함수로, 접근 기록) → Student File, 그리고 가드 공용 계정(출입구 고정, 가드 API 만,
 // 재학생 명단·승인된 외박은 서비스 키로 사유 없이), 학교 여행(등록·수정·명단 제외·취소, 참가자 외박 허용이 가드 화면에),
-// 역할(오피스: 점수표 쓰기·접근 기록·가드 계정 막힘, 매니저: 허용한 경로만·무단결석 승인은 맡은 캠퍼스만).
+// 역할(오피스: 점수표 쓰기·접근 기록·가드 계정 막힘, 매니저: 허용한 경로만·무단결석 승인은 맡은 캠퍼스만),
+// 끝으로 자동 확인(jic-intranet Worker 크론: 서비스 키로 화면과 같은 후보, 여러 번 돌려도 같음).
 // 학생 쓰기는 학생 역할로 SQL 을 실행한다.
 //
 // 실행(저장소 루트, 의존성에 추가하지 않고 임시로 설치):
@@ -538,6 +539,55 @@ x = await api('GET', `/api/students/${attSt}`, tC);
 ok('직원: Student File 수업 출석(결석 무단 1·지각 5분)', x.status === 200 && x.body.attendance?.counts.absent === 1 && x.body.attendance.counts.unexcused === 1 && x.body.attendance.counts.late === 1 && x.body.attendance.counts.lateMin === 5 && x.body.attendance.rows.length === 2, x.body.attendance);
 x = await api('GET', `/api/students/${attSt}`, tM);
 ok('매니저: Student File 수업 출석도 보임', x.status === 200 && x.body.attendance?.counts.sessions === 2, x.body.attendance);
+
+// ── 자동 확인(jic-intranet Worker 크론, apps/intranet/worker/cron.ts, 11/9 결정 I3): 서비스 키로 화면과 같은 후보를 만든다
+const cronOut = `${REPO}node_modules/.cache/intranet-cron.mjs`;
+await build({ entryPoints: [`${REPO}apps/intranet/worker/cron.ts`], bundle: true, platform: 'node', format: 'esm', outfile: cronOut, logLevel: 'warning' });
+const { runChecks, default: cronWorker } = await import(pathToFileURL(cronOut).href);
+const cronEnv = { SUPABASE_URL: sb.url, SUPABASE_SERVICE_ROLE_KEY: 'service-key' };
+const pendingAuto = async () =>
+  (await sb.sql(`select id, basis, campus from public.penalties where status = 'pending' and source in ('outing', 'attendance') order by id`)).map((r) => `${r.id}|${r.basis}|${r.campus}`).join('\n');
+// 직원 화면이 만든 무단결석 후보(대기)가 있는 상태에서 돌린다. 서비스 키에 빈 결과를 주는 함수를 쓰면 이 후보를 지운다
+const sScreen = others[7] ?? others[1];
+const dScreen = plus(manila, -4);
+const sessScreen = (await sb.sql(`insert into public.class_sessions (day, start_time, campus, subject) values ($1, '13:00', 'Challenger', 'Speaking') returning id::text`, [dScreen]))[0].id;
+await sb.sql(`insert into public.attendance (session_id, student_no, result) values ($1, $2, 'AB')`, [sessScreen, sScreen]);
+await sb.sql(`insert into public.attendance_closings (day, campus) values ($1, 'Challenger') on conflict do nothing`, [dScreen]);
+await api('GET', '/api/penalties?tab=pending', tC);
+const screenSnap = await pendingAuto();
+let cr = await runChecks(cronEnv);
+ok('자동 확인: 화면이 만든 대기 후보를 지우거나 바꾸지 않음(서비스 키 출석 함수)', screenSnap.includes(`absence-${sScreen}-${dScreen}|`) && (await pendingAuto()) === screenSnap, [cr, screenSnap.split('\n').length]);
+// 화면을 열지 않은 새 통금 위반(새벽 2시 귀가)과 마감된 날의 결석
+const sCron = others[6] ?? others[0];
+const dCron = plus(manila, -3);
+const outCron = (await sb.sql(
+  `insert into public.outings (student_no, enrollment_id, campus, out_at, out_by, in_at, in_by) values ($1, $2, 'Challenger', ($3 || ' 20:00+08')::timestamptz, '근무자1', ($4 || ' 02:00+08')::timestamptz, '근무자2') returning id::text`,
+  [sCron, await trOf(sCron), dCron, plus(dCron, 1)],
+))[0].id;
+const sessCron = (await sb.sql(`insert into public.class_sessions (day, start_time, campus, subject) values ($1, '10:00', 'Challenger', 'Grammar') returning id::text`, [dCron]))[0].id;
+await sb.sql(`insert into public.attendance (session_id, student_no, result) values ($1, $2, 'AB')`, [sessCron, sCron]);
+await sb.sql(`insert into public.attendance_closings (day, campus) values ($1, 'Challenger') on conflict do nothing`, [dCron]);
+cr = await runChecks(cronEnv);
+const cronRows = await sb.sql(`select id, kind, source, status, decided_by from public.penalties where id in ($1, $2)`, [`curfew-${outCron}`, `absence-${sCron}-${dCron}`]);
+ok('자동 확인: 화면을 열지 않아도 통금 위반·무단결석 후보가 생김(대기, 처리자 없음)', cronRows.length === 2 && cronRows.every((r) => r.status === 'pending' && r.decided_by === null), cronRows);
+const counts = await sb.sql(`select source, count(*)::int n from public.penalties where status = 'pending' group by source`);
+const nOf = (src) => counts.find((c) => c.source === src)?.n ?? 0;
+ok('자동 확인: 돌려준 수 = 대기 중 자동 후보 수', cr.curfew === nOf('outing') && cr.absence === nOf('attendance'), [cr, counts]);
+const cronSnap = await pendingAuto();
+ok('자동 확인: 여러 번 돌려도 같은 결과', JSON.stringify(await runChecks(cronEnv)) === JSON.stringify(cr) && (await pendingAuto()) === cronSnap);
+await api('GET', '/api/penalties?tab=pending', tC);
+ok('자동 확인 뒤 직원 화면을 열어도 같은 후보', (await pendingAuto()) === cronSnap);
+let cronErr = '';
+await runChecks({ SUPABASE_URL: sb.url }).catch((e) => (cronErr = e.message));
+ok('자동 확인: 서비스 키가 없으면 오류(아무것도 바꾸지 않음)', cronErr.startsWith('server_config') && (await pendingAuto()) === cronSnap, cronErr);
+const svcFn = await fetch(`${sb.url}/rest/v1/rpc/intranet_absence_marks_service`, {
+  method: 'POST',
+  headers: { apikey: 'anon-key', Authorization: `Bearer ${tC}`, 'Content-Type': 'application/json' },
+  body: JSON.stringify({ p_from: plus(manila, -30), p_to: manila }),
+});
+ok('서비스 키 전용 출석 함수: 직원 토큰은 403', svcFn.status === 403, svcFn.status);
+const cronPage = await cronWorker.fetch(new Request('https://jic-intranet.example/api/meta'));
+ok('jic-intranet Worker 주소는 화면·API 없이 안내만(404)', cronPage.status === 404 && (await cronPage.text()).includes('/intranet'));
 
 await sb.close();
 console.log(fails ? `${fails}건 실패` : '모두 통과');

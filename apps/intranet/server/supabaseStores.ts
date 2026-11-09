@@ -9,7 +9,7 @@ import type { Departure, DepartureStore, Ride, RideStore } from '../../student/s
 import { isOpen, type LifeRequestStore } from '../../student/server/lifeRequests';
 import type { Absence, Overnight, RequestStore } from '../../student/server/requests';
 import type { SupabaseConf } from '../../student/server/supabaseAuth';
-import { hm, iso, restClient, StoreError, toAbsence, toDeparture, toLife, toOvernight, toRide, toSignup, toTrip, tripReads, type Rest, type Row } from '../../student/server/supabaseStores';
+import { hm, iso, restClient, restWithHeaders, StoreError, toAbsence, toDeparture, toLife, toOvernight, toRide, toSignup, toTrip, tripReads, type Rest, type Row } from '../../student/server/supabaseStores';
 import type { TripStore } from '../../student/server/trips';
 import type { AuditLog, CounselingNote, CounselingRemote } from './counseling';
 import type { AttendanceRow, AttendanceSource, DocRepo, Outing, Penalty, PenaltyRules, Repo, Settings, Stores } from './core';
@@ -70,7 +70,7 @@ function departureStore(rest: Rest): DepartureStore {
     put: readOnly,
   };
 }
-function rideStore(rest: Rest, names: Names, userId: string): RideStore {
+function rideStore(rest: Rest, names: Names, userId: string | null): RideStore {
   const withName = async (r: Row): Promise<Ride> => ({ ...toRide(r), decidedBy: (await names(r.decided_by)) ?? '' });
   return {
     listAll: async () => Promise.all((await rest('GET', 'airport_rides?select=*')).map(withName)),
@@ -127,10 +127,11 @@ function outingStore(rest: Rest): Repo<Outing> {
 }
 
 // ── 강사 포털 출석의 결석(무단결석 후보): 직원만 부르는 DB 함수(20261109050000_absence_penalties.sql), 읽기만
-function attendanceSource(rest: Rest): AttendanceSource {
+/** rpc: 직원·매니저는 intranet_absence_marks, 자동 확인(서비스 키)은 intranet_absence_marks_service(20261109180000_intranet_cron.sql) */
+function attendanceSource(rest: Rest, rpc = 'intranet_absence_marks'): AttendanceSource {
   return {
     async absences(from, to) {
-      const rows = await rest('POST', 'rpc/intranet_absence_marks', { p_from: from, p_to: to });
+      const rows = await rest('POST', `rpc/${rpc}`, { p_from: from, p_to: to });
       return rows.map((r) => ({
         stId: String(r.student_no),
         day: String(r.day),
@@ -160,7 +161,7 @@ function attendanceSource(rest: Rest): AttendanceSource {
 }
 
 // ── 패널티: 직원이 통금·무단결석 후보를 정리하고 승인·반려한다
-function penaltyStore(rest: Rest, names: Names, userId: string): Repo<Penalty> {
+function penaltyStore(rest: Rest, names: Names, userId: string | null): Repo<Penalty> {
   const toPenalty = async (r: Row): Promise<Penalty> => ({
     id: String(r.id),
     stId: String(r.student_no),
@@ -196,7 +197,7 @@ function penaltyStore(rest: Rest, names: Names, userId: string): Repo<Penalty> {
 }
 
 // ── 설정(통금·근무자)과 점수표
-function settingsStore(rest: Rest, userId: string): DocRepo<Settings> {
+function settingsStore(rest: Rest, userId: string | null): DocRepo<Settings> {
   return {
     async get() {
       const r = (await rest('GET', 'intranet_settings?select=curfew,guards&id=eq.1'))[0];
@@ -424,7 +425,20 @@ export { toTrip };
 
 /** 로그인한 직원(userId = 토큰의 사용자 id)의 토큰으로 core 의 Stores 를 만든다. 가드도 같은 저장소를 쓰고 RLS 가 출입구 범위를 막는다. */
 export function supabaseStores(conf: SupabaseConf, token: string, userId: string, fetchFn: typeof fetch = fetch): Stores {
-  const rest = restClient(conf, token, fetchFn);
+  return storesFrom(restClient(conf, token, fetchFn), userId);
+}
+
+/**
+ * 자동 확인(jic-intranet Worker 크론, 11/9 결정 I3): 서비스 키로 core 의 Stores 를 만든다. 로그인한 사람이 없어 처리자는 비운다
+ * (자동 확인은 후보만 정리하고 승인·반려·설정 저장은 하지 않는다). 외박은 승인된 것만 사유 없이, 출석은 서비스 키 전용 함수로 읽는다
+ * (intranet_absence_marks 는 직원·매니저만 받아 서비스 키에는 빈 결과 → 대기 후보를 지우게 된다).
+ */
+export function serviceStores(url: string, serviceKey: string, fetchFn: typeof fetch = fetch): Stores {
+  const rest = restWithHeaders(url, serviceHeaders(serviceKey), fetchFn);
+  return { ...storesFrom(rest, null), overnights: approvedOvernights(url, serviceKey, fetchFn), attendance: attendanceSource(rest, 'intranet_absence_marks_service') };
+}
+
+function storesFrom(rest: Rest, userId: string | null): Stores {
   const names = staffNames(rest);
   return {
     outings: outingStore(rest),
