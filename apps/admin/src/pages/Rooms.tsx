@@ -89,11 +89,11 @@ export default function Rooms() {
               <span className="label">침대</span>
               <span className="value">{fmt(data.totals.beds)} <small>개</small></span>
             </div>
-            <div style={{ gridColumn: 'span 2' }}>
+            <div className="wide">
               <span className="label">타입별 방 / 침대</span>
-              <span className="sub" style={{ fontSize: 13, color: 'var(--ink)', lineHeight: 1.8 }}>
+              <span className="sub" style={{ fontSize: 13, color: 'var(--ink)', lineHeight: 1.8, display: 'flex', flexWrap: 'wrap', columnGap: 12 }}>
                 {data.byType.map((t) => (
-                  <span key={t.type} style={{ marginRight: 12, whiteSpace: 'nowrap' }}>{t.type} {t.rooms}/{t.beds}</span>
+                  <span key={t.type} style={{ whiteSpace: 'nowrap' }}>{t.type} {t.rooms}/{t.beds}</span>
                 ))}
               </span>
             </div>

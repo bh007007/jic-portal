@@ -57,6 +57,18 @@ button, input, select { font: inherit; }
 .nav-item { padding: 7px 20px 7px 30px; color: var(--ink-2); }
 .nav-top.active, .nav-item.active { background: var(--primary-soft); color: var(--primary); font-weight: 700; }
 .content { flex: 999 1 560px; min-width: 0; padding: 18px 24px 40px; display: flex; flex-direction: column; gap: 14px; }
+.topbar .menu-toggle { display: none; }
+/* 휴대폰 폭: 메뉴를 접고(상단 '메뉴' 단추), 여백을 줄인다. 표는 .grid-box 안에서 가로로 밀어 본다 */
+@media (max-width: 767px) {
+  .topbar { padding: 8px 12px; gap: 8px 10px; }
+  .topbar-right { gap: 6px 8px; }
+  .topbar-date { display: none; }
+  .topbar .menu-toggle { display: inline-flex; }
+  .sidenav { display: none; flex-basis: 100%; border-right: 0; border-bottom: 1px solid var(--line); }
+  .sidenav.open { display: block; }
+  .content { padding: 14px 12px 32px; }
+  .summary > .wide { grid-column: auto; }
+}
 
 .page-title { display: flex; flex-wrap: wrap; align-items: baseline; justify-content: space-between; gap: 8px; padding-bottom: 10px; border-bottom: 1px solid var(--line); }
 .page-title h1 { margin: 0; font-size: 18px; font-weight: 700; }
@@ -83,6 +95,7 @@ button, input, select { font: inherit; }
 .summary .value { font-size: 26px; font-weight: 700; }
 .summary .value small { font-size: 13px; font-weight: 400; color: var(--ink-2); }
 .summary .sub { font-size: 12px; color: var(--ink-3); }
+.summary > .wide { grid-column: span 2; }
 
 /* 표 */
 .tbl { width: 100%; border-collapse: collapse; }

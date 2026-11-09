@@ -1,5 +1,5 @@
 import type { Member } from '../auth';
-import { courseLabel, type Course, type CourseContent, type RuleSet } from '../data';
+import { courseLabel, today, type Course, type CourseContent, type RuleSet } from '../data';
 
 interface Props {
   set: RuleSet;
@@ -23,7 +23,7 @@ const firstLine = (s?: string | null) => (s ?? '').split('\n')[0];
 
 // 2.6 학습계획서: A4 1~2장. 'PDF로 저장'은 브라우저 인쇄 창에서 'PDF로 저장'을 고른다. 학생 정보 입력란은 없다.
 export default function StudyPlan({ set, answerText, wished, course, campusName, alt, level, weeks, content, quote, member, onBack, onDownload }: Props) {
-  const today = new Date().toISOString().slice(0, 10);
+  const date = today(); // 보는 사람 기기의 오늘(학습계획서에 찍히는 날짜)
   const courseUrl = `${location.origin}/courses/${course.id}`;
   const print = () => {
     onDownload();
@@ -53,7 +53,7 @@ export default function StudyPlan({ set, answerText, wished, course, campusName,
       <article className="plan" aria-label="학습계획서 미리보기">
         <div className="plan-head">
           <h1>학습계획서</h1>
-          <span><strong style={{ color: 'var(--brand)', fontStyle: 'italic', fontWeight: 900 }}>JIC</strong> · {today}</span>
+          <span><strong style={{ color: 'var(--brand)', fontStyle: 'italic', fontWeight: 900 }}>JIC</strong> · {date}</span>
         </div>
 
         <h2>학생 상담 결과</h2>

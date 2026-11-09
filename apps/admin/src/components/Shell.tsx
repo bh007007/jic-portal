@@ -1,5 +1,5 @@
-import type { ReactNode } from 'react';
-import { Link, NavLink } from 'react-router-dom';
+import { useEffect, useState, type ReactNode } from 'react';
+import { Link, NavLink, useLocation } from 'react-router-dom';
 import { useApi } from '../api';
 import { supabase, useIsAdmin } from '../supabase';
 import { PORTALS } from '../portals';
@@ -41,6 +41,10 @@ export default function Shell({ children, user }: { children: ReactNode; user?: 
   const { data: meta } = useApi<{ source: 'sample' | 'extract' }>('/api/meta');
   const dataLabel = meta?.source === 'sample' ? '샘플 데이터' : supabase ? '운영 데이터' : '로컬 데이터';
   const isAdmin = useIsAdmin();
+  // 휴대폰 폭(767px 이하)에서는 메뉴를 '메뉴' 단추 뒤로 접는다. 다른 화면으로 가면 닫는다
+  const [menuOpen, setMenuOpen] = useState(false);
+  const loc = useLocation();
+  useEffect(() => setMenuOpen(false), [loc.pathname, loc.search]);
   return (
     <div className="app">
       <header className="topbar">
@@ -48,8 +52,11 @@ export default function Shell({ children, user }: { children: ReactNode; user?: 
           <span className="brand-mark">JIC</span>
           <span className="brand-name">통합관리</span>
         </Link>
+        <button type="button" className="btn btn-xs menu-toggle" aria-expanded={menuOpen} aria-controls="sidenav" onClick={() => setMenuOpen(!menuOpen)}>
+          {menuOpen ? '메뉴 닫기' : '메뉴'}
+        </button>
         <div className="topbar-right">
-          <span>{todayLabel}</span>
+          <span className="topbar-date">{todayLabel}</span>
           <span>
             <strong>{user ?? '레오'}</strong>님
           </span>
@@ -71,7 +78,7 @@ export default function Shell({ children, user }: { children: ReactNode; user?: 
         </div>
       </header>
       <div className="layout">
-        <nav className="sidenav" aria-label="메뉴">
+        <nav id="sidenav" className={'sidenav' + (menuOpen ? ' open' : '')} aria-label="메뉴">
           {MENU.map((sec, i) => (
             <div key={i}>
               {sec.group && <span className="nav-group">{sec.group}</span>}
