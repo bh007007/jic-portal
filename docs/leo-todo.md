@@ -1,6 +1,6 @@
 # 레오님 할 일과 결정할 것
 
-Claude가 대신할 수 없는 일(키·비밀번호 입력, 계정 만들기, 결정)을 모아 둔다. 끝난 항목은 지운다. 마지막 갱신 2026-11-09 오후.
+Claude가 대신할 수 없는 일(키·비밀번호 입력, 계정 만들기, 결정)을 모아 둔다. 끝난 항목은 지운다. 마지막 갱신 2026-11-09 저녁.
 
 ## 머지 끝 (11/9)
 
@@ -11,9 +11,13 @@ Claude가 대신할 수 없는 일(키·비밀번호 입력, 계정 만들기, �
 - **Supabase 마이그레이션 11개 적용**: 강사 포털, 사용자·권한 계정 목록, 강사용 결석 신청, 휴일, 출석, 권한표 1단계, 계정 목록은 관리자만, 연장·변경 표, 강사 포털 학생 목록 종료일, 무단결석 패널티 후보(인트라넷 #49), 청구 합계 표. 표 17개 모두 RLS 켜짐, 함수 11개 확인.
 - **Cloudflare Pages 빌드 명령**: `npm run portal:build && npm run teacher:portal --if-present`로 바꿨다. 다음 배포부터 강사 포털 `/teacher/`가 열린다.
 
-## 지금 할 일
+## 머지·적용 끝 (11/9 저녁, 레오님 "Do all of it")
 
-- **Supabase 마이그레이션 적용**: `supabase/migrations/20261109090000_schedule_copy.sql`(수업 관리 PR, 수업 복사 함수 1개). "적용하기"라고 말씀하시면 Claude가 한다. 출석 확인(`20261109080000`)은 11/9 적용했다.
+- **머지**: #63(관리자 기초관리 '가격표'), #65(가격표 배포용 표·업로드·운영 API), #67(사용자·권한에서 직원 이름 고치기, 관리자만), #70(강사 포털: 직원·매니저에게 인트라넷 결석 신청 처리·패널티 승인 링크).
+- **Supabase 마이그레이션 2개 적용**: `20261109120000_staff_name.sql`, `20261109130000_legacy_prices.sql`. 가짜 샘플 가격표 50행(코스 가격 11·기숙사 가격 8·가격 설정 1·프로모션 2·코스 코드 10·기숙사 코드 8·기타 비용 7·커미션 규칙 3)을 Claude가 직접 넣었다(secret 키 없이). RLS 켜짐, 익명 읽기 없음 확인.
+- 수업 복사(`20261109090000`)와 출석 확인(`20261109080000`)은 11/9 적용했다. 인트라넷 `20261109100000_intranet_manager.sql`은 인트라넷 담당이 11/9 저녁 적용했다(운영 DB에 `is_intranet_manager` 있음).
+
+## 지금 할 일
 
 - **샘플 새 표 올림(11/9)**: 연장 29·코스 변경 13·기숙사 변경 11·복귀 8·Check Balance 239건(가짜 샘플)을 Claude가 Supabase에 직접 넣었다(secret 키 없이). 인보이스별 합계(inv_summary)는 넣지 않았다(없으면 Check Balance로 계산). 전부 다시 올리려면 `scripts/upload-sample.ps1`(secret 키는 창에만 입력).
 - **강사 시험 계정**: 강사 포털을 보려면 Supabase Auth에 강사 계정이 하나 있어야 한다. 직원 계정(레오님)은 역할 없이도 들어가진다. 강사 계정이 필요하면 `docs/teacher-portal.md` '강사 계정 만들기'를 따른다.
@@ -25,7 +29,7 @@ Claude가 대신할 수 없는 일(키·비밀번호 입력, 계정 만들기, �
 | 1 | **학생 포털 서비스 키** | Cloudflare → Workers → `jic-student` → Settings → Variables and Secrets → Add → Secret. 이름 `SUPABASE_SERVICE_ROLE_KEY`, 값은 Supabase → Project Settings → API Keys의 secret 키 | 없으면 학생 포털 `/api`가 `server_config` 오류를 낸다. 11/8 밤 기준으로 아직 빠져 있다 |
 | 2 | **JIC 포털(Pages) 서비스 키** | Cloudflare → Workers & Pages → `jic-portal`(Pages) → Settings → Variables and secrets → Add. Type은 **Secret**, 이름은 위와 같다 | 가드 태블릿(`/intranet/guard`)이 쓴다 |
 | 3 | 가드 공용 계정 | Supabase → Authentication → Users → Add user(출입구마다 하나, Auto Confirm). 만든 사용자 id를 Claude에게 알려 준다 | Claude가 `guard_accounts`에 출입구를 잇는다 |
-| 4 | 직원 이름·담당 캠퍼스 | Supabase SQL Editor 또는 Claude에게 이름을 알려 준다 | 처리자 이름(`staff_users.name`)과 상담 기록 열람 범위(`staff_campuses`)에 쓴다 |
+| 4 | 직원 이름·담당 캠퍼스 | 이름은 관리자 포털 → 기초관리 → 사용자·권한 → 직원 줄 '이름'(11/9 #67). 담당 캠퍼스는 Supabase SQL Editor 또는 Claude에게 알려 준다(`user_roles.campus`와 합칠지 결정 대기) | 처리자 이름(`staff_users.name`)과 상담 기록 열람 범위(`staff_campuses`)에 쓴다 |
 | 4-1 | 오피스 직원 역할 주기(역할 PR 적용 뒤) | 관리자 포털 → 기초관리 → 사용자·권한 → 그 직원 줄에서 '오피스' 주기(캠퍼스 선택) | 권한표대로 오피스는 사용자·권한을 못 열고 강사 포털은 읽기만 한다. 주지 않으면 모든 직원이 관리자다 |
 | 5 | 에이전시 가입 허용 | Supabase → Authentication → Sign In / Providers → **Allow new users to sign up** 켜기 | 에이전시 포털 등록 신청 |
 | 6 | 학생 포털 로그인 시험 | https://jic-student.bh007007.workers.dev 에서 샘플 학생번호 + 생년월일 8자리로 로그인한다. 값은 `data-sample/tables/students.ndjson`의 `st_id`·`st_birthday`(가짜 데이터). 1번을 마친 뒤 한다 | 첫 로그인 → 비밀번호 변경 → 홈 |
@@ -46,7 +50,6 @@ Claude가 대신할 수 없는 일(키·비밀번호 입력, 계정 만들기, �
 | 7 | CEFR 대응 기준과 코스별 시험 주기(L3), 녹음 보관 기간(L9), 수업 자료 학생 공개(L8) | 화면에서 입력할 수 있게 빈칸으로 둔다. 기준이 정해지면 채운다 |
 | 8 | 패널티 위반별 점수·경고 기준 | 인트라넷 점수표 화면에서 입력한다(코드에 넣지 않음) |
 | 9 | Supabase 회사 계정·Pro 요금제(원칙 C1·C11), 실제 데이터 업로드 전 보안 점검(C12) | 대표 승인 대기 옮기는 방법은 `docs/accounts.md` |
-| 10 | **연장한 연수의 회계 총액·미입금 고치기**(회계 세션 11/9 발견). 업체 인보이스 목록 값이 연장 연수에서는 최근 인보이스 하나 금액이라 관리자 회계 화면이 틀리다(연장 안 한 4,767건은 맞음) | 고친다. 업체 cost = 기본 + 연장 인보이스 합(2,052건 일치)으로 계산을 바꾸고, 배포용 legacy 표를 하나 더한다. 답은 회계 세션에 |
 
 ## 지금 상태 (요약)
 
