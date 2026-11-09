@@ -1,5 +1,5 @@
 import { Link } from 'react-router-dom';
-import { isActivePromotion, loadCampuses, loadCourses, loadSettings, useLoad, type Notice } from '../data';
+import { courseLabel, isActivePromotion, loadCampuses, loadCourses, loadSettings, useLoad, type Notice } from '../data';
 import { t } from '../i18n';
 import { must, supabase } from '../supabase';
 import { Box, OutLink, TAG_COLOR } from '../ui';
@@ -86,7 +86,7 @@ export default function Home() {
                 <Link key={c.id} className="card" to={`/campuses/${c.id}`}>
                   <div className="card-title"><strong>{c.name}</strong><span className="muted" style={{ fontSize: 12 }}>코스 {cs.length}</span></div>
                   <span style={{ fontSize: 13, color: 'var(--ink-2)' }}>{c.tagline}</span>
-                  <span style={{ fontSize: 13, lineHeight: 1.7 }}>{cs.map((x) => x.name).join(' · ')}</span>
+                  <span style={{ fontSize: 13, lineHeight: 1.7 }}>{cs.map(courseLabel).join(' · ')}</span>
                 </Link>
               ) : (
                 <div key={c.id} className="card off">

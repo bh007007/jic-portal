@@ -1,5 +1,8 @@
 import { useCallback, useEffect, useState } from 'react';
 import { must, supabase } from './supabase';
+import { today } from './shared';
+
+export { courseLabel, fmtSize, today } from './shared';
 
 export interface Campus {
   id: string;
@@ -122,9 +125,6 @@ export interface RuleSet {
   updated_at: string;
 }
 
-/** 화면에 보이는 코스 이름(CL-009) */
-export const courseLabel = (c: Pick<Course, 'name' | 'display_name'>) => c.display_name || c.name;
-
 export interface Notice {
   id: number;
   kind: 'notice' | 'promotion';
@@ -186,9 +186,4 @@ export async function loadRuleSet(): Promise<RuleSet | null> {
   return rows.find((r) => r.status === 'approved') ?? rows[0] ?? null;
 }
 
-export const today = () => new Date().toISOString().slice(0, 10);
-
 export const isActivePromotion = (n: Notice, d = today()) => (!n.starts_on || n.starts_on <= d) && (!n.ends_on || n.ends_on >= d);
-
-export const fmtSize = (n: number | null) =>
-  n == null ? '' : n >= 1048576 ? (n / 1048576).toFixed(1) + ' MB' : Math.max(1, Math.round(n / 1024)) + ' KB';
