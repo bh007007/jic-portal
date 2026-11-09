@@ -1,4 +1,4 @@
-// 연장·변경 표(20261109030000_legacy_extend.sql)의 권한 시험: 직원만 읽고, 다른 로그인·익명은 못 읽고, 아무도 쓰지 못한다(쓰기는 서비스 키 업로드만). 데이터는 가짜.
+// 연장·변경 표(20261109030000_legacy_extend.sql)와 청구 합계 표(20261109060000_legacy_invoice_summary.sql)의 권한 시험: 직원만 읽고, 다른 로그인·익명은 못 읽고, 아무도 쓰지 못한다(쓰기는 서비스 키 업로드만). 데이터는 가짜.
 //
 // 실행(저장소 루트, 의존성에 추가하지 않고 임시로 설치):
 //   npm i --no-save @electric-sql/pglite@0.3
@@ -25,11 +25,13 @@ await db.exec(`
 await db.exec(mig('20261107000000_legacy_tables.sql'));
 await db.exec(mig('20261109030000_legacy_extend.sql'));
 await db.exec(mig('20261109030000_legacy_extend.sql')); // 두 번째 실행
+await db.exec(mig('20261109060000_legacy_invoice_summary.sql'));
+await db.exec(mig('20261109060000_legacy_invoice_summary.sql')); // 두 번째 실행
 ok('마이그레이션 2회 실행', true);
 
 const STAFF = '00000000-0000-0000-0000-0000000000c1';
 const OTHER = '00000000-0000-0000-0000-0000000000a1';
-const TABLES = ['legacy_extensions', 'legacy_course_changes', 'legacy_dorm_changes', 'legacy_comebacks'];
+const TABLES = ['legacy_extensions', 'legacy_course_changes', 'legacy_dorm_changes', 'legacy_comebacks', 'legacy_invoice_summary', 'legacy_balances'];
 await db.exec(`
   insert into auth.users (id) values ('${STAFF}'), ('${OTHER}');
   insert into public.staff_users (user_id, name) values ('${STAFF}', '직원');
@@ -62,6 +64,6 @@ for (const t of TABLES) {
   await as(null, () => denied(`익명: ${t} 거부`, `select * from public.${t}`, /permission denied/));
 }
 
-console.log(`연장·변경 표 권한 시험: 통과 ${pass}, 실패 ${fails.length}`);
+console.log(`연장·변경·청구 합계 표 권한 시험: 통과 ${pass}, 실패 ${fails.length}`);
 for (const f of fails) console.log('  실패:', f);
 process.exit(fails.length ? 1 : 0);
