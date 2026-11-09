@@ -27,7 +27,7 @@
 
 ## 강사 포털(LMS) 화면
 
-출석 추출과 강사 포털 출석은 `scripts/extract/portal-extract-attendance.js`, [teacher-portal.md](teacher-portal.md)가 이 구조로 만들어졌다.
+출석 추출과 강사 포털 출석은 `scripts/extract/portal-extract-attendance.js`, [teacher-portal.md](teacher-portal.md)가 이 구조로 만들어졌다. 강사 포털 쪽 요약은 teacher-portal.md '업체 출석 구조 (11/9 LMS 조사)' 절이고, 이 문서가 화면 전체 기록이다. 출석 열을 고치면 두 곳을 같이 고친다.
 
 | 화면 | 목록 주소 | 검색 항목 | 응답 열(요점) | 건수(11/9) |
 | --- | --- | --- | --- | ---: |
