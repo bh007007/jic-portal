@@ -38,15 +38,15 @@ const EXTENSION_COLUMNS = ['tr_id', 'tt_id', 'tt_start_date', 'tt_finish_date', 
 const INVOICE_SUMMARY_COLUMNS = ['_tr_id', 'tt_id', 'tt_insert_dt', 'week', 'start_date', 'finish_date', 'tr_currency', 'sum_ic_price', 'sum_id_amount', 'sum_tc_price', 'sum_td_amount'];
 const BALANCE_COLUMNS = ['tr_id', 'tr_currency', 'tr_deposit_state', 'extend_count', 'cost', 'payment'];
 // 가격표 표 8개에 올릴 열: core.ts 의 PRICE_COLUMNS 와 같게 둔다. 표 하나(legacy_prices)에 data._table 로 나눠 담는다.
-const PRICE_COLUMNS = {
-  price_course: ['cc_co_id', 'cc_week', 'cc_won', 'cc_usd', 'cc_yen', 'cc_peso', 'cc_start_date', 'cc_finish_date'],
-  price_dorm: ['dc_do_id', 'dc_won', 'dc_usd', 'dc_yen', 'dc_peso', 'dc_start_date', 'dc_finish_date'],
-  price_setting: ['cs_id', 'cs_br_id', 'cs_1w', 'cs_2w', 'cs_3w', 'cs_4w', 'cs_5w', 'cs_6w', 'cs_7w', 'cs_8w', 'cs_1w_more', 'cs_start_date', 'cs_finish_date', 'cs_use_yn'],
-  promo: ['prm_id', 'prm_kind', 'prm_type', 'prm_name', 'prm_name_en', 'prm_note', 'prm_country', 'prm_currency', 'prm_campus', 'prm_target', 'prm_target_id', 'prm_target_weeks_yn', 'prm_show_start_date', 'prm_show_finish_date', 'prm_reg_start_date', 'prm_reg_finish_date', 'prm_allow_stacking_yn', 'prm_priority', 'prm_use_yn', 'campus_code', 'conditions'],
-  course_code: ['co_id', 'co_ca_id', 'co_name', 'co_name_short', 'co_type', 'co_week_only', 'co_country_only', 'co_order', 'co_use_yn', 'co_start_date', 'co_finish_date', 'ca_code'],
-  dorm_code: ['do_id', 'do_ca_id', 'do_name', 'do_name_short', 'do_type', 'do_gender', 'do_max', 'do_include', 'do_order', 'do_use_yn', 'do_start_date', 'do_finish_date', 'ca_code'],
-  price_etc: ['ec_id', 'ec_br_id', 'ec_name', 'ec_type', 'ec_won', 'ec_usd', 'ec_yen', 'ec_peso', 'ec_start_date', 'ec_finish_date', 'ec_use_yn', 'ec_point_flag', 'ec_order', 'ec_memo'],
-  comm_rule: ['acr_id', 'acr_level', 'acr_type', 'acr_ag_id', 'ag_name', 'acr_country', 'country_name', 'acr_min_week', 'acr_max_week', 'acr_start_date', 'acr_finish_date', 'acr_rate', 'acr_memo', 'is_now'],
+const PRICE_COLUMNS = {
+  price_course: ['cc_co_id', 'cc_week', 'cc_won', 'cc_usd', 'cc_yen', 'cc_peso', 'cc_start_date', 'cc_finish_date'],
+  price_dorm: ['dc_do_id', 'dc_won', 'dc_usd', 'dc_yen', 'dc_peso', 'dc_start_date', 'dc_finish_date'],
+  price_setting: ['cs_id', 'cs_br_id', 'cs_1w', 'cs_2w', 'cs_3w', 'cs_4w', 'cs_5w', 'cs_6w', 'cs_7w', 'cs_8w', 'cs_1w_more', 'cs_start_date', 'cs_finish_date', 'cs_use_yn'],
+  promo: ['prm_id', 'prm_kind', 'prm_type', 'prm_name', 'prm_name_en', 'prm_note', 'prm_country', 'prm_currency', 'prm_campus', 'prm_target', 'prm_target_id', 'prm_target_weeks_yn', 'prm_show_start_date', 'prm_show_finish_date', 'prm_reg_start_date', 'prm_reg_finish_date', 'prm_allow_stacking_yn', 'prm_priority', 'prm_use_yn', 'campus_code', 'conditions'],
+  course_code: ['co_id', 'co_ca_id', 'co_name', 'co_name_short', 'co_type', 'co_week_only', 'co_country_only', 'co_order', 'co_use_yn', 'co_start_date', 'co_finish_date', 'ca_code'],
+  dorm_code: ['do_id', 'do_ca_id', 'do_name', 'do_name_short', 'do_type', 'do_gender', 'do_max', 'do_include', 'do_order', 'do_use_yn', 'do_start_date', 'do_finish_date', 'ca_code'],
+  price_etc: ['ec_id', 'ec_br_id', 'ec_name', 'ec_type', 'ec_won', 'ec_usd', 'ec_yen', 'ec_peso', 'ec_start_date', 'ec_finish_date', 'ec_use_yn', 'ec_point_flag', 'ec_order', 'ec_memo'],
+  comm_rule: ['acr_id', 'acr_level', 'acr_type', 'acr_ag_id', 'ag_name', 'acr_country', 'country_name', 'acr_min_week', 'acr_max_week', 'acr_start_date', 'acr_finish_date', 'acr_rate', 'acr_memo', 'is_now'],
 };
 const CHANGE_COLUMNS = ['tr_id', 'ic_id', 'prev_chg_course', 'chg_course', 'chg_course_date', 'prev_chg_dorm', 'chg_dorm', 'chg_dorm_date', 'rqp_cnt'];
 const PLAN = [
@@ -108,7 +108,7 @@ for (const [table, file, idOf, cols, how] of PLAN) {
   });
   await upload(table, [...byId.values()], how);
 }
-// 가격표(20261109100000_legacy_prices.sql): 표 8개를 합쳐 한 번에 올린다(표가 없으면 건너뜀).
+// 가격표(20261109110000_legacy_prices.sql): 표 8개를 합쳐 한 번에 올린다(표가 없으면 건너뜀).
 const priceRows = Object.entries(PRICE_COLUMNS).flatMap(([t, cols]) =>
   read(t + '.ndjson').map((r, i) => ({ id: `${t}:${i}`, data: { _table: t, ...Object.fromEntries(cols.map((c) => [c, r[c] ?? null])) } })),
 );
