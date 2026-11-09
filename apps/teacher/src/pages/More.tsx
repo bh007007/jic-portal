@@ -26,6 +26,14 @@ export default function More() {
           <li><Link to="/absences">{t('absencesMenu')}</Link></li>
         </ul>
       </Section>
+      {me?.canSchedule && (
+        <Section title={t('manageClasses')}>
+          <ul className="menu">
+            <li><Link to="/schedule">{t('scheduleMenu')}</Link></li>
+            <li><Link to="/classrooms">{t('classroomsMenu')}</Link></li>
+          </ul>
+        </Section>
+      )}
       {me?.isManager && (
         <Section title={t('manage')}>
           <ul className="menu">

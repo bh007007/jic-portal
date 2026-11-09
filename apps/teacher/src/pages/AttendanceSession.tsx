@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import { useAuth } from '../auth';
 import {
-  loadAbsences, loadAttendance, loadSessionDay, loadSessions, loadStudents, markAllPresent, markAttendance,
+  addToSession, loadAbsences, loadAttendance, loadSessionDay, loadSessions, loadStudents, markAllPresent, markAttendance, removeFromSession,
   type AttResult, type AttendanceRow, type LmsAbsence, type LmsSession, type LmsStudent,
 } from '../data';
 import { useT, type Key } from '../i18n';
@@ -99,6 +99,39 @@ export default function AttendanceSession() {
     patch(r, { late_min: n });
   }
 
+  // 학생 넣기·빼기(스케줄러·매니저·관리자, 마감 전). 이미 결과를 넣은 학생은 빼지 않는다.
+  const canEditRoster = Boolean(me?.canSchedule) && !s.closed;
+  const notIn = [...students.values()]
+    .filter((st) => st.campus === s.campus && st.start_date <= s.day && !rows.some((r) => r.student_no === st.student_no))
+    .sort((a, b) => a.name.localeCompare(b.name));
+  async function addStudent(no: string) {
+    const st = students.get(no);
+    if (!st) return;
+    setBusy(no);
+    setError('');
+    try {
+      await addToSession(s.id, st);
+      await reload();
+    } catch (e) {
+      setError(errText(e));
+    } finally {
+      setBusy('');
+    }
+  }
+  async function removeStudent(r: AttendanceRow) {
+    if (!window.confirm(t('confirmRemoveStudent', { name: students.get(r.student_no)?.name || r.student_no }))) return;
+    setBusy(r.student_no);
+    setError('');
+    try {
+      await removeFromSession(s.id, r.student_no);
+      setData((d) => (d ? { ...d, rows: d.rows.filter((x) => x.student_no !== r.student_no) } : d));
+    } catch (e) {
+      setError(errText(e));
+    } finally {
+      setBusy('');
+    }
+  }
+
   const head = [s.room, s.teacher_name].filter(Boolean).join(' · ') || '-';
   const sub = [s.day, s.start_time.slice(0, 5), t('minutesN', { n: s.minutes }), s.campus, t(s.kind === 'G' ? 'kind_G' : 'kind_1'), s.subject, s.sub_teacher_name].filter(Boolean).join(' · ');
 
@@ -173,10 +206,19 @@ export default function AttendanceSession() {
                     <span className="ok small">{t('excused')}</span>
                   ) : null}
                 </div>
+                {canEditRoster && !r.result && (
+                  <button type="button" className="link-btn left" disabled={saving} onClick={() => removeStudent(r)}>{t('removeStudent')}</button>
+                )}
               </li>
             );
           })}
         </ul>
+        {canEditRoster && notIn.length > 0 && (
+          <select className="full" style={{ marginTop: 8 }} value="" disabled={busy !== ''} onChange={(e) => e.target.value && addStudent(e.target.value)} aria-label={t('addStudent')}>
+            <option value="">{t('addStudent')} · {t('pickStudent2')}</option>
+            {notIn.map((st) => <option key={st.enrollment_id} value={st.student_no}>{st.name} ({st.student_no})</option>)}
+          </select>
+        )}
       </Section>
     </>
   );

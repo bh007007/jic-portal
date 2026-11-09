@@ -73,6 +73,13 @@ const ko = {
   attSummary: '출석 확인', range7: '최근 7일', range14: '최근 14일', rangeMonth: '이번 달', unexcusedOnly: '무단결석만',
   sumLine: '출석 {at} · 결석 {ab} · 지각 {ta}', unexcusedN: '무단 {n}', unexcusedWord: '무단', unexcusedTitle: '무단결석 목록', excusedN: '사유 인정 {n}', sickN: '병결 {n}', officialN: '공결 {n}', personalN: '개인 {n}', notCheckedN: '미체크 {n}', lateMinN: '{n}분 지각',
   noSummary: '이 기간에 출석 기록이 없습니다.', noUnexcused: '이 기간에 무단결석이 없습니다.', unexcusedDef: '무단: 사유 인정도, 그날 승인된 결석 신청도 없는 결석',
+  // 수업 관리
+  classesOn: '{day} 수업', scheduleMenu: '수업 관리 (만들기·복사)', classroomsMenu: '교실', manageClasses: '수업 관리 (스케줄러·매니저)', schedule: '수업 관리',
+  addSession: '수업 추가', startTime: '시작', minutes: '분', kindLabel: '종류', subject: '과목', teacher: '강사', subTeacher: '보조 강사', classroom: '교실', none: '없음',
+  pickStudents: '학생 ({n}명 선택)', noStudentsOn: '그날 재학생이 없습니다.', createSession: '수업 만들기', created: '수업을 만들었습니다.',
+  copyDay: '이 날 수업 복사', copyNextDay: '다음 날', copyNextWeek: '다음 주 같은 요일', copyWeekdays: '다음 평일 {n}일', copyRun: '복사', copiedN: '수업 {n}개를 만들었습니다(휴일·마감된 날·이미 있는 수업은 건너뜀).',
+  confirmDeleteSession: '{time} {room} 수업을 지울까요? 학생 출석 행도 같이 지워집니다.', deleteSession: '수업 지우기', addStudent: '학생 추가', removeStudent: '빼기', pickStudent2: '학생 고르기…',
+  confirmRemoveStudent: '{name}을(를) 이 수업에서 뺄까요?', classroomList: '교실 목록', addClassroom: '교실 추가', roomNum: '교실 번호', building: '건물', floor: '층', capacity: '정원', inactive: '안 씀', activate: '다시 쓰기', deactivate: '안 쓰기', noClassrooms: '등록된 교실이 없습니다.',
   attendance4w: '출석 (최근 4주)', noAttendance: '출석 기록이 없습니다.', allPresent: '결석·지각 없음', seeSummary: '출석 확인',
   // 성적 읽기만·내부 공지
   scoresReadOnly: '성적 입력은 강사·매니저가 합니다.', notices: '내부 공지', noticesMenu: '내부 공지 (인트라넷과 같은 공지)', noNotices: '게시 중인 공지가 없습니다.', pinned: '고정',
@@ -90,7 +97,7 @@ const ko = {
   e_login: '이메일 또는 비밀번호가 맞지 않습니다.', e_net: '서버에 연결하지 못했습니다. 잠시 후 다시 시도하세요.',
   e_value: '점수가 시험 종류의 범위·단위를 벗어났습니다.', e_section: '이 시험 종류에 없는 영역입니다.', e_date: '오늘 이후 날짜는 넣을 수 없습니다.',
   e_type: '쓰지 않는 시험 종류입니다.', e_rls: '권한이 없습니다.', e_dup: '이미 있는 항목입니다.', e_check: '입력 형식이 맞지 않습니다.',
-  e_closed: '마감된 날이라 고칠 수 없습니다.', e_future: '앞날은 입력할 수 없습니다.', e_manager: '매니저·직원만 바꿀 수 있습니다.',
+  e_closed: '마감된 날이라 고칠 수 없습니다.', e_future: '앞날은 입력할 수 없습니다.', e_manager: '매니저·직원만 바꿀 수 있습니다.', e_range: '날짜가 너무 많습니다(31일까지).',
 };
 export type Key = keyof typeof ko;
 
@@ -157,6 +164,12 @@ const en: Record<Key, string> = {
   attSummary: 'Attendance view', range7: 'Last 7 days', range14: 'Last 14 days', rangeMonth: 'This month', unexcusedOnly: 'Unexcused only',
   sumLine: 'Present {at} · Absent {ab} · Late {ta}', unexcusedN: 'Unexcused {n}', unexcusedWord: 'Unexcused', unexcusedTitle: 'Unexcused absences', excusedN: 'Excused {n}', sickN: 'Sick {n}', officialN: 'Official {n}', personalN: 'Personal {n}', notCheckedN: 'Not checked {n}', lateMinN: '{n} min late',
   noSummary: 'No attendance in this period.', noUnexcused: 'No unexcused absences in this period.', unexcusedDef: 'Unexcused: absent with no excuse and no approved absence request that day',
+  classesOn: 'Classes on {day}', scheduleMenu: 'Class schedule (create · copy)', classroomsMenu: 'Classrooms', manageClasses: 'Classes (scheduler · manager)', schedule: 'Class schedule',
+  addSession: 'Add class', startTime: 'Start', minutes: 'Minutes', kindLabel: 'Type', subject: 'Subject', teacher: 'Teacher', subTeacher: 'Assistant teacher', classroom: 'Classroom', none: 'None',
+  pickStudents: 'Students ({n} selected)', noStudentsOn: 'No students enrolled that day.', createSession: 'Create class', created: 'Class created.',
+  copyDay: "Copy this day's classes", copyNextDay: 'Next day', copyNextWeek: 'Same day next week', copyWeekdays: 'Next {n} weekdays', copyRun: 'Copy', copiedN: 'Created {n} classes (skipped holidays, closed days and existing classes).',
+  confirmDeleteSession: 'Delete the {time} {room} class? Its attendance rows are deleted too.', deleteSession: 'Delete class', addStudent: 'Add student', removeStudent: 'Remove', pickStudent2: 'Choose a student…',
+  confirmRemoveStudent: 'Remove {name} from this class?', classroomList: 'Classrooms', addClassroom: 'Add classroom', roomNum: 'Room no.', building: 'Building', floor: 'Floor', capacity: 'Capacity', inactive: 'Not in use', activate: 'Use again', deactivate: 'Stop using', noClassrooms: 'No classrooms yet.',
   attendance4w: 'Attendance (last 4 weeks)', noAttendance: 'No attendance records.', allPresent: 'No absences or lates', seeSummary: 'Attendance view',
   scoresReadOnly: 'Scores are entered by teachers and managers.', notices: 'Internal notices', noticesMenu: 'Internal notices (same as the intranet)', noNotices: 'No notices posted.', pinned: 'Pinned',
   testTypesSub: 'CEFR is a JIC estimate. Mapping and test cycle are not decided yet',
@@ -170,7 +183,7 @@ const en: Record<Key, string> = {
   e_login: 'Wrong email or password.', e_net: 'Could not reach the server. Try again shortly.',
   e_value: 'The score is outside the range or step for this test type.', e_section: 'This test type has no such section.', e_date: 'Dates after today are not allowed.',
   e_type: 'This test type is not in use.', e_rls: 'You do not have permission.', e_dup: 'Already exists.', e_check: 'The input format is not valid.',
-  e_closed: 'This day is closed and cannot be changed.', e_future: 'Future days cannot be entered.', e_manager: 'Only managers and staff can change this.',
+  e_closed: 'This day is closed and cannot be changed.', e_future: 'Future days cannot be entered.', e_manager: 'Only managers and staff can change this.', e_range: 'Too many days (31 at most).',
 };
 
 const DICT: Record<Lang, Record<Key, string>> = { ko, en };

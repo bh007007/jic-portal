@@ -53,7 +53,7 @@ export default function Attendance() {
 
   return (
     <>
-      <PageHead title={t('attendance')} sub={`${day} (${dayName})`} right={<Link to="/attendance/summary" className="more">{t('seeSummary')}</Link>} />
+      <PageHead title={t('attendance')} sub={`${day} (${dayName})`} right={<span className="head-links">{me?.canSchedule && <Link to={`/schedule${day !== today ? `?day=${day}` : ''}`} className="more">{t('schedule')}</Link>}<Link to="/attendance/summary" className="more">{t('seeSummary')}</Link></span>} />
       {(holidays.data ?? []).map((h) => (
         <p key={h.day + h.campus} className="holiday">{t('holidayOn', { name: h.name })}{h.campus ? ` · ${h.campus}` : ''}</p>
       ))}
