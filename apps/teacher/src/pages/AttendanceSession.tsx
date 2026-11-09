@@ -2,10 +2,11 @@ import { useEffect, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import { useAuth } from '../auth';
 import {
-  addToSession, loadAbsences, loadAttendance, loadSessionDay, loadSessions, loadStudents, markAllPresent, markAttendance, removeFromSession,
+  addToSession, loadAbsenceDetails, loadAbsences, loadAttendance, loadSessionDay, loadSessions, loadStudents, markAllPresent, markAttendance, removeFromSession,
   type AttResult, type AttendanceRow, type LmsAbsence, type LmsSession, type LmsStudent,
 } from '../data';
 import { useT, type Key } from '../i18n';
+import { canUseIntranet } from '../links';
 import { errText, manilaToday } from '../supabase';
 import { Loading, PageHead, Section } from '../ui';
 
@@ -46,6 +47,14 @@ export default function AttendanceSession() {
   const [busy, setBusy] = useState<string>(''); // 저장 중인 학생번호('*' = 모두 출석)
   const [error, setError] = useState('');
   const [lateDraft, setLateDraft] = useState<Record<string, string>>({});
+  // 결석 신청 사유 글(원칙 L4 '출석 현황에서 사유가 보인다'): 직원·매니저만 읽힌다(RLS). 강사·체커는 종류·상태만
+  const [reasons, setReasons] = useState<Map<string, string>>(new Map());
+  const canSeeReason = canUseIntranet(me);
+  const sessionDay = data ? data.session.day : '';
+  useEffect(() => {
+    if (!canSeeReason || !sessionDay) return;
+    loadAbsenceDetails(sessionDay, sessionDay).then((rows) => setReasons(new Map(rows.map((r) => [r.id, r.reason])))).catch(() => setReasons(new Map()));
+  }, [canSeeReason, sessionDay]);
 
   const reload = () =>
     loadAll(id).then(setData).catch((e) => setLoadError(errText(e)));
@@ -160,8 +169,13 @@ export default function AttendanceSession() {
                     {[r.student_no, st?.nation, st?.course].filter(Boolean).join(' · ')}
                   </span>
                   {ab && (
-                    <span className={ab.status === 'approved' ? 'ok small' : 'warn small'}>
+                    <span className={ab.status === 'approved' ? 'ok small' : 'warn small'} title={reasons.get(ab.id) ?? undefined}>
                       {t('absenceReq')}: {t(('abs_' + ab.kind) as Key)} · {ab.periods.length ? t('periodsLabel', { p: ab.periods.join('·') }) : t('allDay')} · {t(('st_' + ab.status) as Key)}
+                    </span>
+                  )}
+                  {ab && reasons.get(ab.id) && (
+                    <span className="muted small" title={reasons.get(ab.id)}>
+                      {t('reasonLabel')}: {(reasons.get(ab.id) ?? '').length > 60 ? (reasons.get(ab.id) ?? '').slice(0, 59) + '…' : reasons.get(ab.id)}
                     </span>
                   )}
                   {r.checked_at && <span className="muted small">{t('checkedBy', { name: r.checked_name, time: timeOf(r.checked_at) })}</span>}
