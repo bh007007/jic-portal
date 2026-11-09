@@ -125,6 +125,8 @@ export const DEFAULT_RULES: PenaltyRules = {
     { code: 'absence', name: '무단결석', score: null, approver: '' },
     { code: 'curfew', name: '통금 위반', score: null, approver: '' },
     { code: 'alcohol', name: '음주', score: null, approver: '' },
+    { code: 'violence', name: '폭력', score: null, approver: '' }, // 11/10 결정 I7(가드 리포트 '폭력')
+    { code: 'unauthorized', name: '무단외출', score: null, approver: '' }, // 11/10 결정 I7(가드 리포트 '무단외출')
     { code: 'other', name: '기타', score: null, approver: '' },
   ],
   stages: [

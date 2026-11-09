@@ -382,7 +382,7 @@ const pA = pl.rows.find((x: any) => x.source === 'guard');
 expect('음주 리포트 → 패널티 대기(음주), 발생일 11/07 밤, 근거', pA && pA.kind === 'alcohol' && pA.date === '2026-11-07' && pA.basis.startsWith('가드 리포트(23:50): 음주 — 정문에서'), pA);
 pl = (await call('GET', '/penalties', null, 'q=' + D)).body as any;
 const pD = pl.rows.find((x: any) => x.source === 'guard');
-expect('무단외출 리포트 → 패널티 대기(기타)', pD && pD.kind === 'other' && pD.kindName === '기타', pD);
+expect('무단외출 리포트 → 패널티 대기(무단외출, 11/10 결정 I7)', pD && pD.kind === 'unauthorized' && pD.kindName === '무단외출', pD);
 await call('POST', '/penalties/decide', { ids: [pD.id], approve: false });
 const rl = (await call('GET', '/reports')).body as any;
 expect('리포트 목록 2건, 최근 순, 패널티 상태(대기·반려)', rl.rows.length === 2 && rl.rows[0].id === rep2.id && rl.rows[0].penaltyStatus === 'rejected' && rl.rows[1].penaltyStatus === 'pending', rl.rows.map((x: any) => [x.kindLabel, x.penaltyStatus]));

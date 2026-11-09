@@ -26,6 +26,7 @@ await db.exec(`
 for (const f of ['20261107000000_legacy_tables.sql', '20261108100000_student_intranet.sql', '20261108200000_teacher_portal.sql', '20261109000000_attendance.sql', '20261109010000_roles.sql']) await db.exec(mig(f));
 await db.exec(mig('20261109070000_intranet_roles.sql'));
 await db.exec(mig('20261109070000_intranet_roles.sql')); // 두 번째 실행
+await db.exec(mig('20261110103000_intranet_decisions_2.sql')); // 11/10 I16: 맡은 캠퍼스는 user_roles(관리자 모든 캠퍼스)
 ok('마이그레이션 2회 실행', true);
 
 const U = {
@@ -59,7 +60,7 @@ const score = async () => (await q(`select score from penalty_rules where code =
 
 // ── 점수표: 직원 읽기, 고치기는 관리자만
 await as(U.office, async () => {
-  ok('오피스: 점수표 읽기', (await q(`select count(*)::int n from penalty_rules`))[0].n === 4 && (await q(`select count(*)::int n from penalty_stages`))[0].n === 3);
+  ok('오피스: 점수표 읽기(종류 6개, I7)', (await q(`select count(*)::int n from penalty_rules`))[0].n === 6 && (await q(`select count(*)::int n from penalty_stages`))[0].n === 3);
   ok('오피스: 점수 고치기는 0행', (await affected(`update penalty_rules set score = 9 where code = 'curfew'`)) === 0);
   ok('오피스: 경고 기준 고치기는 0행', (await affected(`update penalty_stages set min_score = 9 where stage = 1`)) === 0);
 });
@@ -75,6 +76,9 @@ await as(U.admin, async () => ok('관리자: 접근 기록 읽기', (await q(`se
 await as(U.adminRole, async () => ok('관리자(admin + office): 접근 기록 읽기', (await q(`select count(*)::int n from audit_logs`))[0].n === 1));
 await as(U.office, async () => ok('오피스: 접근 기록 안 보임', (await q(`select count(*)::int n from audit_logs`))[0].n === 0));
 await as(U.manager, async () => ok('매니저: 접근 기록 안 보임', (await q(`select count(*)::int n from audit_logs`))[0].n === 0));
+await db.exec(`insert into public.audit_logs (actor_id, actor_name, action, target, target_id, student_no, campus) values ('${U.admin}', '관리자', 'view', 'counseling', 'y', '2001', 'Premium')`);
+await as(U.admin, async () => ok('관리자(staff_campuses 는 Challenger 만): 모든 캠퍼스 접근 기록(I16)', (await q(`select count(*)::int n from audit_logs`))[0].n === 2));
+await as(U.office, async () => ok('오피스: 여전히 접근 기록 안 보임', (await q(`select count(*)::int n from audit_logs`))[0].n === 0));
 
 // ── 오피스도 패널티 승인·외출 기록은 그대로(직원)
 await as(U.office, async () => {

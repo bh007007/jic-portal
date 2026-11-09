@@ -50,7 +50,10 @@ await sb.addUser({ id: U.staffP, email: 'p@staff.example', password: 'staffpass1
 await sb.addUser({ id: U.guard, email: 'gate-c@guard.example', password: 'guardpass1' });
 await sb.addUser({ id: U.student, email: 's@students.example', password: 'studentpass1' });
 await sb.sql(`insert into public.staff_users (user_id, name) values ($1, '직원C'), ($2, '직원P')`, [U.staffC, U.staffP]);
+// 11/10 결정 I16: 맡은 캠퍼스는 user_roles 한 곳. 직원C는 역할 없음 = 관리자(모든 캠퍼스), 직원P는 Premium 오피스.
+// staff_campuses 는 더 쓰지 않는다(넣어 둬도 범위에 영향 없음).
 await sb.sql(`insert into public.staff_campuses values ($1, 'Challenger'), ($2, 'Premium')`, [U.staffC, U.staffP]);
+await sb.sql(`insert into public.user_roles (user_id, role, campus) values ($1, 'office', 'Premium')`, [U.staffP]);
 await sb.sql(`insert into public.guard_accounts values ($1, 'Challenger', 'Challenger 정문')`, [U.guard]);
 const tC = await login('c@staff.example', 'staffpass1');
 const tP = await login('p@staff.example', 'staffpass1');
@@ -89,7 +92,7 @@ ok('설정 저장', x.status === 200, x);
 x = await api('GET', '/api/settings', tC);
 ok('설정이 DB에 남음', x.body.curfew === '22:30' && x.body.guards.join() === '근무자1,근무자2', x);
 x = await api('GET', '/api/penalty-rules', tC);
-ok('점수표 읽기(종류 4, 단계 3)', x.body.kinds?.length === 4 && x.body.stages?.length === 3, x);
+ok('점수표 읽기(종류 6, 단계 3)', x.body.kinds?.length === 6 && x.body.stages?.length === 3, x);
 const rules = { kinds: x.body.kinds.map((k) => ({ ...k, score: k.code === 'curfew' ? 3 : k.score, approver: k.code === 'curfew' ? '생활관리' : k.approver })), stages: x.body.stages.map((s, i) => ({ ...s, min: [5, 10, 20][i] })) };
 x = await api('PUT', '/api/penalty-rules', tC, rules);
 ok('점수표 저장', x.status === 200, x);
@@ -156,13 +159,13 @@ ok('다른 직원도 읽음(2명)', x.body.reads?.length === 2, x.body.reads);
 x = await api('PUT', `/api/notices/${nId}`, tP, { title: '점검 안내(수정)', content: '내일 오후 점검', campus: '', pinned: false, until: null });
 ok('공지 수정(수정자 직원P)', x.status === 200 && (await api('GET', `/api/notices/${nId}`, tC)).body.updatedBy === '직원P', x);
 
-// ── 상담 기록: 같은 캠퍼스 직원만, 내용은 함수로, 열 때마다 기록
+// ── 상담 기록: 맡은 캠퍼스만(관리자는 모든 캠퍼스, 오피스는 오피스 역할의 캠퍼스), 내용은 함수로, 열 때마다 기록
 const today = (await sb.sql(`select (now() at time zone 'Asia/Manila')::date::text d`))[0].d;
 x = await api('POST', '/api/counseling', tC, { stId: sC, date: today, title: '생활 상담', content: '룸메이트 문제', followUpDue: null });
 ok('상담 작성(맡은 캠퍼스)', x.status === 201 && x.body.id, x);
 const cId = x.body.id;
-x = await api('POST', '/api/counseling', tC, { stId: sP, date: today, title: '다른 캠퍼스', content: 'x', followUpDue: null });
-ok('맡지 않은 캠퍼스 학생은 작성 불가', x.status === 400 && x.body.error === 'campus_not_allowed', x);
+x = await api('POST', '/api/counseling', tP, { stId: sC, date: today, title: '다른 캠퍼스', content: 'x', followUpDue: null });
+ok('오피스(Premium): 맡지 않은 캠퍼스 학생은 작성 불가', x.status === 400 && x.body.error === 'campus_not_allowed', x);
 x = await api('GET', '/api/counseling', tC);
 ok('목록 1건, 내용 없음', x.body.rows?.length === 1 && !('content' in x.body.rows[0]) && x.body.rows[0].author === '직원C', x.body);
 x = await api('GET', `/api/counseling/${cId}`, tC);
@@ -179,11 +182,16 @@ ok('목록: 후속 조치 완료자 이름', x.body.rows[0].followUpDone === tru
 x = await api('GET', '/api/audit', tC);
 ok('접근 기록: 작성·열람·수정·완료, 기록자 직원C', x.body.rows?.map((l) => l.action).sort().join() === 'create,followup_done,update,view' && x.body.rows.every((l) => l.actor === '직원C'), x.body.rows);
 x = await api('GET', '/api/counseling', tP);
-ok('다른 캠퍼스 직원: 목록 0', x.body.rows?.length === 0, x.body);
+ok('오피스(Premium): Challenger 상담은 목록 0', x.body.rows?.length === 0, x.body);
 x = await api('GET', `/api/counseling/${cId}`, tP);
-ok('다른 캠퍼스 직원: 상세 404', x.status === 404, x);
+ok('오피스(Premium): Challenger 상담 상세 404', x.status === 404, x);
 x = await api('GET', '/api/audit', tP);
-ok('다른 캠퍼스 직원: 접근 기록 0', x.body.rows?.length === 0, x.body);
+ok('오피스: 접근 기록 403', x.status === 403 && x.body.error === 'admin_only', x);
+x = await api('POST', '/api/counseling', tC, { stId: sP, date: today, title: 'Premium 학생 상담', content: '관리자 작성', followUpDue: null });
+const cPId = x.body.id;
+ok('관리자: staff_campuses 와 상관없이 다른 캠퍼스 학생도 작성(I16)', x.status === 201 && !!cPId, x);
+x = await api('GET', '/api/counseling', tP);
+ok('오피스(Premium): Premium 상담만 보임', x.body.rows?.length === 1 && x.body.rows[0].id === cPId, x.body.rows);
 
 // ── Student File
 x = await api('GET', `/api/students/${sC}`, tC);
@@ -191,7 +199,9 @@ ok('Student File: 상담 제목·패널티·신청·항공편', x.status === 200
   c: x.body.counseling?.length, p: x.body.penalties?.length, a: x.body.absences?.length, d: x.body.departure,
 });
 x = await api('GET', `/api/students/${sC}`, tP);
-ok('다른 캠퍼스 직원의 Student File에는 상담 제목이 없음', x.status === 200 && x.body.counseling?.length === 0, x.body.counseling);
+ok('오피스(Premium): Challenger 학생 Student File 403', x.status === 403 && x.body.error === 'campus_forbidden', x);
+x = await api('GET', `/api/students/${sP}`, tP);
+ok('오피스(Premium): 맡은 캠퍼스 학생 Student File 에는 그 상담 제목', x.status === 200 && x.body.counseling?.length === 1, x.body.counseling);
 
 // ── 생활 요청: 학생이 낸 요청을 직원이 처리(처리자 = 로그인한 직원)
 const lifeId = 'e0000000-0000-4000-8000-000000000001';
@@ -265,7 +275,7 @@ const rdb2 = await sb.sql(`select campus, recorded_by::text from public.incident
 ok('DB: 리포트 출입구·기록 계정', rdb2.length === 1 && rdb2[0].campus === 'Challenger' && rdb2[0].recorded_by === U.guard, rdb2);
 x = await api('GET', '/api/penalties?tab=pending', tC);
 const gp = (x.body.rows ?? []).find((p) => p.stId === sC2 && p.source === 'guard');
-ok('직원 패널티 목록에 가드 리포트 후보(대기)', gp && gp.status === 'pending' && gp.campus === 'Challenger', x.body.rows?.filter?.((p) => p.source === 'guard'));
+ok('직원 패널티 목록에 가드 리포트 후보(대기, 폭력 리포트 → 폭력)', gp && gp.status === 'pending' && gp.campus === 'Challenger' && gp.kind === 'violence' && gp.kindName === '폭력', x.body.rows?.filter?.((p) => p.source === 'guard'));
 x = await api('GET', '/api/outings', tC);
 ok('직원 외출·귀가 목록에 가드 기록', x.status === 200 && JSON.stringify(x.body).includes(sC2), x.status);
 // Premium 출입구 가드는 Challenger 기록을 못 본다
@@ -397,7 +407,9 @@ ok('목록: 마지막 로그인 보임', x.body.rows?.some((g) => g.userId === g
 x = await api('GET', '/api/guard-accounts', tNew);
 ok('가드는 가드 계정 화면 403', x.status === 403 && x.body.error === 'guard_forbidden', x);
 x = await api('POST', `/api/guard-accounts/${gUser}/password`, tP, { password: 'gate2027b', confirm: 'gate2027b' });
-ok('다른 직원이 비밀번호 바꾸기', x.status === 200, x);
+ok('오피스는 가드 비밀번호 못 바꿈(I4)', x.status === 403 && x.body.error === 'admin_only', x);
+x = await api('POST', `/api/guard-accounts/${gUser}/password`, tC, { password: 'gate2027b', confirm: 'gate2027b' });
+ok('관리자가 비밀번호 바꾸기', x.status === 200, x);
 ok('옛 비밀번호로는 로그인 안 됨, 새 비밀번호는 됨', !(await login(gEmail, 'gate2026')) && !!(await login(gEmail, 'gate2027b')));
 x = await api('POST', `/api/guard-accounts/${U.staffC}/password`, tC, { password: 'hack12345', confirm: 'hack12345' });
 ok('직원 계정 id 로는 비밀번호를 못 바꿈(404)', x.status === 404, x);
@@ -405,7 +417,7 @@ x = await api('POST', `/api/guard-accounts/${gUser}/delete`, tC, {});
 ok('가드 계정 지우기', x.status === 200, x);
 ok('지운 뒤 로그인 안 됨, 연결도 없음', !(await login(gEmail, 'gate2027b')) && (await sb.sql(`select count(*)::int n from public.guard_accounts where user_id = $1`, [gUser]))[0].n === 0);
 const gaud = await sb.sql(`select action, actor_id::text from public.audit_logs where target = 'guard_account' order by id`);
-ok('접근 기록: 만들기(직원C)·비밀번호(직원P)·지우기(직원C)', gaud.map((a) => a.action).join() === 'guard_create,guard_password,guard_delete' && gaud[1].actor_id === U.staffP, gaud);
+ok('접근 기록: 만들기·비밀번호·지우기(모두 관리자 직원C, 오피스 시도는 남지 않음)', gaud.map((a) => a.action).join() === 'guard_create,guard_password,guard_delete' && gaud.every((a) => a.actor_id === U.staffC), gaud);
 
 // ── 무단결석: 강사 포털 출석(서비스 키로 넣음)에서 마감된 날의 결석 → 직원 패널티 후보 → 사유 인정하면 지워짐
 const sAb = others[2] ?? sP;
@@ -434,7 +446,7 @@ ok('오피스: meta 에 역할·맡은 캠퍼스', x.status === 200 && x.body.st
 x = await api('GET', '/api/meta', tC);
 ok('역할 없는 직원은 관리자(모든 캠퍼스)', x.body.staffRole === 'admin' && x.body.campuses === null, x.body);
 const rulesO = (await api('GET', '/api/penalty-rules', tO)).body;
-ok('오피스: 점수표 읽기', Array.isArray(rulesO.kinds) && rulesO.kinds.length === 4, rulesO);
+ok('오피스: 점수표 읽기(종류 6개: 무단결석·통금·음주·폭력·무단외출·기타)', Array.isArray(rulesO.kinds) && rulesO.kinds.map((k) => k.code).join() === 'absence,curfew,alcohol,violence,unauthorized,other', rulesO);
 x = await api('PUT', '/api/penalty-rules', tO, rulesO);
 ok('오피스: 점수표 저장 403 admin_only', x.status === 403 && x.body.error === 'admin_only', x);
 const direct = await fetch(`${sb.url}/rest/v1/penalty_rules?code=eq.curfew`, {
