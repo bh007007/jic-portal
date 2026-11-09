@@ -6,6 +6,7 @@
  */
 import type { Db } from '../../admin/server/core';
 import {
+  ABSENCE_PAST_DAYS,
   cancelRequest,
   isMinorOn,
   newAbsence,
@@ -162,7 +163,9 @@ const byNewest = (a: { submittedAt: string }, b: { submittedAt: string }) => b.s
 
 async function listAbsences(ctx: StudentCtx, stId: string) {
   const rows = (await ctx.store.listByStudent(stId)).sort(byNewest);
-  return { refDate: ctx.db.refDate, periodCount: PERIOD_COUNT, reasonMax: REASON_MAX, windows: requestWindows(ctx.db, stId), rows };
+  // 11/10 결정 I10: 신청 화면의 날짜는 minDate(오늘부터 3일 전)부터
+  const minDate = new Date(Date.parse(localToday(ctx.now())) - ABSENCE_PAST_DAYS * 864e5).toISOString().slice(0, 10);
+  return { refDate: ctx.db.refDate, periodCount: PERIOD_COUNT, reasonMax: REASON_MAX, windows: requestWindows(ctx.db, stId), minDate, rows };
 }
 export type AbsenceList = Awaited<ReturnType<typeof listAbsences>>;
 

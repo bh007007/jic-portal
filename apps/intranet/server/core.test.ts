@@ -836,6 +836,19 @@ expect('매니저: 자기 공지 고치기', (await mcall('PUT', `/notices/${mNo
 const others = (await stores.notices.all()).find((n) => n.author !== '매니저 M')!;
 rr = await mcall('PUT', `/notices/${others.id}`, { title: 'x', content: 'y' });
 expect('매니저: 남의 공지 고치기 403', rr.status === 403 && rr.body.error === 'own_notice_only', rr);
+// 공지 대상 역할(11/10 결정 I14): 관리자는 모두, 오피스·매니저는 대상이 비었거나 자기 역할이 든 공지만
+rr = (await call('POST', '/notices', { title: '오피스 공지', content: '회계 마감', roles: ['office'] })) as any;
+const nOffice = rr.body.id;
+expect('관리자: 오피스 대상 공지 쓰기', rr.status === 201 && !!nOffice, rr);
+expect('잘못된 역할 400', ((await call('POST', '/notices', { title: 't', content: 'c', roles: ['teacher'] })).body as any).error === 'invalid_roles');
+rr = (await call('POST', '/notices', { title: '모두', content: 'c', roles: ['manager', 'admin', 'office'] })) as any;
+expect('세 역할을 다 고르면 모든 역할(빈 배열)로 저장', (await stores.notices.all()).find((n) => n.id === rr.body.id)?.roles.length === 0, rr);
+const ml = (await mcall('GET', '/notices')).body;
+expect('매니저: 오피스 대상 공지는 목록에 없음, 역할 목록은 3개', !ml.rows.some((n: any) => n.id === nOffice) && ml.roles.length === 3, ml.rows.map((n: any) => n.title));
+expect('매니저: 오피스 대상 공지 상세 404', (await mcall('GET', `/notices/${nOffice}`)).status === 404);
+const ol2 = (await asOffice('GET', '/notices')).body;
+expect('오피스: 오피스 대상 공지가 보이고 대상 표시', ol2.rows.find((n: any) => n.id === nOffice)?.roles.join() === 'office', ol2.rows.map((n: any) => [n.title, n.roles]));
+expect('관리자: 모든 공지', ((await call('GET', '/notices')).body as any).rows.some((n: any) => n.id === nOffice));
 await stores.absences.put(req('abM', A, { date: '2026-11-26', periods: [], kind: 'sick' }) as Absence);
 rr = await mcall('POST', '/requests/absences/decide', { ids: ['abM'], approve: true, comment: '진단서 확인' });
 expect('매니저: 결석 신청 승인', rr.status === 200 && (await stores.absences.get('abM'))?.status === 'approved', rr);

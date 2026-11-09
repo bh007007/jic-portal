@@ -158,6 +158,14 @@ x = await api('GET', `/api/notices/${nId}`, tP);
 ok('다른 직원도 읽음(2명)', x.body.reads?.length === 2, x.body.reads);
 x = await api('PUT', `/api/notices/${nId}`, tP, { title: '점검 안내(수정)', content: '내일 오후 점검', campus: '', pinned: false, until: null });
 ok('공지 수정(수정자 직원P)', x.status === 200 && (await api('GET', `/api/notices/${nId}`, tC)).body.updatedBy === '직원P', x);
+// 공지 대상 역할(11/10 결정 I14): DB 에 남고, 대상 역할이 아닌 사람에게는 안 보인다(관리자는 모두)
+x = await api('POST', '/api/notices', tC, { title: '매니저만', content: '수업 시간표 변경', roles: ['manager'] });
+const nMgr = x.body.id;
+ok('역할 대상 공지 작성, DB roles', x.status === 201 && (await sb.sql(`select roles from public.internal_notices where id = $1`, [nMgr]))[0]?.roles?.join() === 'manager', x);
+x = await api('GET', '/api/notices', tP);
+ok('오피스(직원P): 매니저 대상 공지는 목록에 없음', x.status === 200 && !x.body.rows.some((n) => n.id === nMgr), x.body.rows?.map((n) => n.title));
+x = await api('GET', '/api/notices', tC);
+ok('관리자(직원C): 매니저 대상 공지도 보임', x.body.rows.some((n) => n.id === nMgr && n.roles.join() === 'manager'), x.body.rows?.map((n) => n.title));
 
 // ── 상담 기록: 맡은 캠퍼스만(관리자는 모든 캠퍼스, 오피스는 오피스 역할의 캠퍼스), 내용은 함수로, 열 때마다 기록
 const today = (await sb.sql(`select (now() at time zone 'Asia/Manila')::date::text d`))[0].d;

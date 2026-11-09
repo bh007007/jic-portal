@@ -68,6 +68,9 @@ export const nightsBetween = (from: string, until: string) => Math.round((Date.p
 /** 필리핀 날짜(UTC+8) */
 export const manilaDate = (d: Date) => new Date(d.getTime() + 8 * 3600e3).toISOString().slice(0, 10);
 
+/** 결석 신청은 지난 날짜도 3일 전까지 받는다(11/10 결정 I10). 진단서 사진(병결 연속 2일 이상)은 Storage 와 함께 다음에 넣는다. */
+export const ABSENCE_PAST_DAYS = 3;
+
 // ── 외박 규칙(11/10 결정 I11): 떠나는 날 하루 전까지 신청, 한 번에 최대 14박, 미성년은 보호자 동의 표시
 export const OVERNIGHT_LEAD_DAYS = 1;
 export const OVERNIGHT_MAX_NIGHTS = 14;
@@ -122,6 +125,7 @@ export interface AbsenceInput {
 
 /**
  * 결석 신청 확인. 날짜는 신청 가능 기간 안, 같은 날짜에 대기·승인 상태인 신청과 교시가 겹치면 거절(종일은 모든 교시와 겹친다).
+ * 11/10 결정 I10: 지난 날짜는 오늘(필리핀 날짜)부터 3일 전까지만(too_old).
  */
 export function newAbsence(ctx: NewCtx, mine: Absence[], input: AbsenceInput): Outcome<Absence> {
   const { date, kind } = input;
@@ -130,6 +134,7 @@ export function newAbsence(ctx: NewCtx, mine: Absence[], input: AbsenceInput): O
   const periods = [...new Set(periodsIn.map(Number))].sort((a, b) => a - b);
 
   if (!isDate(date)) return fail(400, 'invalid_date');
+  if (date < addDays(manilaDate(ctx.now()), -ABSENCE_PAST_DAYS)) return fail(400, 'too_old');
   if (!ABSENCE_KINDS.includes(kind as AbsenceKind)) return fail(400, 'invalid_kind');
   if (periods.some((p) => !Number.isInteger(p) || p < 1 || p > PERIOD_COUNT)) return fail(400, 'invalid_periods');
   if (!reason) return fail(400, 'reason_required');

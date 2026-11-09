@@ -142,6 +142,7 @@ export const en: Record<MsgKey, string> = {
   'err.duplicate': 'You already have a request for that date and period.',
   'err.overnight_duplicate': 'You already have an overnight request for those nights.',
   'err.invalid_range': 'The return date must be after the leave date.',
+  'err.too_old': 'You can apply for past dates up to 3 days ago.',
   'err.too_late': 'The leave date must be tomorrow or later (apply by the day before).',
   'err.too_many_nights': 'You can apply for up to {n} nights at a time.',
   'err.guardian_consent_required': 'Please confirm that you have your parent or guardian’s consent.',

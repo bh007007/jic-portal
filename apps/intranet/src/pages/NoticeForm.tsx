@@ -11,6 +11,8 @@ export default function NoticeForm() {
   const staff = useStaffName();
   const editing = !!id;
   const [campuses, setCampuses] = useState<string[]>([]);
+  const [roleOptions, setRoleOptions] = useState<NoticeList['roles']>([]);
+  const [roles, setRoles] = useState<string[]>([]);
   const [loaded, setLoaded] = useState(!editing);
   const [title, setTitle] = useState('');
   const [content, setContent] = useState('');
@@ -21,13 +23,19 @@ export default function NoticeForm() {
   const [busy, setBusy] = useState(false);
 
   useEffect(() => {
-    api<NoticeList>('/api/notices').then((d) => setCampuses(d.campuses)).catch(() => undefined);
+    api<NoticeList>('/api/notices')
+      .then((d) => {
+        setCampuses(d.campuses);
+        setRoleOptions(d.roles);
+      })
+      .catch(() => undefined);
     if (!editing) return;
     api<NoticeDetail>(`/api/notices/${id}`)
       .then((d) => {
         setTitle(d.title);
         setContent(d.content);
         setCampus(d.campus);
+        setRoles(d.roles);
         setPinned(d.pinned);
         setUntil(d.until ?? '');
         setLoaded(true);
@@ -43,7 +51,7 @@ export default function NoticeForm() {
     e.preventDefault();
     setBusy(true);
     setError(null);
-    const body = { title, content, campus, pinned, until: until || null };
+    const body = { title, content, campus, roles, pinned, until: until || null };
     try {
       if (editing) {
         await api(`/api/notices/${id}`, { method: 'PUT', body });
@@ -83,6 +91,15 @@ export default function NoticeForm() {
               ))}
             </select>
           </label>
+          <fieldset className="narrow plain">
+            <legend>대상 역할 (고르지 않으면 모든 역할)</legend>
+            {roleOptions.map((r) => (
+              <label key={r.code} className="check">
+                <input type="checkbox" checked={roles.includes(r.code)} onChange={(e) => setRoles(e.target.checked ? [...roles, r.code] : roles.filter((x) => x !== r.code))} /> {r.label}
+              </label>
+            ))}
+            <span className="muted small">관리자는 모든 공지를 봅니다.</span>
+          </fieldset>
           <label className="narrow">
             게시 종료일 (선택)
             <input type="date" min={editing ? undefined : today} value={until} onChange={(e) => setUntil(e.target.value)} />
