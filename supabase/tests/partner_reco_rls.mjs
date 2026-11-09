@@ -25,6 +25,9 @@ for (const f of ['20261107000000_legacy_tables.sql', '20261107010000_partner_por
 // 트리거 함수 실행 권한을 먼저 거둔다(20261110131500_trigger_fn_privileges.sql). 아래 끝의 가입 신청·지점 계정 시험이 트리거가 그대로 도는지 본다
 await db.exec(mig('20261110131500_trigger_fn_privileges.sql'));
 await db.exec(mig('20261110131500_trigger_fn_privileges.sql')); // 두 번째 실행
+// 성능 정리(20261110143500_perf_policies_indexes.sql: 정책의 auth.uid() → (select auth.uid()), 외래 키 인덱스)를 먼저 적용한다. 아래 지점 계정 시험이 뜻이 그대로인지 같이 본다
+await db.exec(mig('20261110143500_perf_policies_indexes.sql'));
+await db.exec(mig('20261110143500_perf_policies_indexes.sql')); // 두 번째 실행
 for (const fn of ['handle_partner_signup()', 'guard_member_update()']) {
   const r = (await db.query(`select has_function_privilege('anon', 'public.${fn}', 'execute') a, has_function_privilege('authenticated', 'public.${fn}', 'execute') u`)).rows[0];
   ok(`트리거 함수 ${fn}: 로그인 전·후 직접 실행 불가`, !r.a && !r.u, JSON.stringify(r));
@@ -83,6 +86,22 @@ await as(null, async () => {
     ok('익명: 규칙 못 읽음', /permission denied/.test(e.message));
   }
 });
+
+// 방문 신청·학습계획서 기록(정책을 (select auth.uid()) 로 바꾼 뒤에도 같은 뜻인지): 본인 것만 넣고 읽는다
+const fails0 = async (sql) => db.query(sql).then(() => false, () => true);
+await as(U.partner, async () => {
+  ok('에이전시: 방문 신청', (await db.query(`insert into public.visit_requests (visit_date, people, purpose) values ('2026-12-01', 2, '시설 견학')`)).affectedRows === 1);
+  ok('에이전시: 확정 상태로는 못 넣음', await fails0(`insert into public.visit_requests (visit_date, people, purpose, status) values ('2026-12-02', 1, 'x', 'confirmed')`));
+  ok('에이전시: 다른 지점 이름으로 못 넣음', await fails0(`insert into public.visit_requests (member_id, visit_date, people, purpose) values ('${U.pending}', '2026-12-03', 1, 'x')`));
+  ok('에이전시: 내 방문 신청 1건', (await q(`select 1 from public.visit_requests`)).length === 1);
+  ok('에이전시: 학습계획서 기록', (await db.query(`insert into public.plan_downloads (course_id) values ('p-esl')`)).affectedRows === 1);
+});
+await as(U.pending, async () => {
+  ok('승인 전 계정: 방문 신청 0건', (await q(`select 1 from public.visit_requests`)).length === 0);
+  ok('승인 전 계정: 학습계획서 기록 못 함', await fails0(`insert into public.plan_downloads (course_id) values ('p-esl')`));
+  ok('승인 전 계정: 내 신청만(0건)', (await q(`select 1 from public.agency_requests`)).length === 0);
+});
+await as(U.staff, async () => ok('직원: 방문 신청 전체', (await q(`select 1 from public.visit_requests`)).length === 1));
 
 // 권한을 거둔 뒤에도 트리거는 돈다: 등록 신청(가입 시 신청 행), 지점 계정(연락처만 본인이, 상태는 직원만)
 const NEW = '00000000-0000-0000-0000-0000000000f3';
