@@ -38,3 +38,4 @@ jobs:
       - run: node supabase/tests/lms_course_timeline_rls.mjs
       - run: node supabase/tests/partner_reco_rls.mjs
       - run: node supabase/tests/core_schema.mjs
+      - run: node supabase/tests/core_schema_adapter.mjs
