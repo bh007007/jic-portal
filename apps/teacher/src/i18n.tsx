@@ -74,7 +74,7 @@ const ko = {
   sumLine: '출석 {at} · 결석 {ab} · 지각 {ta}', unexcusedN: '무단 {n}', unexcusedWord: '무단', unexcusedTitle: '무단결석 목록', excusedN: '사유 인정 {n}', sickN: '병결 {n}', officialN: '공결 {n}', personalN: '개인 {n}', notCheckedN: '미체크 {n}', lateMinN: '{n}분 지각',
   noSummary: '이 기간에 출석 기록이 없습니다.', noUnexcused: '이 기간에 무단결석이 없습니다.', unexcusedDef: '무단: 사유 인정도, 그날 승인된 결석 신청도 없는 결석',
   // 수업 관리
-  classesOn: '{day} 수업', scheduleMenu: '수업 관리 (만들기·복사)', classroomsMenu: '교실', manageClasses: '수업 관리 (스케줄러·매니저)', schedule: '수업 관리',
+  classesOn: '{day} 수업', byClass: '수업으로 고르기', allStudentsOn: '그날 재학생 전체', scheduleMenu: '수업 관리 (만들기·복사)', classroomsMenu: '교실', manageClasses: '수업 관리 (스케줄러·매니저)', schedule: '수업 관리',
   addSession: '수업 추가', startTime: '시작', minutes: '분', kindLabel: '종류', subject: '과목', teacher: '강사', subTeacher: '보조 강사', classroom: '교실', none: '없음',
   pickStudents: '학생 ({n}명 선택)', noStudentsOn: '그날 재학생이 없습니다.', createSession: '수업 만들기', created: '수업을 만들었습니다.',
   copyDay: '이 날 수업 복사', copyNextDay: '다음 날', copyNextWeek: '다음 주 같은 요일', copyWeekdays: '다음 평일 {n}일', copyRun: '복사', copiedN: '수업 {n}개를 만들었습니다(휴일·마감된 날·이미 있는 수업은 건너뜀).',
@@ -164,7 +164,7 @@ const en: Record<Key, string> = {
   attSummary: 'Attendance view', range7: 'Last 7 days', range14: 'Last 14 days', rangeMonth: 'This month', unexcusedOnly: 'Unexcused only',
   sumLine: 'Present {at} · Absent {ab} · Late {ta}', unexcusedN: 'Unexcused {n}', unexcusedWord: 'Unexcused', unexcusedTitle: 'Unexcused absences', excusedN: 'Excused {n}', sickN: 'Sick {n}', officialN: 'Official {n}', personalN: 'Personal {n}', notCheckedN: 'Not checked {n}', lateMinN: '{n} min late',
   noSummary: 'No attendance in this period.', noUnexcused: 'No unexcused absences in this period.', unexcusedDef: 'Unexcused: absent with no excuse and no approved absence request that day',
-  classesOn: 'Classes on {day}', scheduleMenu: 'Class schedule (create · copy)', classroomsMenu: 'Classrooms', manageClasses: 'Classes (scheduler · manager)', schedule: 'Class schedule',
+  classesOn: 'Classes on {day}', byClass: 'Pick by class', allStudentsOn: 'All students that day', scheduleMenu: 'Class schedule (create · copy)', classroomsMenu: 'Classrooms', manageClasses: 'Classes (scheduler · manager)', schedule: 'Class schedule',
   addSession: 'Add class', startTime: 'Start', minutes: 'Minutes', kindLabel: 'Type', subject: 'Subject', teacher: 'Teacher', subTeacher: 'Assistant teacher', classroom: 'Classroom', none: 'None',
   pickStudents: 'Students ({n} selected)', noStudentsOn: 'No students enrolled that day.', createSession: 'Create class', created: 'Class created.',
   copyDay: "Copy this day's classes", copyNextDay: 'Next day', copyNextWeek: 'Same day next week', copyWeekdays: 'Next {n} weekdays', copyRun: 'Copy', copiedN: 'Created {n} classes (skipped holidays, closed days and existing classes).',

@@ -3,6 +3,7 @@ import { Link, useParams } from 'react-router-dom';
 import { fmt, useApi, type InvoiceDetail, type InvoiceItem, type StudentDetail as Detail } from '../api';
 import { Loading, PageTitle, Panel, PayText } from '../components/ui';
 import LmsScores from '../components/LmsScores';
+import LmsAttendance from '../components/LmsAttendance';
 
 const STATUS_LABEL: Record<string, string> = { current: '재학', upcoming: '입학 예정', graduated: '졸업', cancelled: '취소', other: '기타' };
 const PICK_LABEL: Record<string, string> = { BESA: 'BESA 그룹', INDIVIDUAL: '개별 픽업', NO_PICKUP: '개인 이동' };
@@ -214,6 +215,7 @@ export default function StudentDetail() {
         </Panel>
       ))}
 
+      <LmsAttendance stId={stId} />
       <LmsScores stId={stId} />
 
       <Panel title={<>메모 <small>({memos.length}건)</small></>}>
