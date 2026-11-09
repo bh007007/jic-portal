@@ -138,6 +138,8 @@ Cloudflare는 이미 Pages 프로젝트에 연결된 저장소로 Pages 프로�
 
 Supabase 대시보드 **Advisors → Security Advisor**(또는 Claude의 Supabase 도구 `get_advisors`)로 본다. 마이그레이션을 더한 뒤와 실제 데이터를 올리기 전에 다시 돌린다.
 
+같은 규칙을 CI가 마이그레이션마다 확인한다: `supabase/tests/security_lint.mjs`(RLS, 정책의 역할 확인, DEFINER 함수, 트리거 함수 권한, 뷰, 역할 없는 사용자·익명 0행). 규칙과 예외 목록은 `docs/collab.md`.
+
 **2026-11-10 결과(운영 프로젝트)**
 - **표 RLS**: 모든 표에 RLS가 켜져 있다. 정책 없는 표 2개(`counseling_notes`, `keycard_secret`)는 일부러 막아 둔 것이다(상담은 DB 함수로만, 카드키 비밀값은 서비스 키로만).
 - **역할 없는 가입자(에이전시 가입을 열면 생김)**가 읽을 수 있는 것: 캠퍼스 카드(`campuses`)와 휴일 날짜(`holidays`)뿐이다. 나머지 정책은 직원·강사·학생·가드·지점 확인 함수를 거친다(정책 식을 운영 DB에서 확인).
