@@ -464,7 +464,7 @@ x = await api('GET', '/api/meta', tM);
 ok('매니저: meta 역할·이름(강사 목록)', x.status === 200 && x.body.role === 'manager' && x.body.actor === '매니저M' && x.body.staffRole === null && x.body.campuses === null, x.body);
 const noKey = await handleApi(new Request('https://intranet.example/api/meta', { headers: { Authorization: `Bearer ${tM}` } }), { ...env, SUPABASE_SERVICE_ROLE_KEY: undefined });
 ok('매니저: 서비스 키가 없으면 500 server_config', noKey.status === 500);
-for (const [m, path] of [['GET', '/api/requests/overnights'], ['GET', '/api/departures'], ['PUT', '/api/settings'], ['GET', '/api/counseling'], ['GET', '/api/accounts']]) {
+for (const [m, path] of [['GET', '/api/requests/overnights'], ['GET', '/api/departures'], ['PUT', '/api/settings'], ['GET', '/api/audit'], ['GET', '/api/accounts']]) {
   x = await api(m, path, tM, m === 'PUT' ? { curfew: '23:00', guards: [] } : undefined);
   ok(`매니저 막힘: ${m} ${path}`, x.status === 403 && x.body.error === 'manager_forbidden', x);
 }
@@ -490,6 +490,17 @@ x = await api('POST', '/api/requests/absences/decide', tM, { ids: [absM], approv
 ok('매니저: 결석 신청 승인(처리자 = 매니저)', x.status === 200 && (await sb.sql(`select decided_by::text from public.absence_requests where id = $1`, [absM]))[0].decided_by === mgrId, x);
 x = await api('POST', '/api/notices', tM, { title: '매니저 공지', content: '수업 시간 변경' });
 ok('매니저: 공지 쓰기(작성자 = 매니저)', x.status === 201 && (await sb.sql(`select author_id::text, author_name from public.internal_notices where id = $1`, [x.body.id]))[0]?.author_id === mgrId, x);
+
+// 상담 기록: 매니저 역할의 캠퍼스(빈칸 = 모든 캠퍼스). 작성자·접근 기록 이름은 강사 목록 이름
+x = await api('POST', '/api/counseling', tM, { stId: sAb2, date: manila, title: '수업 태도 상담', content: '매니저 상담 내용' });
+const mCn = x.body.id;
+ok('매니저: 상담 기록 작성', x.status === 201 && !!mCn, x);
+x = await api('GET', `/api/counseling/${mCn}`, tM);
+ok('매니저: 상담 열람(내용, 작성자 = 매니저 이름)', x.status === 200 && x.body.note?.content === '매니저 상담 내용' && x.body.note?.author === '매니저M', x.body);
+const mAud = await sb.sql(`select action, actor_id::text, actor_name from public.audit_logs where target_id = $1 order by id`, [mCn]);
+ok('매니저 상담 접근 기록(작성·열람)', mAud.map((a) => a.action).join() === 'create,view' && mAud.every((a) => a.actor_id === mgrId && a.actor_name === '매니저M'), mAud);
+x = await api('GET', '/api/counseling', tC);
+ok('직원C(Challenger): 매니저가 쓴 Challenger 상담이 목록에 보임', x.body.rows?.some((r) => r.id === mCn), x.body.rows?.length);
 
 await sb.close();
 console.log(fails ? `${fails}건 실패` : '모두 통과');

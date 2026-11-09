@@ -1,6 +1,7 @@
 // 인트라넷 역할 2단계 B(20261109100000_intranet_manager.sql)의 권한 시험: 강사 포털 매니저(user_roles manager)에게 인트라넷 일부를 연다(docs/roles.md, 11/9 승인).
 // 매니저: 외출·가드 리포트·점수표·통금 설정·결석 신청·학교 여행·내부 공지 읽기, 패널티 승인·반려는 무단결석만, 무단결석 후보(출처 attendance, 대기) 정리,
-// 결석 신청 처리, 공지 쓰기(자기 글만 고침). 강사(teacher)는 그대로 못 본다. 데이터는 전부 가짜.
+// 결석 신청 처리, 공지 쓰기(자기 글만 고침), 상담 기록은 매니저 역할의 캠퍼스만(20261109110000_intranet_manager_counseling.sql).
+// 강사(teacher)는 그대로 못 본다. 데이터는 전부 가짜.
 //
 // 실행(저장소 루트, 의존성에 추가하지 않고 임시로 설치):
 //   npm i --no-save @electric-sql/pglite@0.3
@@ -31,6 +32,8 @@ for (const f of [
 ]) await db.exec(mig(f));
 await db.exec(mig('20261109100000_intranet_manager.sql'));
 await db.exec(mig('20261109100000_intranet_manager.sql')); // 두 번째 실행
+await db.exec(mig('20261109110000_intranet_manager_counseling.sql'));
+await db.exec(mig('20261109110000_intranet_manager_counseling.sql')); // 두 번째 실행
 ok('마이그레이션 2회 실행', true);
 
 const U = {
@@ -38,12 +41,14 @@ const U = {
   manager: '00000000-0000-0000-0000-0000000000b1', // 강사 포털 매니저(직원 아님)
   teacher: '00000000-0000-0000-0000-0000000000a1', // 강사
   student: '00000000-0000-0000-0000-0000000000d1',
+  managerP: '00000000-0000-0000-0000-0000000000b2', // Premium 만 맡은 매니저
 };
 await db.exec(`
   insert into auth.users (id) values ${Object.values(U).map((u) => `('${u}')`).join(',')};
   insert into public.staff_users (user_id, name) values ('${U.staff}', '직원S');
-  insert into public.user_roles (user_id, role, campus) values ('${U.manager}', 'manager', ''), ('${U.teacher}', 'teacher', '');
-  insert into public.staff (user_id, name) values ('${U.manager}', '매니저M'), ('${U.teacher}', '강사T');
+  insert into public.user_roles (user_id, role, campus) values ('${U.manager}', 'manager', ''), ('${U.teacher}', 'teacher', ''), ('${U.managerP}', 'manager', 'Premium');
+  insert into public.staff (user_id, name) values ('${U.manager}', '매니저M'), ('${U.teacher}', '강사T'), ('${U.managerP}', '매니저P');
+  insert into public.staff_campuses values ('${U.staff}', 'Challenger');
   insert into public.student_users (user_id, student_no) values ('${U.student}', '1001');
   insert into public.legacy_enrollments (id, data) values ('tr1', '{"tr_st_id":"1001"}');
   insert into public.outings (student_no, enrollment_id, campus, out_at, out_by) values ('1001', 'tr1', 'Challenger', now() - interval '1 hour', '근무자');
@@ -88,7 +93,7 @@ await as(U.manager, async () => {
   ok('매니저: 업체 원본은 못 읽음', (await n('legacy_enrollments')) === 0);
   ok('매니저: 결석(무단결석 후보용) 읽기', (await q(`select * from intranet_absence_marks('2026-11-01', '2026-11-30')`)).length === 1);
   const names = await q(`select name from staff_directory() order by name`);
-  ok('매니저: 처리자 이름(직원 + 강사 목록)', names.map((r) => r.name).join() === '강사T,매니저M,직원S', JSON.stringify(names));
+  ok('매니저: 처리자 이름(직원 + 강사 목록)', names.map((r) => r.name).join() === '강사T,매니저M,매니저P,직원S', JSON.stringify(names));
 });
 await as(U.teacher, async () => {
   for (const t of READ) ok(`강사 못 읽음: ${t}`, (await n(t)) === 0, `${t}=${await n(t)}`);
@@ -134,6 +139,36 @@ await as(U.staff, async () => {
   ok('직원: 통금 위반 승인', (await affected(`update penalties set status = 'approved' where id = 'curfew-x'`)) === 1);
   ok('직원: 결석 함수', (await q(`select * from intranet_absence_marks('2026-11-01', '2026-11-30')`)).length === 1);
 });
+
+// ── 상담 기록: 직원은 맡은 캠퍼스(staff_campuses), 매니저는 매니저 역할의 캠퍼스(빈칸 = 모든 캠퍼스). 이름은 강사 목록 이름
+const cid = await as(U.manager, async () => (await q(`select counseling_create('1001', 'Challenger', '2026-11-08', '수업 태도', '내용', null) as id`))[0].id);
+ok('매니저(모든 캠퍼스): 상담 기록 작성, 작성자 = 강사 목록 이름', (await q(`select author_name from counseling_notes where id = $1`, [cid]))[0]?.author_name === '매니저M');
+await as(U.manager, async () => {
+  ok('매니저: 상담 목록', (await q(`select * from counseling_list()`)).length === 1);
+  ok('매니저: 상담 열람(내용)', (await q(`select content from counseling_open($1)`, [cid]))[0]?.content === '내용');
+  await q(`select counseling_update($1, '2026-11-08', '수업 태도(수정)', '내용', '2026-11-10')`, [cid]);
+  await q(`select counseling_followup($1, true)`, [cid]);
+  ok('매니저: 수정·후속 조치(처리자 = 매니저 이름)', (await q(`select follow_up_done_by from counseling_open($1)`, [cid]))[0]?.follow_up_done_by === '매니저M');
+});
+const aud = await q(`select actor_id::text, actor_name, action from audit_logs where target_id = $1 order by id`, [cid]);
+ok('매니저 상담 접근 기록(작성·열람·수정·완료, 이름. 10초 안 다시 열람은 한 번)', aud.map((a) => a.action).join() === 'create,view,update,followup_done' && aud.every((a) => a.actor_id === U.manager && a.actor_name === '매니저M'), JSON.stringify(aud));
+await as(U.managerP, async () => {
+  ok('매니저(Premium): Challenger 상담은 목록에 없음', (await q(`select * from counseling_list()`)).length === 0);
+  await denied('매니저(Premium): Challenger 상담 열람 불가', `select * from counseling_open('${cid}')`, /not_found/);
+  await denied('매니저(Premium): Challenger 학생 상담 작성 불가', `select counseling_create('1001', 'Challenger', '2026-11-08', 't', 'c', null)`, /campus_not_allowed/);
+  ok('매니저(Premium): Premium 상담 작성', !!(await q(`select counseling_create('2001', 'Premium', '2026-11-08', 't', 'c', null) as id`))[0].id);
+});
+await as(U.teacher, async () => {
+  ok('강사: 상담 목록 빈 결과', (await q(`select * from counseling_list()`)).length === 0);
+  await denied('강사: 상담 작성 불가', `select counseling_create('1001', 'Challenger', '2026-11-08', 't', 'c', null)`, /campus_not_allowed/);
+});
+await as(U.staff, async () => {
+  ok('직원(Challenger): 매니저가 쓴 Challenger 상담 보임, Premium 은 안 보임', (await q(`select campus from counseling_list()`)).map((r) => r.campus).join() === 'Challenger');
+  const sid = (await q(`select counseling_create('1001', 'Challenger', '2026-11-08', '직원 상담', '내용', null) as id`))[0].id;
+  ok('직원: 작성자 이름은 직원 이름 그대로', (await q(`select author_name from counseling_open($1)`, [sid]))[0]?.author_name === '직원S');
+  await denied('직원: 맡지 않은 캠퍼스는 지금처럼 불가', `select counseling_create('2001', 'Premium', '2026-11-08', 't', 'c', null)`, /campus_not_allowed/);
+});
+await as(null, async () => denied('익명: 상담 범위 함수 실행 불가', `select counseling_campus_ok('Challenger')`, /permission denied/));
 
 console.log(`인트라넷 매니저 권한 시험: 통과 ${pass}, 실패 ${fails.length}`);
 for (const f of fails) console.log('  실패:', f);
