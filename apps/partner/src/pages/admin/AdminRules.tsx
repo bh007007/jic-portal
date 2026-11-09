@@ -1,9 +1,11 @@
 import { useEffect, useState } from 'react';
-import { loadCourses, useLoad, type RuleSet } from '../../data';
+import { courseLabel, loadCourses, useLoad, type Question, type RuleSet, type ScoreModel } from '../../data';
+import { isScoreModel } from '../../consult/engine';
 import { errText, must, supabase } from '../../supabase';
 import { Box, Loading, Msg } from '../../ui';
 
-// 12.2 추천 규칙 관리: 센터장 승인된 추천 조건표를 반영한다. 질문·선택지·규칙·단계 기본값을 JSON 으로 편집.
+// 12.2 추천 규칙 관리: 센터장 승인된 추천 조건표를 반영한다. 질문·선택지·조건표(◎○×)를 JSON 으로 편집하고, 아래 표로 확인한다.
+// v2.1(점수 방식, CL-021)은 rules = { model: 'score', courses: [...] }. 예전 샘플(sample-1)은 rules = [첫 일치 규칙…].
 export default function AdminRules() {
   const { data, error, reload } = useLoad(async () => ({
     sets: await must<RuleSet[]>(supabase.from('recommendation_rules').select('*').order('updated_at', { ascending: false })),
@@ -30,11 +32,16 @@ export default function AdminRules() {
   if (!data) return <Loading error={error} />;
   const courseIds = new Set(data.courses.map((c) => c.id));
 
-  const parse = () => {
+  const parse = (): { questions: Question[]; rules: RuleSet["rules"]; level_defaults: Record<string, unknown> } => {
     const questions = JSON.parse(form.questions);
     const rules = JSON.parse(form.rules);
     const level_defaults = JSON.parse(form.level_defaults);
-    if (!Array.isArray(questions) || !Array.isArray(rules)) throw new Error('질문과 규칙은 배열이어야 합니다.');
+    if (!Array.isArray(questions)) throw new Error('질문은 배열이어야 합니다.');
+    if (isScoreModel(rules)) {
+      checkScoreModel(questions, rules, courseIds);
+      return { questions, rules, level_defaults };
+    }
+    if (!Array.isArray(rules)) throw new Error("규칙은 배열(예전 방식)이거나 { model: 'score', courses: [...] }(조건표 v2.1)이어야 합니다.");
     for (const r of rules) {
       if (!courseIds.has(r.first)) throw new Error(`규칙의 1순위 코스 '${r.first}'가 코스 목록에 없습니다.`);
       if (r.alt && !courseIds.has(r.alt)) throw new Error(`규칙의 대안 코스 '${r.alt}'가 코스 목록에 없습니다.`);
@@ -87,15 +94,64 @@ export default function AdminRules() {
             <textarea className="input" style={{ minHeight: 220, fontFamily: 'Consolas, monospace', fontSize: 12 }} value={form.questions} onChange={(e) => setForm({ ...form, questions: e.target.value })} />
           </label>
           <label>
-            규칙 (위에서부터 처음 맞는 규칙 사용. when: {'{'}질문id: [값…]{'}'}, campus, first, alt, weeks)
+            조건표 (v2.1: {'{'} model: 'score', points, level_check, courses: [{'{'} course, marks: {'{'}질문id: {'{'}선택지값: ◎·○·×{'}'}{'}'}, weeks, alt, alt_when, prereq, status, visible {'}'}] {'}'} · 예전 방식: 첫 일치 규칙 배열)
             <textarea className="input" style={{ minHeight: 220, fontFamily: 'Consolas, monospace', fontSize: 12 }} value={form.rules} onChange={(e) => setForm({ ...form, rules: e.target.value })} />
           </label>
           <label>
-            단계 기본값 (코스id → 수준값 → 단계)
+            단계 기본값 (예전 방식만. v2.1 은 코스 단계의 '기본'으로 정한다)
             <textarea className="input" style={{ minHeight: 120, fontFamily: 'Consolas, monospace', fontSize: 12 }} value={form.level_defaults} onChange={(e) => setForm({ ...form, level_defaults: e.target.value })} />
           </label>
         </div>
       </Box>
+      {current && isScoreModel(current.rules) && <Matrix questions={current.questions} model={current.rules} names={Object.fromEntries(data.courses.map((c) => [c.id, `${c.campus_id.charAt(0).toUpperCase()}${c.campus_id.slice(1)} · ${courseLabel(c)}`]))} />}
     </>
+  );
+}
+
+/** 조건표 v2.1 저장 전 확인: 코스 id, ◎○× 값, 질문 선택지마다 칸이 있는지 */
+function checkScoreModel(questions: Question[], m: ScoreModel, courseIds: Set<string>) {
+  if (!Array.isArray(m.courses) || !m.courses.length) throw new Error('조건표에 코스가 없습니다.');
+  for (const c of m.courses) {
+    for (const [k, v] of [['코스', c.course], ['대안 코스', c.alt], ['선행 코스', c.prereq], ['비교 코스', c.compare]] as const) {
+      if (v && !courseIds.has(v)) throw new Error(`${k} '${v}'가 코스 목록에 없습니다.`);
+    }
+    for (const q of questions) {
+      for (const [v] of q.options) {
+        const mark = c.marks?.[q.id]?.[v];
+        if (mark !== undefined && !['◎', '○', '×'].includes(mark)) throw new Error(`${c.course} ${q.id}=${v}: '${mark}'는 ◎·○·× 가 아닙니다.`);
+      }
+    }
+  }
+}
+
+/** 저장된 조건표를 엑셀과 같은 모양으로 보여 준다(빈 칸 = 조건표에 행이 없음: 점수·제외 없음) */
+function Matrix({ questions, model, names }: { questions: Question[]; model: ScoreModel; names: Record<string, string> }) {
+  return (
+    <Box title="조건표 확인 (저장된 버전)">
+      <div className="box-body scroll">
+        <table className="tbl center" style={{ fontSize: 12 }}>
+          <thead>
+            <tr><th className="left">질문</th><th className="left">선택지</th>{model.courses.map((c) => <th key={c.course}>{names[c.course] ?? c.course}</th>)}</tr>
+          </thead>
+          <tbody>
+            {questions.flatMap((q, qi) =>
+              q.options.map(([v, label], oi) => (
+                <tr key={q.id + v}>
+                  <td className="left muted">{oi === 0 ? `Q${qi + 1}` : ''}</td>
+                  <td className="left">{label}</td>
+                  {model.courses.map((c) => <td key={c.course}>{c.marks[q.id]?.[v] ?? ''}</td>)}
+                </tr>
+              )),
+            )}
+            <tr><td className="left muted">기간</td><td className="left">권장 기간</td>{model.courses.map((c) => <td key={c.course}>{c.weeks ? `${c.weeks}주` : ''}</td>)}</tr>
+            <tr><td /><td className="left">대안 코스</td>{model.courses.map((c) => <td key={c.course}>{c.alt ? names[c.alt] ?? c.alt : ''}</td>)}</tr>
+            <tr><td /><td className="left">대안이 되는 조건</td>{model.courses.map((c) => <td key={c.course}>{c.alt_when ?? ''}</td>)}</tr>
+            <tr><td /><td className="left">선행 코스</td>{model.courses.map((c) => <td key={c.course}>{c.prereq ? `${names[c.prereq] ?? c.prereq} ${c.prereq_weeks ?? ''}주` : '없음'}</td>)}</tr>
+            <tr><td /><td className="left">운영 · 노출</td>{model.courses.map((c) => <td key={c.course}>{c.status} · {c.visible ? '노출' : '숨김'}</td>)}</tr>
+          </tbody>
+        </table>
+        <p className="muted" style={{ fontSize: 12, margin: '8px 0 0' }}>계산: × 가 하나라도 있으면 제외 → ◎ 2점·○ 1점 합산 → 1순위. 2순위는 1순위의 대안 코스가 후보에 남아 있으면 그 코스, 없으면 점수 2위. 동점이면 Q1 ◎ 먼저, 그다음 이 표의 열 순서(CL-021).</p>
+      </div>
+    </Box>
   );
 }

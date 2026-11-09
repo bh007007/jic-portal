@@ -16,16 +16,24 @@ export interface Campus {
 
 export interface Level {
   name: string;
+  /** 수업량(하루 교시·1:1 수업 수) */
   lessons?: string;
   intensity?: string;
+  /** 예전 '예산 수준'. 조건표 v2.1부터 가격은 견적 사이트 값이라 화면에 쓰지 않는다 */
   budget?: string;
   includes?: string;
+  /** 관리용 메모(화면에 내보내지 않음) */
+  note?: string;
+  /** 단계 선택 화면에서 먼저 골라 둘 옵션(Challenger ESL·IELTS, CL-007). TEP·Speaking·1:1 맞춤 과정은 없음(CL-020) */
+  default?: boolean;
 }
 
 export interface Course {
   id: string;
   campus_id: string;
   name: string;
+  /** 화면 표시 이름(CL-009: Senior → '1:1 맞춤 과정'). 견적·DB 에는 name 을 쓴다 */
+  display_name?: string | null;
   levels: Level[];
   sort: number;
   status: 'open' | 'preparing';
@@ -46,9 +54,12 @@ export interface CourseContent {
 export interface Question {
   id: string;
   label: string;
+  /** 답변 요약에 쓰는 짧은 이름(없으면 label) */
+  short?: string;
   options: [string, string][];
 }
 
+/** 예전 샘플 규칙(sample-1): 위에서부터 조건이 모두 맞는 첫 규칙 */
 export interface Rule {
   when: Record<string, string[]>;
   campus: string;
@@ -57,16 +68,62 @@ export interface Rule {
   weeks?: number;
 }
 
+export type Mark = '◎' | '○' | '×';
+
+/** 조건표의 코스 한 열(v2.1 '추천 조건표' 시트) */
+export interface ScoreCourse {
+  course: string;
+  /** 질문 id → 선택지 값 → ◎○× */
+  marks: Record<string, Record<string, Mark>>;
+  min_weeks: number | null;
+  /** 권장 기간(주) */
+  weeks: number | null;
+  /** 대안 코스와 대안이 되는 조건 */
+  alt: string | null;
+  alt_when: string | null;
+  /** 선행 코스(수준이 낮을 때 먼저). 보여 주는 방식은 결정 대기라 화면에 쓰지 않는다 */
+  prereq: string | null;
+  prereq_weeks: number | null;
+  status: string;
+  visible: boolean;
+  approval?: string;
+  note?: string | null;
+  /** 단계 선택 화면에서 하루 수업량을 함께 보여 줄 코스(CL-008: 1:1 맞춤 과정 ↔ TEP) */
+  compare?: string;
+}
+
+export interface LevelCheck {
+  question: string;
+  unknown: string;
+  note: string;
+  items: { label: string; options: string[] }[];
+  bands: { min: number; max: number; level: string }[];
+}
+
+/** 조건표 v2.1 점수 방식(CL-021) */
+export interface ScoreModel {
+  model: 'score';
+  source?: string;
+  /** 질문 시작 전 안내(CL-003) */
+  intro?: string;
+  points: Record<string, number>;
+  level_check?: LevelCheck;
+  courses: ScoreCourse[];
+}
+
 export interface RuleSet {
   id: number;
   version: string;
   status: 'draft' | 'approved';
   note: string | null;
   questions: Question[];
-  rules: Rule[];
+  rules: Rule[] | ScoreModel;
   level_defaults: Record<string, Record<string, string>>;
   updated_at: string;
 }
+
+/** 화면에 보이는 코스 이름(CL-009) */
+export const courseLabel = (c: Pick<Course, 'name' | 'display_name'>) => c.display_name || c.name;
 
 export interface Notice {
   id: number;

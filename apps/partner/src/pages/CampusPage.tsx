@@ -1,5 +1,5 @@
 import { Link, useParams } from 'react-router-dom';
-import { loadCampuses, loadContents, loadCourses, useLoad } from '../data';
+import { courseLabel, loadCampuses, loadContents, loadCourses, useLoad } from '../data';
 import { t } from '../i18n';
 import { Box, Loading, PageHead, Text } from '../ui';
 
@@ -44,7 +44,7 @@ export default function CampusPage() {
                   const ct = data.contents.find((x) => x.course_id === c.id);
                   return (
                     <Link key={c.id} className="card" to={`/courses/${c.id}`}>
-                      <div className="card-title"><strong>{c.name}</strong>{c.levels.length > 0 && <span className="muted" style={{ fontSize: 12 }}>{c.levels.map((l) => l.name).join(' · ')}</span>}</div>
+                      <div className="card-title"><strong>{courseLabel(c)}</strong>{c.levels.length > 1 && <span className="muted" style={{ fontSize: 12 }}>{c.levels.map((l) => l.name).join(' · ')}</span>}</div>
                       <span style={{ fontSize: 13 }}><Text value={ct?.summary} /></span>
                     </Link>
                   );

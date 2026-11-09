@@ -1,10 +1,12 @@
 import type { Member } from '../auth';
-import type { Course, CourseContent, RuleSet } from '../data';
-import { answerLabel, type Answers } from './engine';
+import { courseLabel, type Course, type CourseContent, type RuleSet } from '../data';
 
 interface Props {
   set: RuleSet;
-  answers: Answers;
+  /** 질문 id → 답 표시(잘 모름이면 추정 레벨까지) */
+  answerText: (qid: string) => string;
+  /** 희망 기간 표시 */
+  wished: string;
   course: Course;
   campusName: string;
   alt: Course | null;
@@ -20,7 +22,7 @@ interface Props {
 const firstLine = (s?: string | null) => (s ?? '').split('\n')[0];
 
 // 2.6 학습계획서: A4 1~2장. 'PDF로 저장'은 브라우저 인쇄 창에서 'PDF로 저장'을 고른다. 학생 정보 입력란은 없다.
-export default function StudyPlan({ set, answers, course, campusName, alt, level, weeks, content, quote, member, onBack, onDownload }: Props) {
+export default function StudyPlan({ set, answerText, wished, course, campusName, alt, level, weeks, content, quote, member, onBack, onDownload }: Props) {
   const today = new Date().toISOString().slice(0, 10);
   const courseUrl = `${location.origin}/courses/${course.id}`;
   const print = () => {
@@ -29,7 +31,7 @@ export default function StudyPlan({ set, answers, course, campusName, alt, level
   };
   const mail = () => {
     onDownload();
-    const subject = encodeURIComponent(`JIC 학습계획서 · ${course.name}`);
+    const subject = encodeURIComponent(`JIC 학습계획서 · ${courseLabel(course)}`);
     const body = encodeURIComponent('학습계획서 PDF를 첨부해 보내 주세요.\n\n코스 상세: ' + courseUrl);
     window.location.href = `mailto:?subject=${subject}&body=${body}`;
   };
@@ -58,7 +60,7 @@ export default function StudyPlan({ set, answers, course, campusName, alt, level
         <table className="kv">
           <tbody>
             {set.questions.map((q) => (
-              <tr key={q.id}><th>{q.label}</th><td>{answerLabel(set, q.id, answers[q.id])}</td></tr>
+              <tr key={q.id}><th>{q.short ?? q.label}</th><td>{answerText(q.id)}</td></tr>
             ))}
           </tbody>
         </table>
@@ -66,9 +68,9 @@ export default function StudyPlan({ set, answers, course, campusName, alt, level
         <h2>추천 코스</h2>
         <table className="kv">
           <tbody>
-            <tr><th>1순위</th><td><strong>{campusName} · {course.name}{level ? ` ${level}` : ''}</strong></td></tr>
-            {alt && <tr><th>대안</th><td>{alt.name}</td></tr>}
-            <tr><th>권장 기간</th><td>{weeks ? `${weeks}주` : '-'}{answers.weeks && weeks && Number(answers.weeks) !== weeks ? ` (희망 ${answers.weeks}주)` : ''}</td></tr>
+            <tr><th>1순위</th><td><strong>{campusName} · {courseLabel(course)}{level ? ` ${level}` : ''}</strong></td></tr>
+            {alt && <tr><th>대안</th><td>{courseLabel(alt)}</td></tr>}
+            <tr><th>권장 기간</th><td>{weeks ? `${weeks}주` : '-'} (희망 {wished})</td></tr>
           </tbody>
         </table>
 
