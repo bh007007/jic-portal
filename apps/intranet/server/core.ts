@@ -24,7 +24,7 @@ import { decideRide, rideState, type Departure, type DepartureStore, type RideSt
 import { handleLifeRequest, LIFE_CATEGORIES, LIFE_REPLY_MAX, type LifeRequestStore, type LifeStatus } from '../../student/server/lifeRequests';
 import { PENALTY_KIND_OF, REPORT_KINDS, REPORT_LABEL, REPORT_NOTE_MAX, type IncidentReport, type ReportKind } from './reports';
 import { createNotice, listNotices, noticeSummary, openNotice, updateNotice, type Notice, type NoticeCtx, type NoticeRead } from './notices';
-import { COMMENT_MAX, decideRequest, nightsBetween, overnightFor, type Absence, type Overnight, type RequestStatus, type RequestStore } from '../../student/server/requests';
+import { COMMENT_MAX, decideRequest, isMinorOn, nightsBetween, overnightFor, type Absence, type Overnight, type RequestStatus, type RequestStore } from '../../student/server/requests';
 import { readKeycard, type KeycardSecret } from '../../student/server/keycard';
 import type { AccountAdmin } from '../../student/server/accountAdmin';
 import { createAccounts, listAccounts, resetAccount, type AccountAction, type AccountsCtx } from './studentAccounts';
@@ -125,6 +125,8 @@ export const DEFAULT_RULES: PenaltyRules = {
     { code: 'absence', name: '무단결석', score: null, approver: '' },
     { code: 'curfew', name: '통금 위반', score: null, approver: '' },
     { code: 'alcohol', name: '음주', score: null, approver: '' },
+    { code: 'violence', name: '폭력', score: null, approver: '' }, // 11/10 결정 I7(가드 리포트 '폭력')
+    { code: 'unauthorized', name: '무단외출', score: null, approver: '' }, // 11/10 결정 I7(가드 리포트 '무단외출')
     { code: 'other', name: '기타', score: null, approver: '' },
   ],
   stages: [
@@ -940,7 +942,15 @@ async function listRequests(ctx: IntranetCtx, kind: RequestKind, q: URLSearchPar
       name: studentRef(ctx.db, c).name,
       requested: list.some((x) => x.stId === c && (x.status === 'pending' || x.status === 'approved') && x.from < o.until && o.from < x.until),
     }));
-  const all = list.map((o) => ({ ...o, ...requestRow(ctx, o), nights: nightsBetween(o.from, o.until), companionInfo: companionsOf(o) }));
+  // minor: 출발일에 미성년(18세 미만, 11/10 결정 I11). 보호자 동의 표시(guardianConsent)는 학생이 신청할 때 남긴다
+  const all = list.map((o) => ({
+    ...o,
+    ...requestRow(ctx, o),
+    nights: nightsBetween(o.from, o.until),
+    companionInfo: companionsOf(o),
+    minor: isMinorOn(ctx.db, o.stId, o.from),
+    guardianConsent: o.guardianConsent === true,
+  }));
   for (const o of all) counts[o.status]++;
   // 기간 검색은 외박 기간이 조회 범위와 겹치는 건
   const rows = all.filter((o) => match(o) && (!from || o.until > from) && (!to || o.from <= to)).sort(order((o) => o.from));
@@ -1243,6 +1253,7 @@ function noticeCtx(ctx: IntranetCtx): NoticeCtx {
     newId: ctx.newId,
     today: () => localDate(ctx.now().getTime()),
     campuses: () => [...new Set([...currentIndex(ctx.db).values()].map((s) => s.campus))].filter((c) => c && c !== '-').sort(),
+    viewerRole: ((a) => (a === 'guard' ? null : a))(accessOf(ctx)), // 공지 대상 역할(11/10 결정 I14)
   };
 }
 

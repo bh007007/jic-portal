@@ -78,50 +78,75 @@ const t0 = await login(A, students[A].st_birthday.replace(/-/g, ''));
 x = await api('GET', '/api/me', t0);
 ok('변경 전 403 password_change_required', x.status === 403 && x.body.error === 'password_change_required', x);
 const tA = await firstLogin(A);
+// 계정 학생 토큰(첫 로그인은 한 번만: 비밀번호를 바꾸므로)
+const tokens = new Map([[A, tA]]);
+const tokenOf = async (stId) => {
+  if (!tokens.has(stId)) tokens.set(stId, await firstLogin(stId));
+  return tokens.get(stId);
+};
 x = await api('GET', '/api/me', tA);
 ok('변경 후 내 정보: 본인 학생·연수만', x.status === 200 && x.body.student.stId === A && x.body.enrollment && x.body.departure === null, x);
 ok('내 정보에 기숙사(배정 표)', !!x.body.enrollment.dorm, x.body.enrollment);
 
+// 결석·외박 날짜는 오늘(필리핀) 기준이다(11/10 결정 I10 지난 날짜 3일, I11 외박 하루 전). 그 기간(3일 전~3일 뒤)에 재학하는 계정 학생 F 로 시험한다
+const oToday = (await sql(`select (now() at time zone 'Asia/Manila')::date::text d`))[0].d;
+const od = (n) => new Date(Date.parse(oToday) + n * 864e5).toISOString().slice(0, 10);
+const ofit = await sql(
+  `select su.student_no from public.student_users su join public.legacy_enrollments e on e.data->>'tr_st_id' = su.student_no
+    where left(e.data->>'tr_start_date', 10) <= $1 and left(e.data->>'tr_finish_date', 10) >= $2 and coalesce(e.data->>'tr_state_name', '') !~ '캔슬|거절|취소|연기|홀드|요청'
+    order by (su.student_no = $3) desc, su.student_no limit 1`,
+  [od(-3), od(3), A],
+);
+ok('결석·외박 날짜(3일 전~3일 뒤)에 재학하는 계정 학생이 있음', ofit.length === 1, ofit);
+const F = ofit[0].student_no;
+const tF = await tokenOf(F);
+
 // ── 결석 신청 → 직원 승인 → 학생이 결과를 봄
-x = await api('POST', '/api/absences', tA, { date: '2026-11-10', kind: 'sick', periods: [1, 2], reason: '감기' });
+x = await api('POST', '/api/absences', tF, { date: od(-4), kind: 'sick', periods: [], reason: '4일 전' });
+ok('지난 날짜 4일 전 결석 400 too_old', x.status === 400 && x.body.error === 'too_old', x);
+x = await api('POST', '/api/absences', tF, { date: od(0), kind: 'sick', periods: [1, 2], reason: '감기' });
 ok('결석 등록 201, 번호는 UUID', x.status === 201 && /^[0-9a-f-]{36}$/.test(x.body.id) && x.body.status === 'pending', x);
 const abs1 = x.body.id;
 const findAbs = async (token, id) => (await api('GET', '/api/absences', token)).body.rows.find((y) => y.id === id);
-let a1 = await findAbs(tA, abs1);
-ok('등록한 번호가 목록에 그대로', a1 && a1.periods.join() === '1,2' && a1.date === '2026-11-10' && a1.status === 'pending', a1);
-x = await api('POST', '/api/absences', tA, { date: '2026-11-10', kind: 'sick', periods: [2], reason: '감기' });
+let a1 = await findAbs(tF, abs1);
+ok('등록한 번호가 목록에 그대로', a1 && a1.periods.join() === '1,2' && a1.date === od(0) && a1.status === 'pending', a1);
+x = await api('POST', '/api/absences', tF, { date: od(0), kind: 'sick', periods: [2], reason: '감기' });
 ok('같은 날 같은 교시 409', x.status === 409 && x.body.error === 'duplicate', x);
-x = await api('POST', '/api/absences', tA, { date: '2026-12-20', kind: 'sick', periods: [], reason: 'x' });
+x = await api('POST', '/api/absences', tF, { date: '2030-12-20', kind: 'sick', periods: [], reason: 'x' });
 ok('연수 기간 밖 400', x.status === 400 && x.body.error === 'date_out_of_range', x);
 const staff = '00000000-0000-4000-8000-0000000000c1';
 await sbs.addUser({ id: staff, email: 'staff@jic.example', password: 'staffpass1' });
 await sql(`insert into public.staff_users (user_id, name) values ($1, '오피스 김') on conflict do nothing`, [staff]);
 const dec = await sql(`select public.decide_absence_requests(array[$1]::uuid[], true, '진단서 확인') n`, [abs1], { role: 'authenticated', sub: staff });
 ok('직원 승인 1건', dec[0]?.n === 1, dec);
-a1 = await findAbs(tA, abs1);
+a1 = await findAbs(tF, abs1);
 ok('학생이 승인·메모를 봄, 처리자는 안 보임', a1.status === 'approved' && a1.comment === '진단서 확인' && a1.decidedAt && a1.decidedBy === null, a1);
-x = await api('POST', '/api/absences', tA, { date: '2026-11-12', kind: 'personal', periods: [], reason: '병원' });
+x = await api('POST', '/api/absences', tF, { date: od(2), kind: 'personal', periods: [], reason: '병원' });
 const abs2 = x.body.id;
-x = await api('POST', `/api/absences/${abs2}/cancel`, tA, {});
+x = await api('POST', `/api/absences/${abs2}/cancel`, tF, {});
 ok('취소(취소 함수)', x.status === 200 && x.body.status === 'cancelled', x);
-x = await api('POST', `/api/absences/${abs2}/cancel`, tA, {});
+x = await api('POST', `/api/absences/${abs2}/cancel`, tF, {});
 ok('다시 취소 409 not_pending', x.status === 409 && x.body.error === 'not_pending', x);
-x = await api('POST', `/api/absences/${abs1}/cancel`, tA, {});
+x = await api('POST', `/api/absences/${abs1}/cancel`, tF, {});
 ok('승인된 건 취소 불가', x.status === 409 && x.body.error === 'not_pending', x);
-x = await api('GET', '/api/absences', tA);
+x = await api('GET', '/api/absences', tF);
 ok('신청 목록: 최신순 2건', x.status === 200 && x.body.rows.length === 2 && x.body.rows[0].id === abs2, x.body.rows?.map((y) => y.id));
 
-// ── 외박
-x = await api('POST', '/api/overnights', tA, { from: '2026-11-11', until: '2026-11-12', reason: '여행', destination: 'Baguio', contact: '+63 917 555 0000' });
-ok('외박 등록(여행 정보 저장)', x.status === 201 && x.body.from === '2026-11-11' && x.body.until === '2026-11-12' && x.body.destination === 'Baguio', x);
-const odb = await sql(`select destination, contact from public.overnight_permissions where id = $1`, [x.body.id]);
-ok('DB: 행선지·연락처', odb[0]?.destination === 'Baguio' && odb[0].contact === '+63 917 555 0000', odb);
+// ── 외박(11/10 결정 I11: 출발일은 내일부터, 최대 14박). 날짜는 오늘(필리핀) 기준이라 그 기간에 재학하는 계정 학생으로 시험한다
+const tO = tF;
+const ovBody = { reason: '여행', destination: 'Baguio', contact: '+63 917 555 0000' };
+x = await api('POST', '/api/overnights', tO, { from: oToday, until: od(1), ...ovBody });
+ok('오늘 출발 외박 400 too_late(하루 전까지)', x.status === 400 && x.body.error === 'too_late', x);
+x = await api('POST', '/api/overnights', tO, { from: od(1), until: od(2), ...ovBody });
+ok('외박 등록(여행 정보 저장)', x.status === 201 && x.body.from === od(1) && x.body.until === od(2) && x.body.destination === 'Baguio', x);
+const odb = await sql(`select destination, contact, guardian_consent from public.overnight_permissions where id = $1`, [x.body.id]);
+ok('DB: 행선지·연락처, 보호자 동의 표시 열(성년 false)', odb[0]?.destination === 'Baguio' && odb[0].contact === '+63 917 555 0000' && odb[0].guardian_consent === false, odb);
 const ov = x.body.id;
-x = await api('POST', '/api/overnights', tA, { from: '2026-11-11', until: '2026-11-13', reason: '겹침', destination: 'Baguio', contact: '+63 917 555 0000' });
+x = await api('POST', '/api/overnights', tO, { from: od(1), until: od(3), ...ovBody, reason: '겹침' });
 ok('겹치는 외박 409', x.status === 409 && x.body.error === 'duplicate', x);
-const ol = await api('GET', '/api/overnights', tA);
-ok('외박 목록에 박 수', ol.body.rows.find((y) => y.id === ov)?.nights === 1, ol.body.rows);
-x = await api('POST', `/api/overnights/${ov}/cancel`, tA, {});
+const ol = await api('GET', '/api/overnights', tO);
+ok('외박 목록에 박 수, 화면 정보(내일부터·14박)', ol.body.rows.find((y) => y.id === ov)?.nights === 1 && ol.body.minDate === od(1) && ol.body.maxNights === 14, ol.body);
+x = await api('POST', `/api/overnights/${ov}/cancel`, tO, {});
 ok('외박 취소', x.status === 200 && x.body.status === 'cancelled', x);
 
 // ── 귀국 항공편 → 직원 배차 → 학생이 시각을 바꾸면 재확인
@@ -164,13 +189,13 @@ const ldb = await sql(`select count(*)::int n from public.nonacademic_requests w
 ok('DB: 생활 요청 2건', ldb[0].n === 2, ldb);
 
 // ── 다른 학생에게는 안 보임
-const linked = await sql(`select student_no from public.student_users where student_no <> $1 order by student_no limit 1`, [A]);
+const linked = await sql(`select student_no from public.student_users where student_no <> $1 and student_no <> $2 order by student_no limit 1`, [A, F]);
 const Bno = linked[0].student_no;
-const tB = await firstLogin(Bno);
+const tB = await tokenOf(Bno);
 x = await api('GET', '/api/absences', tB);
-ok('학생B는 A의 신청을 못 봄', x.status === 200 && x.body.rows.every((y) => y.stId === Bno) && !x.body.rows.some((y) => y.id === abs1), x.body.rows);
+ok('학생B는 F의 신청을 못 봄', x.status === 200 && x.body.rows.every((y) => y.stId === Bno) && !x.body.rows.some((y) => y.id === abs1), x.body.rows);
 x = await api('POST', `/api/absences/${abs1}/cancel`, tB, {});
-ok('학생B가 A의 신청 취소 불가', x.status === 404 || x.body.error === 'not_found', x);
+ok('학생B가 F의 신청 취소 불가', x.status === 404 || x.body.error === 'not_found', x);
 x = await api('GET', '/api/life-requests', tB);
 ok('학생B는 A의 생활 요청을 못 봄', x.status === 200 && !x.body.rows.some((r) => r.id === lifeA), x.body.rows);
 x = await api('POST', `/api/life-requests/${lifeA}/cancel`, tB, {});
@@ -188,9 +213,9 @@ const fit = await sql(
 );
 ok('여행 날짜에 재학하는 계정 학생이 있음', fit.length >= 2, fit.length);
 const S = fit[0].student_no;
-const tS = S === A ? tA : S === Bno ? tB : await firstLogin(S);
+const tS = await tokenOf(S);
 const S2 = fit.find((f) => f.student_no !== S).student_no;
-const tS2 = S2 === A ? tA : S2 === Bno ? tB : await firstLogin(S2);
+const tS2 = await tokenOf(S2);
 const otherCampus = String(fit[0].ca).toUpperCase() === 'PREMIUM' ? 'Challenger' : 'Premium';
 const mkTrip = async (title, campus, start, end, capacity) =>
   (await sql(`insert into public.trips (campus, title, place, start_date, end_date, deadline, capacity, cost) values ($1, $2, 'La Union', $3, $4, $5, $6, 1800) returning id`, [campus, title, start, end, manila, capacity], { role: 'authenticated', sub: staff }))[0].id;

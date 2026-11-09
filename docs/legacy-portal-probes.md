@@ -124,7 +124,24 @@
 
 **새 시스템에 쓸 곳**
 - 파트너 포털 '공실'과 관리자 기숙사 화면의 등록 가능 여부. HANDOFF 2번은 침대 수와 입실 인원이 맞지 않아 공실을 계산하지 않기로 했다. 업체는 침대 수가 아니라 기수별 방 목표(`target`)와 국가 목표, 직원이 넣는 마감(Closing Management)으로 판단한다.
-- 같은 판단을 옮기려면 Closing Management 화면(기수·기숙사별 목표, 시작·주 마감, 국가 목표)의 설정 표가 필요하다. 그 화면의 조회 주소는 아직 보지 않았다.
+- 같은 판단을 옮기려면 공실 설정 화면 네 개의 표가 필요하다(아래 '공실 설정').
+
+## 공실 설정: Room Target·Exceptions·연수마감관리·가족연수 마감관리 (11/10, 레오님 허용으로 조사)
+
+Closing Status가 쓰는 설정을 직원이 넣는 화면들이다. 화면 코드에서 주소를 찾아 **조회 주소만** 한 번씩 불러 구조와 건수만 봤다. 저장·복사·되돌리기 주소는 부르지 않았다. 메모·이름 열이 있어 값은 출력하지 않았고 추출하지 않았다.
+
+| 화면 | 조회 주소(POST, csrf) | 부르지 않은 주소 | 받는 것(11/10 기본 조건) |
+| --- | --- | --- | --- |
+| 재학생관리 > Room Setting > Room Target (`/appl/adm/train_stat/room_target_v2`) | `room_target_v2_load_room`(폼 `frm_search_room`: 캠퍼스·시작 기수·20기수), `room_target_v2_load_country`(폼 `frm_search_country`: 캠퍼스·국가·기수) | `room_target_v2_save_bulk`·`recalc`·`copy_range`·`copy_target`·`memo_save`·`memo_select` | 방 목표 `rt2_type` D 428줄(기숙사 × 기수, `rt2_target`), 국가 목표 `rt2_type` C 360줄(캠퍼스 × 국가 × 기수, `rt2_target`·`rt2_target_rate`·허용 `rt2_allow_yn` Y 180·N 180), 국가 관리 `rtc_*` 27줄(캠퍼스 × 국가, 관리 여부 Y 18·N 9, 순서, 풀리는 날 `rtc_release_days`), 기수별 합계(`sum_room_list`·`sum_country_list`·`sum_campus_room_list`), 기수 메모 `rtm_*` |
+| 재학생관리 > Room Setting > Exceptions (`/appl/adm/train_stat/exception`) | `exception_load`(s_sd·s_weeks·s_status·s_type·s_do_id·s_q) | `exception_insert`·`update`·`delete`·`update_cnt_batch`·`select`·`preview`·`period` | 침대 예외(잡아 둔 자리) `rem_*` 13건(모두 사용 중, 종류 OT, 학생 있음), 기수별 인원 `red_*` 49줄(남 `red_cnt` 합 26·여 `red_cnt_f` 합 121), 국가별 시작 마감 칸 `tc_list` 144 |
+| 마케팅 > Room Setting > 연수마감관리 (`/appl/adm/business/close_man`) | `close_man_load`(시작 마감, s_sd·s_weeks·s_country), `close_man_load_2week`(2주 마감), `close_man_load_period`(기간 조건) | `close_man_save_batch`·`period_save`·`undo`·`history`·`history_list`·`history_group` | 마감 `tc_*`(기숙사 × 기수 × 국가: 시작 마감 `tc_state` C/O, 주 마감 `tc_state_return`, 가족 연수 마감 `tc_close_family_yn`, 바꾼 사람·시각) KOR·12주 4줄, 기간 조건 `tcp_*` 0줄 |
+| 마케팅 > Registration > 가족연수 마감관리 (`/appl/adm/register/family_closing`) | `family_closing_load/<쪽>`(폼 `frm_search`) | `family_closing_save`·`delete` | 0건 |
+
+**알아 둘 점**
+- 예외 종류(`rem_type`): AG 에이전트, GR 그룹, NA 수리, IS 격리, MK 마케팅, OT 기타, TR 가예약. 만료일 `rem_expire_date`가 지나면 끝난다(화면의 Active now·Ended).
+- 방 목표는 기숙사 정원 `do_max`와 다르다(같은 줄 61, 작은 줄 12, 나머지는 큼). 그래서 공실은 침대 수가 아니라 이 목표로 계산한다.
+- Closing Status의 남은 자리 = 방 목표 − 학생 − 예외(`red_cnt`·`red_cnt_f`, 남녀 따로). 국가 제한은 국가 목표(인원·비율·허용)로, 시작·주 마감은 연수마감관리 `tc_*`로 닫는다.
+- 새 시스템에 옮길 때 필요한 표: 방 목표(기숙사 × 기수), 국가 목표(캠퍼스 × 국가 × 기수)와 국가 관리, 침대 예외(기간·남녀 인원), 마감(기숙사 × 기수 × 국가), 기간 조건. 기획안 데이터 모델의 `room_targets`·`room_blocks`가 이것이다. 학생 수(기숙사 × 기수)는 연수·기숙사 배정에서 센다.
 
 ## 연장·변경 추출 (`portal-extract-extend.js`)
 

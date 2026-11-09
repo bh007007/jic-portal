@@ -19,7 +19,7 @@ npm run student
 | `/requests` | 신청: 결석·외박 신청·생활 요청·학교 여행 버튼, 결석·외박 신청과 생활 요청 내역 | 결석·외박 신청, 생활 요청 |
 | `/requests/absence/new` | 결석 신청: 날짜, 종류(병결·공결·개인 사유), 교시(종일 또는 1~8), 사유(500자) | |
 | `/requests/:id` | 결석 신청 상세(담당자 메모 포함), 대기 중이면 취소 | |
-| `/requests/overnight/new` | 외박·여행 신청: 출발일, 복귀일(박 수 표시), 행선지, 숙소(선택), 비상 연락처, 같이 가는 학생(학생번호, 선택), 사유(일정, 500자) | |
+| `/requests/overnight/new` | 외박·여행 신청: 출발일(내일부터), 복귀일(박 수 표시, 최대 14박), 행선지, 숙소(선택), 비상 연락처, 같이 가는 학생(학생번호, 선택), 사유(일정, 500자), 18세 미만이면 '보호자 동의를 받았습니다' 표시 | |
 | `/requests/overnight/:id` | 외박·여행 신청 상세(여행 정보, 담당자 메모), 대기 중이면 취소 | |
 | `/requests/life/new` | 생활 요청: 종류(시설 수리·방 변경·ID 카드 재발급·서류 발급·기타), 내용(위치와 필요한 것, 500자) | |
 | `/requests/life/:id` | 생활 요청 상세(상태·담당자 답변), 접수 상태면 취소 | |
@@ -129,8 +129,8 @@ apps/student/
 | `GET /api/absences` | 내 결석 신청, 신청 가능 기간, 교시 수 |
 | `POST /api/absences` | 결석 신청 `{ date, kind, periods, reason }` |
 | `POST /api/absences/:id/cancel` | 대기 중인 내 신청 취소 |
-| `GET /api/overnights` | 내 외박 신청(박 수 포함), 신청 가능 기간 |
-| `POST /api/overnights` | 외박 신청 `{ from, until, reason }` |
+| `GET /api/overnights` | 내 외박 신청(박 수 포함), 신청 가능 기간, 출발일 하한 `minDate`·최대 박 수 `maxNights`·미성년 여부 `minor` |
+| `POST /api/overnights` | 외박 신청 `{ from, until, reason, destination, accommodation, contact, companions, guardianConsent }` |
 | `POST /api/overnights/:id/cancel` | 대기 중인 내 외박 신청 취소 |
 | `GET /api/life-requests` | 내 생활 요청(최근 순), 종류 목록, 요청 가능 여부(재학·입학 예정 연수) |
 | `POST /api/life-requests` | 생활 요청 `{ category, content }` |
@@ -146,6 +146,7 @@ apps/student/
 결석 신청 규칙(서버에서 확인):
 
 - 날짜는 재학 중이거나 입학 예정인 연수 기간 안. 연장으로 연수가 여러 개면 그중 하나에 들어가면 되고, 신청에는 그 연수 번호(`trId`)가 붙는다.
+- (11/10 결정 I10) 지난 날짜는 오늘(필리핀 날짜)부터 3일 전까지만 받는다(`too_old`). 병결 연속 2일 이상의 진단서 사진은 Supabase Storage와 함께 다음에 넣는다.
 - 같은 날짜에 대기·승인 상태인 신청과 교시가 겹치면 거절한다(종일은 모든 교시와 겹친다). 취소·반려된 신청은 다시 낼 수 있다.
 - 학생은 대기 중인 자기 신청만 취소할 수 있다. 승인·반려는 인트라넷 '신청 처리'에서 하고(`docs/intranet.md`), 담당자 메모가 신청 상세에 보인다. 결석 승인은 LMS가 생기면 그쪽으로 옮길 수 있다(같은 `requests.ts`를 쓰면 된다).
 
@@ -153,6 +154,8 @@ apps/student/
 
 - 출발일 밤부터 복귀일 전날 밤까지가 외박이다(11/8 출발, 11/10 복귀 = 2박). 복귀일은 출발일보다 뒤여야 한다.
 - 출발일과 마지막 밤이 한 연수 기간 안에 들어가야 한다.
+- (11/10 결정 I11) 떠나는 날 하루 전까지 신청한다: 출발일은 내일(필리핀 날짜)부터(`too_late`). 한 번에 최대 14박(`too_many_nights`).
+- (11/10 결정 I11) 출발일에 18세 미만(필리핀 성년 기준, 생년월일로 계산)이면 '보호자 동의를 받았습니다'에 표시해야 한다(`guardian_consent_required`). 표시는 `overnight_permissions.guardian_consent`에 남고(`20261110113000_overnight_rules.sql`), 인트라넷 외박 처리 화면에 '미성년 · 보호자 동의 받음(학생 표시)'로 보인다. 생년월일이 없으면 성년으로 본다.
 - 대기·승인 상태인 다른 외박과 밤이 겹치면 거절한다(복귀일 밤부터 새 외박은 겹치지 않는다).
 - 승인된 외박의 밤은 인트라넷 통금 확인에서 빠지고, 가드 태블릿에 '외박 허용 ~복귀일'로 보인다.
 

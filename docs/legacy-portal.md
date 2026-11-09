@@ -49,11 +49,11 @@
 | 재학생관리 | Outing > Travel | adm/outing/travel |
 | 재학생관리 | 항공·픽업 / ID 카드 / ID 카드 교체 / 사진 업로드 | adm/academic/airline, id_card, exchange, adm/academic3/picture |
 | 재학생관리 | 통계 > 학생수(달력) / Student List / Register Stat | adm/train2/inschool, adm/train_stat/stu_stat_list_v2, adm/train2/reg_stat |
-| 재학생관리 | Room Setting > Room Target / Exceptions | adm/train_stat/room_target_v2, exception |
+| 재학생관리 | Room Setting > Room Target / Exceptions | adm/train_stat/room_target_v2, exception (공실 설정, `legacy-portal-probes.md` '공실 설정') |
 | 마케팅 | 학생등록 / 가족등록 / 중단·연기 / 연장 | adm/register/regist, family_regist, adm/train3/canceltrain, extend |
 | 마케팅 | 항공·픽업 관리 / Checking Memo | adm/train2/airpickup, checking_memo |
 | 마케팅 | 통계 > Closing Status / 예상 금액 | adm/register/closing_v2, adm/simul/estimate |
-| 마케팅 | Room Setting > 연수마감관리 / Registration > 가족연수 마감관리 | adm/business/close_man, adm/register/family_closing |
+| 마케팅 | Room Setting > 연수마감관리 / Registration > 가족연수 마감관리 | adm/business/close_man, adm/register/family_closing (공실 설정) |
 | 마케팅 | Marketing Board > 마케팅 게시판 / Weekly Report | brdv2/boardv2/board_list/marketing_* |
 | 마케팅 | 유학원 안내 연락처 / Promo | adm/agency_contact/contact, adm/promo/manage |
 | 회계팀 | Passport / 입금액매칭 / 현지 인보이스 납부 / Payment Report / Check Balance | adm/academic/passport, adm/tuition/matching, adm/tuition2/payment, report, balance |

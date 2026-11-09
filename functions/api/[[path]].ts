@@ -8,6 +8,7 @@
  * 정규화된 테이블과 조건 조회로 바꾼다(HANDOFF.md).
  */
 import { createDb, handleApi, type Db, type PriceTable, type Raw } from '../../apps/admin/server/core';
+import { N_BATCH_COLUMNS, N_ENROLLMENT_COLUMNS, N_STUDENT_COLUMNS, toLegacyEnrollments, toLegacyStudents, type NBatch, type NEnrollment, type NStudent } from '../../apps/admin/server/normalized';
 
 interface Env {
   VITE_SUPABASE_URL?: string;
@@ -48,17 +49,42 @@ async function rest<T>(c: Conf, pathAndQuery: string, init?: { method?: string; 
 }
 
 // 프로젝트의 최대 행 수 설정이 PAGE 보다 작아도 빠짐없이 읽도록 전체 건수(Content-Range)를 보고 반복한다.
-async function readAll(c: Conf, table: string): Promise<Raw[]> {
-  const out: Raw[] = [];
+async function readRows<T>(c: Conf, table: string, select: string, order: string): Promise<T[]> {
+  const out: T[] = [];
   let total = 0;
   do {
-    const r = await call(c, `${table}?select=data&order=id&limit=${PAGE}&offset=${out.length}`, { prefer: 'count=exact' });
+    const r = await call(c, `${table}?select=${select}&order=${order}&limit=${PAGE}&offset=${out.length}`, { prefer: 'count=exact' });
     total = Number(r.headers.get('Content-Range')?.split('/')[1]) || 0;
-    const rows = (await r.json()) as { data: Raw }[];
+    const rows = (await r.json()) as T[];
     if (!rows.length) break;
-    for (const row of rows) out.push(row.data);
+    out.push(...rows);
   } while (out.length < total);
   return out;
+}
+async function readAll(c: Conf, table: string): Promise<Raw[]> {
+  return (await readRows<{ data: Raw }>(c, table, 'data', 'id')).map((r) => r.data);
+}
+
+const isMissingTable = (e: unknown) => e instanceof HttpError && /Supabase 404|PGRST205|does not exist/.test(e.message);
+
+// 학생·연수: 정규화 표(docs/schema.md, load_core_from_legacy() 로 채움)가 채워져 있으면 그것을 어댑터로 바꿔 쓰고,
+// 표가 없거나 비어 있으면(지금 운영) legacy_* 를 읽는다. 시험 supabase/tests/core_schema_adapter.mjs 가 두 길의 응답이 같은지 본다.
+async function readStudentsAndEnrollments(c: Conf): Promise<{ students: Raw[]; enrollments: Raw[] }> {
+  let ne: NEnrollment[] = [];
+  try {
+    ne = await readRows<NEnrollment>(c, 'enrollments', N_ENROLLMENT_COLUMNS, 'id');
+  } catch (e) {
+    if (!isMissingTable(e)) throw e;
+  }
+  if (ne.length) {
+    const [ns, nb] = await Promise.all([
+      readRows<NStudent>(c, 'students', N_STUDENT_COLUMNS, 'student_no'),
+      readRows<NBatch>(c, 'batches', N_BATCH_COLUMNS, 'id'),
+    ]);
+    return { students: toLegacyStudents(ns), enrollments: toLegacyEnrollments(ne, ns, nb) };
+  }
+  const [enrollments, students] = await Promise.all([readAll(c, 'legacy_enrollments'), readAll(c, 'legacy_students')]);
+  return { students, enrollments };
 }
 
 // 나중에 더한 표(연장·변경 20261109030000_legacy_extend.sql, 청구 합계 20261109060000_legacy_invoice_summary.sql, 가격표 20261109130000_legacy_prices.sql, 인보이스 항목 20261110090000_legacy_invoice_items.sql)는 마이그레이션 전에도 나머지 화면이 동작하도록 표가 없으면 빈 목록으로 본다.
@@ -66,7 +92,7 @@ async function readOptional(c: Conf, table: string): Promise<Raw[]> {
   try {
     return await readAll(c, table);
   } catch (e) {
-    if (e instanceof HttpError && /Supabase 404|PGRST205|does not exist/.test(e.message)) return [];
+    if (isMissingTable(e)) return [];
     throw e;
   }
 }
@@ -92,10 +118,9 @@ async function loadDb(c: Conf): Promise<Db> {
   const staff = await rest<boolean>(c, 'rpc/is_staff', { method: 'POST', body: '{}' });
   if (staff !== true) throw new HttpError(403, '직원 계정으로 등록되지 않았습니다. 관리자에게 등록을 요청하세요.');
 
-  const [metaRows, enrollments, students, invoices, dorms, agencies, agents, deposits, pointHistory, rooms, extensions, courseChanges, dormChanges, comebacks, invoiceSummary, balances, priceRows, itemRows] = await Promise.all([
+  const [metaRows, { students, enrollments }, invoices, dorms, agencies, agents, deposits, pointHistory, rooms, extensions, courseChanges, dormChanges, comebacks, invoiceSummary, balances, priceRows, itemRows] = await Promise.all([
     rest<{ data: Raw }[]>(c, 'legacy_meta?select=data&id=eq.current'),
-    readAll(c, 'legacy_enrollments'),
-    readAll(c, 'legacy_students'),
+    readStudentsAndEnrollments(c),
     readAll(c, 'legacy_invoices'),
     readAll(c, 'legacy_dorm_assignments'),
     readAll(c, 'legacy_agencies'),

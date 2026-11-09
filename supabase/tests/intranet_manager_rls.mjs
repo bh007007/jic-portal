@@ -2,6 +2,7 @@
 // 매니저: 외출·가드 리포트·점수표·통금 설정·결석 신청·학교 여행·내부 공지 읽기, 패널티 승인·반려는 무단결석만, 무단결석 후보(출처 attendance, 대기) 정리,
 // 결석 신청 처리, 공지 쓰기(자기 글만 고침), 상담 기록은 매니저 역할의 캠퍼스만(20261109110000_intranet_manager_counseling.sql).
 // 11/9 결정(20261109170000_intranet_decisions.sql): 매니저의 무단결석 승인·반려도 맡은 캠퍼스만(I5), 가드 계정 작업 기록은 관리자만(I4).
+// 11/10 결정(20261110103000_intranet_decisions_2.sql): 직원이 맡은 캠퍼스는 user_roles 한 곳(I16, 관리자 모든 캠퍼스·오피스 역할 캠퍼스), 점수표에 폭력·무단외출(I7).
 // 강사(teacher)는 그대로 못 본다. 데이터는 전부 가짜.
 //
 // 실행(저장소 루트, 의존성에 추가하지 않고 임시로 설치):
@@ -38,6 +39,8 @@ await db.exec(mig('20261109110000_intranet_manager_counseling.sql'));
 await db.exec(mig('20261109110000_intranet_manager_counseling.sql')); // 두 번째 실행
 await db.exec(mig('20261109170000_intranet_decisions.sql'));
 await db.exec(mig('20261109170000_intranet_decisions.sql')); // 두 번째 실행
+await db.exec(mig('20261110103000_intranet_decisions_2.sql'));
+await db.exec(mig('20261110103000_intranet_decisions_2.sql')); // 두 번째 실행(I16 맡은 캠퍼스는 user_roles, I7 폭력·무단외출)
 ok('마이그레이션 2회 실행', true);
 
 const U = {
@@ -158,7 +161,13 @@ await as(U.staff, async () => {
   ok('직원: 결석 함수', (await q(`select * from intranet_absence_marks('2026-11-01', '2026-11-30')`)).length === 1);
 });
 
-// ── 상담 기록: 직원은 맡은 캠퍼스(staff_campuses), 매니저는 매니저 역할의 캠퍼스(빈칸 = 모든 캠퍼스). 이름은 강사 목록 이름
+// ── 상담 기록: 관리자는 모든 캠퍼스, 오피스는 오피스 역할의 캠퍼스(I16), 매니저는 매니저 역할의 캠퍼스(빈칸 = 모든 캠퍼스). 이름은 강사 목록 이름
+const OFFICE = '00000000-0000-0000-0000-0000000000c3'; // Challenger 오피스
+await db.exec(`
+  insert into auth.users (id) values ('${OFFICE}');
+  insert into public.staff_users (user_id, name) values ('${OFFICE}', '오피스O');
+  insert into public.user_roles (user_id, role, campus) values ('${OFFICE}', 'office', 'Challenger');
+`);
 const cid = await as(U.manager, async () => (await q(`select counseling_create('1001', 'Challenger', '2026-11-08', '수업 태도', '내용', null) as id`))[0].id);
 ok('매니저(모든 캠퍼스): 상담 기록 작성, 작성자 = 강사 목록 이름', (await q(`select author_name from counseling_notes where id = $1`, [cid]))[0]?.author_name === '매니저M');
 await as(U.manager, async () => {
@@ -180,21 +189,20 @@ await as(U.teacher, async () => {
   ok('강사: 상담 목록 빈 결과', (await q(`select * from counseling_list()`)).length === 0);
   await denied('강사: 상담 작성 불가', `select counseling_create('1001', 'Challenger', '2026-11-08', 't', 'c', null)`, /campus_not_allowed/);
 });
+await as(OFFICE, async () => {
+  ok('오피스(Challenger): 매니저가 쓴 Challenger 상담 보임, Premium 은 안 보임', (await q(`select campus from counseling_list()`)).map((r) => r.campus).join() === 'Challenger');
+  await denied('오피스(Challenger): Premium 학생 상담 작성 불가', `select counseling_create('2001', 'Premium', '2026-11-08', 't', 'c', null)`, /campus_not_allowed/);
+});
 await as(U.staff, async () => {
-  ok('직원(Challenger): 매니저가 쓴 Challenger 상담 보임, Premium 은 안 보임', (await q(`select campus from counseling_list()`)).map((r) => r.campus).join() === 'Challenger');
+  ok('관리자(staff_campuses 는 Challenger 만): 모든 캠퍼스 상담이 보임(I16)', (await q(`select campus from counseling_list() order by campus`)).map((r) => r.campus).join() === 'Challenger,Premium');
   const sid = (await q(`select counseling_create('1001', 'Challenger', '2026-11-08', '직원 상담', '내용', null) as id`))[0].id;
   ok('직원: 작성자 이름은 직원 이름 그대로', (await q(`select author_name from counseling_open($1)`, [sid]))[0]?.author_name === '직원S');
-  await denied('직원: 맡지 않은 캠퍼스는 지금처럼 불가', `select counseling_create('2001', 'Premium', '2026-11-08', 't', 'c', null)`, /campus_not_allowed/);
+  ok('관리자: Premium 학생 상담도 작성(I16)', !!(await q(`select counseling_create('2001', 'Premium', '2026-11-08', 't', 'c', null) as id`))[0].id);
 });
+ok('I7: 점수표 종류(무단결석·통금·음주·폭력·무단외출·기타 순)', (await q(`select string_agg(code, ',' order by sort) s from penalty_rules`))[0].s === 'absence,curfew,alcohol,violence,unauthorized,other');
 await as(null, async () => denied('익명: 상담 범위 함수 실행 불가', `select counseling_campus_ok('Challenger')`, /permission denied/));
 
 // ── I4: 가드 계정 작업 기록(guard_account_audit)은 관리자만. 오피스·매니저는 막힌다(계정 작업 자체는 인트라넷 서버가 관리자만 받는다)
-const OFFICE = '00000000-0000-0000-0000-0000000000c3';
-await db.exec(`
-  insert into auth.users (id) values ('${OFFICE}');
-  insert into public.staff_users (user_id, name) values ('${OFFICE}', '오피스O');
-  insert into public.user_roles (user_id, role, campus) values ('${OFFICE}', 'office', 'Challenger');
-`);
 const guardAudits = async () => (await q(`select actor_name, action, target_id from audit_logs where target = 'guard_account'`)).map((r) => `${r.actor_name} ${r.action} ${r.target_id}`).join('|');
 await as(OFFICE, async () => denied('오피스: 가드 계정 기록 불가', `select guard_account_audit('guard_create', 'Challenger 정문', 'Challenger')`, /admin_only/));
 await as(U.manager, async () => denied('매니저: 가드 계정 기록 불가', `select guard_account_audit('guard_create', 'Challenger 정문', 'Challenger')`, /admin_only/));

@@ -4,6 +4,10 @@ import { Loading, PageTitle, Tabs } from '../components/ui';
 import { mdhm } from '../format';
 import { useSearchForm } from '../useSearchForm';
 
+/** 대상: 캠퍼스(전체) · 역할(11/10 결정 I14, 비우면 모든 역할) */
+const ROLE_LABEL: Record<string, string> = { admin: '관리자', office: '오피스', manager: '매니저' };
+const audience = (n: { campus: string; roles: string[] }) => [n.campus || '전체', ...n.roles.map((r) => ROLE_LABEL[r] ?? r)].join(' · ');
+
 const KEYS = ['campus', 'q'] as const;
 
 export default function Notices() {
@@ -93,7 +97,7 @@ export default function Notices() {
                         </Link>
                         {!n.readByMe && <span className="text-red small"> 안 읽음</span>}
                       </td>
-                      <td>{n.campus || '전체'}</td>
+                      <td>{audience(n)}</td>
                       <td>{n.author}</td>
                       <td className="nowrap">{mdhm(n.createdAt)}</td>
                       <td>{n.until ?? <span className="muted">-</span>}</td>

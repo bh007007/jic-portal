@@ -206,7 +206,7 @@ const base = (over: Partial<DataInput> = {}): DataInput => ({
   const ens = [
     enrollment('50', '2026-09-20', '2026-12-11', { tr_deposit_name: '미납', tr_currency: 'USD', ag_id: 'A1', tr_deposit_due_date: '2026-10-01' }), // 재학, 기한 지남
     enrollment('51', '2026-09-20', '2026-11-13', { tr_deposit_name: '부분납', ag_id: 'A2', tr_deposit_due_date: '2026-12-01' }), // 재학, 졸업 14일 안
-    enrollment('52', '2026-11-15', '2027-01-08', { tr_deposit_name: '미납', ag_id: 'A1' }), // 입학 예정
+    enrollment('52', '2026-11-15', '2027-01-08', { tr_deposit_name: '미납', ag_id: 'A1', tr_deposit_due_date: '0000-00-00' }), // 입학 예정, 기한 없음(업체 0000-00-00)
     enrollment('53', '2026-05-03', '2026-07-24', { tr_deposit_name: '완납', ag_id: 'A2' }), // 졸업
     enrollment('54', '2026-11-15', '2027-01-08', { tr_deposit_name: '미납', tr_state_name: '캔슬', tr_state: 'CANCEL' }), // 취소
   ];
@@ -234,6 +234,7 @@ const base = (over: Partial<DataInput> = {}): DataInput => ({
   expect('미납: 기본은 입학 예정(52), 취소(54)·완납(53)은 빠짐', up.total === 1 && up.rows[0].trId === '52' && up.scopeCounts.all === 3, { rows: up.rows.map((r) => r.trId), counts: up.scopeCounts });
   const upAll = db.listUnpaid(new URLSearchParams('scope=all'));
   expect('미납 전체: 납부 기한 지난 연수 1건(50), 미납 2·부분납 1', upAll.totals.overdue === 1 && upAll.totals.byPay.map((p) => p.count).join() === '2,1', upAll.totals);
+  expect('미납: 업체 기한 0000-00-00 은 빈 값(기한 지남으로 세지 않음)', upAll.rows.find((r) => r.trId === '52')?.dueDate === '', upAll.rows.find((r) => r.trId === '52'));
   const dep = db.listDeposits(new URLSearchParams(''));
   expect('입금 원장: 사용 안 함(4) 빼고 3건, 최근 날짜 순', dep.total === 3 && dep.rows.map((d) => d.dpId).join() === '3,2,1', dep.rows.map((d) => d.dpId));
   expect('입금 원장: 받는 계좌 열(bk_*)은 내보내지 않음', dep.rows.every((d) => !Object.keys(d).some((k) => /^bk_|owner|num$/.test(k))) && !JSON.stringify(dep.rows).includes('SECRET'), Object.keys(dep.rows[0]));

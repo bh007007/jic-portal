@@ -82,6 +82,7 @@ export const toOvernight = (r: Row): Overnight => ({
   comment: (r.staff_comment as string | null) ?? null,
   destination: String(r.destination ?? ''),
   accommodation: String(r.accommodation ?? ''),
+  guardianConsent: r.guardian_consent === true,
   contact: String(r.contact ?? ''),
   companions: ((r.companions as string[] | null) ?? []).map(String),
 });
@@ -134,6 +135,7 @@ export const overnightStore = (rest: Rest): OvernightStore =>
     accommodation: x.accommodation ?? '',
     contact: x.contact ?? '',
     companions: x.companions ?? [],
+    guardian_consent: x.guardianConsent === true,
   }));
 
 // ── 귀국 항공편(학생이 씀)·배차(직원이 씀, 학생은 읽기만). id 는 `dep-${연수 번호}`
