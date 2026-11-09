@@ -8,6 +8,7 @@
 - 데이터는 당분간 하드디스크에만 둔다(2026-11-07 결정). Supabase 적재는 보안 점검 이후, 테스트 DB에는 샘플만.
 - 업체 포털(jicportal.com)에서는 읽기 전용 `*_load` 조회 API만 호출한다. 구조와 주의점은 `docs/legacy-portal.md`.
   - 예외(2026-11-08 레오 허용): 인보이스 편집 화면이 여는 조회 `adm/tuition2/payment_select/<tr_id>`와 화면 GET `payment_edit/<tr_id>`. `scripts/extract/portal-extract-invoice-items.js`만 쓰고, 주소 허용 목록 밖은 부르지 않는다.
+  - 예외(2026-11-10 레오 허용): Closing Status 조회 `adm/register/closing_v2_list`·`closing_v2_finish_list`·`closing_v2_check_stay`(등록 가능 여부 집계, 개인정보 없음). 구조는 `docs/legacy-portal-probes.md` 'Closing Status'.
 
 ## 코드
 - 관리자 앱: `apps/admin` (React 18 + Vite 5 + TypeScript, npm workspaces). 실행 `npm run admin` → http://127.0.0.1:5173, 검증 `npm run admin:build`(core 시험 `server/core.test.ts` 포함: 연장 종료일, 청구 합계, 연장·변경 목록).

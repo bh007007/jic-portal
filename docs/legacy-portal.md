@@ -113,7 +113,7 @@
 | 마케팅 > Checking Memo (`adm/train2/checking_memo`) | `checking_memo_load/` (수정 `save_check_memo_train`은 부르지 않음) | Agency Memo `tr_ag_memo`, Marketing Memo `tr_br_memo`, Academy Memo `tr_br_memo_en` | `/memos` 체크 메모(읽기 전용). 메모 이름을 업체와 같게 바꿨다(학생 상세도) |
 | 마케팅 > 연장현황 (`adm/train3/extend`) | `extend_load/` | 연장 기록 `tt_*`(`tt_insert_date_str`, `tt_start_date`, `tt_finish_date`, `tt_week`, `tt_memo`, `tt_etc`) | `/extensions` 연장 현황(11/9 추출 412건). 업체는 연장해도 `tr_finish_date`(원래 종료일)를 바꾸지 않아, 종료일·재학 여부는 마지막 `tt_finish_date`로 본다(`core.ts` `finishOf`). 연장 금액 `sum_price`(연수 통화), 입금 `sum_amount` |
 | 재학생 > 신입·연장·복귀·변경 (`adm/academic/freshman`) | `freshman_load/`, `freshman_load_extend/`, `freshman_load_comeback/`, `freshman_load_course/`, `freshman_load_dorm/` | 탭 5개(신입·연장·복귀·코스 변경·기숙사 변경) | 신입은 '입학 배치별 명단', 연장 탭은 '연장 현황'(연장현황의 일부 86건)이 대신한다. 코스 변경·기숙사 변경·복귀는 `/changes` 변경 이력(업체 New Course·New Dorm 칸 `chg_course`·`chg_dorm`과 날짜). 주의: 복귀 탭은 `total_size`가 늘 1이라 빈 쪽까지 넘겨야 하고, 기숙사 변경은 긴 기간을 한 번에 넣으면 500이라 한 달씩 받는다(2024-04-21 하루는 하루만 넣어도 500) |
-| 마케팅 > 통계 > Closing Status·예상 금액 | `adm/register/closing_v2`, `adm/simul/estimate` | 검색 폼 없음(화면 안에서 따로 조회) | 확인 전 |
+| 마케팅 > 통계 > Closing Status·예상 금액 | `adm/register/closing_v2`, `adm/simul/estimate` | 검색 폼 없음(화면 안에서 따로 조회) | Closing Status = 캠퍼스 × 기숙사 × 기수 등록 가능 여부(공실), 조회 `closing_v2_list`·`finish_list`·`check_stay`(11/10 허용, `legacy-portal-probes.md`). 예상 금액 = 가격표(화면 코드) |
 
 ## 주의
 
