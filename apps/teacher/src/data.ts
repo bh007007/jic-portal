@@ -110,6 +110,16 @@ export const MATERIAL_KINDS = ['book', 'worksheet', 'slides', 'audio', 'video', 
 export const loadStudents = (on?: string) => must<LmsStudent[]>(supabase.rpc('lms_students', on ? { p_on: on } : {}));
 export const loadTestTypes = () => must<TestType[]>(supabase.from('test_types').select('*').order('sort').order('code'));
 export const loadCefr = () => must<CefrMapping[]>(supabase.from('cefr_mappings').select('*'));
+
+/** 한 학생의 연수 시작·코스 변경(날짜순, lms_course_timeline). CEFR 성장선의 코스 변경 표시(원칙 L2). 함수가 아직 없으면 빈 목록 */
+export interface CourseEvent {
+  day: string;
+  kind: 'start' | 'change';
+  course: string;
+  prev_course: string;
+}
+export const loadCourseTimeline = (studentNo: string) =>
+  must<CourseEvent[]>(supabase.rpc('lms_course_timeline', { p_student_no: studentNo })).catch(() => [] as CourseEvent[]);
 export const loadResults = (studentNo: string) =>
   must<TestResult[]>(supabase.from('test_results').select('*').eq('student_no', studentNo).order('test_date', { ascending: false }).order('created_at', { ascending: false }));
 export const loadRecentResults = (limit = 30) =>
