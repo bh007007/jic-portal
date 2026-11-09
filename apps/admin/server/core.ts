@@ -21,13 +21,13 @@ export interface DataInput {
   pointHistory?: Raw[];
   /** 업체 포털 방관리(rooms, room_bed_v2). 방 하나에 beds 배열. 2026-11-08 기준 Premium만 등록되어 있다. */
   rooms?: Raw[];
-  /** 인보이스 학생 가격 항목(inv_invoice_cost_st, portal-extract-invoice-items.js). 배포에는 아직 없다. */
+  /** 인보이스 학생 가격 항목(inv_invoice_cost_st, portal-extract-invoice-items.js). 배포는 legacy_invoice_items(세 표를 _table 로 나눠 담음). */
   invoiceItems?: Raw[];
   /** 인보이스 에이전시 공제 항목(inv_invoice_cost_ag: 커미션·에이전시 등록비·바우처). */
   invoiceAgencyItems?: Raw[];
   /** 현지 인보이스 비용·납부(inv_etc: tc_* 청구, td_* 납부, PHP). */
   localCosts?: Raw[];
-  /** 연장 기간(업체 마케팅 > 연장현황 extend_load, tt_*; portal-extract-extend.js). 배포에는 아직 없다. */
+  /** 연장 기간(업체 마케팅 > 연장현황 extend_load, tt_*; portal-extract-extend.js). 배포는 legacy_extensions. */
   extensions?: Raw[];
   /** 신입·연장·복귀·변경 화면의 코스 변경·기숙사 변경·복귀 탭(freshman_load_course / _dorm / _comeback). */
   courseChanges?: Raw[];

@@ -37,6 +37,11 @@ const EXTENSION_COLUMNS = ['tr_id', 'tt_id', 'tt_start_date', 'tt_finish_date', 
 // 청구 합계 표에 올릴 열: core.ts 의 INVOICE_SUMMARY_COLUMNS·BALANCE_COLUMNS 와 같게 둔다.
 const INVOICE_SUMMARY_COLUMNS = ['_tr_id', 'tt_id', 'tt_insert_dt', 'week', 'start_date', 'finish_date', 'tr_currency', 'sum_ic_price', 'sum_id_amount', 'sum_tc_price', 'sum_td_amount'];
 const BALANCE_COLUMNS = ['tr_id', 'tr_currency', 'tr_deposit_state', 'extend_count', 'cost', 'payment'];
+// 인보이스 항목 표 3개에 올릴 열: core.ts 의 INVOICE_ITEM_COLUMNS·LOCAL_COST_COLUMNS 와 같게 둔다. 표 하나(legacy_invoice_items)에 data._table 로 나눠 담는다.
+// 받는 계좌 열이 있는 입금 표(inv_invoice_deposit)는 올리지 않는다.
+const INVOICE_ITEM_COLUMNS = ['_tr_id', 'ic_ver', 'ic_type', 'ic_type_name', 'ic_currency', 'ic_price', 'ic_week', 'ic_departure_date', 'ic_return_date', 'co_name', 'do_name', 'ic_use_yn', 'ic_cancel_yn'];
+const LOCAL_COST_COLUMNS = ['_tr_id', 'tc_id', 'ec_type', 'tc_type_name', 'tc_currency', 'tc_price', 'rest_amount', 'td_id', 'td_currency', 'td_amount', 'td_deposit_dt'];
+const INVOICE_ITEM_TABLES = { inv_invoice_cost_st: INVOICE_ITEM_COLUMNS, inv_invoice_cost_ag: INVOICE_ITEM_COLUMNS, inv_etc: LOCAL_COST_COLUMNS };
 // 가격표 표 9개에 올릴 열: core.ts 의 PRICE_COLUMNS 와 같게 둔다. 표 하나(legacy_prices)에 data._table 로 나눠 담는다.
 const PRICE_COLUMNS = {
   price_course: ['cc_co_id', 'cc_week', 'cc_won', 'cc_usd', 'cc_yen', 'cc_peso', 'cc_start_date', 'cc_finish_date'],
@@ -109,11 +114,15 @@ for (const [table, file, idOf, cols, how] of PLAN) {
   });
   await upload(table, [...byId.values()], how);
 }
+// 여러 표를 표 하나에 합친다: id = '<표>:<순번>', data._table = 원래 표 이름, 열은 정해 둔 것만.
+const merged = (tables) =>
+  Object.entries(tables).flatMap(([t, cols]) =>
+    read(t + '.ndjson').map((r, i) => ({ id: `${t}:${i}`, data: { _table: t, ...Object.fromEntries(cols.map((c) => [c, r[c] ?? null])) } })),
+  );
 // 가격표(20261109130000_legacy_prices.sql): 표 9개(환율 exchange_rate 는 표를 바꾸지 않고 _table 로 더했다)를 합쳐 한 번에 올린다(표가 없으면 건너뜀).
-const priceRows = Object.entries(PRICE_COLUMNS).flatMap(([t, cols]) =>
-  read(t + '.ndjson').map((r, i) => ({ id: `${t}:${i}`, data: { _table: t, ...Object.fromEntries(cols.map((c) => [c, r[c] ?? null])) } })),
-);
-await upload('legacy_prices', priceRows, { optional: true });
+await upload('legacy_prices', merged(PRICE_COLUMNS), { optional: true });
+// 인보이스 항목(20261110090000_legacy_invoice_items.sql): 학생 가격·에이전시 공제·현지 비용(표가 없으면 건너뜀).
+await upload('legacy_invoice_items', merged(INVOICE_ITEM_TABLES), { optional: true });
 const metaFile = path.join(dir, 'meta.json');
 if (fs.existsSync(metaFile)) await upload('legacy_meta', [{ id: 'current', data: JSON.parse(fs.readFileSync(metaFile, 'utf8')) }]);
 console.log('완료');
