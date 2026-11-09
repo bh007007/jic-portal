@@ -730,6 +730,13 @@ expect('처리된 후보는 그대로', apl.some((x: any) => x.id === w3.id && x
 const sfW = (await call('GET', `/students/${W4}`)).body as any;
 expect('Student File 에 무단결석 후보', sfW.penalties?.some((x: any) => x.kind === 'absence' && x.date === '2026-11-24'), sfW.penalties);
 expect('홈 요약 승인 대기에 무단결석 포함', ((await call('GET', '/summary')).body as any).pending >= 1);
+stores.attendance = { absences: async () => { throw new Error('rpc/intranet_absence_marks 404'); } };
+const warn = console.warn;
+console.warn = () => {};
+r = await call('GET', '/penalties');
+const smX = await call('GET', '/summary');
+console.warn = warn;
+expect('출석을 못 읽어도 패널티·홈은 열리고 대기 후보는 그대로', r.status === 200 && smX.status === 200 && (r.body as any).rows.some((x: any) => x.stId === W4 && x.source === 'attendance'), r.status);
 delete stores.attendance;
 
 console.log(fails ? `\n${fails}건 실패` : '\n모두 통과');

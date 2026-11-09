@@ -356,8 +356,15 @@ async function syncAbsencePenalties(ctx: IntranetCtx) {
   if (!source || ctx.session?.role === 'guard') return;
   const to = localDate(ctx.now().getTime());
   const from = addDaysTo(to, -(ABSENCE_LOOKBACK_DAYS - 1));
-  const [marks, penalties, absences, trips, signups] = await Promise.all([
-    source.absences(from, to),
+  // 출석을 못 읽으면(강사 포털 마이그레이션 전, DB 오류 등) 후보를 건드리지 않고 넘어간다. 패널티·홈 화면은 그대로 열린다.
+  let marks: AbsenceMark[];
+  try {
+    marks = await source.absences(from, to);
+  } catch (e) {
+    console.warn(`[intranet] 출석 결석을 읽지 못해 무단결석 후보를 건너뜀: ${(e as Error).message}`);
+    return;
+  }
+  const [penalties, absences, trips, signups] = await Promise.all([
     ctx.stores.penalties.all(),
     ctx.stores.absences.listAll(),
     ctx.stores.trips.listTrips(),
