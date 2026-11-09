@@ -27,6 +27,9 @@ await db.exec(`
 for (const f of ['20261107000000_legacy_tables.sql', '20261108100000_student_intranet.sql', '20261108200000_teacher_portal.sql', '20261109000000_attendance.sql']) await db.exec(mig(f));
 await db.exec(mig('20261109010000_roles.sql'));
 await db.exec(mig('20261109010000_roles.sql')); // 두 번째 실행
+// 성능 정리(20261110143500_perf_policies_indexes.sql: 정책의 auth.uid() → (select auth.uid()), 외래 키 인덱스)를 먼저 적용한다. 아래 성적·자료 쓰기 시험이 뜻이 그대로인지 같이 본다
+await db.exec(mig('20261110143500_perf_policies_indexes.sql'));
+await db.exec(mig('20261110143500_perf_policies_indexes.sql')); // 두 번째 실행
 ok('마이그레이션 2회 실행', true);
 
 const U = {
