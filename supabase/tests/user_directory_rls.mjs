@@ -34,7 +34,7 @@ await db.exec(mig('20261108210000_user_directory.sql')); // 두 번째 실행
 await db.exec(mig('20261108230000_holidays.sql'));
 await db.exec(mig('20261108230000_holidays.sql'));
 // 역할별 권한표(11/9): 관리자·오피스 구분, 계정 목록은 관리자만
-for (const f of ['20261109010000_roles.sql', '20261109020000_user_directory_admin.sql']) {
+for (const f of ['20261109010000_roles.sql', '20261109020000_user_directory_admin.sql', '20261109120000_staff_name.sql']) {
   await db.exec(mig(f));
   await db.exec(mig(f)); // 두 번째 실행
 }
@@ -120,6 +120,21 @@ await as(U.teacher, async () => {
 });
 await as(U.agent, async () => ok('에이전시는 계정 목록 0', (await q(`select * from user_directory()`)).length === 0));
 await as(null, async () => denied('익명 계정 목록', `select * from user_directory()`, /permission denied/));
+
+// ── 직원 이름(20261109120000_staff_name.sql): 관리자만, 직원 행만, 공백 정리, 빈 이름·40자 넘음 거부
+await as(U.boss, async () => {
+  ok('관리자: 직원 이름 고침(공백 정리)', (await q(`select staff_set_name('${U.office}', '  오피스   김 ') v`))[0].v === '오피스 김');
+  ok('고친 이름이 계정 목록에', (await q(`select staff_name from user_directory() where user_id = '${U.office}'`))[0].staff_name === '오피스 김');
+  await denied('관리자: 빈 이름 거부', `select staff_set_name('${U.office}', '   ')`, /bad_name/);
+  await denied('관리자: 41자 거부', `select staff_set_name('${U.office}', '${'가'.repeat(41)}')`, /bad_name/);
+  await denied('관리자: 직원 아닌 계정(강사) 거부', `select staff_set_name('${U.teacher}', 'Ann')`, /not_staff/);
+});
+await as(U.staff, async () => ok('역할 없는 직원(관리자)도 고침', (await q(`select staff_set_name('${U.staff}', '직원 박') v`))[0].v === '직원 박'));
+await as(U.office, async () => denied('오피스: 이름 고치기 거부', `select staff_set_name('${U.office}', '셀프')`, /not_allowed/));
+await as(U.teacher, async () => denied('강사: 이름 고치기 거부', `select staff_set_name('${U.staff}', 'x')`, /not_allowed/));
+await as(U.staff, async () => denied('직원도 staff_users 직접 고치기는 거부(함수만)', `update staff_users set name = 'x'`, /permission denied/));
+await as(null, async () => denied('익명: 이름 고치기', `select staff_set_name('${U.staff}', 'x')`, /permission denied/));
+ok('오피스 이름은 그대로', (await q(`select name from staff_users where user_id = '${U.office}'`))[0].name === '오피스 김');
 
 // ── 휴일(20261108230000_holidays.sql): 직원만 쓰고, 로그인한 모든 포털이 읽는다
 await as(U.staff, async () => {
