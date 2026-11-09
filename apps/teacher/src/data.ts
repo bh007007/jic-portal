@@ -88,6 +88,20 @@ export interface LmsAbsence {
 export const loadAbsences = (from?: string, to?: string) =>
   must<LmsAbsence[]>(supabase.rpc('lms_absences', { ...(from ? { p_from: from } : {}), ...(to ? { p_to: to } : {}) }));
 
+/** 결석 신청 처리용(직원·매니저만 읽힘, RLS absence_read·absence_manager_read): 사유·신청 시각·처리 메모 */
+export interface AbsenceDetail {
+  id: string;
+  reason: string;
+  created_at: string;
+  staff_comment: string | null;
+  decided_at: string | null;
+}
+export const loadAbsenceDetails = (from: string, to: string) =>
+  must<AbsenceDetail[]>(supabase.from('absence_requests').select('id, reason, created_at, staff_comment, decided_at').gte('absence_date', from).lte('absence_date', to));
+/** 결석 승인·반려(원칙 L4). 인트라넷과 같은 DB 함수(decide_absence_requests: 직원·매니저, 처리 전 신청만, 처리자·시각을 남긴다) */
+export const decideAbsences = (ids: string[], approve: boolean, comment: string) =>
+  must<number>(supabase.rpc('decide_absence_requests', { p_ids: ids, p_approve: approve, p_comment: comment.trim() || null }));
+
 export const CEFR_LEVELS = ['Pre-A1', 'A1', 'A2', 'B1', 'B2', 'C1', 'C2'] as const;
 export const SCALES: TestType['scale'][] = ['band', 'score', 'level', 'percent'];
 // 화면 이름은 i18n 의 kind_*·scale_*·abs_*·st_* 키
