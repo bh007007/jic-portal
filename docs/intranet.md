@@ -264,7 +264,7 @@ apps/intranet/
 - **매시 30분**(필리핀 시각도 30분)에 통금 위반·무단결석 후보를 정리한다. 화면을 열 때와 같은 core 규칙(`scheduledChecks` → `syncPenalties`)이라 여러 번 돌려도 같은 결과이고, 통금 시각을 설정에서 바꿔도 그다음 30분에 맞춰진다. 승인·반려·설정 저장은 하지 않는다.
 - 로그인한 사람이 없어 **서비스 키**로 읽고 쓴다(`serviceStores`: 처리자 비움, 외박은 승인된 것만 사유 없이). 출석은 서비스 키 전용 함수 `intranet_absence_marks_service`(`20261109180000_intranet_cron.sql`, 직원 함수와 같은 결과)로 읽는다. 직원 함수 `intranet_absence_marks`는 서비스 키에 빈 결과를 줘서 대기 중인 무단결석 후보를 지우게 되므로 쓰지 않는다. 후보 규칙은 업체 원본(학생·연수)을 읽지 않아 자동 확인도 읽지 않는다.
 - Worker 변수: `SUPABASE_URL`, 비밀 변수 `SUPABASE_SERVICE_ROLE_KEY`(11/8 기록상 들어 있음). 둘 중 하나가 없으면 크론이 오류로 끝나고 아무것도 바꾸지 않는다. 결과(대기 중 통금 위반·무단결석 수)는 Cloudflare → `jic-intranet` → Logs에 남는다.
-- 배포: Workers Builds가 저장소에 이어져 있으면 main에 머지될 때 다시 배포되고 크론이 켜진다(Settings → Trigger Events에 `30 * * * *`). 이어져 있지 않으면 Settings → Build에서 저장소 `bh007007/jic-portal`, 빌드 명령 `npm run intranet:build`, 배포 명령 `npx wrangler deploy --config apps/intranet/wrangler.jsonc`로 잇는다.
+- 배포: Workers Builds가 저장소에 이어져 있어 main에 머지될 때 다시 배포되고 크론이 켜진다(11/10 #83 머지 때 `jic-intranet` 빌드 성공, Settings → Trigger Events에 `30 * * * *`). 빌드 명령 `npm run intranet:build`, 배포 명령 `npx wrangler deploy --config apps/intranet/wrangler.jsonc`. 마이그레이션 `20261109180000_intranet_cron.sql`은 11/10 적용.
 
 ### 설정 순서 (레오 PC의 Claude, 지금 쓰는 Cloudflare·Supabase 계정)
 
