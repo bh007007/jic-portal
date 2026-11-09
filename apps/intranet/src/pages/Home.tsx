@@ -5,7 +5,7 @@ import { dateWithDay, mdhm } from '../format';
 
 export default function Home() {
   const { data, error, reload } = useApi<Summary>('/api/summary', 60000);
-  const { manager } = useAccess(); // 매니저에게는 열 수 없는 화면(외박·생활 요청·상담·귀국)의 칸을 숨긴다
+  const { manager } = useAccess(); // 매니저에게는 열 수 없는 화면(외박·생활 요청·귀국)의 칸을 숨긴다
   if (!data) return <Loading error={error} onRetry={reload} />;
   return (
     <>
@@ -64,23 +64,21 @@ export default function Home() {
             <small>건 · {data.tripsAccepting}건</small>
           </span>
         </Link>
+        <Link to="/counseling?view=followup">
+          <span className="label">확인할 일 (상담 후속 조치)</span>
+          <span className="value">
+            {data.followUpOpen}
+            <small>건 · 기한 지남·오늘 {data.followUpDue}건</small>
+          </span>
+        </Link>
         {!manager && (
-          <>
-            <Link to="/counseling?view=followup">
-              <span className="label">확인할 일 (상담 후속 조치)</span>
-              <span className="value">
-                {data.followUpOpen}
-                <small>건 · 기한 지남·오늘 {data.followUpDue}건</small>
-              </span>
-            </Link>
-            <Link to="/departures?view=missing">
-              <span className="label">귀국 항공편 미등록 (졸업 14일 이내)</span>
-              <span className="value">
-                {data.departureMissing}
-                <small>명</small>
-              </span>
-            </Link>
-          </>
+          <Link to="/departures?view=missing">
+            <span className="label">귀국 항공편 미등록 (졸업 14일 이내)</span>
+            <span className="value">
+              {data.departureMissing}
+              <small>명</small>
+            </span>
+          </Link>
         )}
         <div>
           <span className="label">재학생</span>

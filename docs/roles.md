@@ -139,6 +139,10 @@
 - 결석 신청 처리는 매니저·오피스 둘 다(`decide_absence_requests`).
 - 남은 것: 매니저의 상담 기록(맡은 캠퍼스).
 
+### 인트라넷 2단계 C (11/9, 인트라넷 담당)
+
+- 매니저 상담 기록: 매니저 역할의 캠퍼스(빈칸 = 모든 캠퍼스)만. 상담 함수 6개가 `counseling_campus_ok()`(직원 `staff_campuses` 또는 매니저 역할 캠퍼스)와 `counseling_actor_name()`(직원 이름, 없으면 강사 목록 이름)을 쓴다(`20261109110000_intranet_manager_counseling.sql`). 직원은 그대로다.
+
 ### 다음 단계
 
 - 스케줄러·매니저에게 관리자 포털 일부(대시보드·학생·통계·기초관리 읽기)를 연다. `functions/api`가 로그인한 사람의 토큰으로 `legacy_*`를 읽는데(RLS `is_staff()`), 이 RLS를 넓히지 않고 읽기 함수를 따로 둬야 한다.
