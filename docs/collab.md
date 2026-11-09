@@ -30,6 +30,7 @@
 ## 데이터베이스 규칙
 - 마이그레이션 파일 이름은 `YYYYMMDDHHMMSS_설명.sql`로 하고, main에 있는 마지막 파일보다 뒤 시각을 쓴다.
 - 여러 번 실행해도 되게 쓴다(`if not exists`, `drop policy if exists`, `on conflict do nothing`).
+- **한 파일만 다시 돌리지 않는다.** 뒤 파일이 같은 함수·정책을 `create or replace`로 고친 경우가 있어(예: `teacher_portal` 뒤의 `attendance`·`roles`·`lms_students_extend`), 앞 파일만 다시 돌리면 옛 정의로 돌아간다. 다시 돌릴 때는 그 파일부터 끝까지 파일 이름 순서대로 돌린다(11/9 운영에서 실제로 생겨 바로잡음).
 - 프로젝트는 'Automatically expose new tables'가 꺼져 있다. 새 테이블마다 `grant`를 직접 쓰고 RLS를 켠다.
 - 이미 있는 권한 함수는 `is_staff()`(직원)와 `is_partner()`(승인된 에이전시 지점)다. 새 역할은 새 함수로 만든다(예: `is_student()`). 기존 함수의 뜻은 바꾸지 않는다.
 - 학생 앱·인트라넷이 더한 권한 함수: `is_student()`·`current_student_no()`(학생), `is_guard()`·`current_guard_campus()`(가드 공용 계정), `staff_has_campus(캠퍼스)`(직원이 맡은 캠퍼스, `staff_campuses`). `20261108100000_student_intranet.sql`. 직원끼리 이름을 보는 `staff_directory()`(`20261108130000_intranet_deploy.sql`, `staff_users` RLS 는 그대로). 학생 계정 만들기·초기화 접근 기록 `student_account_audit()`(`20261108180000_student_account_admin.sql`), 가드 계정 접근 기록 `guard_account_audit()`(`20261108190000_guard_account_admin.sql`). 인트라넷 무단결석 후보용 결석 읽기 `intranet_absence_marks(시작, 끝)`(직원만, 강사 포털 `attendance`는 읽기만, 패널티 출처에 `attendance` 추가, `20261109050000_absence_penalties.sql`). `audit_logs` 종류 목록은 두 파일이 같은 목록을 쓴다(어느 쪽을 다시 실행해도 지워지지 않게).
