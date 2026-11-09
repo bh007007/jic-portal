@@ -96,7 +96,7 @@
 | 기초코드 > 기타비용 (`adm/basic/etc_cost`) | `etc_cost_load` | 74(ec_type 22종: BOOK·PROMO·PICKUP·VISA·SSP 등, 4개 통화, 포인트 구분 `ec_point_flag` P·PI) |
 | 유학원관리 > Commission (`adm/agency/comm`) | `acr_load` | 3(acr_level ACADEMY·COUNTRY·AGENCY, acr_type BASE·EXTEND, 주 수 범위, `acr_rate` 0.28 = 28%) |
 | 기초코드 > 환율 (`adm/basic/exchange`) | `exchange_load` | 106(11/10, 주소 하나만 허용해 조회). 통화쌍 `er_type` 5종: USDKRW 86·USDJPY 12·PHPKRW 6·USDPHP 1·PHPJPY 1. 적용 시작일 `er_start_date`만 있고 끝은 없다. TTB·TTS는 모두 비어 있다 |
-| 마케팅 > 통계 > Closing Status (`adm/register/closing_v2`) | `closing_v2_list`·`closing_v2_finish_list`·`closing_v2_check_stay` | `_load`가 아니라 부르지 않았다 |
+| 마케팅 > 통계 > Closing Status (`adm/register/closing_v2`) | `closing_v2_list`·`closing_v2_finish_list`·`closing_v2_check_stay` | 11/10 레오님 허용으로 조사(아래 'Closing Status'). 등록 가능 여부(공실) 표, 개인정보 없음 |
 
 **알아 둘 점**
 - 코스 가격은 `cc_week` 주 기준이다(58행 중 44행이 4주). 원·달러·엔은 채워져 있고 페소는 비어 있다.
@@ -104,6 +104,27 @@
 - 사용 중인 코스 39개 중 13개는 가격 줄이 없다(업체 그대로).
 - 프로모션 `campus_code`는 'CHALLENGER,PREMIUM'처럼 쉼표로 이어진다.
 - 환율 `er_rate`는 앞 통화 1단위당 뒤 통화다(USDKRW 1508.23 = 1달러당 1,508.23원). 관리자 '가격표 > 환율'은 같은 통화쌍의 다음 시작일 전날을 끝으로 보고, 기준일에 적용되는 것(통화쌍마다 하나)을 지금 적용분으로 보인다. USDKRW만 꾸준히 바뀌고(2026-07-08이 마지막), 나머지 넷은 2024~2025년 값이 그대로다.
+
+## Closing Status (11/10, 레오님 허용으로 조사)
+
+업체 '마케팅 > 통계 > Closing Status'(`/appl/adm/register/closing_v2`)는 **캠퍼스 × 기숙사 × 시작 기수마다 등록을 받을 수 있는지(공실)** 보여 주는 표다. 목록 주소 이름이 `_load`가 아니어서 11/9까지 부르지 않았다. 11/10 레오님 허용으로 조회 세 개를 한 번씩 불러 구조와 건수만 봤다. 저장·변경 주소는 없다. 응답은 집계(건수)뿐이고 학생 개인정보는 없다. 값을 내려받거나 추출하지는 않았다.
+
+| 주소(POST, csrf) | 화면에서 하는 일 | 보내는 값 | 받는 것(11/10, KOR·30) |
+| --- | --- | --- | --- |
+| `closing_v2_list` | 첫 표 | `country`(국적, 기본 KOR), `weeks`(앞으로 볼 주: 12·24·30·52) | `result[ca_id][do_id][sd_id]` 칸 375개(캠퍼스 3 × 기숙사 25 × 기수 15), `ca_list`·`dorm_list`(25, 등록 화면 표시 16)·`sd_list`(15), 국적별 인원 `country_list`(30)·`cc_list`(60), 국가 목표 `rt2_country_list`(285), 마감 설정 `train_close_list`(4)·`train_close_period_list`, 방 사진 `dorm_image_list`(453) |
+| `closing_v2_finish_list` | 열린 칸을 누름: 그 기수부터 이어서 머물 수 있는지 | `ca_id`, `do_id`, `sd_id`, `country` | 같은 모양. 칸에 기간 조건 `tcp_week`·`tcp_condition`·`tcp_close_yn`이 더해지고 `sd_list`에 `diff_week`·`period_week` |
+| `closing_v2_check_stay` | '연수 확인'(3단계): 시작 기수 + 주 수 + 성별 → 방마다 같은 방으로 되는지 | `ca_id`, `do_id`, `sd_id`, `weeks`, `gender`, `country` | `rows`(기숙사마다 `result`·`until`·`why`·`cells`), `sd_list`(sd_id·dt), `code` |
+
+**칸 값**(`cnt`, `target`, `avail`, `avail_m`, `avail_f`, `state`, `state_m`, `state_f`, `state_arrival`, `state_return`, `tcp_msg`)
+- `state`: O 시작 가능 75 · I 시작 가능하지만 자리 적음 136 · C 마감 164. 화면 문구는 '시작 가능', '자리 적음(숫자 = 남은 자리)', '이어서'(새로 시작은 안 되지만 앞에서 시작한 연수는 이어서 머묾), '마감'.
+- 마감 이유는 화면이 칸 값으로 고른다. F 자리 없음(`avail` < 0, 또는 남녀 방 나누기로 그 성별 방이 없음), N 국가 제한(이 캠퍼스에서 이 국가가 목표에 닿음, Room Target `rt2_*`), S 시작 마감(`state_arrival` C, Closing Management), W 주 마감(`state_return` C, 이 기수를 포함하는 연수는 모두 불가).
+- `avail` = 방 목표 − 학생 − 예외(화면 도움말). 375칸 중 270칸이 `target − cnt`와 같다. `target`이 기숙사 `do_max`와 같은 칸은 38개뿐이라 기수마다 목표가 따로 있다.
+- `avail_m`·`avail_f`는 '그 성별만 받으면 최대 몇 명'이라 같은 침대를 두 번 센다(더하지 않는다).
+- 출발 14일 안에는 '이어서' 칸을 보이지 않는다.
+
+**새 시스템에 쓸 곳**
+- 파트너 포털 '공실'과 관리자 기숙사 화면의 등록 가능 여부. HANDOFF 2번은 침대 수와 입실 인원이 맞지 않아 공실을 계산하지 않기로 했다. 업체는 침대 수가 아니라 기수별 방 목표(`target`)와 국가 목표, 직원이 넣는 마감(Closing Management)으로 판단한다.
+- 같은 판단을 옮기려면 Closing Management 화면(기수·기숙사별 목표, 시작·주 마감, 국가 목표)의 설정 표가 필요하다. 그 화면의 조회 주소는 아직 보지 않았다.
 
 ## 연장·변경 추출 (`portal-extract-extend.js`)
 
