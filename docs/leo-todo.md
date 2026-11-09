@@ -6,21 +6,14 @@ Claude가 대신할 수 없는 일(키·비밀번호 입력, 계정 만들기, �
 
 #37(첫 화면·구조), #39(강사 포털), #40(사용자·권한·휴일), #42(출석), #44(권한표 1단계), #46(배포용 연장 표)을 11/9에 main에 머지했다. Cloudflare가 운영 주소 https://jic-portal-916.pages.dev 에 자동으로 배포한다(첫 화면 = 포털 선택, 관리자 포털 `/admin/`).
 
-## 지금 할 일 (머지 뒤, 이것을 해야 새 화면에 데이터가 보인다)
+## 적용 끝 (11/9 오후)
 
-말씀만 주시면 Claude가 한다("적용하기", "Cloudflare 바꿔").
-- **Supabase 마이그레이션 적용**(새 테이블·함수만, 순서대로):
-  - `supabase/migrations/20261108200000_teacher_portal.sql`(#39).
-  - `supabase/migrations/20261108210000_user_directory.sql`(#40). 권한 시험 13개 통과.
-  - `supabase/migrations/20261108220000_lms_absences.sql`(#39, 강사용 결석 신청 보기). #39 두 파일의 권한 시험 46개 통과.
-  - `supabase/migrations/20261108230000_holidays.sql`(#40, 관리자 포털 기초관리 > 휴일. 직원만 쓰고 모든 포털이 읽음). 권한 시험 통과(#40 두 파일 합쳐 22개).
-  - `supabase/migrations/20261109000000_attendance.sql`(출석 PR, 교실·수업·출석·마감 표 4개와 함수). 권한 시험 56개 통과. 표만 만들고 데이터는 넣지 않는다(업체 출석은 보안 점검 뒤).
-  - `supabase/migrations/20261109010000_roles.sql`, `20261109020000_user_directory_admin.sql`(역할 PR, 함수·정책만). 권한 시험 50 + 35개 통과. 적용해도 지금 직원은 모두 관리자로 남는다(오피스 역할을 줄 때부터 나뉜다).
-  - `supabase/migrations/20261109030000_legacy_extend.sql`(#46, 연장·변경 표 4개). 적용 뒤 `scripts/upload-sample.ps1`로 샘플을 다시 올리면 연장 샘플이 들어간다.
-  - `supabase/migrations/20261109040000_lms_students_extend.sql`(#44, 강사 포털 학생 목록 종료일을 마지막 연장 종료일로). 연장 표가 없으면 만들어서 #46과 순서 상관없다.
-  - `supabase/migrations/20261109060000_legacy_invoice_summary.sql`(#51 회계 청구 합계의 배포용 표 2개: 인보이스별 합계·업체 Check Balance). 적용 뒤 샘플을 다시 올리면 배포 회계 화면도 기본 + 연장 인보이스로 계산된다.
-- **Cloudflare Pages 빌드 명령**: `npm run portal:build && npm run teacher:portal --if-present`로 바꾼다. 바꾸고 다시 배포해야 강사 포털 `/teacher/`가 열린다(지금은 관리자 화면이 나온다).
-- **샘플 다시 올리기**: 마이그레이션 뒤 `scripts/upload-sample.ps1`(secret 키는 창에만 입력). 연장·변경 샘플이 들어가 배포 관리자 포털의 연장 현황이 채워진다.
+- **Supabase 마이그레이션 11개 적용**: 강사 포털, 사용자·권한 계정 목록, 강사용 결석 신청, 휴일, 출석, 권한표 1단계, 계정 목록은 관리자만, 연장·변경 표, 강사 포털 학생 목록 종료일, 무단결석 패널티 후보(인트라넷 #49), 청구 합계 표. 표 17개 모두 RLS 켜짐, 함수 11개 확인.
+- **Cloudflare Pages 빌드 명령**: `npm run portal:build && npm run teacher:portal --if-present`로 바꿨다. 다음 배포부터 강사 포털 `/teacher/`가 열린다.
+
+## 지금 할 일
+
+- **샘플 다시 올리기**: `scripts/upload-sample.ps1`(secret 키는 창에만 입력). 연장·변경·청구 합계 샘플이 들어가 배포 관리자 포털의 연장 현황·회계 합계가 채워진다.
 - **강사 시험 계정**: 강사 포털을 보려면 Supabase Auth에 강사 계정이 하나 있어야 한다. 직원 계정(레오님)은 역할 없이도 들어가진다. 강사 계정이 필요하면 `docs/teacher-portal.md` '강사 계정 만들기'를 따른다.
 
 ## 직접 해 주셔야 하는 일
