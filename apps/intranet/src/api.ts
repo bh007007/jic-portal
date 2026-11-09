@@ -111,10 +111,20 @@ export interface Meta {
   source: 'sample' | 'extract';
   refDate: string;
   actor: string | null;
-  role: 'staff' | 'guard' | null;
+  role: 'staff' | 'guard' | 'manager' | null;
   campus: string | null;
   staffRole: 'admin' | 'office' | null;
   campuses: string[] | null;
+}
+
+/**
+ * 화면에서 버튼·메뉴를 숨길 때 쓰는 역할(docs/roles.md). 막는 것은 서버·DB 다.
+ * manager: 강사 포털 매니저(인트라넷 일부만), office: 오피스 직원, readOnlyRules: 점수표 읽기만(오피스·매니저)
+ */
+export function useAccess() {
+  const { data } = useApi<Meta>('/api/meta');
+  const manager = data?.role === 'manager';
+  return { meta: data, manager, office: data?.staffRole === 'office', readOnlyRules: manager || data?.staffRole === 'office' };
 }
 
 export function useApi<T>(path: string, intervalMs?: number) {
@@ -224,9 +234,12 @@ const MESSAGES: Record<string, string> = {
   same_status: '이미 그 상태입니다.',
   not_applied: '참가 신청 상태가 아닙니다(학생 취소·명단 제외).',
   campus_not_allowed: '맡은 캠퍼스의 학생만 상담 기록을 쓸 수 있습니다. 관리자에게 담당 캠퍼스 등록을 요청하세요.',
-  staff_only: '직원이나 가드 계정으로 등록되지 않았습니다.',
+  staff_only: '직원·매니저·가드 계정으로 등록되지 않았습니다.',
   guard_forbidden: '가드 계정으로는 가드 태블릿만 쓸 수 있습니다.',
   admin_only: '관리자만 할 수 있습니다.',
+  manager_forbidden: '매니저 계정으로는 열 수 없는 화면입니다.',
+  manager_absence_only: '매니저는 무단결석만 승인·반려할 수 있습니다.',
+  own_notice_only: '내가 쓴 공지만 고칠 수 있습니다.',
   campus_forbidden: '맡은 캠퍼스의 학생만 볼 수 있습니다.',
   unauthorized: '로그인이 필요합니다.',
 };

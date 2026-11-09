@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
-import { api, ApiError, errorText, notifySummaryChanged, useApi, type TripDetail as Detail } from '../api';
+import { api, ApiError, errorText, notifySummaryChanged, useAccess, useApi, type TripDetail as Detail } from '../api';
 import { Loading, PageTitle, StudentLink } from '../components/ui';
 import { mdhm } from '../format';
 import { deadlineText, SIGNUP_STATUS, SIGNUP_STATUS_CLASS, TRIP_ERRORS, TRIP_STATUS, TRIP_STATUS_CLASS, tripCost, tripDates } from '../tripLabels';
@@ -9,6 +9,7 @@ import { deadlineText, SIGNUP_STATUS, SIGNUP_STATUS_CLASS, TRIP_ERRORS, TRIP_STA
 export default function TripDetail() {
   const { id = '' } = useParams();
   const { data, error, reload } = useApi<Detail>(`/api/trips/${encodeURIComponent(id)}`);
+  const { manager } = useAccess(); // 매니저는 읽기만
   const [reasons, setReasons] = useState<Record<string, string>>({});
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState<{ id: string; text: string; ok: boolean } | null>(null);
@@ -50,7 +51,7 @@ export default function TripDetail() {
     setBusy(false);
   }
 
-  const editable = t.status !== 'cancelled';
+  const editable = t.status !== 'cancelled' && !manager;
   return (
     <>
       <PageTitle

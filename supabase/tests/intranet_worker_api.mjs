@@ -454,6 +454,43 @@ ok('오피스: 맡은 캠퍼스 학생 상세 200', x.status === 200, x.status);
 x = await api('GET', '/api/penalties?tab=pending', tO);
 ok('오피스: 패널티 승인 목록은 그대로', x.status === 200, x.status);
 
+// ── 강사 포털 매니저(user_roles manager, 직원 아님): 인트라넷 일부만. 업체 원본은 서버가 서비스 키로, 쓰기는 매니저 토큰(RLS)
+const mgrId = '00000000-0000-4000-8000-0000000000b1';
+await sb.addUser({ id: mgrId, email: 'm@teacher.example', password: 'managerpass1' });
+await sb.sql(`insert into public.user_roles (user_id, role, campus) values ($1, 'manager', '')`, [mgrId]);
+await sb.sql(`insert into public.staff (user_id, name) values ($1, '매니저M')`, [mgrId]);
+const tM = await login('m@teacher.example', 'managerpass1');
+x = await api('GET', '/api/meta', tM);
+ok('매니저: meta 역할·이름(강사 목록)', x.status === 200 && x.body.role === 'manager' && x.body.actor === '매니저M' && x.body.staffRole === null && x.body.campuses === null, x.body);
+const noKey = await handleApi(new Request('https://intranet.example/api/meta', { headers: { Authorization: `Bearer ${tM}` } }), { ...env, SUPABASE_SERVICE_ROLE_KEY: undefined });
+ok('매니저: 서비스 키가 없으면 500 server_config', noKey.status === 500);
+for (const [m, path] of [['GET', '/api/requests/overnights'], ['GET', '/api/departures'], ['PUT', '/api/settings'], ['GET', '/api/counseling'], ['GET', '/api/accounts']]) {
+  x = await api(m, path, tM, m === 'PUT' ? { curfew: '23:00', guards: [] } : undefined);
+  ok(`매니저 막힘: ${m} ${path}`, x.status === 403 && x.body.error === 'manager_forbidden', x);
+}
+x = await api('GET', '/api/students?size=200', tM);
+ok('매니저: Student File 목록(서비스 키로 읽음)', x.status === 200 && x.body.rows.length > 0, x.status);
+// 무단결석: 매니저가 화면을 열면 후보를 만들고(매니저 토큰, RLS), 승인한다
+const sAb2 = others[3] ?? sP;
+const d2 = plus(manila, -2);
+const sess2 = (await sb.sql(`insert into public.class_sessions (day, start_time, campus, subject) values ($1, '09:00', 'Challenger', 'Reading') returning id::text`, [d2]))[0].id;
+await sb.sql(`insert into public.attendance (session_id, student_no, result) values ($1, $2, 'AB')`, [sess2, sAb2]);
+await sb.sql(`insert into public.attendance_closings (day, campus) values ($1, 'Challenger') on conflict do nothing`, [d2]);
+x = await api('GET', '/api/penalties?tab=pending', tM);
+const mAb = (x.body.rows ?? []).find((p) => p.source === 'attendance' && p.stId === sAb2);
+ok('매니저: 화면을 열면 무단결석 후보가 생기고 승인할 수 있음', x.status === 200 && mAb?.canDecide === true && mAb.basis === '수업 결석 1회(09:00 Reading)', x.body.rows?.map((p) => [p.source, p.stId, p.canDecide]));
+x = await api('POST', '/api/penalties/decide', tM, { ids: [mAb.id], approve: true });
+const mAbDb = (await sb.sql(`select status, decided_by::text from public.penalties where id = $1`, [mAb.id]))[0];
+ok('매니저: 무단결석 승인(처리자 = 매니저)', x.status === 200 && x.body.done === 1 && mAbDb.status === 'approved' && mAbDb.decided_by === mgrId, [x.body, mAbDb]);
+await sb.sql(`insert into public.penalties (id, student_no, kind, occurred_on, campus, basis, source, source_id) values ('curfew-mgr', $1, 'curfew', $2, 'Challenger', '통금', 'outing', 'mgr') on conflict do nothing`, [sAb2, d2]);
+x = await api('POST', '/api/penalties/decide', tM, { ids: ['curfew-mgr'], approve: true });
+ok('매니저: 통금 위반 승인 403', x.status === 403 && x.body.error === 'manager_absence_only' && (await sb.sql(`select status from public.penalties where id = 'curfew-mgr'`))[0].status === 'pending', x);
+const absM = (await sb.sql(`insert into public.absence_requests (student_no, enrollment_id, absence_date, kind, reason) values ($1, $2, $3, 'sick', '감기') returning id::text`, [sAb2, await trOf(sAb2), manila]))[0].id;
+x = await api('POST', '/api/requests/absences/decide', tM, { ids: [absM], approve: true, comment: '확인' });
+ok('매니저: 결석 신청 승인(처리자 = 매니저)', x.status === 200 && (await sb.sql(`select decided_by::text from public.absence_requests where id = $1`, [absM]))[0].decided_by === mgrId, x);
+x = await api('POST', '/api/notices', tM, { title: '매니저 공지', content: '수업 시간 변경' });
+ok('매니저: 공지 쓰기(작성자 = 매니저)', x.status === 201 && (await sb.sql(`select author_id::text, author_name from public.internal_notices where id = $1`, [x.body.id]))[0]?.author_id === mgrId, x);
+
 await sb.close();
 console.log(fails ? `${fails}건 실패` : '모두 통과');
 process.exit(fails ? 1 : 0);

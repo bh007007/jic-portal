@@ -1,6 +1,6 @@
 import { ADMIN_URL } from '../base';
 import { Link, useParams } from 'react-router-dom';
-import { useApi, type StudentFile } from '../api';
+import { errorText, useAccess, useApi, type StudentFile } from '../api';
 import { Loading, PageTitle } from '../components/ui';
 import { duration, md, mdhm } from '../format';
 import { LIFE_CATEGORY, LIFE_STATUS, LIFE_STATUS_CLASS } from '../lifeLabels';
@@ -18,8 +18,13 @@ const Status = ({ s }: { s: string }) => <span className={STATUS_CLASS[s]}>{STAT
 export default function StudentFileDetail() {
   const { stId = '' } = useParams();
   const { data, error, reload } = useApi<StudentFile>(`/api/students/${encodeURIComponent(stId)}`);
+  const { manager } = useAccess(); // 매니저: 통합관리·상담·생활 요청 처리로 가는 링크는 숨긴다(열 수 없는 화면)
   const path = '홈 > 학생 생활 > Student File';
-  if (!data) return error === 'not_found' ? <div className="state-msg">학생을 찾을 수 없습니다.</div> : <Loading error={error} onRetry={reload} />;
+  if (!data) {
+    if (error === 'not_found') return <div className="state-msg">학생을 찾을 수 없습니다.</div>;
+    if (error === 'campus_forbidden') return <div className="state-msg">{errorText(error)}</div>;
+    return <Loading error={error} onRetry={reload} />;
+  }
   const s = data.student;
 
   return (
@@ -32,9 +37,11 @@ export default function StudentFileDetail() {
             <Link to="/student-file" className="btn">
               목록
             </Link>
-            <a href={`${ADMIN_URL}/students/${s.stId}`} className="btn">
-              통합관리 학생 상세
-            </a>
+            {!manager && (
+              <a href={`${ADMIN_URL}/students/${s.stId}`} className="btn">
+                통합관리 학생 상세
+              </a>
+            )}
           </>
         }
       />
@@ -163,9 +170,11 @@ export default function StudentFileDetail() {
           <h2>
             상담 기록 <small>({data.counseling.length}건 · 내용은 상세에서)</small>
           </h2>
-          <Link to={`/counseling/new?stId=${s.stId}`} className="more">
-            상담 기록 작성 &gt;
-          </Link>
+          {!manager && (
+            <Link to={`/counseling/new?stId=${s.stId}`} className="more">
+              상담 기록 작성 &gt;
+            </Link>
+          )}
         </div>
         <div className="panel-body">
           <table className="tbl center">
@@ -337,9 +346,11 @@ export default function StudentFileDetail() {
           <h2>
             생활 요청 <small>({data.lifeRequests.length}건)</small>
           </h2>
-          <Link to="/requests/life" className="more">
-            생활 요청 처리 &gt;
-          </Link>
+          {!manager && (
+            <Link to="/requests/life" className="more">
+              생활 요청 처리 &gt;
+            </Link>
+          )}
         </div>
         <div className="panel-body">
           <table className="tbl center">

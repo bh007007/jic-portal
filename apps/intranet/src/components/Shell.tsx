@@ -7,21 +7,21 @@ import { dateWithDay, localDate } from '../format';
 
 // 디자인 I1(IntranetPenalty.dc.html)의 메뉴. 아직 없는 화면은 '준비 중'으로 연결된다.
 type Badge = 'pending' | 'pendingAbsences' | 'pendingOvernights' | 'lifePending' | 'followUpDue' | 'unreadNotices' | 'ridePending';
-// adminOnly: 관리자만 여는 화면(docs/roles.md). 오피스에게는 메뉴를 숨긴다(주소로 열어도 서버가 막는다).
-const MENU: { group?: string; items: { to: string; label: string; badge?: Badge; adminOnly?: true }[] }[] = [
-  { items: [{ to: '/', label: '홈' }] },
-  { group: '공지·결재', items: [{ to: '/notices', label: '내부 공지', badge: 'unreadNotices' }, { to: '/approvals', label: '전자결재' }, { to: '/forms', label: '양식·자료실' }] },
+// adminOnly: 관리자만 여는 화면, manager: 강사 포털 매니저에게도 보이는 화면(docs/roles.md). 나머지는 숨긴다(주소로 열어도 서버가 막는다).
+const MENU: { group?: string; items: { to: string; label: string; badge?: Badge; adminOnly?: true; manager?: true }[] }[] = [
+  { items: [{ to: '/', label: '홈', manager: true }] },
+  { group: '공지·결재', items: [{ to: '/notices', label: '내부 공지', badge: 'unreadNotices', manager: true }, { to: '/approvals', label: '전자결재' }, { to: '/forms', label: '양식·자료실' }] },
   {
     group: '학생 생활',
     items: [
-      { to: '/student-file', label: 'Student File' },
+      { to: '/student-file', label: 'Student File', manager: true },
       { to: '/accounts', label: '학생 계정' },
       { to: '/counseling', label: '상담 기록', badge: 'followUpDue' },
-      { to: '/penalties', label: '패널티 승인', badge: 'pending' },
-      { to: '/penalty-rules', label: '패널티 점수표' },
-      { to: '/outings', label: '외출·귀가' },
-      { to: '/curfew', label: '통금 확인' },
-      { to: '/reports', label: '가드 리포트' },
+      { to: '/penalties', label: '패널티 승인', badge: 'pending', manager: true },
+      { to: '/penalty-rules', label: '패널티 점수표', manager: true },
+      { to: '/outings', label: '외출·귀가', manager: true },
+      { to: '/curfew', label: '통금 확인', manager: true },
+      { to: '/reports', label: '가드 리포트', manager: true },
       { to: '/departures', label: '귀국 일정', badge: 'ridePending' },
       { to: '/photos', label: '사진 관리' },
     ],
@@ -30,10 +30,10 @@ const MENU: { group?: string; items: { to: string; label: string; badge?: Badge;
   {
     group: '신청 처리',
     items: [
-      { to: '/requests/absences', label: '결석 신청', badge: 'pendingAbsences' },
+      { to: '/requests/absences', label: '결석 신청', badge: 'pendingAbsences', manager: true },
       { to: '/requests/overnights', label: '외박·여행 신청', badge: 'pendingOvernights' },
       { to: '/requests/life', label: '생활 요청', badge: 'lifePending' },
-      { to: '/trips', label: '학교 여행' },
+      { to: '/trips', label: '학교 여행', manager: true },
     ],
   },
   { group: '직원', items: [{ to: '/guard-accounts', label: '가드 계정' }, { to: '/staff', label: '직원·부서' }, { to: '/staff-review', label: 'Staff 평가' }, { to: '/audit', label: '접근 기록', adminOnly: true }] },
@@ -62,10 +62,12 @@ export default function Shell({ children }: { children: ReactNode }) {
       </header>
       <div className="layout">
         <nav className="sidenav" aria-label="메뉴">
-          {MENU.map((sec, i) => (
+          {MENU.map((sec) => ({ ...sec, items: sec.items.filter((it) => (meta?.role === 'manager' ? it.manager : !it.adminOnly || meta?.staffRole !== 'office')) }))
+            .filter((sec) => sec.items.length)
+            .map((sec, i) => (
             <div key={i}>
               {sec.group && <span className="nav-group">{sec.group}</span>}
-              {sec.items.filter((it) => !it.adminOnly || meta?.staffRole !== 'office').map((it) => (
+              {sec.items.map((it) => (
                 <NavLink key={it.to} to={it.to} end={it.to === '/'} className={({ isActive }) => (sec.group ? 'nav-item' : 'nav-top') + (isActive ? ' active' : '')}>
                   {it.label}
                   {it.badge && summary && summary[it.badge] > 0 && <span className="nav-count">{summary[it.badge]}</span>}

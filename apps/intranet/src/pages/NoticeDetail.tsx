@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
-import { api, ApiError, errorText, notifySummaryChanged, useStaffName, type NoticeDetail as Detail } from '../api';
+import { api, ApiError, errorText, notifySummaryChanged, useAccess, useStaffName, type NoticeDetail as Detail } from '../api';
 import { Loading, PageTitle } from '../components/ui';
 import { mdhm, ymdhm } from '../format';
 
@@ -8,6 +8,7 @@ import { mdhm, ymdhm } from '../format';
 export default function NoticeDetail() {
   const { id = '' } = useParams();
   const staff = useStaffName();
+  const { manager, meta } = useAccess();
   const [data, setData] = useState<Detail | null>(null);
   const [error, setError] = useState<string | null>(null);
   useEffect(() => {
@@ -30,9 +31,11 @@ export default function NoticeDetail() {
             <Link to="/notices" className="btn">
               목록
             </Link>
-            <Link to={`/notices/${data.id}/edit`} className="btn">
-              수정
-            </Link>
+            {(!manager || data.author === meta?.actor) && (
+              <Link to={`/notices/${data.id}/edit`} className="btn">
+                수정
+              </Link>
+            )}
           </>
         }
       />

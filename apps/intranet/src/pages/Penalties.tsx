@@ -34,7 +34,8 @@ export default function Penalties() {
 
   const rows = data?.rows ?? [];
   const pending = tab === 'pending';
-  const allChecked = rows.length > 0 && rows.every((r) => selected.has(r.id));
+  const decidable = rows.filter((r) => r.canDecide); // 매니저는 무단결석만
+  const allChecked = decidable.length > 0 && decidable.every((r) => selected.has(r.id));
   const toggle = (id: string) =>
     setSelected((s) => {
       const n = new Set(s);
@@ -133,7 +134,7 @@ export default function Penalties() {
                 <tr>
                   {pending && (
                     <th>
-                      <input type="checkbox" aria-label="전체 선택" checked={allChecked} onChange={() => setSelected(allChecked ? new Set() : new Set(rows.map((r) => r.id)))} />
+                      <input type="checkbox" aria-label="전체 선택" checked={allChecked} onChange={() => setSelected(allChecked ? new Set() : new Set(decidable.map((r) => r.id)))} />
                     </th>
                   )}
                   <th>발생일</th>
@@ -196,11 +197,7 @@ export default function Penalties() {
 function Row({ r, pending, checked, onToggle, onDecide, busy }: { r: PenaltyRow; pending: boolean; checked: boolean; onToggle: () => void; onDecide: (ok: boolean) => void; busy: boolean }) {
   return (
     <tr>
-      {pending && (
-        <td>
-          <input type="checkbox" aria-label={`${r.name} 선택`} checked={checked} onChange={onToggle} />
-        </td>
-      )}
+      {pending && <td>{r.canDecide && <input type="checkbox" aria-label={`${r.name} 선택`} checked={checked} onChange={onToggle} />}</td>}
       <td>{md(r.date)}</td>
       <td className="left">
         <StudentLink stId={r.stId} name={r.name} />
@@ -216,7 +213,9 @@ function Row({ r, pending, checked, onToggle, onDecide, busy }: { r: PenaltyRow;
       <td>{r.score === null && pending ? <span className="muted">점수 미정</span> : r.stage === null ? <span className="muted">기준 미정</span> : r.stage}</td>
       <td>{r.approver || <span className="muted">미정</span>}</td>
       <td className="nowrap">
-        {pending ? (
+        {pending && !r.canDecide ? (
+          <span className="muted">-</span>
+        ) : pending ? (
           <>
             <button type="button" className="btn btn-xs btn-primary" disabled={busy} onClick={() => onDecide(true)}>
               승인
