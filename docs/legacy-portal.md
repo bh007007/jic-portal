@@ -1,6 +1,6 @@
 # 기존 업체 포털 (jicportal.com) 구조
 
-2026-11-07 관리자 계정으로 화면 구조만 분석한 기록이다. 학생 개인정보는 담지 않는다.
+2026-11-07 관리자 계정으로 화면 구조만 분석한 기록이다. 학생 개인정보는 담지 않는다. 강사 포털(LMS)·회계(Check Balance·Payment Report·청구 합계 계산)·변경요청 화면 조사와 연장·변경 추출 주의점은 [legacy-portal-probes.md](legacy-portal-probes.md)(2026-11-09).
 
 ## 기술 구조
 
