@@ -405,6 +405,22 @@ ok('지운 뒤 로그인 안 됨, 연결도 없음', !(await login(gEmail, 'gate
 const gaud = await sb.sql(`select action, actor_id::text from public.audit_logs where target = 'guard_account' order by id`);
 ok('접근 기록: 만들기(직원C)·비밀번호(직원P)·지우기(직원C)', gaud.map((a) => a.action).join() === 'guard_create,guard_password,guard_delete' && gaud[1].actor_id === U.staffP, gaud);
 
+// ── 무단결석: 강사 포털 출석(서비스 키로 넣음)에서 마감된 날의 결석 → 직원 패널티 후보 → 사유 인정하면 지워짐
+const sAb = others[2] ?? sP;
+const yday = plus(manila, -1);
+const sess = (await sb.sql(`insert into public.class_sessions (day, start_time, campus, subject) values ($1, '08:00', 'Challenger', 'Grammar') returning id::text`, [yday]))[0].id;
+await sb.sql(`insert into public.attendance (session_id, student_no, result) values ($1, $2, 'AB')`, [sess, sAb]);
+const absenceRows = async () => ((await api('GET', '/api/penalties?tab=pending', tC)).body.rows ?? []).filter((p) => p.source === 'attendance');
+ok('마감 전에는 무단결석 후보 없음', (await absenceRows()).length === 0);
+await sb.sql(`insert into public.attendance_closings (day, campus) values ($1, 'Challenger')`, [yday]);
+let abr = await absenceRows();
+ok('출석 마감 → 무단결석 후보(학생·날짜, 근거, 캠퍼스)', abr.length === 1 && abr[0].id === `absence-${sAb}-${yday}` && abr[0].kind === 'absence' && abr[0].date === yday && abr[0].basis === '수업 결석 1회(08:00 Grammar)' && abr[0].campus === 'Challenger', abr);
+ok('여러 번 열어도 한 건', (await absenceRows()).length === 1 && (await sb.sql(`select count(*)::int n from public.penalties where source = 'attendance'`))[0].n === 1);
+x = await api('GET', '/api/guard', tG);
+ok('가드 화면은 그대로(가드는 결석을 읽지 않음)', x.status === 200);
+await sb.sql(`update public.attendance set excused = true where session_id = $1`, [sess]);
+ok('사유 인정 → 대기 후보 지워짐', (await absenceRows()).length === 0 && (await sb.sql(`select count(*)::int n from public.penalties where source = 'attendance'`))[0].n === 0);
+
 await sb.close();
 console.log(fails ? `${fails}건 실패` : '모두 통과');
 process.exit(fails ? 1 : 0);

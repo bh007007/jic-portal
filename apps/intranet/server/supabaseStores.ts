@@ -12,7 +12,7 @@ import type { SupabaseConf } from '../../student/server/supabaseAuth';
 import { hm, iso, restClient, StoreError, toAbsence, toDeparture, toLife, toOvernight, toRide, toSignup, toTrip, tripReads, type Rest, type Row } from '../../student/server/supabaseStores';
 import type { TripStore } from '../../student/server/trips';
 import type { AuditLog, CounselingNote, CounselingRemote } from './counseling';
-import type { DocRepo, Outing, Penalty, PenaltyRules, Repo, Settings, Stores } from './core';
+import type { AttendanceSource, DocRepo, Outing, Penalty, PenaltyRules, Repo, Settings, Stores } from './core';
 import type { Notice, NoticeRead } from './notices';
 import type { IncidentReport } from './reports';
 import { serviceHeaders } from './supabaseData';
@@ -126,7 +126,25 @@ function outingStore(rest: Rest): Repo<Outing> {
   };
 }
 
-// ── 패널티: 직원이 통금 후보를 정리하고 승인·반려한다
+// ── 강사 포털 출석의 결석(무단결석 후보): 직원만 부르는 DB 함수(20261109050000_absence_penalties.sql), 읽기만
+function attendanceSource(rest: Rest): AttendanceSource {
+  return {
+    async absences(from, to) {
+      const rows = await rest('POST', 'rpc/intranet_absence_marks', { p_from: from, p_to: to });
+      return rows.map((r) => ({
+        stId: String(r.student_no),
+        day: String(r.day),
+        time: String(r.start_time ?? ''),
+        campus: String(r.campus ?? ''),
+        subject: String(r.subject ?? ''),
+        excused: r.excused === true,
+        closed: r.closed === true,
+      }));
+    },
+  };
+}
+
+// ── 패널티: 직원이 통금·무단결석 후보를 정리하고 승인·반려한다
 function penaltyStore(rest: Rest, names: Names, userId: string): Repo<Penalty> {
   const toPenalty = async (r: Row): Promise<Penalty> => ({
     id: String(r.id),
@@ -407,6 +425,7 @@ export function supabaseStores(conf: SupabaseConf, token: string, userId: string
     rides: rideStore(rest, names, userId),
     lifeRequests: lifeRequestStore(rest, names),
     trips: tripStore(rest, names),
+    attendance: attendanceSource(rest),
     // 학생 계정 만들기·초기화 접근 기록: 직원 토큰으로 DB 함수(처리자 = 로그인한 직원)
     accountAudit: async (action, stNo, campus) => {
       await rest('POST', 'rpc/student_account_audit', { p_action: action, p_student_no: stNo, p_campus: campus }, 'return=minimal');
