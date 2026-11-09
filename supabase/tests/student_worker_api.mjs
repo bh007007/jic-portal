@@ -243,6 +243,19 @@ ok('큰 본문 413', x.status === 413 && x.body.error === 'body_too_large', x);
 x = await api('POST', '/api/absences', tA, '{not json');
 ok('잘못된 JSON 400', x.status === 400 && x.body.error === 'invalid_json', x);
 
+// ── 시간표: 강사 포털 수업·출석 중 학생 본인 것만(DB 함수 student_timetable). 강사 부르는 이름·교실, 메모는 안 보임
+const manilaToday = (await sql(`select (now() at time zone 'Asia/Manila')::date::text d`))[0].d;
+const tId = (await sql(`insert into public.staff (name, nickname, campus) values ('Teacher Full', 'Tess', 'Challenger') returning id::text`))[0].id;
+const roomId = (await sql(`insert into public.classrooms (campus, num) values ('Challenger', '305') returning id::text`))[0].id;
+const sess = (await sql(`insert into public.class_sessions (day, start_time, campus, kind, subject, teacher_id, classroom_id) values ($1, '08:00', 'Challenger', 'G', 'Speaking', $2, $3) returning id::text`, [manilaToday, tId, roomId]))[0].id;
+await sql(`insert into public.attendance (session_id, student_no, result, late_min, note) values ($1, $2, 'TA', 7, '비밀 메모'), ($1, '99999', 'AB', null, '')`, [sess, A]);
+x = await api('GET', `/api/timetable/${manilaToday}`, tA);
+const ttRows = (x.body.days ?? []).flatMap((d) => d.classes);
+ok('시간표: 본인 수업(강사 부르는 이름·교실·지각 분), 다른 학생·메모 없음', x.status === 200 && x.body.available && ttRows.length === 1 && ttRows[0].teacher === 'Tess' && ttRows[0].room === '305' && ttRows[0].kind === 'G' && ttRows[0].result === 'TA' && ttRows[0].lateMin === 7 && !JSON.stringify(x.body).includes('비밀'), x.body);
+ok('시간표: 합계', x.body.counts?.late === 1 && x.body.counts?.classes === 1, x.body.counts);
+const ttOther = await sql(`select count(*)::int n from public.student_timetable($1, $1)`, [manilaToday], { role: 'authenticated', sub: (await sql(`select user_id::text from public.student_users where student_no = $1`, [A]))[0].user_id });
+ok('DB 함수: 학생 본인 것만', ttOther[0].n === 1, ttOther);
+
 // ── DB에 실제로 남은 것
 const rows = await sql(`select status, created_by::text = (select user_id::text from public.student_users where student_no = $1) mine from public.absence_requests where student_no = $1 order by created_at`, [A]);
 ok('DB: 결석 2건(승인·취소), 작성자 = 학생 계정', rows.length === 2 && rows[0].status === 'approved' && rows[1].status === 'cancelled' && rows.every((y) => y.mine), rows);

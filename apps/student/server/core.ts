@@ -36,12 +36,14 @@ import {
 } from './lifeRequests';
 import { keycardCode, type KeycardSecret } from './keycard';
 import { cancelSignup, seatsLeft, signUp, studentCampuses, tripNights, visibleTo, type Trip, type TripSignup, type TripStore } from './trips';
+import { timetableView, type TimetableSource } from './timetable';
 
 export { ABSENCE_KINDS, PERIOD_COUNT, REASON_MAX } from './requests';
 export type { Departure, DepartureStore, Ride, RideState, RideStore } from './departures';
 export type { Absence, AbsenceInput, AbsenceKind, AbsenceStore, Overnight, OvernightInput, OvernightStore, RequestStatus } from './requests';
 export type { LifeCategory, LifeInput, LifeRequest, LifeRequestStore, LifeStatus } from './lifeRequests';
 export type { SignupStatus, Trip, TripSignup, TripStatus, TripStore } from './trips';
+export type { AttendanceResult, ClassMark, TimetableSource, TimetableView } from './timetable';
 
 export interface StudentCtx {
   db: Db;
@@ -53,6 +55,8 @@ export interface StudentCtx {
   life: LifeRequestStore;
   /** 학교 여행·액티비티와 참가 신청(server/trips.ts, 인트라넷과 같이 씀) */
   trips: TripStore;
+  /** 시간표: 강사 포털 수업·출석(server/timetable.ts, 읽기만). 없으면 '아직 없음' */
+  timetable?: TimetableSource;
   /** 카드키 QR 비밀 값(server/keycard.ts). 없으면 출입 QR 을 만들지 않는다. */
   keycardSecret?: KeycardSecret;
   /** 로그인한 학생 번호. 없으면 null. */
@@ -313,6 +317,8 @@ export async function handleStudentApi(ctx: StudentCtx, method: string, pathname
       const k = await keycardCode(await ctx.keycardSecret(), stId, ctx.now().getTime());
       return ok({ ...k, now: ctx.now().toISOString() }); // now: 기기 시계가 달라도 남은 시간을 맞게 보이도록
     }
+    const tt = p.match(/^\/timetable(?:\/(\d{4}-\d{2}-\d{2}))?$/);
+    if (tt && method === 'GET') return ok(await timetableView(ctx.timetable, stId, localToday(ctx.now()), tt[1])); // 주(그 날짜가 든 월~일)
     if (p === '/trips' && method === 'GET') return ok(await tripRows(ctx, stId));
     const tr = p.match(/^\/trips\/([\w-]+)(?:\/(signup|cancel))?$/);
     if (tr && !tr[2] && method === 'GET') {

@@ -12,6 +12,7 @@ import { handleLifeRequest, LIFE_OPEN_MAX, type LifeRequest } from './lifeReques
 import { decideRequest, overnightFor, type Absence, type Overnight, type RequestStore } from './requests';
 import { memoryTripStore, removeSignup, saveTrip, tripPermits, type Trip } from './trips';
 import { KEYCARD_PERIOD, keycardCode, readKeycard } from './keycard';
+import { mondayOf, type ClassMark, type TimetableSource, type TimetableView } from './timetable';
 
 function memStore<T extends { id: string; stId: string }>(): RequestStore<T> {
   const m = new Map<string, T>();
@@ -367,6 +368,40 @@ r = await handleStudentApi({ ...ctx(), keycardSecret: undefined }, 'GET', '/api/
 expect('비밀 값이 없는 서버는 404', r.status === 404 && err(r) === 'keycard_unavailable', r);
 r = await call('GET', '/keycard', null, '99999999');
 expect('연수가 없는 학생은 403', r.status === 403 && err(r) === 'no_enrollment', r);
+
+// ── 시간표: 강사 포털 수업·출석(읽기만). 오늘(11/08 일요일)이 든 주 = 11/02(월) ~ 11/08(일)
+expect('월요일 계산: 일요일은 그 주 월요일', mondayOf('2026-11-08') === '2026-11-02' && mondayOf('2026-11-02') === '2026-11-02' && mondayOf('2026-11-04') === '2026-11-02');
+const cls = (id: string, day: string, time: string, extra: Partial<ClassMark> = {}): ClassMark & { stId: string } => ({ stId, id, day, time, minutes: 50, kind: '1', subject: 'Grammar', teacher: '', room: '', result: null, lateMin: null, excused: false, ...extra });
+const allClasses = [
+  cls('c1', '2026-11-03', '10:00', { subject: 'Speaking', teacher: 'Ann', room: '201', kind: 'G', result: 'AB' }),
+  cls('c2', '2026-11-03', '08:00', { teacher: 'Ben', result: 'AT' }),
+  cls('c3', '2026-11-05', '09:00', { subject: '', result: 'TA', lateMin: 10 }),
+  cls('c4', '2026-11-06', '09:00', { subject: 'Reading', result: 'AB', excused: true }),
+  cls('c5', '2026-11-08', '13:00', { subject: 'Writing' }),
+  cls('c6', '2026-11-10', '08:00'),
+  { ...cls('x1', '2026-11-03', '08:00', { result: 'AB' }), stId: '99999' },
+];
+let asked: string[] = [];
+const ttSource: TimetableSource = {
+  classes: async (who, from, to) => {
+    asked = [who, from, to];
+    return allClasses.filter((c) => c.stId === who && c.day >= from && c.day <= to).map(({ stId: _s, ...c }) => c);
+  },
+};
+const tcall = async (p: string, who: string | null = stId) => handleStudentApi({ ...ctx(who), timetable: ttSource }, 'GET', p, null);
+let tv = (await tcall('/timetable')).body as TimetableView;
+expect('시간표: 이번 주(월~일), 이전·다음 주', tv.available && tv.from === '2026-11-02' && tv.to === '2026-11-08' && tv.prev === '2026-10-26' && tv.next === '2026-11-09' && tv.today === '2026-11-08' && tv.days.length === 7, tv);
+expect('시간표: 로그인한 학생 것만 그 주로 묻는다', asked.join() === `${stId},2026-11-02,2026-11-08`, asked);
+const d3 = tv.days.find((d) => d.day === '2026-11-03')!;
+expect('시간표: 날짜별, 시작 시각 순, 다른 학생 수업은 없음', d3.classes.map((c) => c.id).join() === 'c2,c1', d3.classes);
+expect('시간표: 합계(출석 1·결석 1·지각 1·사유 인정 1·체크 전 1)', JSON.stringify(tv.counts) === JSON.stringify({ classes: 5, attended: 1, absent: 1, late: 1, excused: 1, unchecked: 1 }), tv.counts);
+tv = (await tcall('/timetable/2026-11-11')).body as TimetableView;
+expect('시간표: 다른 주(그 날짜가 든 월~일)', tv.from === '2026-11-09' && tv.days.flatMap((d) => d.classes).map((c) => c.id).join() === 'c6', tv);
+tv = (await tcall('/timetable/2026-13-40')).body as TimetableView;
+expect('시간표: 날짜가 아니면 이번 주', tv.from === '2026-11-02', tv.from);
+tv = (await call('GET', '/timetable')).body as TimetableView;
+expect('시간표: 출석 자료가 없으면 아직 없음', tv.available === false && tv.days.every((d) => d.classes.length === 0), tv);
+expect('시간표: 로그인 전 401', (await tcall('/timetable', null)).status === 401);
 
 console.log(fails ? `\n${fails}건 실패` : '\n모두 통과');
 if (fails) process.exit(1);

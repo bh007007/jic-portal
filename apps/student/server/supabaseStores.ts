@@ -8,6 +8,7 @@ import type { Departure, DepartureStore, Ride, RideStore } from './departures';
 import type { LifeRequest, LifeRequestStore } from './lifeRequests';
 import type { Absence, AbsenceStore, Overnight, OvernightStore } from './requests';
 import type { Trip, TripSignup, TripStore } from './trips';
+import type { ClassMark, TimetableSource } from './timetable';
 import type { SupabaseConf } from './supabaseAuth';
 
 export type Row = Record<string, unknown>;
@@ -301,8 +302,30 @@ export function tripStore(rest: Rest): TripStore {
   };
 }
 
+/** 시간표: 강사 포털 수업·출석을 학생 본인 것만(DB 함수 student_timetable, 20261109120000_student_timetable.sql). 읽기만 */
+export function timetableSource(rest: Rest): TimetableSource {
+  return {
+    async classes(_stId, from, to) {
+      const rows = await rest('POST', 'rpc/student_timetable', { p_from: from, p_to: to });
+      return rows.map((r) => ({
+        id: String(r.id),
+        day: String(r.day),
+        time: String(r.start_time ?? ''),
+        minutes: Number(r.minutes ?? 0),
+        kind: r.kind === 'G' ? 'G' : '1',
+        subject: String(r.subject ?? ''),
+        teacher: String(r.teacher ?? ''),
+        room: String(r.room ?? ''),
+        result: (r.result as ClassMark['result']) ?? null,
+        lateMin: (r.late_min as number | null) ?? null,
+        excused: r.excused === true,
+      }));
+    },
+  };
+}
+
 /** 학생 토큰으로 저장소를 만든다. */
 export function supabaseStores(conf: SupabaseConf, token: string, fetchFn: typeof fetch = fetch) {
   const rest = restClient(conf, token, fetchFn);
-  return { store: absenceStore(rest), overnights: overnightStore(rest), departures: departureStore(rest), rides: rideStore(rest), life: lifeStore(rest), trips: tripStore(rest) };
+  return { store: absenceStore(rest), overnights: overnightStore(rest), departures: departureStore(rest), rides: rideStore(rest), life: lifeStore(rest), trips: tripStore(rest), timetable: timetableSource(rest) };
 }

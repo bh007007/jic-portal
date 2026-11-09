@@ -2,11 +2,11 @@
  * /api 호출. 로그인 헤더는 auth.ts 가 붙인다(로컬 개발: X-Student-Id, Supabase: Authorization 토큰).
  */
 import { useCallback, useEffect, useState } from 'react';
-import type { Absence, AbsenceInput, AbsenceList, Departure, DepartureView, LifeInput, LifeList, LifeRow, OvernightInput, OvernightList, OvernightRow, Profile, TripDetail, TripList, TripRow } from '../server/core';
+import type { Absence, AbsenceInput, AbsenceList, ClassMark, Departure, DepartureView, LifeInput, LifeList, LifeRow, OvernightInput, OvernightList, OvernightRow, Profile, TimetableView, TripDetail, TripList, TripRow } from '../server/core';
 import type { DepartureInput } from '../server/departures';
 import { authHeaders, recheck } from './auth';
 
-export type { Absence, AbsenceList, Departure, DepartureView, LifeList, LifeRow, OvernightList, OvernightRow, Profile, TripDetail, TripList, TripRow };
+export type { Absence, AbsenceList, ClassMark, Departure, DepartureView, LifeList, LifeRow, OvernightList, OvernightRow, Profile, TimetableView, TripDetail, TripList, TripRow };
 export type LifeCategory = LifeRow['category'];
 export type LifeStatus = LifeRow['status'];
 export type AbsenceKind = Absence['kind'];
