@@ -227,7 +227,7 @@ export default function Consult() {
                         )}
                       </td>
                     </tr>
-                    {hasLevels && <tr><th>단계</th><td>{pickedLevel ? `다음 화면에서 선택 (기본: ${pickedLevel})` : '다음 화면에서 가격과 함께 직접 선택'}</td></tr>}
+                    {hasLevels && <tr><th>단계</th><td>{pickedLevel ? `다음 화면에서 선택 (기본: ${pickedLevel})` : '다음 화면에서 직접 선택'}</td></tr>}
                     {(() => {
                       // 선행 코스(조건표 '선행 코스 (수준이 낮을 때 먼저)', 11/10 결정 D-5: 추천 결과에 한 줄)
                       const pre = col?.prereq ? courses.find((c) => c.id === col.prereq) : undefined;
