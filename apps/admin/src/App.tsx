@@ -13,6 +13,7 @@ import Arrivals from './pages/Arrivals';
 import Agencies from './pages/Agencies';
 import AgencyDetail from './pages/AgencyDetail';
 import Agents from './pages/Agents';
+import AgencyPortal from './pages/AgencyPortal';
 import Invoices from './pages/Invoices';
 import Deposits from './pages/Deposits';
 import Points from './pages/Points';
@@ -58,6 +59,7 @@ export default function App() {
         <Route path="/agencies" element={<Agencies />} />
         <Route path="/agencies/:agId" element={<AgencyDetail />} />
         <Route path="/agents" element={<Agents />} />
+        <Route path="/agency-portal" element={<AgencyPortal />} />
         <Route path="/invoices" element={<Invoices />} />
         <Route path="/deposits" element={<Deposits />} />
         <Route path="/points" element={<Points />} />

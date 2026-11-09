@@ -2,15 +2,13 @@ import type { ReactNode } from 'react';
 import { NavLink } from 'react-router-dom';
 import { PageHead } from '../../ui';
 
+// 가입 승인·지점 계정·방문 신청·사용 통계는 관리자 포털로 옮겼다(11/10, '관리자 포털로' 안내)
 const MENU: [string, string][] = [
-  ['/admin', '계정 승인'],
-  ['/admin/members', '지점 계정'],
+  ['/admin', '관리자 포털로'],
   ['/admin/rules', '추천 규칙'],
   ['/admin/content', '캠퍼스·코스 내용'],
   ['/admin/resources', '자료실'],
   ['/admin/notices', '공지·프로모션'],
-  ['/admin/visits', '방문 신청'],
-  ['/admin/stats', '사용 통계'],
   ['/admin/settings', '링크·안내 설정'],
 ];
 
