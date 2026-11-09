@@ -1,4 +1,4 @@
-// 파트너 포털 추천 조건표 v2.1(20261109140000_partner_reco_v21.sql) 시험: 두 번 실행해도 같은지, 표시 이름·단계·승인본, 읽기 권한.
+// 파트너 포털 추천 조건표 v2.1(20261109153000_partner_reco_v21.sql) 시험: 두 번 실행해도 같은지, 표시 이름·단계·승인본, 읽기 권한.
 // 실행(저장소 루트): npm i --no-save @electric-sql/pglite@0.3 && node supabase/tests/partner_reco_rls.mjs
 import { readFileSync } from 'node:fs';
 import { pathToFileURL } from 'node:url';
@@ -24,8 +24,8 @@ await db.exec(`
 for (const f of ['20261107000000_legacy_tables.sql', '20261107010000_partner_portal.sql']) await db.exec(mig(f));
 // 관리자가 Speaking Course 단계 내용을 이미 넣었다면 덮어쓰지 않는지 보려고 하나 넣어 둔다
 await db.exec(`update public.courses set levels = '[{"name":"STARTER","lessons":"관리자 입력"}]' where id = 'p-speaking'`);
-await db.exec(mig('20261109140000_partner_reco_v21.sql'));
-await db.exec(mig('20261109140000_partner_reco_v21.sql')); // 두 번째 실행
+await db.exec(mig('20261109153000_partner_reco_v21.sql'));
+await db.exec(mig('20261109153000_partner_reco_v21.sql')); // 두 번째 실행
 ok('마이그레이션 2회 실행', true);
 
 const q = async (sql) => (await db.query(sql)).rows;
@@ -43,7 +43,7 @@ ok('IELTS Guarantee 옵션 1개', courses['c-ielts-g'].levels.length === 1);
 ok('관리자가 넣은 단계는 그대로', courses['p-speaking'].levels[0].lessons === '관리자 입력');
 // 표시 이름을 관리자가 바꾼 뒤 다시 실행해도 그대로
 await db.exec(`update public.courses set display_name = '1:1 Custom' where id = 'p-senior'`);
-await db.exec(mig('20261109140000_partner_reco_v21.sql'));
+await db.exec(mig('20261109153000_partner_reco_v21.sql'));
 ok('표시 이름 덮어쓰지 않음', (await q(`select display_name from public.courses where id = 'p-senior'`))[0].display_name === '1:1 Custom');
 
 // 읽기 권한: 승인된 에이전시 지점과 직원만 규칙을 읽고, 익명은 못 읽는다

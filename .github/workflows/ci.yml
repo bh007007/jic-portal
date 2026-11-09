@@ -33,4 +33,5 @@ jobs:
       - run: node supabase/tests/absence_penalties_rls.mjs
       - run: node supabase/tests/intranet_roles_rls.mjs
       - run: node supabase/tests/intranet_manager_rls.mjs
+      - run: node supabase/tests/student_timetable_rls.mjs
       - run: node supabase/tests/partner_reco_rls.mjs

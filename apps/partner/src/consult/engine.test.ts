@@ -1,4 +1,4 @@
-// 상담 추천 계산 시험(조건표 v2.1, CL-021). 데이터는 마이그레이션 20261109140000_partner_reco_v21.sql 의 JSON 을 그대로 읽는다.
+// 상담 추천 계산 시험(조건표 v2.1, CL-021). 데이터는 마이그레이션 20261109153000_partner_reco_v21.sql 의 JSON 을 그대로 읽는다.
 // 실행: npm --workspace apps/partner run test (partner:build 에 포함)
 import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
@@ -6,7 +6,8 @@ import type { Course, Question, RuleSet, ScoreModel } from '../data';
 import { estimateLevel, rank, recommend } from './engine';
 
 // npm 워크스페이스 스크립트는 apps/partner 에서 돈다(번들 뒤에는 import.meta.url 이 캐시 폴더라 쓰지 않는다)
-const sql = readFileSync(resolve(process.cwd(), '../../supabase/migrations/20261109140000_partner_reco_v21.sql'), 'utf8');
+// 체크아웃 줄바꿈(CRLF)과 상관없이 LF 로 맞춘다
+const sql = readFileSync(resolve(process.cwd(), '../../supabase/migrations/20261109153000_partner_reco_v21.sql'), 'utf8').split('\r\n').join('\n');
 const between = (tag: string) => JSON.parse(sql.split(`$${tag}$`)[1]);
 const questions = between('q') as Question[];
 const model = between('r') as ScoreModel;
