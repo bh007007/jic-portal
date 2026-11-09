@@ -121,6 +121,14 @@ powershell -ExecutionPolicy Bypass -File scripts/split-export.ps1 -Source data/r
 powershell -ExecutionPolicy Bypass -File scripts/split-export.ps1 -Source data/raw/jic_portal_balance_2026-11-09.json.gz -DictPath docs/data-dictionary-balance.md
 ```
 
+### 연장·변경 추출
+
+[scripts/extract/portal-extract-extend.js](scripts/extract/portal-extract-extend.js)를 같은 방법으로 실행한다(3~6분, 읽기 전용). 연장현황(연장 기간 `tt_*`)과 신입·연장·복귀·변경의 연장·복귀·코스 변경·기숙사 변경 탭을 받는다. 관리자 포털 '연장 현황'·'변경 이력'과 연장 반영 종료일(`finishOf`)이 읽는다. 복귀 탭은 빈 쪽까지 넘기고, 기숙사 변경은 긴 기간이 안 되면 한 달씩 나눠 받는다. 콘솔에 '못 받은 날'이 나오면 업체 쪽 오류라 그 날만 빠진다(11/9 기준 2024-04-21).
+
+```powershell
+powershell -ExecutionPolicy Bypass -File scripts/split-export.ps1 -Source data/raw/jic_portal_extend_YYYY-MM-DD.json.gz -DictPath docs/data-dictionary-extend.md
+```
+
 ## 데이터 원칙
 
 - `data/` 폴더와 `*.json.gz`는 `.gitignore`로 막혀 있다. 개인정보를 GitHub, OneDrive, 메신저로 옮기지 않는다.
