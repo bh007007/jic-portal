@@ -5,6 +5,7 @@
  *   샘플 데이터와 실제 추출본을 섞지 않도록 데이터 종류별로 파일을 나눈다. 통금·근무자·점수표 설정은 공용 JSON.
  * - 결석·외박 신청은 학생 앱의 파일(studentStoreDir, .local-db/student)을 같이 열어 승인·반려한다.
  * - 상담 기록·접근 기록은 counseling-<source>.ndjson, audit-<source>.ndjson. 실제 데이터로 실행하면 민감 정보가 들어간다.
+ * - 강사 포털 출석(무단결석 후보)은 강사 포털에 로컬 실행이 없어 attendance-<source>.ndjson(결석 한 건이 한 줄, 읽기만)를 넣었을 때만 본다.
  * - 로컬에는 로그인이 없다(관리자 앱과 같다). 상담 기록 처리자는 X-Staff-Name 헤더(브라우저에 입력한 이름). 이 PC(127.0.0.1)에서만 열린다.
  */
 import fs from 'node:fs';
@@ -18,7 +19,7 @@ import type { Departure, Ride } from '../../student/server/departures';
 import type { LifeRequest } from '../../student/server/lifeRequests';
 import type { Absence, Overnight } from '../../student/server/requests';
 import { ACTOR_MAX } from './counseling';
-import { handleIntranetApi, type DocRepo, type Repo, type Stores } from './core';
+import { handleIntranetApi, type AbsenceMark, type AttendanceSource, type DocRepo, type Repo, type Stores } from './core';
 
 function writeAtomic(file: string, text: string) {
   fs.mkdirSync(path.dirname(file), { recursive: true });
@@ -62,6 +63,21 @@ export function fileDoc<T>(file: string): DocRepo<T> {
     },
     async set(v) {
       writeAtomic(file, JSON.stringify(v, null, 2) + '\n');
+    },
+  };
+}
+
+/** 강사 포털 출석의 결석(읽기만). 파일이 없으면 없음. 한 줄: {"stId","day","time","campus","subject","excused","closed"} */
+export function fileAttendance(file: string): AttendanceSource {
+  return {
+    async absences(from, to) {
+      if (!fs.existsSync(file)) return [];
+      return fs
+        .readFileSync(file, 'utf8')
+        .split('\n')
+        .filter((l) => l.trim())
+        .map((l) => JSON.parse(l) as AbsenceMark)
+        .filter((m) => m.day >= from && m.day <= to);
     },
   };
 }
@@ -112,6 +128,7 @@ export function intranetLocalPlugin(dataDir: string, storeDir: string, studentSt
         notices: fileRepo(path.join(storeDir, 'notices.ndjson')),
         noticeReads: fileRepo(path.join(storeDir, 'notice-reads.ndjson')),
         reports: fileRepo(path.join(storeDir, `reports-${source}.ndjson`)),
+        attendance: fileAttendance(path.join(storeDir, `attendance-${source}.ndjson`)),
       };
       const keycardSecret = localKeycardSecret(req.keycardSecret); // 학생 앱과 같은 파일(출입 QR 확인)
       server.config.logger.info(`[intranet-local] ${db.summary()} · 기준일 ${db.refDate} · 저장 폴더 ${storeDir}`);

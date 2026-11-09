@@ -87,7 +87,7 @@ export interface Penalty {
   date: string; // 발생일(통금 위반은 그날 밤)
   campus: string;
   basis: string; // 근거 문장
-  source: 'outing' | 'guard'; // 외출 기록(통금 위반 자동) | 가드 리포트
+  source: 'outing' | 'guard' | 'attendance'; // 외출 기록(통금 위반 자동) | 가드 리포트 | 강사 포털 출석(무단결석 자동)
   sourceId: string;
   status: PenaltyStatus;
   score: number | null; // 승인할 때의 점수표 점수(이후 점수표가 바뀌어도 그대로)
@@ -143,6 +143,23 @@ export interface DocRepo<T> {
   get(): Promise<T | null>;
   set(v: T): Promise<void>;
 }
+/**
+ * 강사 포털 출석의 결석 한 건(수업 × 학생, 결과 '결석'). 출석은 강사 포털이 쓰고(attendance, 20261109000000_attendance.sql) 인트라넷은 읽기만 한다.
+ * 배포: DB 함수 intranet_absence_marks(직원만), 로컬: 파일(강사 포털에 로컬 실행이 없어 비어 있다).
+ */
+export interface AbsenceMark {
+  stId: string;
+  day: string; // 수업 날짜 YYYY-MM-DD
+  time: string; // 수업 시작 'HH:MM'
+  campus: string;
+  subject: string;
+  excused: boolean; // 사유 인정(강사 포털 매니저·관리자)
+  closed: boolean; // 그 캠퍼스·날짜 출석 마감
+}
+export interface AttendanceSource {
+  absences(from: string, to: string): Promise<AbsenceMark[]>;
+}
+
 export interface Stores {
   outings: Repo<Outing>;
   penalties: Repo<Penalty>;
@@ -172,6 +189,8 @@ export interface Stores {
   /** 학생 앱과 같이 쓰는 귀국 항공편과, 직원이 쓰는 공항 이동 배차 */
   departures: DepartureStore;
   rides: RideStore;
+  /** 강사 포털 출석의 결석(읽기만). 없으면 무단결석 후보를 만들지 않는다 */
+  attendance?: AttendanceSource;
 }
 
 export interface IntranetCtx {
@@ -308,6 +327,92 @@ async function syncCurfewPenalties(ctx: IntranetCtx) {
           },
     );
   }
+}
+
+// ── 무단결석: 강사 포털 출석에서
+/** 무단결석 후보를 다시 맞추는 기간(오늘 포함 지난 며칠). 그전 후보는 건드리지 않는다. */
+export const ABSENCE_LOOKBACK_DAYS = 31;
+/**
+ * 학생·날짜별 무단결석 근거 문장, 아니면 null.
+ * 출석이 마감된 날의 결석 중 사유 인정이 없는 수업만 센다. 그날 승인됐거나 처리 전인 결석 신청이 있으면(교시와 수업 시각의 대응이
+ * 정해지기 전이라 날 전체를) 빼고, 참가 신청한 학교 여행 날도 뺀다. 반려된 신청은 근거에 적는다.
+ */
+function absenceBreach(marks: AbsenceMark[], requests: Absence[], onTrip: boolean): string | null {
+  const counted = marks.filter((m) => m.closed && !m.excused).sort((a, b) => a.time.localeCompare(b.time));
+  if (!counted.length || onTrip) return null;
+  if (requests.some((a) => a.status === 'approved' || a.status === 'pending')) return null;
+  const list = counted.map((m) => (m.subject ? `${m.time} ${m.subject}` : m.time)).join(', ');
+  const rejected = requests.some((a) => a.status === 'rejected') ? ', 결석 신청 반려' : '';
+  return `수업 결석 ${counted.length}회(${list.length > 120 ? list.slice(0, 119) + '…' : list})${rejected}`;
+}
+
+/**
+ * 강사 포털 출석에서 무단결석 패널티 후보를 만든다(학생·날짜당 한 건, 여러 번 불러도 같은 결과).
+ * 통금 후보와 같이, 승인 대기 중인 후보는 근거를 다시 계산하고 더는 무단결석이 아니면(사유 인정, 신청 승인, 마감 되돌리기) 지운다.
+ * 처리된 건과 기간(ABSENCE_LOOKBACK_DAYS)보다 오래된 건은 건드리지 않는다.
+ */
+async function syncAbsencePenalties(ctx: IntranetCtx) {
+  const source = ctx.stores.attendance;
+  if (!source || ctx.session?.role === 'guard') return;
+  const to = localDate(ctx.now().getTime());
+  const from = addDaysTo(to, -(ABSENCE_LOOKBACK_DAYS - 1));
+  const [marks, penalties, absences, trips, signups] = await Promise.all([
+    source.absences(from, to),
+    ctx.stores.penalties.all(),
+    ctx.stores.absences.listAll(),
+    ctx.stores.trips.listTrips(),
+    ctx.stores.trips.listSignups(),
+  ]);
+  const key = (stId: string, day: string) => `${stId}:${day}`;
+  const byDay = new Map<string, AbsenceMark[]>();
+  for (const m of marks) if (m.day >= from && m.day <= to) byDay.set(key(m.stId, m.day), [...(byDay.get(key(m.stId, m.day)) ?? []), m]);
+  const live = new Map(trips.filter((t) => t.status !== 'cancelled').map((t) => [t.id, t]));
+  const onTrip = (stId: string, day: string) =>
+    signups.some((s) => {
+      const t = live.get(s.tripId);
+      return !!t && s.stId === stId && s.status === 'applied' && t.start <= day && day <= t.end;
+    });
+  const existing = new Map(penalties.filter((p) => p.source === 'attendance' && p.date >= from && p.date <= to).map((p) => [p.sourceId, p]));
+  const keys = new Set([...byDay.keys(), ...existing.keys()]);
+  for (const k of keys) {
+    const cur = existing.get(k);
+    if (cur && cur.status !== 'pending') continue;
+    const [stId, day] = [k.slice(0, k.lastIndexOf(':')), k.slice(k.lastIndexOf(':') + 1)];
+    const dayMarks = byDay.get(k) ?? [];
+    const basis = absenceBreach(dayMarks, absences.filter((a) => a.stId === stId && a.date === day && a.status !== 'cancelled'), onTrip(stId, day));
+    if (!basis) {
+      if (cur) await ctx.stores.penalties.remove(cur.id);
+      continue;
+    }
+    if (cur && cur.basis === basis) continue;
+    const campus = dayMarks.find((m) => m.closed && !m.excused)!.campus;
+    await ctx.stores.penalties.put(
+      cur
+        ? { ...cur, basis, campus }
+        : {
+            id: `absence-${stId}-${day}`,
+            stId,
+            kind: 'absence',
+            date: day,
+            campus,
+            basis,
+            source: 'attendance',
+            sourceId: k,
+            status: 'pending',
+            score: null,
+            createdAt: ctx.now().toISOString(),
+            decidedAt: null,
+            decidedBy: null,
+            note: null,
+          },
+    );
+  }
+}
+
+/** 직원 화면을 열 때 자동 후보(통금 위반, 무단결석)를 정리한다. */
+async function syncPenalties(ctx: IntranetCtx) {
+  await syncCurfewPenalties(ctx);
+  await syncAbsencePenalties(ctx);
 }
 
 // ── 가드 태블릿
@@ -563,7 +668,7 @@ function stageOf(stages: PenaltyStage[], total: number) {
 }
 
 async function listPenalties(ctx: IntranetCtx, q: URLSearchParams) {
-  await syncCurfewPenalties(ctx);
+  await syncPenalties(ctx);
   const rules = await loadRules(ctx);
   const kindOf = new Map(rules.kinds.map((k) => [k.code, k]));
   const all = await ctx.stores.penalties.all();
@@ -839,7 +944,7 @@ async function decideRequests(ctx: IntranetCtx, kind: RequestKind, input: Record
 const RECENT_NIGHTS = 30;
 
 async function lifeData(ctx: IntranetCtx) {
-  await syncCurfewPenalties(ctx);
+  await syncPenalties(ctx);
   const [settings, rules, outings, penalties, absences, overnights, trips, signups] = await Promise.all([
     loadSettings(ctx),
     loadRules(ctx),
@@ -1021,7 +1126,7 @@ function counselingCtx(ctx: IntranetCtx): CounselingCtx {
 }
 
 async function summary(ctx: IntranetCtx) {
-  await syncCurfewPenalties(ctx);
+  await syncPenalties(ctx);
   const settings = await loadSettings(ctx);
   const now = ctx.now().getTime();
   const night = nightOf(now);

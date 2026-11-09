@@ -6,7 +6,7 @@ import { md, mdhm } from '../format';
 import { useSearchForm } from '../useSearchForm';
 
 const KEYS = ['from', 'to', 'campus', 'kind', 'q'] as const;
-const SOURCE: Record<string, string> = { outing: '외출 기록', guard: '가드 리포트' };
+const SOURCE: Record<string, string> = { outing: '외출 기록', guard: '가드 리포트', attendance: '출석 기록' };
 
 export default function Penalties() {
   const f = useSearchForm(KEYS);

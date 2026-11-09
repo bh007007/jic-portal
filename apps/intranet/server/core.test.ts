@@ -11,7 +11,7 @@ import { memoryTripStore, signUp } from '../../student/server/trips';
 import { KEYCARD_PERIOD, keycardCode } from '../../student/server/keycard';
 import { AccountAdminError, type AccountAdmin, type LinkedAccount } from '../../student/server/accountAdmin';
 import type { GuardAccount, GuardAdmin } from './guardAccounts';
-import { handleIntranetApi, type Stores } from './core';
+import { handleIntranetApi, type AbsenceMark, type Stores } from './core';
 
 function memRepo<T extends { id: string }>() {
   const m = new Map<string, T>();
@@ -679,6 +679,58 @@ r = await gcall('POST', `/guard-accounts/${gid}/delete`, {});
 expect('지우기 200', r.status === 200 && gstore.size === 0, r);
 const gaud = (await stores.audit.all()).filter((x: any) => x.target === 'guard_account');
 expect('접근 기록: 만들기·비밀번호·지우기(출입구 이름)', ['guard_create', 'guard_password', 'guard_delete'].every((a) => gaud.some((x: any) => x.action === a && x.targetId === 'Challenger 정문' && x.actor === '오피스 김')), gaud.map((x: any) => x.action));
+
+// ── 무단결석: 강사 포털 출석(마감된 날의 결석)에서 후보를 만든다
+at('2026-11-25T10:00:00');
+const usedW = new Set([A, B, C, D, E]);
+const [W1, W2, W3, W4, W5] = [...new Set(cur.map((x) => x.stId))].filter((x) => !usedW.has(x)).slice(-5);
+const mark = (stId: string, day: string, time: string, extra: Partial<AbsenceMark> = {}): AbsenceMark => ({ stId, day, time, campus, subject: '', excused: false, closed: true, ...extra });
+let marks: AbsenceMark[] = [
+  mark(W1, '2026-11-24', '10:00', { subject: 'Speaking' }),
+  mark(W1, '2026-11-24', '08:00', { subject: 'Grammar' }),
+  mark(W1, '2026-11-24', '13:00', { excused: true }),
+  mark(W2, '2026-11-24', '08:00', { closed: false }),
+  mark(W3, '2026-11-24', '08:00'),
+  mark(W3, '2026-11-23', '09:00', { subject: 'Writing' }),
+  mark(W4, '2026-11-24', '08:00'),
+  mark(W5, '2026-11-24', '08:00'),
+  mark(W5, '2026-10-01', '08:00'),
+];
+let asked: string[] = [];
+stores.attendance = { absences: async (from, to) => { asked = [from, to]; return marks.filter((m) => m.day >= from && m.day <= to); } };
+await stores.absences.put(req('abW3a', W3, { date: '2026-11-24', periods: [], kind: 'sick', status: 'approved' }) as Absence);
+await stores.absences.put(req('abW3b', W3, { date: '2026-11-23', periods: [2], kind: 'personal', status: 'rejected' }) as Absence);
+await stores.absences.put(req('abW4', W4, { date: '2026-11-24', periods: [1], kind: 'sick' }) as Absence);
+await stores.absences.put(req('abW5', W5, { date: '2026-11-24', periods: [], kind: 'sick', status: 'cancelled' }) as Absence);
+await stores.trips.putTrip({ id: 'tripW', campus: '', title: '바기오 시티 투어', place: 'Baguio', meeting: '', description: '', start: '2026-11-24', end: '2026-11-24', deadline: '2026-11-20', capacity: 30, cost: 0, status: 'open', createdAt: '', updatedAt: '', createdBy: null, taken: 0 });
+await stores.trips.putSignup({ id: 'sgW', tripId: 'tripW', stId: W5, trId: '', status: 'applied', createdAt: '', updatedAt: '', reason: null, handledAt: null, handledBy: null });
+const absRows = async () => ((await call('GET', '/penalties')).body as any).rows.filter((x: any) => x.source === 'attendance');
+let ar = await absRows();
+expect('무단결석: 지난 31일만 묻는다', asked[0] === '2026-10-26' && asked[1] === '2026-11-25', asked);
+const w1 = ar.find((x: any) => x.stId === W1);
+expect('무단결석 후보: 학생·날짜당 한 건, 사유 인정 수업 빼고 시각 순', w1 && w1.id === `absence-${W1}-2026-11-24` && w1.kind === 'absence' && w1.kindName === '무단결석' && w1.date === '2026-11-24' && w1.campus === campus && w1.basis === '수업 결석 2회(08:00 Grammar, 10:00 Speaking)', ar);
+expect('마감 전인 날은 후보 없음', !ar.some((x: any) => x.stId === W2), ar);
+expect('승인된 결석 신청이 있는 날은 후보 없음', !ar.some((x: any) => x.stId === W3 && x.date === '2026-11-24'), ar);
+const w3 = ar.find((x: any) => x.stId === W3 && x.date === '2026-11-23');
+expect('반려된 신청은 후보 + 근거에 반려', w3?.basis === '수업 결석 1회(09:00 Writing), 결석 신청 반려', ar);
+expect('처리 전 신청이 있으면 처리될 때까지 후보 없음', !ar.some((x: any) => x.stId === W4), ar);
+expect('학교 여행 참가 날은 후보 없음(취소한 신청은 상관없음), 기간 밖 결석도 없음', !ar.some((x: any) => x.stId === W5), ar);
+expect('여러 번 불러도 같은 결과', (await absRows()).length === 2 && ar.length === 2);
+r = await call('POST', '/requests/absences/decide', { ids: ['abW4'], approve: false, comment: '진단서 없음' });
+expect('신청을 반려하면 후보가 생김', r.status === 200 && (await absRows()).some((x: any) => x.stId === W4 && x.basis.endsWith('결석 신청 반려')), r);
+marks = marks.map((m) => (m.stId === W1 && m.time === '10:00' ? { ...m, excused: true } : m));
+expect('사유 인정하면 근거를 다시 계산', (await absRows()).find((x: any) => x.stId === W1)?.basis === '수업 결석 1회(08:00 Grammar)');
+r = await call('POST', '/penalties/decide', { ids: [w3.id], approve: true });
+expect('무단결석 승인', r.status === 200 && (r.body as any).done === 1, r);
+marks = marks.map((m) => (m.stId === W1 || m.stId === W3 ? { ...m, excused: true } : m));
+ar = await absRows();
+expect('모두 사유 인정되면 대기 후보는 지워짐', !ar.some((x: any) => x.stId === W1), ar);
+const apl = ((await call('GET', '/penalties', null, 'tab=approved')).body as any).rows;
+expect('처리된 후보는 그대로', apl.some((x: any) => x.id === w3.id && x.status === 'approved'), apl);
+const sfW = (await call('GET', `/students/${W4}`)).body as any;
+expect('Student File 에 무단결석 후보', sfW.penalties?.some((x: any) => x.kind === 'absence' && x.date === '2026-11-24'), sfW.penalties);
+expect('홈 요약 승인 대기에 무단결석 포함', ((await call('GET', '/summary')).body as any).pending >= 1);
+delete stores.attendance;
 
 console.log(fails ? `\n${fails}건 실패` : '\n모두 통과');
 if (fails) process.exit(1);
