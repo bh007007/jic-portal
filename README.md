@@ -3,8 +3,8 @@
 업체 포털(jicportal.com)을 대체할 JIC 자체 통합 시스템이다. **관리자 포털(인트라넷 포함)·학생 포털·에이전시 포털·강사 포털(LMS)** 4개가 하나의 공용 DB(Supabase)를 쓴다. 구조는 [docs/architecture.md](docs/architecture.md).
 
 - 기획안: [docs/plan.md](docs/plan.md) (원본은 [Claude 문서](https://claude.ai/artifact/9JTCwocjZJFqPjdDjvZEg2))
-- 기존 업체 포털 구조와 조회 API: [docs/legacy-portal.md](docs/legacy-portal.md)
-- 추출 데이터의 열 목록: [docs/data-dictionary.md](docs/data-dictionary.md)
+- 기존 업체 포털 구조와 조회 API: [docs/legacy-portal.md](docs/legacy-portal.md), LMS·회계·변경요청 화면 조사: [docs/legacy-portal-probes.md](docs/legacy-portal-probes.md)
+- 추출 데이터의 열 목록: [docs/data-dictionary.md](docs/data-dictionary.md)(기본), 추가 추출은 `docs/data-dictionary-*.md`(extra·invoice·balance·extend)
 
 ## 지금 단계
 
