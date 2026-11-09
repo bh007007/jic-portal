@@ -9,6 +9,7 @@ export interface Me {
   isManager: boolean; // 매니저 또는 관리자: 시험 종류·강사 목록·출석 마감·사유 인정(DB is_lms_manager)
   isAdmin: boolean; // 직원 중 관리자('office' 역할만 있으면 오피스, docs/roles.md)
   canWrite: boolean; // 성적 입력·자료 등록: 강사·매니저·관리자(DB is_lms_writer). 체커·스케줄러·오피스는 읽기만
+  canSchedule: boolean; // 수업·교실·출석 행 만들기: 매니저·관리자·스케줄러(DB can_schedule)
 }
 
 interface AuthState {
@@ -53,7 +54,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       const isAdmin = roles.includes('staff') && (roles.includes('admin') || !roles.includes('office'));
       const isManager = roles.includes('manager') || isAdmin;
       const canWrite = isManager || roles.includes('teacher');
-      if (alive) setMe({ session, roles, name, isManager, isAdmin, canWrite });
+      const canSchedule = isManager || roles.includes('scheduler');
+      if (alive) setMe({ session, roles, name, isManager, isAdmin, canWrite, canSchedule });
     })()
       .catch((e) => alive && setError((e as Error).message))
       .finally(() => alive && setLoadingMe(false));

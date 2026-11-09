@@ -20,6 +20,8 @@ export function errText(e: unknown): string {
   if (/attendance_closed/.test(m)) return tNow('e_closed');
   if (/future_session|future_day/.test(m)) return tNow('e_future');
   if (/manager_only/.test(m)) return tNow('e_manager');
+  if (/not_allowed/.test(m)) return tNow('e_rls');
+  if (/bad_range/.test(m)) return tNow('e_range');
   if (/row-level security|violates row-level/.test(m)) return tNow('e_rls');
   if (/duplicate key/.test(m)) return tNow('e_dup');
   if (/check constraint/.test(m)) return tNow('e_check');
