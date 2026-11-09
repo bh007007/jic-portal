@@ -1,5 +1,5 @@
 import { Link } from 'react-router-dom';
-import { useApi, type TripList } from '../api';
+import { useAccess, useApi, type TripList } from '../api';
 import { Loading, PageTitle, Tabs } from '../components/ui';
 import { deadlineText, TRIP_STATUS, TRIP_STATUS_CLASS, tripCost, tripDates } from '../tripLabels';
 import { useSearchForm } from '../useSearchForm';
@@ -12,15 +12,18 @@ export default function Trips() {
   const f = useSearchForm(KEYS);
   const tab = f.params.get('tab') === 'past' ? 'past' : 'upcoming';
   const { data, error, reload } = useApi<TripList>('/api/trips?' + f.query);
+  const { manager } = useAccess(); // 매니저는 읽기만
   return (
     <>
       <PageTitle
         title="학교 여행"
         path="홈 > 신청 처리 > 학교 여행"
         actions={
-          <Link to="/trips/new" className="btn btn-primary">
-            여행 등록
-          </Link>
+          !manager && (
+            <Link to="/trips/new" className="btn btn-primary">
+              여행 등록
+            </Link>
+          )
         }
       />
       <Tabs

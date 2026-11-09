@@ -1,10 +1,11 @@
 import { Link } from 'react-router-dom';
-import { useApi, type Summary } from '../api';
+import { useAccess, useApi, type Summary } from '../api';
 import { Loading, PageTitle } from '../components/ui';
 import { dateWithDay, mdhm } from '../format';
 
 export default function Home() {
   const { data, error, reload } = useApi<Summary>('/api/summary', 60000);
+  const { manager } = useAccess(); // 매니저에게는 열 수 없는 화면(외박·생활 요청·상담·귀국)의 칸을 숨긴다
   if (!data) return <Loading error={error} onRetry={reload} />;
   return (
     <>
@@ -38,20 +39,24 @@ export default function Home() {
             <small>건</small>
           </span>
         </Link>
-        <Link to="/requests/overnights">
-          <span className="label">외박·여행 신청 대기 · 오늘 밤 외박</span>
-          <span className="value">
-            {data.pendingOvernights}
-            <small>건 · {data.overnightTonight}명</small>
-          </span>
-        </Link>
-        <Link to="/requests/life">
-          <span className="label">생활 요청 접수</span>
-          <span className="value">
-            {data.lifePending}
-            <small>건</small>
-          </span>
-        </Link>
+        {!manager && (
+          <>
+            <Link to="/requests/overnights">
+              <span className="label">외박·여행 신청 대기 · 오늘 밤 외박</span>
+              <span className="value">
+                {data.pendingOvernights}
+                <small>건 · {data.overnightTonight}명</small>
+              </span>
+            </Link>
+            <Link to="/requests/life">
+              <span className="label">생활 요청 접수</span>
+              <span className="value">
+                {data.lifePending}
+                <small>건</small>
+              </span>
+            </Link>
+          </>
+        )}
         <Link to="/trips">
           <span className="label">학교 여행 (다가오는 · 신청 받는 중)</span>
           <span className="value">
@@ -59,20 +64,24 @@ export default function Home() {
             <small>건 · {data.tripsAccepting}건</small>
           </span>
         </Link>
-        <Link to="/counseling?view=followup">
-          <span className="label">확인할 일 (상담 후속 조치)</span>
-          <span className="value">
-            {data.followUpOpen}
-            <small>건 · 기한 지남·오늘 {data.followUpDue}건</small>
-          </span>
-        </Link>
-        <Link to="/departures?view=missing">
-          <span className="label">귀국 항공편 미등록 (졸업 14일 이내)</span>
-          <span className="value">
-            {data.departureMissing}
-            <small>명</small>
-          </span>
-        </Link>
+        {!manager && (
+          <>
+            <Link to="/counseling?view=followup">
+              <span className="label">확인할 일 (상담 후속 조치)</span>
+              <span className="value">
+                {data.followUpOpen}
+                <small>건 · 기한 지남·오늘 {data.followUpDue}건</small>
+              </span>
+            </Link>
+            <Link to="/departures?view=missing">
+              <span className="label">귀국 항공편 미등록 (졸업 14일 이내)</span>
+              <span className="value">
+                {data.departureMissing}
+                <small>명</small>
+              </span>
+            </Link>
+          </>
+        )}
         <div>
           <span className="label">재학생</span>
           <span className="value">
@@ -83,9 +92,7 @@ export default function Home() {
       </div>
       <section className="panel">
         <div className="panel-head">
-          <h2>
-            내부 공지 {data.unreadNotices > 0 && <small className="text-red">안 읽음 {data.unreadNotices}건</small>}
-          </h2>
+          <h2>내부 공지 {data.unreadNotices > 0 && <small className="text-red">안 읽음 {data.unreadNotices}건</small>}</h2>
           <Link to="/notices" className="more">
             전체 보기 &gt;
           </Link>

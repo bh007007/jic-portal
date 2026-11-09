@@ -14,7 +14,8 @@ import type { StaffRole } from './core';
 type Db = ReturnType<typeof createDb>;
 export type Account =
   | { role: 'staff'; userId: string; name: string; staffRole: StaffRole; campuses: string[] | null }
-  | { role: 'guard'; userId: string; campus: string; label: string };
+  | { role: 'guard'; userId: string; campus: string; label: string }
+  | { role: 'manager'; userId: string; name: string; campuses: string[] | null };
 
 const PAGE = 1000;
 const base = (url: string) => `${url.replace(/\/+$/, '')}/rest/v1`;
@@ -39,20 +40,33 @@ export function staffRoleFrom(rows: { role: string; campus: string | null }[]): 
   return { staffRole: 'office', campuses: office.some((r) => !r.campus) ? null : [...new Set(office.map((r) => r.campus!))].sort() };
 }
 
-/** 직원이면 이름·역할, 가드면 출입구. 둘 다 아니면 null(토큰 만료·위조, 학생·에이전시 계정). */
+/** 직원이면 이름·역할, 가드면 출입구, 강사 포털 매니저면 이름·캠퍼스. 모두 아니면 null(토큰 만료·위조, 학생·에이전시·강사 계정). */
 export async function accountFromToken(conf: SupabaseConf, token: string, fetchFn: typeof fetch = fetch): Promise<Account | null> {
   const sub = tokenSubject(token);
   if (!sub) return null;
   const staff = await firstRow<{ name: string | null }>(conf, token, `staff_users?select=name&user_id=eq.${sub}`, fetchFn);
   if (staff === 'denied') return null;
-  if (staff) {
+  const roles = async () => {
     const r = await fetchFn(`${base(conf.url)}/user_roles?select=role,campus&user_id=eq.${sub}`, { headers: userHeaders(conf, token) });
     if (!r.ok) throw new Error(`supabase_${r.status}`);
-    return { role: 'staff', userId: sub, name: staff.name?.trim() || sub, ...staffRoleFrom((await r.json()) as { role: string; campus: string | null }[]) };
-  }
+    return (await r.json()) as { role: string; campus: string | null }[];
+  };
+  if (staff) return { role: 'staff', userId: sub, name: staff.name?.trim() || sub, ...staffRoleFrom(await roles()) };
   const guard = await firstRow<{ campus: string; label: string }>(conf, token, `guard_accounts?select=campus,label&user_id=eq.${sub}`, fetchFn);
   if (guard && guard !== 'denied') return { role: 'guard', userId: sub, campus: guard.campus, label: guard.label };
-  return null;
+  // 강사 포털 매니저(직원 아님): 인트라넷 일부를 쓴다(docs/roles.md). 이름은 강사 목록 이름(current_lms_name)
+  const managerCampuses = managerFrom(await roles());
+  if (managerCampuses === false) return null;
+  const n = await fetchFn(`${base(conf.url)}/rpc/current_lms_name`, { method: 'POST', headers: { ...userHeaders(conf, token), 'Content-Type': 'application/json' }, body: '{}' });
+  const name = n.ok ? String((await n.json()) ?? '').trim() : '';
+  return { role: 'manager', userId: sub, name: name || sub, campuses: managerCampuses };
+}
+
+/** 매니저 역할의 캠퍼스(null = 모든 캠퍼스), 매니저가 아니면 false */
+export function managerFrom(rows: { role: string; campus: string | null }[]): string[] | null | false {
+  const m = rows.filter((r) => r.role === 'manager');
+  if (!m.length) return false;
+  return m.some((r) => !r.campus) ? null : [...new Set(m.map((r) => r.campus!))].sort();
 }
 
 async function readAll(url: string, headers: Record<string, string>, table: string, fetchFn: typeof fetch): Promise<Raw[]> {
