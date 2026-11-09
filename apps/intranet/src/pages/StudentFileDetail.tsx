@@ -18,7 +18,7 @@ const Status = ({ s }: { s: string }) => <span className={STATUS_CLASS[s]}>{STAT
 export default function StudentFileDetail() {
   const { stId = '' } = useParams();
   const { data, error, reload } = useApi<StudentFile>(`/api/students/${encodeURIComponent(stId)}`);
-  const { manager } = useAccess(); // 매니저: 통합관리·상담·생활 요청 처리로 가는 링크는 숨긴다(열 수 없는 화면)
+  const { manager } = useAccess(); // 매니저: 통합관리·생활 요청 처리로 가는 링크는 숨긴다(열 수 없는 화면)
   const path = '홈 > 학생 생활 > Student File';
   if (!data) {
     if (error === 'not_found') return <div className="state-msg">학생을 찾을 수 없습니다.</div>;
@@ -170,11 +170,9 @@ export default function StudentFileDetail() {
           <h2>
             상담 기록 <small>({data.counseling.length}건 · 내용은 상세에서)</small>
           </h2>
-          {!manager && (
-            <Link to={`/counseling/new?stId=${s.stId}`} className="more">
-              상담 기록 작성 &gt;
-            </Link>
-          )}
+          <Link to={`/counseling/new?stId=${s.stId}`} className="more">
+            상담 기록 작성 &gt;
+          </Link>
         </div>
         <div className="panel-body">
           <table className="tbl center">

@@ -774,11 +774,11 @@ const mctx = { ...ctx, actor: '매니저 M', session: { role: 'manager' as const
 const mcall = (m: string, p: string, body: any = null, q = ''): Promise<any> => handleIntranetApi(mctx, m, p, new URLSearchParams(q), body);
 const mm = (await mcall('GET', '/meta')).body;
 expect('매니저 meta: 역할·캠퍼스, 직원 역할 없음', mm.role === 'manager' && mm.staffRole === null && mm.campuses.join() === campus, mm);
-for (const [m, p] of [['GET', '/summary'], ['GET', '/outings'], ['GET', '/reports'], ['GET', '/penalties'], ['GET', '/penalty-rules'], ['GET', '/requests/absences'], ['GET', '/trips'], ['GET', '/notices'], ['GET', '/students']]) {
+for (const [m, p] of [['GET', '/summary'], ['GET', '/outings'], ['GET', '/reports'], ['GET', '/penalties'], ['GET', '/penalty-rules'], ['GET', '/requests/absences'], ['GET', '/trips'], ['GET', '/notices'], ['GET', '/students'], ['GET', '/counseling']]) {
   const x = await mcall(m, p);
   expect(`매니저 열림: ${m} ${p}`, x.status === 200, [x.status, x.body]);
 }
-for (const [m, p, b] of [['GET', '/requests/overnights'], ['GET', '/requests/life'], ['GET', '/departures'], ['GET', '/counseling'], ['GET', '/settings'], ['PUT', '/settings', { curfew: '23:00', guards: [] }], ['PUT', '/penalty-rules', rulesNow], ['GET', '/audit'], ['GET', '/accounts'], ['GET', '/guard-accounts'], ['POST', '/trips', {}], ['POST', '/guard/scan', {}], ['POST', '/requests/overnights/decide', {}]] as [string, string, any?][]) {
+for (const [m, p, b] of [['GET', '/requests/overnights'], ['GET', '/requests/life'], ['GET', '/departures'], ['GET', '/settings'], ['PUT', '/settings', { curfew: '23:00', guards: [] }], ['PUT', '/penalty-rules', rulesNow], ['GET', '/audit'], ['GET', '/accounts'], ['GET', '/guard-accounts'], ['POST', '/trips', {}], ['POST', '/guard/scan', {}], ['POST', '/requests/overnights/decide', {}]] as [string, string, any?][]) {
   const x = await mcall(m, p, b ?? null);
   expect(`매니저 막힘: ${m} ${p}`, x.status === 403 && x.body.error === 'manager_forbidden', [x.status, x.body]);
 }

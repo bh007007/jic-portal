@@ -217,17 +217,19 @@ export interface IntranetCtx {
 }
 
 // ── 역할(docs/roles.md '인트라넷' 표): 패널티 점수표 쓰기·접근 기록은 관리자만, Student File 은 오피스·매니저가 맡은 캠퍼스만.
-// 매니저는 아래 경로만 쓴다(홈·외출·통금·가드 리포트·점수표 읽기, 패널티 승인은 무단결석만, 결석 신청 처리, 학교 여행 읽기, 내부 공지, Student File).
+// 매니저는 아래 경로만 쓴다(홈·외출·통금·가드 리포트·점수표 읽기, 패널티 승인은 무단결석만, 결석 신청 처리, 학교 여행 읽기, 내부 공지, Student File,
+// 상담 기록은 맡은 캠퍼스만 — DB 함수가 막는다, 20261109110000_intranet_manager_counseling.sql).
 export type StaffRole = 'admin' | 'office';
 type Access = StaffRole | 'manager' | 'guard';
 /** 관리자만 쓰는 경로. DB 도 같은 범위만 허용한다(20261109070000_intranet_roles.sql). */
 export const ADMIN_ROUTES = new Set(['PUT /penalty-rules', 'GET /audit']);
 /** 매니저가 쓰는 경로(20261109100000_intranet_manager.sql 이 DB 에서 같은 범위를 연다) */
 const MANAGER_ROUTES = [
-  /^GET \/(meta|summary|notices|outings|reports|penalties|penalty-rules|students|requests\/absences|trips)$/,
-  /^POST \/(notices|penalties\/decide|requests\/absences\/decide)$/,
-  /^GET \/(notices|students|trips)\/[\w-]+$/,
-  /^PUT \/notices\/[\w-]+$/,
+  /^GET \/(meta|summary|notices|outings|reports|penalties|penalty-rules|students|requests\/absences|trips|counseling)$/,
+  /^POST \/(notices|penalties\/decide|requests\/absences\/decide|counseling)$/,
+  /^GET \/(notices|students|trips|counseling)\/[\w-]+$/,
+  /^PUT \/(notices|counseling)\/[\w-]+$/,
+  /^POST \/counseling\/[\w-]+\/followup$/,
 ];
 /** 매니저가 승인·반려할 수 있는 위반 종류(수업 관련, '정할 것' 4) */
 export const MANAGER_PENALTY_KINDS = new Set(['absence']);
