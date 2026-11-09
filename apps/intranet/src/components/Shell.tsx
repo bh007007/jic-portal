@@ -1,13 +1,14 @@
 import { ADMIN_HOME } from '../base';
 import { useState, type FormEvent, type ReactNode } from 'react';
 import { Link, NavLink } from 'react-router-dom';
-import { setStaffName, useApi, useStaffName, useSummaryChanged, type Summary } from '../api';
+import { setStaffName, useApi, useStaffName, useSummaryChanged, type Meta, type Summary } from '../api';
 import { authMode, signOut } from '../auth';
 import { dateWithDay, localDate } from '../format';
 
 // 디자인 I1(IntranetPenalty.dc.html)의 메뉴. 아직 없는 화면은 '준비 중'으로 연결된다.
 type Badge = 'pending' | 'pendingAbsences' | 'pendingOvernights' | 'lifePending' | 'followUpDue' | 'unreadNotices' | 'ridePending';
-const MENU: { group?: string; items: { to: string; label: string; badge?: Badge }[] }[] = [
+// adminOnly: 관리자만 여는 화면(docs/roles.md). 오피스에게는 메뉴를 숨긴다(주소로 열어도 서버가 막는다).
+const MENU: { group?: string; items: { to: string; label: string; badge?: Badge; adminOnly?: true }[] }[] = [
   { items: [{ to: '/', label: '홈' }] },
   { group: '공지·결재', items: [{ to: '/notices', label: '내부 공지', badge: 'unreadNotices' }, { to: '/approvals', label: '전자결재' }, { to: '/forms', label: '양식·자료실' }] },
   {
@@ -35,12 +36,12 @@ const MENU: { group?: string; items: { to: string; label: string; badge?: Badge 
       { to: '/trips', label: '학교 여행' },
     ],
   },
-  { group: '직원', items: [{ to: '/guard-accounts', label: '가드 계정' }, { to: '/staff', label: '직원·부서' }, { to: '/staff-review', label: 'Staff 평가' }, { to: '/audit', label: '접근 기록' }] },
+  { group: '직원', items: [{ to: '/guard-accounts', label: '가드 계정' }, { to: '/staff', label: '직원·부서' }, { to: '/staff-review', label: 'Staff 평가' }, { to: '/audit', label: '접근 기록', adminOnly: true }] },
 ];
 
 
 export default function Shell({ children }: { children: ReactNode }) {
-  const { data: meta } = useApi<{ source: 'sample' | 'extract'; actor: string | null }>('/api/meta');
+  const { data: meta } = useApi<Meta>('/api/meta');
   const { data: summary, reload: reloadSummary } = useApi<Summary>('/api/summary', 60000);
   useSummaryChanged(reloadSummary);
   return (
@@ -64,7 +65,7 @@ export default function Shell({ children }: { children: ReactNode }) {
           {MENU.map((sec, i) => (
             <div key={i}>
               {sec.group && <span className="nav-group">{sec.group}</span>}
-              {sec.items.map((it) => (
+              {sec.items.filter((it) => !it.adminOnly || meta?.staffRole !== 'office').map((it) => (
                 <NavLink key={it.to} to={it.to} end={it.to === '/'} className={({ isActive }) => (sec.group ? 'nav-item' : 'nav-top') + (isActive ? ' active' : '')}>
                   {it.label}
                   {it.badge && summary && summary[it.badge] > 0 && <span className="nav-count">{summary[it.badge]}</span>}

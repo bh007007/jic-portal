@@ -92,7 +92,7 @@ http://127.0.0.1:5177 을 연다. 가드 태블릿은 http://127.0.0.1:5177/guar
 - **만들기**: 계정 없는 학생을 한 번에 8명씩 만든다(Cloudflare 무료 요금제의 요청당 외부 호출 한도 때문에 나누고, 화면이 남은 수가 0이 될 때까지 이어서 부른다). 계정만 있고 연결이 빠진 학생은 잇기만 한다. 생년월일이 없는 학생은 만들지 않는다.
 - **비밀번호 초기화**: 학생이 비밀번호를 잊었을 때 생년월일로 되돌리고 다음 로그인 때 다시 바꾸게 한다.
 - 계정 작업은 배포 서버가 서비스 키로 Supabase Auth Admin API 를 부른다(`apps/student/server/accountAdmin.ts`, 계정 생성 스크립트 `npm run student:accounts` 와 같은 코드). 서비스 키가 없으면 안내만 보인다. 로컬 개발 서버에는 계정이 없다(학생 앱이 학생번호 + 생년월일로 로그인).
-- 만들기·초기화는 **접근 기록**에 남는다(처리자 = 로그인한 직원, DB 함수 `student_account_audit`). 지금은 직원이면 누구나 할 수 있다(역할별 권한은 HANDOFF 6-4).
+- 만들기·초기화는 **접근 기록**에 남는다(처리자 = 로그인한 직원, DB 함수 `student_account_audit`). 직원(관리자·오피스)이면 할 수 있다(권한표에 따로 없음).
 
 ### 가드 계정 (출입구 공용 계정)
 
@@ -144,6 +144,15 @@ http://127.0.0.1:5177 을 연다. 가드 태블릿은 http://127.0.0.1:5177/guar
   - 참가 신청한 **학교 여행 날**(출발일~돌아오는 날)도 뺀다.
   - 직원이 홈·패널티·Student File을 열 때 지난 31일(`ABSENCE_LOOKBACK_DAYS`)을 다시 맞춘다. 통금 후보처럼 승인 대기 중인 후보는 사유 인정·신청 승인·마감 되돌리기로 무단결석이 아니게 되면 지워지고, 승인·반려한 건과 31일보다 오래된 건은 그대로다.
   - 로컬에는 강사 포털 실행이 없어 출석이 비어 있다. 시험하려면 `.local-db/intranet/attendance-sample.ndjson`에 결석 한 건을 한 줄로 넣는다: `{"stId":"30161","day":"2026-11-08","time":"08:00","campus":"Challenger","subject":"Grammar","excused":false,"closed":true}`.
+
+### 직원 역할 (docs/roles.md, 11/9 레오님 승인)
+
+인트라넷 칸 중 관리자·오피스 구분을 넣었다(2단계 A). 매니저(강사 포털 역할)에게 인트라넷 일부를 여는 것과 결석 승인은 다음 단계다.
+- **관리자·오피스**: 관리자 포털 '사용자·권한'에서 주는 `user_roles`의 역할로 나눈다. `admin`이 있거나 `office`가 없으면 관리자다(DB `is_admin()`과 같음). 역할을 주기 전에는 모든 직원이 관리자라 지금과 같다.
+- **관리자만**: 패널티 점수표 저장, 접근 기록 보기. 오피스에게는 점수표가 읽기로만 보이고(저장 버튼 없음) 접근 기록 메뉴가 숨는다. 주소로 열거나 API를 바로 불러도 서버가 `403 admin_only`로 막고, DB(`20261109070000_intranet_roles.sql`)도 막는다.
+- **Student File**: 오피스는 맡은 캠퍼스(오피스 역할의 캠퍼스, 빈칸이면 모든 캠퍼스) 학생만 목록에 나오고, 다른 캠퍼스 학생 상세는 `403 campus_forbidden`이다. 외출·패널티·신청 목록은 권한표대로 오피스도 모든 캠퍼스를 본다.
+- 상담 기록은 지금처럼 `staff_campuses`(맡은 캠퍼스) 범위다. 학생 계정·가드 계정 화면은 권한표에 없어 지금처럼 직원이면 쓴다.
+- 로컬(로그인 없음)은 관리자로 본다.
 
 ## 구조
 
@@ -249,14 +258,15 @@ apps/intranet/
 
 ### 배포 시험
 
-- `supabase/tests/intranet_worker_api.mjs`(130개): 실제 마이그레이션을 올린 PGlite(`pg-supabase.mjs`)에서 직원 두 명(Challenger·Premium 담당)으로 설정·점수표 → 통금 위반 후보·승인(점수표 점수, 처리자) → 결석 반려·외박 승인 → 배차 확정 → 공지·읽음 → 상담 기록(같은 캠퍼스만, 내용은 함수로, 열람 10초 중복 제외, 접근 기록) → Student File → 가드 리포트 목록. 이어서 가드 두 명(Challenger·Premium 정문)으로 출입구 고정, 직원 API 403, 서비스 키 없을 때, 외출·이미 외출 중·귀가·근무자 미선택·재학생 아님, 승인된 외박(복귀일 표시, 사유 안 보임), 리포트 → 직원 패널티 후보, 다른 출입구 기록 안 보임. 끝으로 강사 포털 출석(마감 전·마감 뒤·사유 인정) → 무단결석 후보. CI가 함께 돌린다.
+- `supabase/tests/intranet_worker_api.mjs`(141개): 실제 마이그레이션을 올린 PGlite(`pg-supabase.mjs`)에서 직원 두 명(Challenger·Premium 담당)으로 설정·점수표 → 통금 위반 후보·승인(점수표 점수, 처리자) → 결석 반려·외박 승인 → 배차 확정 → 공지·읽음 → 상담 기록(같은 캠퍼스만, 내용은 함수로, 열람 10초 중복 제외, 접근 기록) → Student File → 가드 리포트 목록. 이어서 가드 두 명(Challenger·Premium 정문)으로 출입구 고정, 직원 API 403, 서비스 키 없을 때, 외출·이미 외출 중·귀가·근무자 미선택·재학생 아님, 승인된 외박(복귀일 표시, 사유 안 보임), 리포트 → 직원 패널티 후보, 다른 출입구 기록 안 보임. 끝으로 강사 포털 출석(마감 전·마감 뒤·사유 인정) → 무단결석 후보, 오피스 계정(Challenger)의 역할·점수표 저장·REST 직접 수정·접근 기록·Student File 캠퍼스. CI가 함께 돌린다.
+- `supabase/tests/intranet_roles_rls.mjs`(15개): 점수표 고치기는 관리자(역할 없음, admin + office)만, 오피스·매니저·가드는 0행. 접근 기록은 관리자만, 오피스도 패널티 승인은 그대로.
 - `supabase/tests/absence_penalties_rls.mjs`(20개): `intranet_absence_marks()`는 직원(관리자·오피스)만 결석을 받고 강사·가드·학생은 빈 결과, 익명은 실행 불가, 기간 62일, 패널티 출처 `attendance`.
 - 11/8 `wrangler dev`(workerd)에 이 Worker를 띄우고 Playwright로 확인: 직원 26개(로그인, 직원 아닌 계정 안내, 메뉴 12개 화면, 상담 작성, 공지 작성, 가드 주소 안내, 로그아웃), 가드 태블릿 14개(가드 로그인 → 태블릿만, 캠퍼스 고정, 외출·귀가 처리, 없는 번호, 사건 리포트 → 직원 패널티 화면에 후보, 로그아웃).
 
 ### 남은 것
 
 1. **미귀가 확인**: 지금은 직원 화면을 열 때 계산한다. 배포에서는 통금 직후 Cloudflare Workers 크론으로 후보를 만든다.
-2. **역할별 권한**(HANDOFF 6-4): 지금은 `staff_users`면 모든 직원 화면을 쓴다.
+2. **역할별 권한**(HANDOFF 6-4, `docs/roles.md`): 관리자·오피스 구분은 11/9에 넣었다. 남은 것은 매니저에게 인트라넷 일부(홈·외출·패널티 승인·결석 신청 처리·Student File·상담·내부 공지)를 여는 것과 결석 승인(매니저·오피스, `decide_absence_requests`).
 3. **카드키 QR**: 11/8 학생 앱 '출입 QR'(1분마다 바뀌는 서명 QR)과 태블릿 카메라 읽기로 만들었다. 실물 카드를 함께 쓸지는 정하지 않았다.
 4. 서비스 키를 쓰는 범위(가드의 재학생 명단·승인된 외박)를 보안 점검 때 확인한다. 실제 학생 데이터는 보안 점검 뒤에만 올린다(2026-11-07 결정).
 
@@ -269,7 +279,7 @@ apps/intranet/
 | `incident_reports` | 자기 출입구로 등록·읽기 | 모두 읽기 |
 | `penalties` | 자기 출입구의 가드 리포트 후보만 대기 상태로 등록, 목록은 못 봄 | 모두(통금·무단결석 후보 정리·승인·반려). 출처 `outing`·`guard`·`attendance` |
 | `attendance`(강사 포털) | - | 읽기만, `intranet_absence_marks()` 함수로 결석만(쓰기는 강사 포털) |
-| `penalty_rules`, `penalty_stages` | - | 읽기·수정(점수는 비워 두고 점수표 화면에서 입력) |
+| `penalty_rules`, `penalty_stages` | - | 읽기, 수정은 관리자만(점수는 비워 두고 점수표 화면에서 입력) |
 | `intranet_settings` | 읽기(통금, 근무자 목록) | 읽기·수정 |
 | `absence_requests`, `overnight_permissions` | - | 읽기, 처리는 `decide_*` 함수 |
 | `departure_flights`, `airport_rides` | - | 항공편 읽기, 배차 등록·수정 |
@@ -278,7 +288,7 @@ apps/intranet/
 | `trip_signups` | 참가 신청(applied)만 읽기 | 읽기, 명단 제외는 `trip_remove_signup(id, 사유)`(처리자 = 로그인한 직원, 신청 수 다시 셈). 신청·취소는 학생이 `trip_sign_up`·`trip_cancel_signup` |
 | `internal_notices`, `internal_notice_reads` | - | 읽기·쓰기, 읽음은 본인 것만 |
 | `counseling_notes` | - | 테이블 직접 읽기·쓰기 불가, 아래 함수만 |
-| `audit_logs` | - | 맡은 캠퍼스 기록만 읽기, 쓰기·삭제 불가(상담 함수, 학생 계정 함수 `student_account_audit`, 가드 계정 함수 `guard_account_audit` 만 남김) |
+| `audit_logs` | - | 관리자가 맡은 캠퍼스 기록만 읽기, 쓰기·삭제 불가(상담 함수, 학생 계정 함수 `student_account_audit`, 가드 계정 함수 `guard_account_audit` 만 남김) |
 
 상담 기록 함수(맡은 캠퍼스만, 처리자 이름은 `staff_users.name`):
 - `counseling_list()`: 목록(내용 없음)
