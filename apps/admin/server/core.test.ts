@@ -182,5 +182,52 @@ const base = (over: Partial<DataInput> = {}): DataInput => ({
   expect('/api/prices 200', handleApi(db, '/api/prices', new URLSearchParams('tab=etc')).status === 200);
 }
 
+// ── 8. 회계 목록: 인보이스·미납·입금 원장·포인트
+{
+  const ens = [
+    enrollment('50', '2026-09-20', '2026-12-11', { tr_deposit_name: '미납', tr_currency: 'USD', ag_id: 'A1', tr_deposit_due_date: '2026-10-01' }), // 재학, 기한 지남
+    enrollment('51', '2026-09-20', '2026-11-13', { tr_deposit_name: '부분납', ag_id: 'A2', tr_deposit_due_date: '2026-12-01' }), // 재학, 졸업 14일 안
+    enrollment('52', '2026-11-15', '2027-01-08', { tr_deposit_name: '미납', ag_id: 'A1' }), // 입학 예정
+    enrollment('53', '2026-05-03', '2026-07-24', { tr_deposit_name: '완납', ag_id: 'A2' }), // 졸업
+    enrollment('54', '2026-11-15', '2027-01-08', { tr_deposit_name: '미납', tr_state_name: '캔슬', tr_state: 'CANCEL' }), // 취소
+  ];
+  const invoices = [invoice('50', 1000, 0), invoice('51', 2000, 500, 'KRW'), invoice('52', 1500, 0), invoice('53', 900, 900), invoice('54', 700, 0)];
+  const pointHistory = [
+    { tr_id: '51', type: 'D', dt: '2026-09-21 09:00:00', point: '10000', php: '10000', ec_name: null },
+    { tr_id: '51', type: 'U', dt: '2026-09-21 10:00:00', point: '6500', php: '6500', ec_name: 'SSP' },
+    { tr_id: '53', type: 'D', dt: '2026-05-04 09:00:00', point: '8000', php: '8000', ec_name: null },
+    { tr_id: '53', type: 'U', dt: '2026-05-04 10:00:00', point: '7000', php: '7000', ec_name: 'Visa' },
+  ];
+  const deposits = [
+    { dp_id: '1', dp_deposit_dt: '2026-11-01 10:00:00', dp_name: 'AGENCY ONE', dp_currency: 'USD', dp_amount: '1000', dp_fee: '0', dp_amount_total: '1000', cnt: '0', sum_id_amount: '0', balance: '1000', dp_confirm_yn: 'N', bk_num: '123-456', bk_owner: 'SECRET' },
+    { dp_id: '2', dp_deposit_dt: '2026-11-02 10:00:00', dp_name: 'AGENCY TWO', dp_currency: 'KRW', dp_amount: '500', dp_fee: '0', dp_amount_total: '500', cnt: '1', sum_id_amount: '500', balance: '0', dp_confirm_yn: 'Y' },
+    { dp_id: '3', dp_deposit_dt: '2026-11-03 10:00:00', dp_name: 'AGENCY THREE', dp_currency: 'USD', dp_amount: '300', dp_fee: '0', dp_amount_total: '300', cnt: '1', sum_id_amount: '100', balance: '200', dp_confirm_yn: 'Y' },
+    { dp_id: '4', dp_deposit_dt: '2026-11-04 10:00:00', dp_name: 'DELETED', dp_currency: 'USD', dp_amount: '1', dp_amount_total: '1', cnt: '0', balance: '1', dp_use_yn: 'N' },
+  ];
+  const db = createDb(base({ enrollments: ens, invoices, pointHistory, deposits }));
+  const cur = db.listInvoices(new URLSearchParams(''));
+  expect('인보이스: 기본 탭은 재학(50·51), 탭 건수 재학 2·예정 1(캔슬 54는 취소)·졸업 1·전체 5', cur.total === 2 && cur.tabCounts.current === 2 && cur.tabCounts.upcoming === 1 && cur.tabCounts.graduated === 1 && cur.tabCounts.all === 5, cur.tabCounts);
+  expect('인보이스: 재학 탭은 종료일 순(51 → 50)', cur.rows.map((r) => r.trId).join() === '51,50', cur.rows.map((r) => r.trId));
+  const all = db.listInvoices(new URLSearchParams('tab=all&all=1'));
+  expect('인보이스: 통화별 총액·미입금(USD 미입금 = 1,000 + 1,500 + 700)', JSON.stringify(all.totals.totalByCurrency) === JSON.stringify([{ currency: 'KRW', amount: 2000 }, { currency: 'USD', amount: 4100 }]) && all.totals.remainingByCurrency.find((c) => c.currency === 'USD')?.amount === 3200, all.totals);
+  expect('인보이스: 에이전시·납부 조건으로 거르기', db.listInvoices(new URLSearchParams('tab=all&agency=A2&pay=완납')).rows.map((r) => r.trId).join() === '53');
+  const up = db.listUnpaid(new URLSearchParams(''));
+  expect('미납: 기본은 입학 예정(52), 취소(54)·완납(53)은 빠짐', up.total === 1 && up.rows[0].trId === '52' && up.scopeCounts.all === 3, { rows: up.rows.map((r) => r.trId), counts: up.scopeCounts });
+  const upAll = db.listUnpaid(new URLSearchParams('scope=all'));
+  expect('미납 전체: 납부 기한 지난 연수 1건(50), 미납 2·부분납 1', upAll.totals.overdue === 1 && upAll.totals.byPay.map((p) => p.count).join() === '2,1', upAll.totals);
+  const dep = db.listDeposits(new URLSearchParams(''));
+  expect('입금 원장: 사용 안 함(4) 빼고 3건, 최근 날짜 순', dep.total === 3 && dep.rows.map((d) => d.dpId).join() === '3,2,1', dep.rows.map((d) => d.dpId));
+  expect('입금 원장: 받는 계좌 열(bk_*)은 내보내지 않음', dep.rows.every((d) => !Object.keys(d).some((k) => /^bk_|owner|num$/.test(k))) && !JSON.stringify(dep.rows).includes('SECRET'), Object.keys(dep.rows[0]));
+  expect('입금 원장: 매칭 상태(없음 1·남음 1·끝 1)', ['none', 'open', 'done'].map((m) => db.listDeposits(new URLSearchParams('match=' + m)).total).join() === '1,1,1');
+  const pts = db.points(new URLSearchParams(''));
+  expect('포인트: 재학생 잔액은 원장 합(충전 10,000 − 사용 6,500 = 3,500)', pts.rows.find((r) => r.trId === '51')?.pointBalance === 3500, pts.rows.map((r) => [r.trId, r.pointBalance]));
+  const clear = db.points(new URLSearchParams('view=clear'));
+  expect('포인트 정산: 14일 안 졸업 예정 중 미처리(51)', clear.rows.map((r) => r.trId).join() === '51', clear.rows.map((r) => r.trId));
+  const left = db.points(new URLSearchParams('view=leftover'));
+  expect('잔액 남은 졸업생(53, 1,000P)', left.rows.length === 1 && left.rows[0].trId === '53' && left.rows[0].pointBalance === 1000, left.rows.map((r) => [r.trId, r.pointBalance]));
+  const d = db.studentDetail('S51')!;
+  expect('학생 상세 포인트 내역: 충전·사용 순서와 항목', d.enrollments[0].points.map((p) => `${p.kind}:${p.item}:${p.amount}`).join() === '충전::10000,사용:SSP:6500', d.enrollments[0].points);
+}
+
 console.log(fails ? `\n${fails}건 실패` : '\n모두 통과');
 if (fails) process.exit(1);
