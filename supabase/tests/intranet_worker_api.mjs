@@ -502,6 +502,15 @@ ok('매니저 상담 접근 기록(작성·열람)', mAud.map((a) => a.action).j
 x = await api('GET', '/api/counseling', tC);
 ok('직원C(Challenger): 매니저가 쓴 Challenger 상담이 목록에 보임', x.body.rows?.some((r) => r.id === mCn), x.body.rows?.length);
 
+// ── Student File '수업 출석': 강사 포털 출석(lms_student_attendance)을 직원·매니저가 지난 30일 합계로 본다
+const attSt = others[4] ?? sP;
+const attSess = (await sb.sql(`insert into public.class_sessions (day, start_time, campus, subject) values ($1, '11:00', 'Challenger', 'Listening'), ($1, '14:00', 'Challenger', 'Writing') returning id::text`, [manila])).map((r) => r.id);
+await sb.sql(`insert into public.attendance (session_id, student_no, result, late_min) values ($1, $3, 'AB', null), ($2, $3, 'TA', 5)`, [attSess[0], attSess[1], attSt]);
+x = await api('GET', `/api/students/${attSt}`, tC);
+ok('직원: Student File 수업 출석(결석 무단 1·지각 5분)', x.status === 200 && x.body.attendance?.counts.absent === 1 && x.body.attendance.counts.unexcused === 1 && x.body.attendance.counts.late === 1 && x.body.attendance.counts.lateMin === 5 && x.body.attendance.rows.length === 2, x.body.attendance);
+x = await api('GET', `/api/students/${attSt}`, tM);
+ok('매니저: Student File 수업 출석도 보임', x.status === 200 && x.body.attendance?.counts.sessions === 2, x.body.attendance);
+
 await sb.close();
 console.log(fails ? `${fails}건 실패` : '모두 통과');
 process.exit(fails ? 1 : 0);

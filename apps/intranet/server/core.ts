@@ -156,8 +156,56 @@ export interface AbsenceMark {
   excused: boolean; // 사유 인정(강사 포털 매니저·관리자)
   closed: boolean; // 그 캠퍼스·날짜 출석 마감
 }
+/** 강사 포털 출석 한 건(수업 × 학생, Student File '수업 출석'). 결석 신청은 core 가 신청 저장소에서 붙인다 */
+export interface AttendanceRow {
+  day: string;
+  time: string;
+  campus: string;
+  subject: string;
+  teacher: string; // 강사 부르는 이름
+  room: string;
+  result: 'AT' | 'AB' | 'TA' | null; // null = 아직 체크 전
+  lateMin: number | null;
+  excused: boolean;
+}
 export interface AttendanceSource {
   absences(from: string, to: string): Promise<AbsenceMark[]>;
+  /** 한 학생의 수업별 출석(배포: DB 함수 lms_student_attendance, 직원·매니저). 없으면 Student File 에 출석을 보이지 않는다 */
+  studentRows?(stId: string, from: string, to: string): Promise<AttendanceRow[]>;
+}
+
+/** Student File '수업 출석'에 보이는 기간(오늘 포함 지난 며칠)과 목록 최대 건수(결석·지각만) */
+export const ATTENDANCE_DAYS = 30;
+const ATTENDANCE_LIST_MAX = 30;
+
+/**
+ * 한 학생의 지난 30일 수업 출석: 합계와 결석·지각 목록(최근순). 결석은 사유 인정(강사 포털) → 결석 신청 승인 → 처리 전 신청 → 무단으로 나눈다.
+ * 결석 신청의 교시와 수업 시각을 잇는 기준이 아직 없어 그날 신청이 있으면 그날 결석에 붙인다(강사 포털 lms_attendance_summary 와 같은 기준).
+ */
+export function attendanceSummary(rows: AttendanceRow[], requests: Absence[], from: string, to: string) {
+  const reqOf = (day: string) => {
+    const same = requests.filter((a) => a.date === day && a.status !== 'cancelled' && a.status !== 'rejected');
+    return same.find((a) => a.status === 'approved') ?? same.find((a) => a.status === 'pending') ?? null;
+  };
+  const counts = { sessions: rows.length, present: 0, late: 0, absent: 0, unchecked: 0, excused: 0, requested: 0, pendingRequest: 0, unexcused: 0, lateMin: 0 };
+  const listed: (AttendanceRow & { reason: 'excused' | 'requested' | 'pending' | 'unexcused' | null; requestKind: string | null })[] = [];
+  for (const r of rows) {
+    if (r.result === null) counts.unchecked++;
+    else if (r.result === 'AT') counts.present++;
+    else if (r.result === 'TA') {
+      counts.late++;
+      counts.lateMin += r.lateMin ?? 0;
+      listed.push({ ...r, reason: r.excused ? 'excused' : null, requestKind: null });
+    } else {
+      counts.absent++;
+      const q = r.excused ? null : reqOf(r.day);
+      const reason = r.excused ? 'excused' : q?.status === 'approved' ? 'requested' : q ? 'pending' : 'unexcused';
+      counts[reason === 'pending' ? 'pendingRequest' : reason]++;
+      listed.push({ ...r, reason, requestKind: q?.kind ?? null });
+    }
+  }
+  listed.sort((a, b) => b.day.localeCompare(a.day) || b.time.localeCompare(a.time));
+  return { from, to, counts, rows: listed.slice(0, ATTENDANCE_LIST_MAX), more: Math.max(0, listed.length - ATTENDANCE_LIST_MAX) };
 }
 
 export interface Stores {
@@ -1081,6 +1129,19 @@ async function studentFile(ctx: IntranetCtx, stId: string) {
     .filter((o) => o.stId === stId)
     .map((o) => outingRow(ctx, o, life.settings.curfew, now, life.permits))
     .sort((a, b) => (b.outAt ?? b.inAt ?? '').localeCompare(a.outAt ?? a.inAt ?? ''));
+  // 강사 포털 출석(지난 30일). 못 읽으면(강사 포털 마이그레이션 전 등) 출석 칸만 비우고 나머지는 그대로 보인다
+  let attendance: ReturnType<typeof attendanceSummary> | null = null;
+  const read = ctx.stores.attendance?.studentRows;
+  if (read) {
+    const to = localDate(now);
+    const from = addDaysTo(to, -(ATTENDANCE_DAYS - 1));
+    try {
+      const rows = await read.call(ctx.stores.attendance, stId, from, to);
+      attendance = attendanceSummary(rows, life.absences.filter((a) => a.stId === stId), from, to);
+    } catch (e) {
+      console.warn(`[intranet] 학생 출석을 읽지 못함: ${(e as Error).message}`);
+    }
+  }
   return {
     refDate: d.refDate,
     curfew: life.settings.curfew,
@@ -1118,6 +1179,7 @@ async function studentFile(ctx: IntranetCtx, stId: string) {
       })
       .sort((a, b) => b.trip.start.localeCompare(a.trip.start) || b.createdAt.localeCompare(a.createdAt)),
     departure: main ? ((await ctx.stores.departures.get(`dep-${main.trId}`)) as Departure | null) : null,
+    attendance,
   };
 }
 export type StudentFile = Exclude<NonNullable<Awaited<ReturnType<typeof studentFile>>>, 'forbidden'>;

@@ -19,7 +19,7 @@ import type { Departure, Ride } from '../../student/server/departures';
 import type { LifeRequest } from '../../student/server/lifeRequests';
 import type { Absence, Overnight } from '../../student/server/requests';
 import { ACTOR_MAX } from './counseling';
-import { handleIntranetApi, type AbsenceMark, type AttendanceSource, type DocRepo, type Repo, type Stores } from './core';
+import { handleIntranetApi, type AbsenceMark, type AttendanceRow, type AttendanceSource, type DocRepo, type Repo, type Stores } from './core';
 
 function writeAtomic(file: string, text: string) {
   fs.mkdirSync(path.dirname(file), { recursive: true });
@@ -67,17 +67,32 @@ export function fileDoc<T>(file: string): DocRepo<T> {
   };
 }
 
-/** 강사 포털 출석의 결석(읽기만). 파일이 없으면 없음. 한 줄: {"stId","day","time","campus","subject","excused","closed"} */
+/**
+ * 강사 포털 출석(읽기만). 파일이 없으면 없음. 한 줄 = 수업 × 학생 한 건:
+ * {"stId","day","time","campus","subject","excused","closed"} + 선택 {"result":"AT"|"AB"|"TA"|null(없으면 결석),"teacher","room","lateMin"}
+ */
+type LocalMark = AbsenceMark & { result?: AttendanceRow['result']; teacher?: string; room?: string; lateMin?: number | null };
 export function fileAttendance(file: string): AttendanceSource {
+  const read = (from: string, to: string): LocalMark[] =>
+    fs.existsSync(file)
+      ? fs
+          .readFileSync(file, 'utf8')
+          .split('\n')
+          .filter((l) => l.trim())
+          .map((l) => JSON.parse(l) as LocalMark)
+          .filter((m) => m.day >= from && m.day <= to)
+      : [];
+  const resultOf = (m: LocalMark) => (m.result === undefined ? 'AB' : m.result);
   return {
     async absences(from, to) {
-      if (!fs.existsSync(file)) return [];
-      return fs
-        .readFileSync(file, 'utf8')
-        .split('\n')
-        .filter((l) => l.trim())
-        .map((l) => JSON.parse(l) as AbsenceMark)
-        .filter((m) => m.day >= from && m.day <= to);
+      return read(from, to)
+        .filter((m) => resultOf(m) === 'AB')
+        .map(({ stId, day, time, campus, subject, excused, closed }) => ({ stId, day, time, campus, subject, excused, closed }));
+    },
+    async studentRows(stId, from, to) {
+      return read(from, to)
+        .filter((m) => m.stId === stId)
+        .map((m) => ({ day: m.day, time: m.time, campus: m.campus, subject: m.subject, teacher: m.teacher ?? '', room: m.room ?? '', result: resultOf(m), lateMin: m.lateMin ?? null, excused: m.excused }));
     },
   };
 }

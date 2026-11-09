@@ -165,6 +165,8 @@ export default function StudentFileDetail() {
         </div>
       </section>
 
+      {data.attendance && <Attendance a={data.attendance} />}
+
       <section className="panel">
         <div className="panel-head">
           <h2>
@@ -433,5 +435,74 @@ export default function StudentFileDetail() {
         </div>
       </section>
     </>
+  );
+}
+
+const REASON: Record<string, string> = { excused: '사유 인정', requested: '결석 신청 승인', pending: '신청 처리 전', unexcused: '무단' };
+const REASON_CLASS: Record<string, string> = { excused: 'text-blue', requested: 'text-blue', pending: 'text-amber', unexcused: 'text-red' };
+
+/** 강사 포털 출석(지난 30일): 합계와 결석·지각 목록. 출석·사유 인정은 강사 포털이 정하고 여기서는 읽기만 한다 */
+function Attendance({ a }: { a: NonNullable<StudentFile['attendance']> }) {
+  const c = a.counts;
+  return (
+    <section className="panel">
+      <div className="panel-head">
+        <h2>
+          수업 출석{' '}
+          <small>
+            ({md(a.from)} ~ {md(a.to)} · 강사 포털)
+          </small>
+        </h2>
+      </div>
+      <div className="panel-body">
+        {c.sessions === 0 ? (
+          <p className="muted">이 기간 강사 포털 출석 기록이 없습니다.</p>
+        ) : (
+          <>
+            <p>
+              수업 {c.sessions} · 출석 {c.present} · 지각 {c.late}
+              {c.lateMin > 0 && ` (${c.lateMin}분)`} · 결석 {c.absent}
+              {c.absent > 0 && (
+                <span className="muted">
+                  {' '}
+                  (사유 인정 {c.excused} · 신청 승인 {c.requested} · 처리 전 {c.pendingRequest} · <span className={c.unexcused > 0 ? 'text-red' : ''}>무단 {c.unexcused}</span>)
+                </span>
+              )}
+              {c.unchecked > 0 && <span className="muted"> · 체크 전 {c.unchecked}</span>}
+            </p>
+            {a.rows.length > 0 && (
+              <table className="tbl center">
+                <thead>
+                  <tr>
+                    <th>날짜</th>
+                    <th>시각</th>
+                    <th className="left">수업</th>
+                    <th>강사</th>
+                    <th>결과</th>
+                    <th>사유</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {a.rows.map((r, i) => (
+                    <tr key={`${r.day}-${r.time}-${i}`}>
+                      <td>{md(r.day)}</td>
+                      <td>{r.time}</td>
+                      <td className="left">{[r.subject || '수업', r.room].filter(Boolean).join(' · ')}</td>
+                      <td>{r.teacher || '-'}</td>
+                      <td className={r.result === 'AB' ? 'text-red' : 'text-amber'}>{r.result === 'AB' ? '결석' : r.lateMin ? `지각 ${r.lateMin}분` : '지각'}</td>
+                      <td className={r.reason ? REASON_CLASS[r.reason] : 'muted'}>
+                        {r.reason ? REASON[r.reason] : '-'}
+                        {r.requestKind && <span className="muted"> ({KIND[r.requestKind] ?? r.requestKind})</span>}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            )}
+            {a.more > 0 && <p className="muted small">결석·지각 {a.more}건 더 있음(최근 {a.rows.length}건만 보임)</p>}
+          </>
+        )}
+      </div>
+    </section>
   );
 }

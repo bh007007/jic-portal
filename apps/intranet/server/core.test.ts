@@ -11,7 +11,7 @@ import { memoryTripStore, signUp } from '../../student/server/trips';
 import { KEYCARD_PERIOD, keycardCode } from '../../student/server/keycard';
 import { AccountAdminError, type AccountAdmin, type LinkedAccount } from '../../student/server/accountAdmin';
 import type { GuardAccount, GuardAdmin } from './guardAccounts';
-import { handleIntranetApi, type AbsenceMark, type Stores } from './core';
+import { handleIntranetApi, type AbsenceMark, type AttendanceRow, type Stores } from './core';
 
 function memRepo<T extends { id: string }>() {
   const m = new Map<string, T>();
@@ -807,6 +807,42 @@ expect('매니저: 남의 공지 고치기 403', rr.status === 403 && rr.body.er
 await stores.absences.put(req('abM', A, { date: '2026-11-26', periods: [], kind: 'sick' }) as Absence);
 rr = await mcall('POST', '/requests/absences/decide', { ids: ['abM'], approve: true, comment: '진단서 확인' });
 expect('매니저: 결석 신청 승인', rr.status === 200 && (await stores.absences.get('abM'))?.status === 'approved', rr);
+
+// ── Student File '수업 출석': 강사 포털 출석(지난 30일) 합계와 결석·지각 목록, 사유는 사유 인정 → 신청 승인 → 처리 전 → 무단
+at('2026-11-25T10:00:00');
+const SA = cur.find((x) => x.campus === campus)!.stId;
+const arow = (day: string, time: string, result: AttendanceRow['result'], extra: Partial<AttendanceRow> = {}): AttendanceRow => ({ day, time, campus, subject: 'Grammar', teacher: 'Ben', room: '201', result, lateMin: null, excused: false, ...extra });
+let askedRows: string[] = [];
+stores.attendance = {
+  absences: async () => [],
+  studentRows: async (st, from, to) => {
+    askedRows = [st, from, to];
+    return [
+      arow('2026-11-24', '08:00', 'AT'),
+      arow('2026-11-24', '10:00', 'TA', { lateMin: 7 }),
+      arow('2026-11-23', '08:00', 'AB', { excused: true }),
+      arow('2026-11-20', '08:00', 'AB'),
+      arow('2026-11-21', '08:00', 'AB'),
+      arow('2026-11-22', '13:00', 'AB', { subject: 'Speaking', teacher: 'Ann' }),
+      arow('2026-11-25', '13:00', null),
+    ];
+  },
+};
+await stores.absences.put(req('abSA1', SA, { date: '2026-11-20', periods: [], kind: 'sick', status: 'approved' }) as Absence);
+await stores.absences.put(req('abSA2', SA, { date: '2026-11-21', periods: [1], kind: 'official' }) as Absence);
+await stores.absences.put(req('abSA3', SA, { date: '2026-11-22', periods: [], kind: 'personal', status: 'rejected' }) as Absence);
+let sfa = ((await call('GET', `/students/${SA}`)).body as any).attendance;
+expect('Student File 출석: 지난 30일을 그 학생으로 묻는다', askedRows.join() === `${SA},2026-10-27,2026-11-25`, askedRows);
+expect('Student File 출석: 합계', JSON.stringify(sfa.counts) === JSON.stringify({ sessions: 7, present: 1, late: 1, absent: 4, unchecked: 1, excused: 1, requested: 1, pendingRequest: 1, unexcused: 1, lateMin: 7 }), sfa.counts);
+expect('Student File 출석: 결석·지각만 최근순, 사유(인정·승인·처리 전·무단, 반려는 무단)', sfa.rows.map((r: any) => `${r.day}/${r.result}/${r.reason}/${r.requestKind ?? ''}`).join(' ') === '2026-11-24/TA/null/ 2026-11-23/AB/excused/ 2026-11-22/AB/unexcused/ 2026-11-21/AB/pending/official 2026-11-20/AB/requested/sick', sfa.rows);
+stores.attendance = { absences: async () => [], studentRows: async () => { throw new Error('rpc 404'); } };
+const warn2 = console.warn;
+console.warn = () => {};
+rr = await call('GET', `/students/${SA}`);
+console.warn = warn2;
+expect('Student File 출석: 못 읽으면 출석만 비우고 나머지는 그대로', rr.status === 200 && rr.body.attendance === null && Array.isArray(rr.body.penalties), rr.status);
+delete stores.attendance;
+expect('Student File 출석: 출석 자료가 없으면 null', ((await call('GET', `/students/${SA}`)).body as any).attendance === null);
 
 console.log(fails ? `\n${fails}건 실패` : '\n모두 통과');
 if (fails) process.exit(1);
