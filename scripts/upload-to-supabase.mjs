@@ -34,6 +34,9 @@ const read = (name) => {
 };
 // 연장·변경 표에 올릴 열: apps/admin/server/core.ts 의 EXTENSION_COLUMNS·CHANGE_COLUMNS 와 같게 둔다(바꾸면 함께 바꾼다).
 const EXTENSION_COLUMNS = ['tr_id', 'tt_id', 'tt_start_date', 'tt_finish_date', 'tt_week', 'tt_memo', 'tt_insert_dt', 'sum_price', 'sum_amount', 'tr_currency'];
+// 청구 합계 표에 올릴 열: core.ts 의 INVOICE_SUMMARY_COLUMNS·BALANCE_COLUMNS 와 같게 둔다.
+const INVOICE_SUMMARY_COLUMNS = ['_tr_id', 'tt_id', 'tt_insert_dt', 'week', 'start_date', 'finish_date', 'tr_currency', 'sum_ic_price', 'sum_id_amount', 'sum_tc_price', 'sum_td_amount'];
+const BALANCE_COLUMNS = ['tr_id', 'tr_currency', 'tr_deposit_state', 'extend_count', 'cost', 'payment'];
 const CHANGE_COLUMNS = ['tr_id', 'ic_id', 'prev_chg_course', 'chg_course', 'chg_course_date', 'prev_chg_dorm', 'chg_dorm', 'chg_dorm_date', 'rqp_cnt'];
 const PLAN = [
   ['legacy_students', 'students.ndjson', (r) => r.st_id],
@@ -53,6 +56,9 @@ const PLAN = [
   ['legacy_course_changes', 'change_course.ndjson', (r) => r.ic_id, CHANGE_COLUMNS, { optional: true }],
   ['legacy_dorm_changes', 'change_dorm.ndjson', (r) => r.ic_id, CHANGE_COLUMNS, { optional: true }],
   ['legacy_comebacks', 'change_comeback.ndjson', (r) => r.ic_id, CHANGE_COLUMNS, { optional: true }],
+  // 청구 합계(20261109060000_legacy_invoice_summary.sql): 인보이스별 합계(기본 + 연장), 업체 Check Balance. 표가 없으면 건너뛴다.
+  ['legacy_invoice_summary', 'inv_summary.ndjson', (r) => (r._tr_id && r.tt_id ? `${r._tr_id}-${r.tt_id}` : null), INVOICE_SUMMARY_COLUMNS, { optional: true }],
+  ['legacy_balances', 'balance.ndjson', (r) => r.tr_id, BALANCE_COLUMNS, { optional: true }],
 ];
 // 예전 형식 service_role 키(eyJ…)는 Authorization 에도 넣고, 새 형식(sb_secret_…)은 apikey 헤더만 쓴다.
 const headers = { apikey: key, 'Content-Type': 'application/json', ...(key.startsWith('eyJ') ? { Authorization: `Bearer ${key}` } : {}) };

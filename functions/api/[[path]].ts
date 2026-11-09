@@ -61,7 +61,7 @@ async function readAll(c: Conf, table: string): Promise<Raw[]> {
   return out;
 }
 
-// 나중에 더한 표(연장·변경, 20261109030000_legacy_extend.sql)는 마이그레이션 전에도 나머지 화면이 동작하도록 표가 없으면 빈 목록으로 본다.
+// 나중에 더한 표(연장·변경 20261109030000_legacy_extend.sql, 청구 합계 20261109060000_legacy_invoice_summary.sql)는 마이그레이션 전에도 나머지 화면이 동작하도록 표가 없으면 빈 목록으로 본다.
 async function readOptional(c: Conf, table: string): Promise<Raw[]> {
   try {
     return await readAll(c, table);
@@ -82,7 +82,7 @@ async function loadDb(c: Conf): Promise<Db> {
   const staff = await rest<boolean>(c, 'rpc/is_staff', { method: 'POST', body: '{}' });
   if (staff !== true) throw new HttpError(403, '직원 계정으로 등록되지 않았습니다. 관리자에게 등록을 요청하세요.');
 
-  const [metaRows, enrollments, students, invoices, dorms, agencies, agents, deposits, pointHistory, rooms, extensions, courseChanges, dormChanges, comebacks] = await Promise.all([
+  const [metaRows, enrollments, students, invoices, dorms, agencies, agents, deposits, pointHistory, rooms, extensions, courseChanges, dormChanges, comebacks, invoiceSummary, balances] = await Promise.all([
     rest<{ data: Raw }[]>(c, 'legacy_meta?select=data&id=eq.current'),
     readAll(c, 'legacy_enrollments'),
     readAll(c, 'legacy_students'),
@@ -97,6 +97,8 @@ async function loadDb(c: Conf): Promise<Db> {
     readOptional(c, 'legacy_course_changes'),
     readOptional(c, 'legacy_dorm_changes'),
     readOptional(c, 'legacy_comebacks'),
+    readOptional(c, 'legacy_invoice_summary'),
+    readOptional(c, 'legacy_balances'),
   ]);
   const db = createDb({
     meta: metaRows[0]?.data ?? { counts: {}, extracted_at: null },
@@ -113,6 +115,8 @@ async function loadDb(c: Conf): Promise<Db> {
     courseChanges,
     dormChanges,
     comebacks,
+    invoiceSummary,
+    balances,
   });
 
   for (const [k, v] of cache) if (now - v.at >= TTL) cache.delete(k);
