@@ -264,13 +264,14 @@ export interface IntranetCtx {
   session?: { role: 'staff' | 'guard' | 'manager'; campus?: string | null; staffRole?: StaffRole; campuses?: string[] | null };
 }
 
-// ── 역할(docs/roles.md '인트라넷' 표): 패널티 점수표 쓰기·접근 기록은 관리자만, Student File 은 오피스·매니저가 맡은 캠퍼스만.
+// ── 역할(docs/roles.md '인트라넷' 표): 패널티 점수표 쓰기·접근 기록·가드 계정은 관리자만, Student File 은 오피스·매니저가 맡은 캠퍼스만.
 // 매니저는 아래 경로만 쓴다(홈·외출·통금·가드 리포트·점수표 읽기, 패널티 승인은 무단결석만, 결석 신청 처리, 학교 여행 읽기, 내부 공지, Student File,
-// 상담 기록은 맡은 캠퍼스만 — DB 함수가 막는다, 20261109110000_intranet_manager_counseling.sql).
+// 상담 기록은 맡은 캠퍼스만 — DB 함수가 막는다, 20261109110000_intranet_manager_counseling.sql). 매니저의 무단결석 승인도 맡은 캠퍼스만(11/9 결정 I5).
 export type StaffRole = 'admin' | 'office';
 type Access = StaffRole | 'manager' | 'guard';
-/** 관리자만 쓰는 경로. DB 도 같은 범위만 허용한다(20261109070000_intranet_roles.sql). */
-export const ADMIN_ROUTES = new Set(['PUT /penalty-rules', 'GET /audit']);
+/** 관리자만 쓰는 경로. DB 도 같은 범위만 허용한다(20261109070000_intranet_roles.sql, 가드 계정은 11/9 결정 I4 · 20261109170000_intranet_decisions.sql). */
+const ADMIN_ROUTES = [/^PUT \/penalty-rules$/, /^GET \/audit$/, /^(GET|POST) \/guard-accounts$/, /^POST \/guard-accounts\/[0-9a-zA-Z-]+\/(password|delete)$/];
+export const isAdminRoute = (route: string) => ADMIN_ROUTES.some((r) => r.test(route));
 /** 매니저가 쓰는 경로(20261109100000_intranet_manager.sql 이 DB 에서 같은 범위를 연다) */
 const MANAGER_ROUTES = [
   /^GET \/(meta|summary|notices|outings|reports|penalties|penalty-rules|students|requests\/absences|trips|counseling)$/,
@@ -287,7 +288,9 @@ const staffRoleOf = (ctx: IntranetCtx): StaffRole | null => {
   const a = accessOf(ctx);
   return a === 'admin' || a === 'office' ? a : null;
 };
-const canDecidePenalty = (ctx: IntranetCtx, p: Penalty) => p.status === 'pending' && (accessOf(ctx) !== 'manager' || MANAGER_PENALTY_KINDS.has(p.kind));
+/** 매니저는 무단결석만, 맡은 캠퍼스만 승인·반려한다(DB 정책 penalties_manager_decide 도 같은 조건) */
+const managerCanDecide = (ctx: IntranetCtx, p: Penalty) => MANAGER_PENALTY_KINDS.has(p.kind) && inScope(ctx, p.campus);
+const canDecidePenalty = (ctx: IntranetCtx, p: Penalty) => p.status === 'pending' && (accessOf(ctx) !== 'manager' || managerCanDecide(ctx, p));
 /** Student File 을 볼 수 있는 캠퍼스(null = 모든 캠퍼스). 관리자는 모두, 오피스·매니저는 맡은 캠퍼스. */
 const campusScope = (ctx: IntranetCtx): string[] | null => {
   const a = accessOf(ctx);
@@ -824,7 +827,11 @@ async function decidePenalties(ctx: IntranetCtx, input: Record<string, unknown>)
 
   const rules = await loadRules(ctx);
   const all = await ctx.stores.penalties.all();
-  if (accessOf(ctx) === 'manager' && ids.some((id) => all.some((p) => p.id === id && !MANAGER_PENALTY_KINDS.has(p.kind)))) return fail(403, 'manager_absence_only');
+  if (accessOf(ctx) === 'manager') {
+    const picked = all.filter((p) => ids.includes(p.id));
+    if (picked.some((p) => !MANAGER_PENALTY_KINDS.has(p.kind))) return fail(403, 'manager_absence_only');
+    if (picked.some((p) => !inScope(ctx, p.campus))) return fail(403, 'campus_forbidden');
+  }
   const nowIso = ctx.now().toISOString();
   let done = 0;
   const skipped: string[] = [];
@@ -1276,7 +1283,7 @@ export async function handleIntranetApi(ctx: IntranetCtx, method: string, pathna
     const input = (body && typeof body === 'object' ? body : {}) as Record<string, unknown>;
     const route = `${method} ${p}`;
     if (accessOf(ctx) === 'manager' && !MANAGER_ROUTES.some((r) => r.test(route))) return fail(403, 'manager_forbidden');
-    if (ADMIN_ROUTES.has(route) && accessOf(ctx) !== 'admin') return fail(403, 'admin_only');
+    if (isAdminRoute(route) && accessOf(ctx) !== 'admin') return fail(403, 'admin_only');
     switch (route) {
       case 'GET /meta': {
         const m = ctx.db.meta();

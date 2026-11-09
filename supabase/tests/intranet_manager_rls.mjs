@@ -1,6 +1,7 @@
 // 인트라넷 역할 2단계 B(20261109100000_intranet_manager.sql)의 권한 시험: 강사 포털 매니저(user_roles manager)에게 인트라넷 일부를 연다(docs/roles.md, 11/9 승인).
 // 매니저: 외출·가드 리포트·점수표·통금 설정·결석 신청·학교 여행·내부 공지 읽기, 패널티 승인·반려는 무단결석만, 무단결석 후보(출처 attendance, 대기) 정리,
 // 결석 신청 처리, 공지 쓰기(자기 글만 고침), 상담 기록은 매니저 역할의 캠퍼스만(20261109110000_intranet_manager_counseling.sql).
+// 11/9 결정(20261109170000_intranet_decisions.sql): 매니저의 무단결석 승인·반려도 맡은 캠퍼스만(I5), 가드 계정 작업 기록은 관리자만(I4).
 // 강사(teacher)는 그대로 못 본다. 데이터는 전부 가짜.
 //
 // 실행(저장소 루트, 의존성에 추가하지 않고 임시로 설치):
@@ -27,13 +28,16 @@ await db.exec(`
 `);
 for (const f of [
   '20261107000000_legacy_tables.sql', '20261108100000_student_intranet.sql', '20261108120000_student_request_ids.sql', '20261108130000_intranet_deploy.sql',
-  '20261108140000_nonacademic_requests.sql', '20261108150000_overnight_travel.sql', '20261108160000_school_trips.sql', '20261108200000_teacher_portal.sql',
+  '20261108140000_nonacademic_requests.sql', '20261108150000_overnight_travel.sql', '20261108160000_school_trips.sql', '20261108180000_student_account_admin.sql',
+  '20261108190000_guard_account_admin.sql', '20261108200000_teacher_portal.sql',
   '20261109000000_attendance.sql', '20261109010000_roles.sql', '20261109050000_absence_penalties.sql', '20261109070000_intranet_roles.sql',
 ]) await db.exec(mig(f));
 await db.exec(mig('20261109100000_intranet_manager.sql'));
 await db.exec(mig('20261109100000_intranet_manager.sql')); // 두 번째 실행
 await db.exec(mig('20261109110000_intranet_manager_counseling.sql'));
 await db.exec(mig('20261109110000_intranet_manager_counseling.sql')); // 두 번째 실행
+await db.exec(mig('20261109170000_intranet_decisions.sql'));
+await db.exec(mig('20261109170000_intranet_decisions.sql')); // 두 번째 실행
 ok('마이그레이션 2회 실행', true);
 
 const U = {
@@ -116,6 +120,20 @@ await as(U.manager, async () => {
 });
 await as(U.teacher, async () => ok('강사: 무단결석 승인 0행', (await affected(`update penalties set note = 'x' where kind = 'absence'`)) === 0));
 
+// ── I5: 매니저의 승인·반려는 맡은 캠퍼스만(역할의 캠퍼스, 빈칸 = 모든 캠퍼스). 대기 후보 넣기·지우기(화면을 열 때의 정리)는 캠퍼스를 가리지 않는다
+const absPen = (st, campus) => `('absence-${st}-2026-11-23', '${st}', 'absence', '2026-11-23', '${campus}', '수업 결석 1회', 'attendance', '${st}:2026-11-23')`;
+await db.exec(`insert into public.penalties (id, student_no, kind, occurred_on, campus, basis, source, source_id) values ${absPen('1001', 'Challenger')}, ${absPen('2001', 'Premium')}`);
+await as(U.managerP, async () => {
+  ok('매니저(Premium): Challenger 무단결석 승인 0행', (await affected(`update penalties set status = 'approved' where id = 'absence-1001-2026-11-23'`)) === 0);
+  ok('매니저(Premium): Premium 무단결석 반려', (await affected(`update penalties set status = 'rejected', decided_at = now() where id = 'absence-2001-2026-11-23'`)) === 1);
+  await denied('매니저(Premium): 캠퍼스를 바꿔 넘기지 못함', `update penalties set campus = 'Challenger' where id = 'absence-2001-2026-11-23'`, /row-level security/);
+  ok('매니저(Premium): 다른 캠퍼스 대기 후보 지우기(정리)는 그대로', (await affected(`delete from penalties where id = 'absence-1001-2026-11-23'`)) === 1);
+  await q(`insert into penalties (id, student_no, kind, occurred_on, campus, basis, source, source_id) values ${absPen('1001', 'Challenger')}`);
+  ok('매니저(Premium): 다른 캠퍼스 대기 후보 넣기(정리)는 그대로', (await q(`select campus from penalties where id = 'absence-1001-2026-11-23'`))[0]?.campus === 'Challenger');
+});
+await as(U.manager, async () => ok('매니저(모든 캠퍼스): 어느 캠퍼스든 승인', (await affected(`update penalties set status = 'approved' where id = 'absence-1001-2026-11-23'`)) === 1));
+await as(null, async () => denied('익명: 매니저 캠퍼스 함수 실행 불가', `select intranet_manager_campus_ok('Challenger')`, /permission denied/));
+
 // ── 결석 신청 처리: 매니저 가능, 강사·학생은 안 됨
 await as(U.manager, async () => ok('매니저: 결석 신청 승인', (await q(`select decide_absence_requests(array['a0000000-0000-4000-8000-000000000001'::uuid], true, '확인') as n`))[0].n === 1));
 ok('처리자 = 매니저', (await q(`select decided_by::text from absence_requests`))[0].decided_by === U.manager);
@@ -169,6 +187,22 @@ await as(U.staff, async () => {
   await denied('직원: 맡지 않은 캠퍼스는 지금처럼 불가', `select counseling_create('2001', 'Premium', '2026-11-08', 't', 'c', null)`, /campus_not_allowed/);
 });
 await as(null, async () => denied('익명: 상담 범위 함수 실행 불가', `select counseling_campus_ok('Challenger')`, /permission denied/));
+
+// ── I4: 가드 계정 작업 기록(guard_account_audit)은 관리자만. 오피스·매니저는 막힌다(계정 작업 자체는 인트라넷 서버가 관리자만 받는다)
+const OFFICE = '00000000-0000-0000-0000-0000000000c3';
+await db.exec(`
+  insert into auth.users (id) values ('${OFFICE}');
+  insert into public.staff_users (user_id, name) values ('${OFFICE}', '오피스O');
+  insert into public.user_roles (user_id, role, campus) values ('${OFFICE}', 'office', 'Challenger');
+`);
+const guardAudits = async () => (await q(`select actor_name, action, target_id from audit_logs where target = 'guard_account'`)).map((r) => `${r.actor_name} ${r.action} ${r.target_id}`).join('|');
+await as(OFFICE, async () => denied('오피스: 가드 계정 기록 불가', `select guard_account_audit('guard_create', 'Challenger 정문', 'Challenger')`, /admin_only/));
+await as(U.manager, async () => denied('매니저: 가드 계정 기록 불가', `select guard_account_audit('guard_create', 'Challenger 정문', 'Challenger')`, /admin_only/));
+await as(U.staff, async () => {
+  await q(`select guard_account_audit('guard_create', ' Challenger 정문 ', 'Challenger')`);
+  await denied('관리자: 없는 작업은 막힘', `select guard_account_audit('view', 'x', 'Challenger')`, /invalid_action/);
+});
+ok('관리자: 가드 계정 기록(처리자·출입구 이름)', (await guardAudits()) === '직원S guard_create Challenger 정문', await guardAudits());
 
 console.log(`인트라넷 매니저 권한 시험: 통과 ${pass}, 실패 ${fails.length}`);
 for (const f of fails) console.log('  실패:', f);

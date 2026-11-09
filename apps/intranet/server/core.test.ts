@@ -768,6 +768,12 @@ expect('오피스: 다른 캠퍼스 학생 상세 403', rr.status === 403 && rr.
 expect('오피스: 맡은 캠퍼스 학생 상세 200', (await asOffice('GET', `/students/${sfo.rows[0].stId}`)).status === 200);
 expect('오피스(모든 캠퍼스): 다른 캠퍼스도 200', (await asRole('office', null)('GET', `/students/${otherSt.stId}`)).status === 200);
 expect('오피스: 패널티 승인·외출 목록은 그대로', (await asOffice('GET', '/penalties')).status === 200 && (await asOffice('GET', '/outings')).status === 200);
+for (const [m, p] of [['GET', '/guard-accounts'], ['POST', '/guard-accounts'], ['POST', '/guard-accounts/g-1/password'], ['POST', '/guard-accounts/g-1/delete']]) {
+  rr = await asOffice(m, p, {});
+  expect(`오피스: 가드 계정 ${m} ${p} 는 관리자만(I4)`, rr.status === 403 && rr.body.error === 'admin_only', rr);
+}
+expect('오피스: 학생 계정은 그대로(I4)', (await asOffice('GET', '/accounts')).status === 200);
+expect('관리자: 가드 계정 열림', (await asAdmin('GET', '/guard-accounts')).status === 200);
 
 // ── 매니저(강사 포털 manager, docs/roles.md): 인트라넷 일부만, 패널티 승인은 무단결석만, Student File 은 맡은 캠퍼스
 const mctx = { ...ctx, actor: '매니저 M', session: { role: 'manager' as const, campuses: [campus] } };
@@ -791,6 +797,22 @@ rr = await mcall('POST', '/penalties/decide', { ids: [mOther.id], approve: true 
 expect('매니저: 무단결석 아닌 건 승인 403', rr.status === 403 && rr.body.error === 'manager_absence_only', rr);
 rr = await mcall('POST', '/penalties/decide', { ids: [mAbs.id, mOther.id], approve: false });
 expect('매니저: 섞어 보내도 403(아무것도 바꾸지 않음)', rr.status === 403 && (await mcall('GET', '/penalties')).body.rows.some((x: any) => x.id === mAbs.id && x.status === 'pending'));
+// 다른 캠퍼스 학생의 무단결석 후보(같은 날 같은 결석): 매니저는 보기만 한다(I5)
+const mAbsRow = (await stores.penalties.all()).find((x) => x.id === mAbs.id)!;
+const attBefore = stores.attendance;
+const farMarks = marks.filter((m) => m.stId === mAbsRow.stId && m.day === mAbsRow.date).map((m) => ({ ...m, stId: otherSt.stId, campus: otherSt.campus }));
+stores.attendance = { absences: async (from, to) => [...marks, ...farMarks].filter((m) => m.day >= from && m.day <= to) };
+const farId = `absence-${otherSt.stId}-${mAbsRow.date}`;
+const mFar = ((await mcall('GET', '/penalties')).body.rows as any[]).find((x) => x.id === farId);
+expect('매니저: 다른 캠퍼스 무단결석은 승인 불가 표시(I5)', mFar && mFar.campus === otherSt.campus && mFar.canDecide === false, mFar);
+rr = await mcall('POST', '/penalties/decide', { ids: [mAbs.id, farId], approve: true });
+expect('매니저: 다른 캠퍼스 무단결석 승인 403(아무것도 바꾸지 않음)', rr.status === 403 && rr.body.error === 'campus_forbidden' && (await stores.penalties.all()).filter((x) => [mAbs.id, farId].includes(x.id)).every((x) => x.status === 'pending'), rr);
+const mAll = { ...mctx, session: { role: 'manager' as const, campuses: null } };
+expect('매니저(모든 캠퍼스): 다른 캠퍼스도 승인 가능 표시', ((await handleIntranetApi(mAll, 'GET', '/penalties', new URLSearchParams(), null)).body as any).rows.find((x: any) => x.id === farId)?.canDecide === true);
+farMarks.length = 0;
+await call('GET', '/penalties'); // 결석이 사라지면 대기 후보도 지워진다
+expect('다른 캠퍼스 후보 정리', !(await stores.penalties.all()).some((x) => x.id === farId));
+stores.attendance = attBefore;
 rr = await mcall('POST', '/penalties/decide', { ids: [mAbs.id], approve: true });
 expect('매니저: 무단결석 승인', rr.status === 200 && rr.body.done === 1, rr);
 const msf = (await mcall('GET', '/students')).body;

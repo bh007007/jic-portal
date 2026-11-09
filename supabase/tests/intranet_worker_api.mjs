@@ -1,7 +1,8 @@
 // 인트라넷 배포 서버(apps/intranet/worker)의 /api 시험. 실제 마이그레이션을 올린 PGlite(pg-supabase.mjs)에서
 // 직원 두 명(Challenger·Premium 담당)으로: 설정·점수표 → 통금 위반 후보·승인 → 결석·외박 처리 → 배차 → 공지·읽음
 // → 상담 기록(같은 캠퍼스만, 내용은 함수로, 접근 기록) → Student File, 그리고 가드 공용 계정(출입구 고정, 가드 API 만,
-// 재학생 명단·승인된 외박은 서비스 키로 사유 없이), 학교 여행(등록·수정·명단 제외·취소, 참가자 외박 허용이 가드 화면에).
+// 재학생 명단·승인된 외박은 서비스 키로 사유 없이), 학교 여행(등록·수정·명단 제외·취소, 참가자 외박 허용이 가드 화면에),
+// 역할(오피스: 점수표 쓰기·접근 기록·가드 계정 막힘, 매니저: 허용한 경로만·무단결석 승인은 맡은 캠퍼스만).
 // 학생 쓰기는 학생 역할로 SQL 을 실행한다.
 //
 // 실행(저장소 루트, 의존성에 추가하지 않고 임시로 설치):
@@ -453,6 +454,12 @@ x = await api('GET', `/api/students/${sC}`, tO);
 ok('오피스: 맡은 캠퍼스 학생 상세 200', x.status === 200, x.status);
 x = await api('GET', '/api/penalties?tab=pending', tO);
 ok('오피스: 패널티 승인 목록은 그대로', x.status === 200, x.status);
+x = await api('GET', '/api/guard-accounts', tO);
+ok('오피스: 가드 계정 403 admin_only(I4)', x.status === 403 && x.body.error === 'admin_only', x);
+x = await api('POST', `/api/guard-accounts/${officeId}/password`, tO, { password: 'hack12345', confirm: 'hack12345' });
+ok('오피스: 가드 비밀번호 바꾸기 403(I4)', x.status === 403 && x.body.error === 'admin_only', x);
+x = await api('GET', '/api/accounts', tO);
+ok('오피스: 학생 계정은 그대로(I4)', x.status === 200, x);
 
 // ── 강사 포털 매니저(user_roles manager, 직원 아님): 인트라넷 일부만. 업체 원본은 서버가 서비스 키로, 쓰기는 매니저 토큰(RLS)
 const mgrId = '00000000-0000-4000-8000-0000000000b1';
@@ -485,6 +492,27 @@ ok('매니저: 무단결석 승인(처리자 = 매니저)', x.status === 200 && 
 await sb.sql(`insert into public.penalties (id, student_no, kind, occurred_on, campus, basis, source, source_id) values ('curfew-mgr', $1, 'curfew', $2, 'Challenger', '통금', 'outing', 'mgr') on conflict do nothing`, [sAb2, d2]);
 x = await api('POST', '/api/penalties/decide', tM, { ids: ['curfew-mgr'], approve: true });
 ok('매니저: 통금 위반 승인 403', x.status === 403 && x.body.error === 'manager_absence_only' && (await sb.sql(`select status from public.penalties where id = 'curfew-mgr'`))[0].status === 'pending', x);
+// I5: Premium 만 맡은 매니저는 Challenger 무단결석을 보기만 한다(서버 403, REST 로 고쳐도 DB 가 막음)
+const mgrPId = '00000000-0000-4000-8000-0000000000b2';
+await sb.addUser({ id: mgrPId, email: 'mp@teacher.example', password: 'managerpass2' });
+await sb.sql(`insert into public.user_roles (user_id, role, campus) values ($1, 'manager', 'Premium')`, [mgrPId]);
+await sb.sql(`insert into public.staff (user_id, name) values ($1, '매니저P')`, [mgrPId]);
+const tMP = await login('mp@teacher.example', 'managerpass2');
+const sFar = others[5] ?? others[1];
+await sb.sql(`insert into public.attendance (session_id, student_no, result) values ($1, $2, 'AB')`, [sess2, sFar]);
+x = await api('GET', '/api/penalties?tab=pending', tMP);
+const far = (x.body.rows ?? []).find((p) => p.source === 'attendance' && p.stId === sFar);
+ok('매니저(Premium): Challenger 무단결석 후보는 보이지만 승인 불가 표시', x.status === 200 && far?.campus === 'Challenger' && far.canDecide === false, far);
+x = await api('POST', '/api/penalties/decide', tMP, { ids: [far.id], approve: true });
+ok('매니저(Premium): Challenger 무단결석 승인 403 campus_forbidden', x.status === 403 && x.body.error === 'campus_forbidden', x);
+const farPatch = await fetch(`${sb.url}/rest/v1/penalties?id=eq.${far.id}`, {
+  method: 'PATCH',
+  headers: { apikey: 'anon-key', Authorization: `Bearer ${tMP}`, 'Content-Type': 'application/json', Prefer: 'return=representation' },
+  body: JSON.stringify({ status: 'approved' }),
+});
+ok('매니저(Premium): REST 로 고쳐도 DB 가 막음', (await farPatch.json()).length === 0 && (await sb.sql(`select status from public.penalties where id = $1`, [far.id]))[0].status === 'pending');
+x = await api('POST', '/api/penalties/decide', tM, { ids: [far.id], approve: false, note: '확인' });
+ok('매니저(모든 캠퍼스): 같은 건 반려', x.status === 200 && x.body.done === 1, x);
 const absM = (await sb.sql(`insert into public.absence_requests (student_no, enrollment_id, absence_date, kind, reason) values ($1, $2, $3, 'sick', '감기') returning id::text`, [sAb2, await trOf(sAb2), manila]))[0].id;
 x = await api('POST', '/api/requests/absences/decide', tM, { ids: [absM], approve: true, comment: '확인' });
 ok('매니저: 결석 신청 승인(처리자 = 매니저)', x.status === 200 && (await sb.sql(`select decided_by::text from public.absence_requests where id = $1`, [absM]))[0].decided_by === mgrId, x);

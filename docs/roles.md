@@ -143,6 +143,12 @@
 
 - 매니저 상담 기록: 매니저 역할의 캠퍼스(빈칸 = 모든 캠퍼스)만. 상담 함수 6개가 `counseling_campus_ok()`(직원 `staff_campuses` 또는 매니저 역할 캠퍼스)와 `counseling_actor_name()`(직원 이름, 없으면 강사 목록 이름)을 쓴다(`20261109110000_intranet_manager_counseling.sql`). 직원은 그대로다.
 
+### 인트라넷 결정 반영 (11/9 밤, 인트라넷 담당)
+
+- 권한표에 없던 두 가지를 레오님 결정대로 넣었다(`docs/leo-todo.md` I4·I5). `20261109170000_intranet_decisions.sql`.
+- 가드 계정(만들기·비밀번호·지우기)은 관리자만. 학생 계정은 관리자·오피스 둘 다. `guard_account_audit()`가 `is_admin()`을 본다.
+- 매니저의 무단결석 승인·반려는 맡은 캠퍼스(매니저 역할의 캠퍼스, 빈칸 = 모든 캠퍼스)만. `intranet_manager_campus_ok(캠퍼스)`, 정책 `penalties_manager_decide`.
+
 ### 다음 단계
 
 - 스케줄러·매니저에게 관리자 포털 일부(대시보드·학생·통계·기초관리 읽기)를 연다. `functions/api`가 로그인한 사람의 토큰으로 `legacy_*`를 읽는데(RLS `is_staff()`), 이 RLS를 넓히지 않고 읽기 함수를 따로 둬야 한다.
