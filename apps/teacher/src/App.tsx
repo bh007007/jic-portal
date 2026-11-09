@@ -17,6 +17,8 @@ import Absences from './pages/Absences';
 import Attendance from './pages/Attendance';
 import AttendanceSession from './pages/AttendanceSession';
 import AttendanceSummary from './pages/AttendanceSummary';
+import Schedule from './pages/Schedule';
+import Classrooms from './pages/Classrooms';
 import Notices from './pages/Notices';
 import NotReady from './pages/NotReady';
 
@@ -58,6 +60,8 @@ export default function App() {
         <Route path="/absences" element={<Absences />} />
         <Route path="/attendance" element={<Attendance />} />
         <Route path="/attendance/summary" element={<AttendanceSummary />} />
+        <Route path="/schedule" element={<Schedule />} />
+        <Route path="/classrooms" element={<Classrooms />} />
         <Route path="/attendance/:id" element={<AttendanceSession />} />
         <Route path="/notices" element={<Notices />} />
         <Route path="*" element={<NotReady title={t('noPage')} />} />

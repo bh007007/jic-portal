@@ -232,3 +232,52 @@ export const loadAttendanceSummary = (from: string, to: string, campus = '') =>
   must<AttendanceSummaryRow[]>(supabase.rpc('lms_attendance_summary', { p_from: from, p_to: to, p_campus: campus }));
 export const loadStudentAttendance = (studentNo: string, from: string, to: string) =>
   must<StudentAttendanceRow[]>(supabase.rpc('lms_student_attendance', { p_student_no: studentNo, p_from: from, p_to: to }));
+
+// 수업 관리(스케줄러·매니저·관리자, DB can_schedule). 교실·수업·출석 행 만들기와 하루 복사(20261109090000_schedule_copy.sql).
+export const CAMPUS_NAMES = ['Challenger', 'Premium', 'MCO'] as const;
+export interface Classroom {
+  id: string;
+  campus: string;
+  num: string;
+  kind: '1' | 'G';
+  building: string;
+  floor: string;
+  capacity: number | null;
+  active: boolean;
+}
+export const loadClassrooms = () => must<Classroom[]>(supabase.from('classrooms').select('*').order('campus').order('num'));
+export const addClassroom = (row: Pick<Classroom, 'campus' | 'num' | 'kind' | 'building' | 'floor' | 'capacity'>) => must(supabase.from('classrooms').insert(row));
+export const setClassroomActive = (id: string, active: boolean) => must(supabase.from('classrooms').update({ active }).eq('id', id));
+export interface NewSession {
+  day: string;
+  start_time: string;
+  minutes: number;
+  campus: string;
+  kind: '1' | 'G';
+  subject: string;
+  teacher_id: string | null;
+  sub_teacher_id: string | null;
+  classroom_id: string | null;
+}
+/** 수업 하나와 학생(출석 행)을 만든다. 학생 넣기가 실패하면 만든 수업을 지운다. */
+export async function createSession(row: NewSession, students: Pick<LmsStudent, 'student_no' | 'enrollment_id'>[]) {
+  const made = await must<{ id: string }[]>(supabase.from('class_sessions').insert(row).select('id'));
+  const id = made?.[0]?.id;
+  if (!id) throw new Error('row-level security');
+  if (students.length) {
+    try {
+      await must(supabase.from('attendance').insert(students.map((s) => ({ session_id: id, student_no: s.student_no, enrollment_id: s.enrollment_id }))));
+    } catch (e) {
+      await supabase.from('class_sessions').delete().eq('id', id);
+      throw e;
+    }
+  }
+  return id;
+}
+export const deleteSession = (id: string) => must(supabase.from('class_sessions').delete().eq('id', id));
+export const addToSession = (sessionId: string, s: Pick<LmsStudent, 'student_no' | 'enrollment_id'>) =>
+  must(supabase.from('attendance').insert({ session_id: sessionId, student_no: s.student_no, enrollment_id: s.enrollment_id }));
+export const removeFromSession = (sessionId: string, studentNo: string) =>
+  must(supabase.from('attendance').delete().eq('session_id', sessionId).eq('student_no', studentNo));
+export const copySessions = (from: string, to: string[], campus = '') =>
+  must<number>(supabase.rpc('lms_copy_sessions', { p_from: from, p_to: to, p_campus: campus }));
