@@ -12,7 +12,7 @@ import type { SupabaseConf } from '../../student/server/supabaseAuth';
 import { hm, iso, restClient, StoreError, toAbsence, toDeparture, toLife, toOvernight, toRide, toSignup, toTrip, tripReads, type Rest, type Row } from '../../student/server/supabaseStores';
 import type { TripStore } from '../../student/server/trips';
 import type { AuditLog, CounselingNote, CounselingRemote } from './counseling';
-import type { AttendanceSource, DocRepo, Outing, Penalty, PenaltyRules, Repo, Settings, Stores } from './core';
+import type { AttendanceRow, AttendanceSource, DocRepo, Outing, Penalty, PenaltyRules, Repo, Settings, Stores } from './core';
 import type { Notice, NoticeRead } from './notices';
 import type { IncidentReport } from './reports';
 import { serviceHeaders } from './supabaseData';
@@ -139,6 +139,21 @@ function attendanceSource(rest: Rest): AttendanceSource {
         subject: String(r.subject ?? ''),
         excused: r.excused === true,
         closed: r.closed === true,
+      }));
+    },
+    // Student File '수업 출석': 강사 포털 함수 lms_student_attendance(직원·매니저 = 강사 포털 사용자, 20261109080000_attendance_summary.sql)
+    async studentRows(stId, from, to) {
+      const rows = await rest('POST', 'rpc/lms_student_attendance', { p_student_no: stId, p_from: from, p_to: to });
+      return rows.map((r) => ({
+        day: String(r.day),
+        time: String(r.start_time ?? ''),
+        campus: String(r.campus ?? ''),
+        subject: String(r.subject ?? ''),
+        teacher: String(r.teacher_name ?? ''),
+        room: String(r.room ?? ''),
+        result: (r.result as AttendanceRow['result']) ?? null,
+        lateMin: (r.late_min as number | null) ?? null,
+        excused: r.excused === true,
       }));
     },
   };
