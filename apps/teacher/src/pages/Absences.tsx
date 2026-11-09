@@ -1,6 +1,8 @@
 import { useSearchParams } from 'react-router-dom';
+import { useAuth } from '../auth';
 import { loadAbsences, type LmsAbsence } from '../data';
 import { useT, type Key } from '../i18n';
+import { canUseIntranet, intranetUrl } from '../links';
 import { manilaToday } from '../supabase';
 import { AbsenceRow, Loading, PageHead, useLoad } from '../ui';
 
@@ -8,9 +10,10 @@ const plus = (d: string, n: number) => new Date(Date.parse(d + 'T00:00:00Z') + n
 
 /**
  * 결석 신청(원칙 L4: 출석 현황에서 사유 표시). 학생 포털에서 낸 신청을 날짜별로 본다. 사유 글은 보이지 않고 종류·처리 상태만.
- * 승인·반려는 인트라넷 › 신청 처리에서 한다(결정 대기). 출석 원본이 생기면 출석 체크 화면에 같이 보인다.
+ * 승인·반려는 인트라넷 › 결석 신청 처리에서 한다(직원·매니저, #64). 그 사람들에게만 위에 인트라넷 링크가 보인다. 출석 체크 화면에도 이름 아래 같이 보인다.
  */
 export default function Absences() {
+  const { me } = useAuth();
   const { t, lang } = useT();
   const [params, setParams] = useSearchParams();
   const today = manilaToday();
@@ -28,7 +31,11 @@ export default function Absences() {
 
   return (
     <>
-      <PageHead title={t('absences')} sub={t('absencesSub')} />
+      <PageHead
+        title={t('absences')}
+        sub={t('absencesSub')}
+        right={canUseIntranet(me) ? <a href={intranetUrl('requests/absences')} className="more">{t('processInIntranet')}</a> : undefined}
+      />
       <div className="seg" role="tablist">
         {tabs.map(([k, l]) => (
           <button key={k} type="button" role="tab" aria-selected={range === k} onClick={() => setParams(k === 'today' ? {} : { range: k }, { replace: true })}>{t(l)}</button>
