@@ -1,8 +1,8 @@
 // 학교 여행(학생 앱 server/trips.ts) 화면 이름. 학생 앱 문구와 뜻을 맞춘다.
 export const TRIP_STATUS: Record<string, string> = { open: '신청 받는 중', closed: '신청 마감', cancelled: '여행 취소' };
 export const TRIP_STATUS_CLASS: Record<string, string> = { open: 'text-blue', closed: 'muted', cancelled: 'text-red' };
-export const SIGNUP_STATUS: Record<string, string> = { applied: '참가 신청', cancelled: '학생 취소', removed: '명단 제외' };
-export const SIGNUP_STATUS_CLASS: Record<string, string> = { applied: 'text-blue', cancelled: 'muted', removed: 'text-red' };
+export const SIGNUP_STATUS: Record<string, string> = { applied: '참가 신청', waiting: '대기', cancelled: '학생 취소', removed: '명단 제외' };
+export const SIGNUP_STATUS_CLASS: Record<string, string> = { applied: 'text-blue', waiting: '', cancelled: 'muted', removed: 'text-red' };
 
 const WEEK = ['일', '월', '화', '수', '목', '금', '토'];
 const day = (d: string) => `${d.slice(5).replace('-', '.')} (${WEEK[new Date(d + 'T00:00:00Z').getUTCDay()]})`;

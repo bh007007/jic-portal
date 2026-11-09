@@ -414,7 +414,7 @@ function tripStore(rest: Rest, names: Names): TripStore {
     },
     async putSignup(x) {
       const cur = await reads.getSignup(x.id);
-      if (cur?.status === 'applied' && x.status === 'removed') {
+      if ((cur?.status === 'applied' || cur?.status === 'waiting') && x.status === 'removed') {
         await rest('POST', 'rpc/trip_remove_signup', { p_id: x.id, p_reason: x.reason }, 'return=minimal');
         return;
       }
