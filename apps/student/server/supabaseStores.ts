@@ -302,7 +302,7 @@ export function tripStore(rest: Rest): TripStore {
   };
 }
 
-/** 시간표: 강사 포털 수업·출석을 학생 본인 것만(DB 함수 student_timetable, 20261109120000_student_timetable.sql). 읽기만 */
+/** 시간표: 강사 포털 수업·출석을 학생 본인 것만(DB 함수 student_timetable, 20261109130000_student_timetable.sql). 읽기만 */
 export function timetableSource(rest: Rest): TimetableSource {
   return {
     async classes(_stId, from, to) {

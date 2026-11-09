@@ -1,4 +1,4 @@
-// 학생 앱 시간표 함수(20261109120000_student_timetable.sql)의 권한 시험: 학생 본인 수업만, 강사 메모는 주지 않음, 다른 계정은 빈 결과, 익명은 실행 불가. 데이터는 전부 가짜.
+// 학생 앱 시간표 함수(20261109130000_student_timetable.sql)의 권한 시험: 학생 본인 수업만, 강사 메모는 주지 않음, 다른 계정은 빈 결과, 익명은 실행 불가. 데이터는 전부 가짜.
 //
 // 실행(저장소 루트, 의존성에 추가하지 않고 임시로 설치):
 //   npm i --no-save @electric-sql/pglite@0.3
@@ -23,8 +23,8 @@ await db.exec(`
   alter default privileges in schema public grant all on tables to anon, authenticated;
 `);
 for (const f of ['20261107000000_legacy_tables.sql', '20261108100000_student_intranet.sql', '20261108200000_teacher_portal.sql', '20261109000000_attendance.sql']) await db.exec(mig(f));
-await db.exec(mig('20261109120000_student_timetable.sql'));
-await db.exec(mig('20261109120000_student_timetable.sql')); // 두 번째 실행
+await db.exec(mig('20261109130000_student_timetable.sql'));
+await db.exec(mig('20261109130000_student_timetable.sql')); // 두 번째 실행
 ok('마이그레이션 2회 실행', true);
 
 const U = {
