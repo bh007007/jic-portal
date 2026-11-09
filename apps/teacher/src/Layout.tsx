@@ -2,10 +2,8 @@ import type { ReactNode } from 'react';
 import { NavLink } from 'react-router-dom';
 import { useAuth } from './auth';
 import { useT, type Key } from './i18n';
+import { PORTAL_HOME } from './links';
 import { supabase } from './supabase';
-
-// JIC 포털 첫 화면: 배포는 같은 주소의 '/', 로컬은 관리자 앱 개발 서버
-const PORTAL_HOME = import.meta.env.VITE_PORTAL_HOME ?? (import.meta.env.DEV ? 'http://127.0.0.1:5173/' : '/');
 
 // 원칙 L7: 강사 화면은 휴대폰 기준. 아래쪽 메뉴 5개, 관리 화면은 '더보기'에 모은다.
 const NAV: [string, Key][] = [
