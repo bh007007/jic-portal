@@ -481,6 +481,52 @@ for (const inv of invoices) {
 write('inv_summary', invSummary);
 write('balance', balance);
 
+// ── 가격표(portal-extract-prices.js 와 같은 표·열). 무작위 없이 정한 값이라 다른 표는 그대로다.
+// 코스 가격은 4주 기준, 기간별 값은 4주 = 100. 시험용으로 지난 가격 1줄, 가격 없는 코스(TOEIC) 1개, 끝난 기타비용·프로모션 1줄씩.
+const courseCode = [], dormCode = [], priceCourse = [], priceDorm = [];
+let coNo = 100, doNo = 200;
+for (const [code, c] of Object.entries(CAMPUS)) {
+  c.courses.forEach((name, i) => {
+    const id = String(++coNo);
+    courseCode.push({ co_id: id, co_ca_id: code === 'PREMIUM' ? '12' : '11', co_name: name, co_name_short: name, co_type: 'REG', co_week_only: '', co_country_only: '', co_order: String(i + 1), co_use_yn: 'Y', co_start_date: '2010-01-01', co_finish_date: '2099-12-31', ca_code: code });
+    if (name === 'TOEIC') return;
+    const usd = 1000 + i * 80 + (code === 'PREMIUM' ? 120 : 0);
+    priceCourse.push({ cc_co_id: id, cc_week: '4', cc_won: String(usd * 1350), cc_usd: String(usd), cc_yen: String(usd * 150), cc_peso: '0', cc_start_date: '2024-01-01', cc_finish_date: '2099-12-31' });
+    if (i === 0) priceCourse.push({ cc_co_id: id, cc_week: '4', cc_won: String((usd - 60) * 1350), cc_usd: String(usd - 60), cc_yen: String((usd - 60) * 150), cc_peso: '0', cc_start_date: '2023-01-01', cc_finish_date: '2023-12-31' });
+  });
+  c.dorms.forEach((name, i) => {
+    const id = String(++doNo);
+    const out = /^Stay Out/.test(name);
+    dormCode.push({ do_id: id, do_ca_id: code === 'PREMIUM' ? '12' : '11', do_name: name, do_name_short: name, do_type: out ? 'NONROOM' : '', do_gender: '', do_max: out ? '0' : String(name.startsWith('R4') ? 4 : 2), do_include: '', do_order: String(i + 1), do_use_yn: 'Y', do_start_date: '2010-01-01', do_finish_date: '2099-12-31', ca_code: code });
+    const usd = out ? 0 : name.startsWith('R2') ? 760 : 560;
+    priceDorm.push({ dc_do_id: id, dc_won: String(usd * 1350), dc_usd: String(usd), dc_yen: String(usd * 150), dc_peso: '0', dc_start_date: '2024-01-01', dc_finish_date: '2099-12-31' });
+  });
+}
+const priceSetting = [{ cs_id: '3', cs_br_id: '3', cs_1w: '40', cs_2w: '65', cs_3w: '85', cs_4w: '100', cs_5w: '125', cs_6w: '150', cs_7w: '175', cs_8w: '200', cs_1w_more: '25', cs_start_date: '2020-01-01', cs_finish_date: '2099-12-31', cs_use_yn: 'Y' }];
+const ETC = [
+  ['SSP', 'SSP (Valid for 6 mon)', 0, 0, 0, 6500, 'P'], ['VISA', 'Visa Extension (4w)', 0, 0, 0, 3800, 'P'], ['BOOK', 'Class Materials', 0, 0, 0, 1000, 'P'],
+  ['PICKUP', 'Airport Pick-up', 65000, 50, 7000, 0, ''], ['LAUNDRY', 'Laundry Fee (4w basis)', 0, 0, 0, 1000, 'PI'], ['REGIST', 'Registration Fee', 150000, 150, 15000, 0, ''],
+];
+const priceEtc = ETC.map(([type, name, won, usd, yen, peso, point], i) => ({ ec_id: String(300 + i), ec_br_id: '3', ec_name: name, ec_type: type, ec_won: String(won), ec_usd: String(usd), ec_yen: String(yen), ec_peso: String(peso), ec_start_date: '2024-01-01', ec_finish_date: '2099-12-31', ec_use_yn: 'Y', ec_point_flag: point, ec_order: String(i + 1), ec_memo: null }));
+priceEtc.push({ ec_id: '399', ec_br_id: '3', ec_name: 'Old Book Set', ec_type: 'BOOK', ec_won: '0', ec_usd: '0', ec_yen: '0', ec_peso: '800', ec_start_date: '2023-01-01', ec_finish_date: '2024-12-31', ec_use_yn: 'Y', ec_point_flag: 'P', ec_order: '99', ec_memo: '샘플: 끝난 항목' });
+const promoRows = [
+  { prm_id: '1', prm_kind: 'DC', prm_type: '', prm_name: '샘플: 겨울 기숙사 할인', prm_name_en: 'Winter Dorm DC', prm_note: '샘플: 12주 이상 등록 시 기숙사 5% 할인', prm_country: '', prm_currency: 'KRW', prm_campus: '', prm_target: 'DORM', prm_target_id: '', prm_target_weeks_yn: 'Y', prm_show_start_date: '2026-10-01', prm_show_finish_date: '2026-12-31', prm_reg_start_date: '2026-10-01', prm_reg_finish_date: '2026-12-31', prm_allow_stacking_yn: 'N', prm_priority: '1', prm_use_yn: 'Y', campus_code: 'PREMIUM', conditions: '[]' },
+  { prm_id: '2', prm_kind: 'DC', prm_type: '', prm_name: '샘플: 여름 조기 등록', prm_name_en: 'Summer Early Bird', prm_note: null, prm_country: '', prm_currency: 'USD', prm_campus: '', prm_target: '', prm_target_id: '', prm_target_weeks_yn: 'N', prm_show_start_date: '2026-03-01', prm_show_finish_date: '2026-05-31', prm_reg_start_date: '2026-03-01', prm_reg_finish_date: '2026-05-31', prm_allow_stacking_yn: 'Y', prm_priority: '2', prm_use_yn: 'Y', campus_code: '', conditions: '[]' },
+];
+const commRule = [
+  { acr_id: '1', acr_level: 'ACADEMY', acr_type: 'BASE', acr_ag_id: '0', ag_name: null, acr_country: '', country_name: '', acr_min_week: '0', acr_max_week: '0', acr_start_date: '2020-01-01', acr_finish_date: '2099-12-31', acr_rate: '0.2800', acr_memo: null, is_now: '1' },
+  { acr_id: '2', acr_level: 'ACADEMY', acr_type: 'EXTEND', acr_ag_id: '0', ag_name: null, acr_country: '', country_name: '', acr_min_week: '0', acr_max_week: '0', acr_start_date: '2020-01-01', acr_finish_date: '2099-12-31', acr_rate: '0.2000', acr_memo: null, is_now: '1' },
+  { acr_id: '3', acr_level: 'AGENCY', acr_type: 'BASE', acr_ag_id: agencies[0].ag_id, ag_name: agencies[0].ag_name, acr_country: '', country_name: '', acr_min_week: '0', acr_max_week: '0', acr_start_date: '2024-01-01', acr_finish_date: '2099-12-31', acr_rate: '0.2500', acr_memo: '샘플: 협력 에이전시', is_now: '1' },
+];
+write('course_code', courseCode);
+write('dorm_code', dormCode);
+write('price_course', priceCourse);
+write('price_dorm', priceDorm);
+write('price_setting', priceSetting);
+write('price_etc', priceEtc);
+write('promo', promoRows);
+write('comm_rule', commRule);
+
 write('point_history', pointHistory);
 write('students', students);
 write('enrollments', enrollments);

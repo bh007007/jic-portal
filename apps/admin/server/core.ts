@@ -37,7 +37,22 @@ export interface DataInput {
   invoiceSummary?: Raw[];
   /** 업체 회계 > Check Balance(balance_load): 연수 청구 합계 cost·납부 payment·연장 수 extend_count(portal-extract-balance.js). */
   balances?: Raw[];
+  /** 업체 가격표(portal-extract-prices.js): 표 이름 → 행. 개인정보 없는 업체 가격·규칙. 배포에는 아직 없다. */
+  prices?: Partial<Record<PriceTable, Raw[]>>;
 }
+
+/** 가격표 표마다 읽는 열(추출 스크립트의 KEEP 과 같다). */
+export const PRICE_COLUMNS = {
+  price_course: ['cc_co_id', 'cc_week', 'cc_won', 'cc_usd', 'cc_yen', 'cc_peso', 'cc_start_date', 'cc_finish_date'],
+  price_dorm: ['dc_do_id', 'dc_won', 'dc_usd', 'dc_yen', 'dc_peso', 'dc_start_date', 'dc_finish_date'],
+  price_setting: ['cs_id', 'cs_br_id', 'cs_1w', 'cs_2w', 'cs_3w', 'cs_4w', 'cs_5w', 'cs_6w', 'cs_7w', 'cs_8w', 'cs_1w_more', 'cs_start_date', 'cs_finish_date', 'cs_use_yn'],
+  promo: ['prm_id', 'prm_kind', 'prm_type', 'prm_name', 'prm_name_en', 'prm_note', 'prm_country', 'prm_currency', 'prm_campus', 'prm_target', 'prm_target_id', 'prm_target_weeks_yn', 'prm_show_start_date', 'prm_show_finish_date', 'prm_reg_start_date', 'prm_reg_finish_date', 'prm_allow_stacking_yn', 'prm_priority', 'prm_use_yn', 'campus_code', 'conditions'],
+  course_code: ['co_id', 'co_ca_id', 'co_name', 'co_name_short', 'co_type', 'co_week_only', 'co_country_only', 'co_order', 'co_use_yn', 'co_start_date', 'co_finish_date', 'ca_code'],
+  dorm_code: ['do_id', 'do_ca_id', 'do_name', 'do_name_short', 'do_type', 'do_gender', 'do_max', 'do_include', 'do_order', 'do_use_yn', 'do_start_date', 'do_finish_date', 'ca_code'],
+  price_etc: ['ec_id', 'ec_br_id', 'ec_name', 'ec_type', 'ec_won', 'ec_usd', 'ec_yen', 'ec_peso', 'ec_start_date', 'ec_finish_date', 'ec_use_yn', 'ec_point_flag', 'ec_order', 'ec_memo'],
+  comm_rule: ['acr_id', 'acr_level', 'acr_type', 'acr_ag_id', 'ag_name', 'acr_country', 'country_name', 'acr_min_week', 'acr_max_week', 'acr_start_date', 'acr_finish_date', 'acr_rate', 'acr_memo', 'is_now'],
+} as const;
+export type PriceTable = keyof typeof PRICE_COLUMNS;
 
 /** 인보이스 항목 표에서 읽는 열(직원 메모 ic_memo 는 읽지 않는다). localData 가 이 열만 골라 넘긴다. */
 export const INVOICE_ITEM_COLUMNS = ['_tr_id', 'ic_ver', 'ic_type', 'ic_type_name', 'ic_currency', 'ic_price', 'ic_week', 'ic_departure_date', 'ic_return_date', 'co_name', 'do_name', 'ic_use_yn', 'ic_cancel_yn'];
@@ -1450,6 +1465,90 @@ export function createDb(input: DataInput) {
     return { refDate, hasData: tabCounts.course + tabCounts.dorm + tabCounts.comeback > 0, tab, tabCounts, facets, ...paginate<ChangeRow>(list, q) };
   }
 
+  // ── 기초관리 > 가격표: 업체 '예상 금액' 화면 코드의 가격표, 기초코드 > 기타비용, 유학원관리 > Commission.
+  // 값은 업체 그대로 보여 준다. 코스 가격은 cc_week 주 기준(대부분 4주)이고, 기간별 값(cs_*)은 4주가 100인 비율이다(11/9 추출본).
+  const priceRows = (k: PriceTable) => input.prices?.[k] ?? [];
+  const courseCodeById = new Map(priceRows('course_code').map((c) => [str(c.co_id), c]));
+  const dormCodeById = new Map(priceRows('dorm_code').map((d) => [str(d.do_id), d]));
+  const day10 = (v: unknown) => str(v).slice(0, 10);
+  /** 지금(기준일) 적용되는가: 사용 N 이 아니고 시작 ≤ 기준일 ≤ 끝(비어 있으면 열린 기간). */
+  const activeOn = (start: unknown, finish: unknown, use?: unknown) =>
+    !/^n$/i.test(str(use)) && (!day10(start) || day10(start) <= refDate) && (!day10(finish) || day10(finish) >= refDate);
+  const fourPrices = (r: Raw, p: string) => ({ krw: num(r[p + 'won']), usd: num(r[p + 'usd']), jpy: num(r[p + 'yen']), php: num(r[p + 'peso']) });
+  const COURSE_KIND: Record<string, string> = { REG: '일반', FAMILY: '가족', PARENT: '부모' };
+  const COMM_LEVEL: Record<string, string> = { ACADEMY: '학원 전체', COUNTRY: '국가', AGENCY: '에이전시' };
+  const COMM_TYPE: Record<string, string> = { BASE: '기본', EXTEND: '연장' };
+  const LEVEL_ORDER = ['ACADEMY', 'COUNTRY', 'AGENCY'];
+  const priceLists = {
+    course: priceRows('price_course').map((r) => {
+      const c = courseCodeById.get(str(r.cc_co_id));
+      return {
+        key: `c${str(r.cc_co_id)}-${str(r.cc_week)}-${day10(r.cc_start_date)}`, campus: campusName(c?.ca_code), name: str(c?.co_name) || `코스 ${str(r.cc_co_id)}`,
+        kind: COURSE_KIND[str(c?.co_type)] ?? str(c?.co_type), weekOnly: num(c?.co_week_only), weeks: num(r.cc_week), ...fourPrices(r, 'cc_'),
+        start: day10(r.cc_start_date), end: day10(r.cc_finish_date), active: activeOn(r.cc_start_date, r.cc_finish_date, c?.co_use_yn),
+      };
+    }),
+    dorm: priceRows('price_dorm').map((r) => {
+      const d = dormCodeById.get(str(r.dc_do_id));
+      return {
+        key: `d${str(r.dc_do_id)}-${day10(r.dc_start_date)}`, campus: campusName(d?.ca_code), name: str(d?.do_name) || `기숙사 ${str(r.dc_do_id)}`,
+        kind: str(d?.do_type) === 'NONROOM' ? '방 없음' : '', gender: str(d?.do_gender), max: num(d?.do_max), ...fourPrices(r, 'dc_'),
+        start: day10(r.dc_start_date), end: day10(r.dc_finish_date), active: activeOn(r.dc_start_date, r.dc_finish_date, d?.do_use_yn),
+      };
+    }),
+    etc: priceRows('price_etc').map((r) => ({
+      key: `e${str(r.ec_id)}`, campus: '', name: str(r.ec_name), kind: str(r.ec_type), point: str(r.ec_point_flag), order: num(r.ec_order), memo: str(r.ec_memo), ...fourPrices(r, 'ec_'),
+      start: day10(r.ec_start_date), end: day10(r.ec_finish_date), active: activeOn(r.ec_start_date, r.ec_finish_date, r.ec_use_yn),
+    })),
+    promo: priceRows('promo').map((r) => ({
+      key: `p${str(r.prm_id)}`, campus: str(r.campus_code || r.prm_campus).split(/\s*,\s*/).filter(Boolean).map(campusName).join(', '), name: str(r.prm_name) || str(r.prm_name_en), kind: str(r.prm_kind), type: str(r.prm_type), target: str(r.prm_target),
+      currency: str(r.prm_currency), country: str(r.prm_country), note: str(r.prm_note), stacking: yes(r.prm_allow_stacking_yn), priority: num(r.prm_priority),
+      showStart: day10(r.prm_show_start_date), showEnd: day10(r.prm_show_finish_date), start: day10(r.prm_reg_start_date), end: day10(r.prm_reg_finish_date),
+      active: activeOn(r.prm_reg_start_date, r.prm_reg_finish_date, r.prm_use_yn),
+    })),
+    comm: priceRows('comm_rule').map((r) => ({
+      key: `a${str(r.acr_id)}`, campus: '', name: str(r.ag_name), level: COMM_LEVEL[str(r.acr_level)] ?? str(r.acr_level), levelCode: str(r.acr_level), kind: COMM_TYPE[str(r.acr_type)] ?? str(r.acr_type),
+      country: str(r.country_name || r.acr_country), minWeek: num(r.acr_min_week), maxWeek: num(r.acr_max_week), rate: Math.round(num(r.acr_rate) * 10000) / 100, memo: str(r.acr_memo),
+      start: day10(r.acr_start_date), end: day10(r.acr_finish_date), active: str(r.is_now) ? str(r.is_now) === '1' : activeOn(r.acr_start_date, r.acr_finish_date),
+    })),
+  };
+  type PriceTab = keyof typeof priceLists;
+  type AnyPriceRow = (typeof priceLists)[PriceTab][number] & Raw;
+  const PRICE_SORT: Record<PriceTab, (a: AnyPriceRow, b: AnyPriceRow) => number> = {
+    course: (a, b) => a.campus.localeCompare(b.campus) || a.name.localeCompare(b.name) || a.weeks - b.weeks,
+    dorm: (a, b) => a.campus.localeCompare(b.campus) || a.name.localeCompare(b.name),
+    etc: (a, b) => a.kind.localeCompare(b.kind) || a.order - b.order || a.name.localeCompare(b.name),
+    promo: (a, b) => b.start.localeCompare(a.start) || a.name.localeCompare(b.name),
+    comm: (a, b) => LEVEL_ORDER.indexOf(a.levelCode) - LEVEL_ORDER.indexOf(b.levelCode) || a.kind.localeCompare(b.kind) || a.name.localeCompare(b.name),
+  };
+
+  function prices(q: URLSearchParams) {
+    const tab: PriceTab = (['dorm', 'etc', 'promo', 'comm'] as const).find((t) => t === q.get('tab')) ?? 'course';
+    const current = q.get('current') !== '0';
+    const inScope = (l: readonly AnyPriceRow[]) => (current ? l.filter((r) => r.active) : [...l]);
+    let list = inScope(priceLists[tab] as AnyPriceRow[]);
+    const facets = {
+      campuses: countBy(list.filter((r) => r.campus && r.campus !== '-'), (r) => r.campus).map((c) => c.name),
+      kinds: countBy(list.filter((r) => r.kind), (r) => r.kind).map((c) => c.name),
+    };
+    const campus = q.get('campus'), kind = q.get('kind');
+    const kw = (q.get('q') ?? '').trim().toLowerCase();
+    if (campus) list = list.filter((r) => r.campus === campus);
+    if (kind) list = list.filter((r) => r.kind === kind);
+    if (kw) list = list.filter((r) => `${r.name} ${r.kind} ${str(r.memo)} ${str(r.note)} ${str(r.country)}`.toLowerCase().includes(kw));
+    list = [...list].sort(PRICE_SORT[tab]);
+    const s = priceRows('price_setting').find((x) => activeOn(x.cs_start_date, x.cs_finish_date, x.cs_use_yn)) ?? priceRows('price_setting')[0];
+    const setting = s ? { weeks: [1, 2, 3, 4, 5, 6, 7, 8].map((n) => num(s[`cs_${n}w`])), more: num(s.cs_1w_more), start: day10(s.cs_start_date), end: day10(s.cs_finish_date) } : null;
+    const pricedCourses = new Set(priceRows('price_course').map((r) => str(r.cc_co_id)));
+    const tabCounts = Object.fromEntries((Object.keys(priceLists) as PriceTab[]).map((t) => [t, inScope(priceLists[t] as AnyPriceRow[]).length])) as Record<PriceTab, number>;
+    return {
+      refDate, tab, current, hasData: Object.values(priceLists).some((l) => l.length > 0), tabCounts, facets, setting,
+      // 사용 중인 코스 가운데 가격 줄이 없는 것(사용 안 함 코스는 세지 않는다)
+      coursesWithoutPrice: [...courseCodeById.entries()].filter(([id, c]) => !/^n$/i.test(str(c.co_use_yn)) && !pricedCourses.has(id)).length,
+      total: list.length, rows: list,
+    };
+  }
+
   // ── 학생관리 > 체크 메모: 업체 포털 Checking Memo. 에이전시·마케팅·아카데미 메모가 있는 연수. 읽기 전용(메모 수정은 새 시스템 이관 뒤).
   const memoRows = all
     .filter((x) => str(x.raw.tr_ag_memo) || str(x.raw.tr_br_memo) || str(x.raw.tr_br_memo_en))
@@ -1525,6 +1624,7 @@ export function createDb(input: DataInput) {
     cancellations,
     extensions,
     changes,
+    prices,
     checkingMemos,
   };
 }
@@ -1554,6 +1654,7 @@ export function handleApi(db: Db, pathname: string, params: URLSearchParams): { 
     if (p === '/cancellations') return { status: 200, body: db.cancellations(params) };
     if (p === '/extensions') return { status: 200, body: db.extensions(params) };
     if (p === '/changes') return { status: 200, body: db.changes(params) };
+    if (p === '/prices') return { status: 200, body: db.prices(params) };
     if (p === '/memos') return { status: 200, body: db.checkingMemos(params) };
     const m = p.match(/^\/students\/(\w+)$/);
     if (m) {

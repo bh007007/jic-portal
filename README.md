@@ -38,7 +38,7 @@ npm install
 npm run admin
 ```
 
-브라우저에서 http://127.0.0.1:5173 을 연다. 화면: 대시보드, 재학생·입학 예정·졸업생 목록, 학생 상세, 입학 배치별 명단, 중단·연기·연장 현황, 변경 이력(코스·기숙사 변경, 복귀), 기숙사 배정 현황·방·침대 목록, 회계(인보이스·입금 매칭·포인트), 에이전시 목록·상세, 담당자 계정, 기초관리(코스·기숙사, 캠퍼스·배치). 목록 화면의 '엑셀 다운로드'는 현재 검색 조건 전체를 CSV(엑셀에서 바로 열림)로 받는다.
+브라우저에서 http://127.0.0.1:5173 을 연다. 화면: 대시보드, 재학생·입학 예정·졸업생 목록, 학생 상세, 입학 배치별 명단, 중단·연기·연장 현황, 변경 이력(코스·기숙사 변경, 복귀), 기숙사 배정 현황·방·침대 목록, 회계(인보이스·입금 매칭·포인트), 에이전시 목록·상세, 담당자 계정, 기초관리(코스·기숙사, 가격표, 캠퍼스·배치). 목록 화면의 '엑셀 다운로드'는 현재 검색 조건 전체를 CSV(엑셀에서 바로 열림)로 받는다.
 
 `data/tables`가 있어도 샘플로 보려면 `$env:JIC_DATA_DIR='data-sample/tables'; npm run admin`으로 실행한다(Claude 미리보기 설정 `admin-sample`, 포트 5174).
 
@@ -127,6 +127,14 @@ powershell -ExecutionPolicy Bypass -File scripts/split-export.ps1 -Source data/r
 
 ```powershell
 powershell -ExecutionPolicy Bypass -File scripts/split-export.ps1 -Source data/raw/jic_portal_extend_YYYY-MM-DD.json.gz -DictPath docs/data-dictionary-extend.md
+```
+
+### 가격표 추출
+
+[scripts/extract/portal-extract-prices.js](scripts/extract/portal-extract-prices.js)를 같은 방법으로 실행한다(1분 안쪽, 읽기 전용, 개인정보 없음). 업체 '예상 금액' 화면 코드에 들어 있는 코스·기숙사 가격표(원·달러·엔·페소)·기간별 값·프로모션과, 기초코드 코스·기숙사·기타비용, 유학원 커미션 규칙을 받는다. 관리자 포털 기초관리 '가격표'가 읽는다.
+
+```powershell
+powershell -ExecutionPolicy Bypass -File scripts/split-export.ps1 -Source data/raw/jic_portal_prices_YYYY-MM-DD.json.gz -DictPath docs/data-dictionary-prices.md
 ```
 
 ## 데이터 원칙

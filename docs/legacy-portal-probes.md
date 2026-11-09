@@ -83,6 +83,27 @@
 - 열: rqp_type(CHG_COURSE·CHG_ROOM·EXTESION·ADD_CLASS·CANCELLATION·OTHER), rqp_state(REQ·REC·REJ·CANCEL·APP·DONE_TUITION·DONE_LOCAL·DONE), rqp_what, rqp_period_original·rqp_period, rqp_amount, rqp_tuition_fee, rqp_local_fee, rqp_pay_method, rqp_content, rqp_reply.
 - 거의 쓰이지 않은 기능이라 옮겨 올 화면은 만들지 않았다. 새 시스템에서 필요하면 따로 정한다.
 
+## 가격표·커미션·통계 화면 (11/9, `portal-extract-prices.js`)
+
+열 목록은 [data-dictionary-prices.md](data-dictionary-prices.md). 관리자 포털 기초관리 '가격표'(`core.ts` prices)가 읽는다.
+
+| 화면 | 주소 | 받은 것(11/9 건수) |
+| --- | --- | --- |
+| 마케팅 > 통계 > 예상 금액 (`adm/simul/estimate`) | 서버 조회 없음. 화면 코드(GET)에 목록이 들어 있다 | `course_cost_list` 58(cc_co_id·cc_week·cc_won/usd/yen/peso·적용 기간), `dorm_cost_list` 23, `course_cost_setting_list` 1, `promo_list` 9 |
+| 기초코드 > 코스 (`adm/basic/course`) | `course_load`(s_co_use_yn 비움 = 사용 안 함 포함) | 66(사용 39·안 함 27). 예상 금액 화면의 `co_list`는 고를 수 있는 39개뿐이라 지난 가격의 이름은 여기서 찾는다 |
+| 기초코드 > 기숙사 (`adm/basic/dorm`) | `dorm_load`(s_do_use_yn·s_do_show_reg_yn 비움) | 27 |
+| 기초코드 > 코스비용 (`adm/basic/cc_setting`) | `cc_setting_load` | 1(= course_cost_setting_list) |
+| 기초코드 > 기타비용 (`adm/basic/etc_cost`) | `etc_cost_load` | 74(ec_type 22종: BOOK·PROMO·PICKUP·VISA·SSP 등, 4개 통화, 포인트 구분 `ec_point_flag` P·PI) |
+| 유학원관리 > Commission (`adm/agency/comm`) | `acr_load` | 3(acr_level ACADEMY·COUNTRY·AGENCY, acr_type BASE·EXTEND, 주 수 범위, `acr_rate` 0.28 = 28%) |
+| 기초코드 > 환율 (`adm/basic/exchange`) | `exchange_load` | 부르지 않음(주소 이름의 'change' 때문에 안전 규칙이 막음) |
+| 마케팅 > 통계 > Closing Status (`adm/register/closing_v2`) | `closing_v2_list`·`closing_v2_finish_list`·`closing_v2_check_stay` | `_load`가 아니라 부르지 않았다 |
+
+**알아 둘 점**
+- 코스 가격은 `cc_week` 주 기준이다(58행 중 44행이 4주). 원·달러·엔은 채워져 있고 페소는 비어 있다.
+- 기간별 값(`cs_1w`~`cs_8w`, `cs_1w_more`)은 4주가 100인 값이다(11/9: 40·65·85·100·125·150·175·200, 8주 넘으면 1주마다 25).
+- 사용 중인 코스 39개 중 13개는 가격 줄이 없다(업체 그대로).
+- 프로모션 `campus_code`는 'CHALLENGER,PREMIUM'처럼 쉼표로 이어진다.
+
 ## 연장·변경 추출 (`portal-extract-extend.js`)
 
 열 목록은 [data-dictionary-extend.md](data-dictionary-extend.md). 11/9 추출 건수: 연장현황 412, 연장 탭 86(연장현황의 일부), 복귀 175, 코스 변경 1,394, 기숙사 변경 1,114.

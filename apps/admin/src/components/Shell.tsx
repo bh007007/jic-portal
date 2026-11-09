@@ -24,7 +24,7 @@ const MENU: { group?: string; items: { to: string; label: string }[] }[] = [
   { group: '기숙사', items: [{ to: '/dorm', label: '배정 현황' }, { to: '/rooms', label: '방·침대 관리' }] },
   { group: '회계', items: [{ to: '/invoices', label: '인보이스' }, { to: '/deposits', label: '입금 매칭' }, { to: '/points', label: '포인트' }] },
   { group: '에이전시', items: [{ to: '/agencies', label: '에이전시 목록' }, { to: '/agents', label: '담당자 계정' }] },
-  { group: '기초관리', items: [{ to: '/codes', label: '코스·기숙사' }, { to: '/batches', label: '캠퍼스·배치' }, { to: '/holidays', label: '휴일' }, { to: '/users', label: '사용자·권한' }] },
+  { group: '기초관리', items: [{ to: '/codes', label: '코스·기숙사' }, { to: '/prices', label: '가격표' }, { to: '/batches', label: '캠퍼스·배치' }, { to: '/holidays', label: '휴일' }, { to: '/users', label: '사용자·권한' }] },
 ];
 // 관리자만 보는 메뉴(docs/roles.md: 사용자·권한은 오피스가 열 수 없다)
 const ADMIN_ONLY = new Set(['/users']);
