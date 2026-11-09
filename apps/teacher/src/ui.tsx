@@ -74,14 +74,16 @@ export function useSave() {
 export const fmtDate = (d: string) => (d ? d.slice(0, 10) : '-');
 
 /** 결석 신청 한 줄(홈·결석 신청 화면 공용): 이름, 처리 상태, 캠퍼스·교시·종류. 사유 글은 없다. */
-export function AbsenceRow({ a }: { a: LmsAbsence }) {
+/** 결석 신청 한 줄. bare 면 <li> 없이 칸만(처리 화면이 아래에 사유·버튼을 붙인다) */
+export function AbsenceRow({ a, bare }: { a: LmsAbsence; bare?: boolean }) {
   const { t } = useT();
   const periods = a.periods.length ? t('periodsLabel', { p: a.periods.join('·') }) : t('allDay');
-  return (
-    <li>
+  const cells = (
+    <>
       <Link to={`/students/${a.student_no}`}>{a.name || a.student_no}</Link>
       <span className={a.status === 'approved' ? 'ok' : a.status === 'rejected' ? 'err' : 'muted'}>{t(('st_' + a.status) as Key)}</span>
       <span className="muted small">{a.campus} · {periods} · {t(('abs_' + a.kind) as Key)}</span>
-    </li>
+    </>
   );
+  return bare ? cells : <li>{cells}</li>;
 }

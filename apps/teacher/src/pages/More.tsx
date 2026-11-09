@@ -3,9 +3,8 @@ import { useAuth } from '../auth';
 import { useT, type Key } from '../i18n';
 import { PageHead, Section } from '../ui';
 
-// 메뉴 검토표 'LMS' 시트 순서. 출석 체크·출석 확인·무단결석 목록은 11/9에 열었다. 나머지는 결정이나 업체 시간표가 필요하다(원칙 V1·V6, C8).
+// 메뉴 검토표 'LMS' 시트 순서. 출석 체크·출석 확인·무단결석 목록·결석 신청 승인(직원·매니저)은 11/9에 열었다. 나머지는 결정이나 업체 시간표가 필요하다(원칙 V1·V6, C8).
 const PLANNED: [Key, Key][] = [
-  ['p_appr', 'p_appr_why'],
   ['p_rep', 'p_rep_why'],
   ['p_rec', 'p_rec_why'],
   ['p_chg', 'p_chg_why'],
