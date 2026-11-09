@@ -30,10 +30,10 @@ jobs:
       - run: node supabase/tests/attendance_rls.mjs
       - run: node supabase/tests/roles_rls.mjs
       - run: node supabase/tests/legacy_extend_rls.mjs
-      - run: node supabase/tests/core_schema.mjs
       - run: node supabase/tests/absence_penalties_rls.mjs
       - run: node supabase/tests/intranet_roles_rls.mjs
       - run: node supabase/tests/intranet_manager_rls.mjs
       - run: node supabase/tests/student_timetable_rls.mjs
       - run: node supabase/tests/lms_course_timeline_rls.mjs
       - run: node supabase/tests/partner_reco_rls.mjs
+      - run: node supabase/tests/core_schema.mjs
