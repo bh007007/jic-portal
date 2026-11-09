@@ -44,6 +44,7 @@ export interface Overnight extends RequestBase {
   accommodation?: string; // 숙소(선택)
   contact?: string; // 여행 중 비상 연락처
   companions?: string[]; // 같이 가는 학생 번호
+  guardianConsent?: boolean; // 미성년 학생이 '보호자 동의 받음'에 표시했는지(11/10 결정 I11, 그전 기록은 없음)
   tripId?: string; // 학교 여행 참가로 생긴 외박 허용(trips.ts tripPermits). 신청 저장소에는 없다
 }
 
@@ -64,6 +65,29 @@ export const isDate = (v: unknown): v is string =>
   typeof v === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(v) && !Number.isNaN(Date.parse(v)) && new Date(v).toISOString().slice(0, 10) === v;
 const addDays = (d: string, n: number) => new Date(Date.parse(d) + n * 864e5).toISOString().slice(0, 10);
 export const nightsBetween = (from: string, until: string) => Math.round((Date.parse(until) - Date.parse(from)) / 864e5);
+/** 필리핀 날짜(UTC+8) */
+export const manilaDate = (d: Date) => new Date(d.getTime() + 8 * 3600e3).toISOString().slice(0, 10);
+
+// ── 외박 규칙(11/10 결정 I11): 떠나는 날 하루 전까지 신청, 한 번에 최대 14박, 미성년은 보호자 동의 표시
+export const OVERNIGHT_LEAD_DAYS = 1;
+export const OVERNIGHT_MAX_NIGHTS = 14;
+/** 성년 나이(필리핀 18세). 이보다 어리면 외박 신청에 보호자 동의 표시가 있어야 한다. */
+export const ADULT_AGE = 18;
+
+/** 그날의 만 나이. 생년월일이 없거나 이상하면 null */
+export function ageOn(birthday: string, date: string): number | null {
+  const b = /^(\d{4})-(\d{2})-(\d{2})/.exec(birthday ?? '');
+  const d = /^(\d{4})-(\d{2})-(\d{2})/.exec(date ?? '');
+  if (!b || !d) return null;
+  const [by, bm, bd] = b.slice(1).map(Number);
+  const [y, m, dd] = d.slice(1).map(Number);
+  return y - by - (m < bm || (m === bm && dd < bd) ? 1 : 0);
+}
+/** 그날 미성년인지(생년월일을 모르면 아니라고 본다: 직원이 확인) */
+export function isMinorOn(db: Db, stId: string, date: string) {
+  const age = ageOn(db.studentDetail(stId)?.student.birthday ?? '', date);
+  return age !== null && age < ADULT_AGE;
+}
 
 /** 신청할 수 있는 기간: 재학 중이거나 입학 예정인 연수의 기간. 연장으로 연수가 여러 개면 여러 구간이 된다. */
 export function requestWindows(db: Db, stId: string) {
@@ -128,6 +152,8 @@ export interface OvernightInput {
   contact?: unknown;
   /** 학생번호 배열 또는 쉼표·공백으로 나눈 글 */
   companions?: unknown;
+  /** 미성년이면 true 여야 한다(보호자 동의 받음) */
+  guardianConsent?: unknown;
 }
 
 export const DESTINATION_MAX = 100;
@@ -141,7 +167,10 @@ export function parseCompanions(v: unknown, self: string): string[] {
   return [...new Set(text.match(/\d+/g) ?? [])].filter((n) => n !== self);
 }
 
-/** 외박·여행 신청 확인. 출발일~마지막 밤이 한 연수 기간 안, 대기·승인 상태인 다른 외박과 밤이 겹치면 거절. */
+/**
+ * 외박·여행 신청 확인. 출발일~마지막 밤이 한 연수 기간 안, 대기·승인 상태인 다른 외박과 밤이 겹치면 거절.
+ * 11/10 결정 I11: 출발일은 내일부터(하루 전까지 신청), 최대 14박, 출발일에 미성년이면 보호자 동의 표시가 있어야 한다.
+ */
 export function newOvernight(ctx: NewCtx, mine: Overnight[], input: OvernightInput): Outcome<Overnight> {
   const { from, until } = input;
   const reason = cleanReason(input.reason);
@@ -151,6 +180,8 @@ export function newOvernight(ctx: NewCtx, mine: Overnight[], input: OvernightInp
   const companions = parseCompanions(input.companions, ctx.stId);
   if (!isDate(from) || !isDate(until)) return fail(400, 'invalid_date');
   if (until <= from) return fail(400, 'invalid_range');
+  if (from < addDays(manilaDate(ctx.now()), OVERNIGHT_LEAD_DAYS)) return fail(400, 'too_late');
+  if (nightsBetween(from, until) > OVERNIGHT_MAX_NIGHTS) return fail(400, 'too_many_nights');
   if (!destination) return fail(400, 'destination_required');
   if (destination.length > DESTINATION_MAX) return fail(400, 'destination_too_long');
   if (accommodation.length > ACCOMMODATION_MAX) return fail(400, 'accommodation_too_long');
@@ -160,13 +191,15 @@ export function newOvernight(ctx: NewCtx, mine: Overnight[], input: OvernightInp
   if (companions.some((n) => !ctx.db.studentDetail(n))) return fail(400, 'invalid_companion');
   if (!reason) return fail(400, 'reason_required');
   if (reason.length > REASON_MAX) return fail(400, 'reason_too_long');
+  const minor = isMinorOn(ctx.db, ctx.stId, from);
+  if (minor && input.guardianConsent !== true) return fail(400, 'guardian_consent_required');
 
   const lastNight = addDays(until, -1);
   const win = requestWindows(ctx.db, ctx.stId).find((w) => w.from <= from && lastNight <= w.to);
   if (!win) return fail(400, 'date_out_of_range');
   if (mine.some((o) => live(o.status) && o.from < until && from < o.until)) return fail(409, 'duplicate');
 
-  return done({ ...base(ctx, win.trId, reason), from, until, destination, accommodation, contact, companions }, 201);
+  return done({ ...base(ctx, win.trId, reason), from, until, destination, accommodation, contact, companions, guardianConsent: minor }, 201);
 }
 
 /** 학생 취소: 대기 중인 자기 신청만. */

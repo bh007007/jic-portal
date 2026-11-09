@@ -7,9 +7,12 @@
 import type { Db } from '../../admin/server/core';
 import {
   cancelRequest,
+  isMinorOn,
   newAbsence,
   newOvernight,
   nightsBetween,
+  OVERNIGHT_LEAD_DAYS,
+  OVERNIGHT_MAX_NIGHTS,
   PERIOD_COUNT,
   REASON_MAX,
   requestWindows,
@@ -171,7 +174,10 @@ async function createAbsence(ctx: StudentCtx, stId: string, input: AbsenceInput)
 
 async function listOvernights(ctx: StudentCtx, stId: string) {
   const rows = (await ctx.overnights.listByStudent(stId)).sort(byNewest).map((o) => ({ ...o, nights: nightsBetween(o.from, o.until) }));
-  return { refDate: ctx.db.refDate, reasonMax: REASON_MAX, windows: requestWindows(ctx.db, stId), rows };
+  // 11/10 결정 I11: 신청 화면의 출발일은 minDate 부터, 최대 maxNights 박. minor 면 보호자 동의 칸을 보인다(출발일 기준으로 서버가 다시 확인)
+  const today = localToday(ctx.now());
+  const minDate = new Date(Date.parse(today) + OVERNIGHT_LEAD_DAYS * 864e5).toISOString().slice(0, 10);
+  return { refDate: ctx.db.refDate, reasonMax: REASON_MAX, windows: requestWindows(ctx.db, stId), minDate, maxNights: OVERNIGHT_MAX_NIGHTS, minor: isMinorOn(ctx.db, stId, today), rows };
 }
 export type OvernightList = Awaited<ReturnType<typeof listOvernights>>;
 export type OvernightRow = OvernightList['rows'][number];

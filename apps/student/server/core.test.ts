@@ -9,7 +9,7 @@ import { handleStudentApi } from './core';
 import { studentFromToken, tokenCache, tokenSubject } from './supabaseAuth';
 import { decideRide, rideState, type Departure, type Ride } from './departures';
 import { handleLifeRequest, LIFE_OPEN_MAX, type LifeRequest } from './lifeRequests';
-import { decideRequest, overnightFor, type Absence, type Overnight, type RequestStore } from './requests';
+import { ageOn, decideRequest, newOvernight, nightsBetween, overnightFor, type Absence, type Overnight, type RequestStore } from './requests';
 import { memoryTripStore, removeSignup, saveTrip, tripPermits, type Trip } from './trips';
 import { KEYCARD_PERIOD, keycardCode, readKeycard } from './keycard';
 import { mondayOf, type ClassMark, type TimetableSource, type TimetableView } from './timetable';
@@ -67,13 +67,15 @@ r = await call('GET', '/absences', null, null);
 expect('로그인 없이 401', r.status === 401, r);
 
 // 외박
-r = await call('POST', '/overnights', { from: '2026-11-08', until: '2026-11-10', reason: '마닐라 친척 집', ...TRIP, accommodation: ' 친척 집 ', companions: '30140, 30140 30095' });
-expect('외박 신청 201', r.status === 201, r);
+r = await call('POST', '/overnights', { from: '2026-11-08', until: '2026-11-10', reason: '오늘 출발', ...TRIP });
+expect('외박: 오늘 출발은 400(하루 전까지, 11/10 결정 I11)', err(r) === 'too_late', r);
+r = await call('POST', '/overnights', { from: '2026-11-09', until: '2026-11-11', reason: '마닐라 친척 집', ...TRIP, accommodation: ' 친척 집 ', companions: '30140, 30140 30095' });
+expect('외박 신청 201(성년: 보호자 동의 표시 없이, 표시는 false)', r.status === 201 && (r.body as any).guardianConsent === false, r);
 expect('여행 정보 저장: 행선지·숙소·연락처, 동행은 중복·본인 제외', (r.body as any).destination === 'Manila' && (r.body as any).accommodation === '친척 집' && (r.body as any).contact === '+63 917 123 4567' && JSON.stringify((r.body as any).companions) === '["30140"]', r.body);
 const ovId = (r.body as Overnight).id;
 r = await call('POST', '/overnights', { from: '2026-11-09', until: '2026-11-11', reason: 'x', ...TRIP });
 expect('밤이 겹치는 외박 409', r.status === 409 && err(r) === 'duplicate', r);
-r = await call('POST', '/overnights', { from: '2026-11-10', until: '2026-11-11', reason: '복귀일 밤부터는 안 겹침', ...TRIP });
+r = await call('POST', '/overnights', { from: '2026-11-11', until: '2026-11-12', reason: '복귀일 밤부터는 안 겹침', ...TRIP });
 expect('복귀일 밤부터는 겹치지 않음 201', r.status === 201, r);
 r = await call('POST', '/overnights', { from: '2026-11-12', until: '2026-11-12', reason: 'x', ...TRIP });
 expect('복귀일이 출발일과 같으면 400', err(r) === 'invalid_range', r);
@@ -93,8 +95,30 @@ expect('연락처 형식', err(await bad({ contact: 'call me' })) === 'invalid_c
 expect('없는 동행 학생', err(await bad({ companions: '99999999' })) === 'invalid_companion');
 expect('동행 10명까지', err(await bad({ companions: Array.from({ length: 11 }, (_, i) => String(30001 + i)).join(',') })) === 'too_many_companions');
 r = await call('GET', '/overnights');
-const ol = r.body as { rows: (Overnight & { nights: number })[] };
+const ol = r.body as { rows: (Overnight & { nights: number })[]; minDate: string; maxNights: number; minor: boolean };
+expect('외박 화면 정보: 출발일은 내일부터, 최대 14박, 성년', ol.minDate === '2026-11-09' && ol.maxNights === 14 && ol.minor === false, [ol.minDate, ol.maxNights, ol.minor]);
 expect('외박 목록 3건, 2박 계산', ol.rows.length === 3 && ol.rows.find((o) => o.id === ovId)?.nights === 2, ol.rows);
+
+// 외박 규칙 함수(가짜 학생, 샘플에 미성년 재학생이 없어서): 최대 14박, 미성년은 보호자 동의 표시
+{
+  const fakeDb = (birthday: string) =>
+    ({ studentDetail: (id: string) => (id === 'K1' || id === 'K2' ? { student: { birthday }, enrollments: [{ trId: 'T1', status: 'current', start: '2026-10-01', end: '2026-12-31' }] } : null) }) as unknown as Parameters<typeof newOvernight>[0]['db'];
+  const nctx = (birthday: string) => ({ db: fakeDb(birthday), stId: 'K1', now: () => now, newId: () => 'k' + ++n });
+  const body = { reason: '여행', destination: 'Manila', contact: '+63 917 555 0000' };
+  let o = newOvernight(nctx('1990-01-01'), [], { from: '2026-11-10', until: '2026-11-25', ...body });
+  expect('15박은 400 too_many_nights', !o.ok && o.error === 'too_many_nights', o);
+  o = newOvernight(nctx('1990-01-01'), [], { from: '2026-11-10', until: '2026-11-24', ...body });
+  expect('14박은 됨', o.ok && nightsBetween(o.value.from, o.value.until) === 14, o);
+  o = newOvernight(nctx('2010-03-01'), [], { from: '2026-11-10', until: '2026-11-12', ...body });
+  expect('미성년(16세)은 보호자 동의 표시 없으면 400', !o.ok && o.error === 'guardian_consent_required', o);
+  o = newOvernight(nctx('2010-03-01'), [], { from: '2026-11-10', until: '2026-11-12', ...body, guardianConsent: true });
+  expect('미성년 + 보호자 동의 표시 → 됨, 표시가 남음', o.ok && o.value.guardianConsent === true, o);
+  o = newOvernight(nctx('2008-11-10'), [], { from: '2026-11-10', until: '2026-11-12', ...body });
+  expect('출발일에 만 18세가 되면 성년(동의 표시 없이 됨)', o.ok && o.value.guardianConsent === false, o);
+  o = newOvernight(nctx('2008-11-11'), [], { from: '2026-11-10', until: '2026-11-12', ...body });
+  expect('출발일 다음 날 18세면 아직 미성년', !o.ok && o.error === 'guardian_consent_required', o);
+  expect('나이 계산', ageOn('2008-11-11', '2026-11-10') === 17 && ageOn('2008-11-10', '2026-11-10') === 18 && ageOn('', '2026-11-10') === null);
+}
 
 // 취소
 r = await call('POST', `/overnights/${ovId}/cancel`, {}, '30001');
@@ -112,9 +136,10 @@ expect('처리된 건 다시 처리 409', !d2.ok && d2.status === 409, d2);
 r = await call('POST', `/overnights/${ovId}/cancel`, {});
 expect('승인된 외박은 학생이 취소 못 함 409', err(r) === 'not_pending', r);
 const all = await overnights.listAll();
-expect('11/08 밤 외박 허용', overnightFor(all, stId, '2026-11-08')?.id === ovId);
 expect('11/09 밤 외박 허용', overnightFor(all, stId, '2026-11-09')?.id === ovId);
-expect('복귀일(11/10) 밤은 허용 아님', overnightFor(all, stId, '2026-11-10') === null);
+expect('11/10 밤 외박 허용', overnightFor(all, stId, '2026-11-10')?.id === ovId);
+expect('복귀일(11/11) 밤은 허용 아님', overnightFor(all, stId, '2026-11-11')?.id !== ovId);
+expect('출발 전날(11/08) 밤은 허용 아님', overnightFor(all, stId, '2026-11-08') === null);
 expect('대기 중 외박은 허용 아님', overnightFor(all, stId, '2026-11-12') === null);
 
 // 귀국 항공편 (지금 2026-11-08 10:00 필리핀, 연수 종료 11/13, 출발일은 종료 30일 뒤 12/13까지)
