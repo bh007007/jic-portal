@@ -94,6 +94,7 @@ button, input, select { font: inherit; }
 .tbl tfoot th, .tbl tfoot td { background: var(--head-bg); border-top: 0; }
 .tbl.big th { border-top-width: 2px; }
 .tbl tbody tr:hover td { background: #fafbfc; }
+.tbl tbody tr.selected td { background: #eef2f9; }
 .tbl .empty td { padding: 30px; text-align: center; color: var(--ink-3); }
 .kv { width: 100%; border-collapse: collapse; border-top: 1px solid var(--rule); }
 .kv th { width: 110px; padding: 9px 12px; background: var(--head-bg); border-bottom: 1px solid var(--line-2); text-align: left; font-weight: 500; white-space: nowrap; }
