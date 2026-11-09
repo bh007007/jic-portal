@@ -11,7 +11,8 @@ Claude가 대신할 수 없는 일(키·비밀번호 입력, 계정 만들기, �
 | --- | --- | --- |
 | M-1 | [#75](https://github.com/bh007007/jic-portal/pull/75) 머지 + 마이그레이션 `20261109163000_lms_course_timeline.sql` 적용(강사 포털 CEFR 성장선·코스 변경 표시, 원칙 L2) | "머지하고 적용해" |
 | M-2 | [#77](https://github.com/bh007007/jic-portal/pull/77) 머지(파트너 관리자 '추천 규칙'을 칸을 눌러 고치는 편집 표, 새 버전은 늘 초안, R-001). DB 변경 없음 | "머지해" |
-| M-3 | [#76](https://github.com/bh007007/jic-portal/pull/76) 머지(이 결정 모음 문서) | "머지해" |
+| M-3 | [#78](https://github.com/bh007007/jic-portal/pull/78) 머지(강사 포털 출석 체크에서 직원·매니저에게 결석 신청 사유 표시, 원칙 L4). DB 변경 없음 | "머지해" |
+| M-4 | [#76](https://github.com/bh007007/jic-portal/pull/76) 머지(이 결정 모음 문서) | "머지해" |
 
 **먼저 정하면 좋은 것**
 | # | 결정 | 지금 | Claude 제안 | 어디 |
