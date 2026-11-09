@@ -208,9 +208,24 @@ export interface IntranetCtx {
   /** 가드 계정 관리(서비스 키, 배포 직원 요청만). 없으면 '가드 계정' 화면은 안내만 */
   guardAdmin?: GuardAdmin;
   studentEmailDomain?: string;
-  /** 배포: 로그인한 계정 종류. 가드 공용 계정은 그 출입구(캠퍼스)로 고정한다. 로컬은 없음. */
-  session?: { role: 'staff' | 'guard'; campus?: string | null };
+  /**
+   * 배포: 로그인한 계정 종류. 가드 공용 계정은 그 출입구(캠퍼스)로 고정한다. 로컬은 없음(관리자로 본다).
+   * 직원은 역할(docs/roles.md, 11/9 승인): 관리자 또는 오피스(user_roles office), 오피스가 맡은 캠퍼스(null = 모든 캠퍼스).
+   */
+  session?: { role: 'staff' | 'guard'; campus?: string | null; staffRole?: StaffRole; campuses?: string[] | null };
 }
+
+// ── 직원 역할(docs/roles.md '인트라넷' 표): 패널티 점수표 쓰기·접근 기록은 관리자만, Student File 은 오피스가 맡은 캠퍼스만.
+export type StaffRole = 'admin' | 'office';
+/** 관리자만 쓰는 경로. DB 도 같은 범위만 허용한다(20261109070000_intranet_roles.sql). */
+export const ADMIN_ROUTES = new Set(['PUT /penalty-rules', 'GET /audit']);
+const staffRoleOf = (ctx: IntranetCtx): StaffRole => ctx.session?.staffRole ?? 'admin';
+/** Student File 을 볼 수 있는 캠퍼스(null = 모든 캠퍼스). 관리자는 모두, 오피스는 맡은 캠퍼스. */
+const campusScope = (ctx: IntranetCtx): string[] | null => (staffRoleOf(ctx) === 'office' ? (ctx.session?.campuses ?? null) : null);
+const inScope = (ctx: IntranetCtx, campus: string) => {
+  const scope = campusScope(ctx);
+  return !scope || scope.includes(campus);
+};
 
 type Result = { status: number; body: unknown };
 const ok = (body: unknown, status = 200): Result => ({ status, body });
@@ -981,8 +996,8 @@ async function studentFiles(ctx: IntranetCtx, q: URLSearchParams) {
   const outs = by(life.outings);
   const abs = by(life.absences);
   const ovs = by(life.overnights);
-  // 연장으로 재학 연수가 둘이면 학생당 한 줄만 남긴다.
-  const current = [...new Map(currentRows(ctx).map((r) => [r.stId, r] as const)).values()];
+  // 연장으로 재학 연수가 둘이면 학생당 한 줄만 남긴다. 오피스는 맡은 캠퍼스 학생만.
+  const current = [...new Map(currentRows(ctx).map((r) => [r.stId, r] as const)).values()].filter((r) => inScope(ctx, r.campus));
 
   const campus = q.get('campus') || '';
   const kw = (q.get('q') ?? '').trim().toLowerCase();
@@ -1027,10 +1042,11 @@ function currentRows(ctx: IntranetCtx) {
 async function studentFile(ctx: IntranetCtx, stId: string) {
   const d = ctx.db.studentDetail(stId);
   if (!d) return null;
+  const main = d.enrollments.find((e) => e.status === 'current') ?? d.enrollments.find((e) => e.status === 'upcoming') ?? d.enrollments[0] ?? null;
+  if (!inScope(ctx, main?.campus ?? '')) return 'forbidden' as const; // 오피스: 맡지 않은 캠퍼스 학생
   const life = await lifeData(ctx);
   const now = ctx.now().getTime();
   const kindName = new Map(life.rules.kinds.map((k) => [k.code, k.name]));
-  const main = d.enrollments.find((e) => e.status === 'current') ?? d.enrollments.find((e) => e.status === 'upcoming') ?? d.enrollments[0] ?? null;
   const penalties = life.penalties
     .filter((p) => p.stId === stId)
     .sort((a, b) => b.date.localeCompare(a.date))
@@ -1079,7 +1095,7 @@ async function studentFile(ctx: IntranetCtx, stId: string) {
     departure: main ? ((await ctx.stores.departures.get(`dep-${main.trId}`)) as Departure | null) : null,
   };
 }
-export type StudentFile = NonNullable<Awaited<ReturnType<typeof studentFile>>>;
+export type StudentFile = Exclude<NonNullable<Awaited<ReturnType<typeof studentFile>>>, 'forbidden'>;
 
 function accountsCtx(ctx: IntranetCtx): AccountsCtx {
   return {
@@ -1172,11 +1188,22 @@ export async function handleIntranetApi(ctx: IntranetCtx, method: string, pathna
     const p = pathname.replace(/^\/api/, '').replace(/\/+$/, '');
     const input = (body && typeof body === 'object' ? body : {}) as Record<string, unknown>;
     const route = `${method} ${p}`;
+    if (ADMIN_ROUTES.has(route) && staffRoleOf(ctx) !== 'admin') return fail(403, 'admin_only');
     switch (route) {
       case 'GET /meta': {
         const m = ctx.db.meta();
         // actor: 배포에서는 로그인한 직원 이름(화면 오른쪽 위), 로컬은 화면이 입력한 이름. role·campus: 배포의 계정 종류(가드는 출입구)
-        return ok({ source: m.source, refDate: m.refDate, actor: ctx.actor ?? null, role: ctx.session?.role ?? null, campus: ctx.session?.campus ?? null });
+        // staffRole·campuses: 직원 역할(관리자·오피스)과 Student File 캠퍼스 범위. 화면이 메뉴를 숨기는 데 쓴다(막는 것은 서버·DB)
+        const staff = ctx.session?.role !== 'guard';
+        return ok({
+          source: m.source,
+          refDate: m.refDate,
+          actor: ctx.actor ?? null,
+          role: ctx.session?.role ?? null,
+          campus: ctx.session?.campus ?? null,
+          staffRole: staff ? staffRoleOf(ctx) : null,
+          campuses: staff ? campusScope(ctx) : null,
+        });
       }
       case 'GET /notices':
         return ok(await listNotices(noticeCtx(ctx), q));
@@ -1274,6 +1301,7 @@ export async function handleIntranetApi(ctx: IntranetCtx, method: string, pathna
     const sf = route.match(/^GET \/students\/(\w+)$/);
     if (sf) {
       const file = await studentFile(ctx, sf[1]);
+      if (file === 'forbidden') return fail(403, 'campus_forbidden');
       return file ? ok(file) : fail(404, 'not_found');
     }
     return fail(404, 'not_found');

@@ -106,6 +106,17 @@ export async function api<T>(path: string, init?: { method?: string; body?: unkn
 }
 
 /** GET 조회. intervalMs 를 주면 그 간격으로 다시 읽는다(가드 태블릿). */
+/** /api/meta: 데이터 종류, 처리자, 계정 종류. 직원 역할(관리자·오피스)과 오피스의 캠퍼스(null = 모든 캠퍼스)는 메뉴를 숨기는 데만 쓴다(막는 것은 서버·DB). */
+export interface Meta {
+  source: 'sample' | 'extract';
+  refDate: string;
+  actor: string | null;
+  role: 'staff' | 'guard' | null;
+  campus: string | null;
+  staffRole: 'admin' | 'office' | null;
+  campuses: string[] | null;
+}
+
 export function useApi<T>(path: string, intervalMs?: number) {
   const [data, setData] = useState<T | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -215,6 +226,8 @@ const MESSAGES: Record<string, string> = {
   campus_not_allowed: '맡은 캠퍼스의 학생만 상담 기록을 쓸 수 있습니다. 관리자에게 담당 캠퍼스 등록을 요청하세요.',
   staff_only: '직원이나 가드 계정으로 등록되지 않았습니다.',
   guard_forbidden: '가드 계정으로는 가드 태블릿만 쓸 수 있습니다.',
+  admin_only: '관리자만 할 수 있습니다.',
+  campus_forbidden: '맡은 캠퍼스의 학생만 볼 수 있습니다.',
   unauthorized: '로그인이 필요합니다.',
 };
 export const errorText = (code: string) =>

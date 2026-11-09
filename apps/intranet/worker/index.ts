@@ -95,7 +95,7 @@ export async function handleApi(req: Request, env: Env, fetchFn: typeof fetch = 
         db,
         stores,
         actor: account.name,
-        session: { role: 'staff' },
+        session: { role: 'staff', staffRole: account.staffRole, campuses: account.campuses },
         // 학생 계정 관리는 서비스 키로(Auth Admin API). 계정 작업 경로에서만 쓰인다
         accounts: env.SUPABASE_SERVICE_ROLE_KEY ? supabaseAccountAdmin(conf.url, env.SUPABASE_SERVICE_ROLE_KEY, env.STUDENT_EMAIL_DOMAIN || DEFAULT_EMAIL_DOMAIN, fetchFn) : undefined,
         accountsUnavailable: env.SUPABASE_SERVICE_ROLE_KEY ? undefined : 'server_config',
