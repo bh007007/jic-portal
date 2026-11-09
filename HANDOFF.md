@@ -153,7 +153,8 @@ jic-portal/
      - 받는 계좌 열이 있는 `inv_invoice_deposit`은 앱에서 읽지 않는다. 남은 것: 인보이스 항목의 배포용 Supabase 테이블.
      - Check Balance·Payment Report 조사(11/9, 회계 세션):
        - 업체 Check Balance 재학생 295명 중 294명이 우리(연장 반영, #45)와 같고, 연장 횟수는 5,004건 모두 같다.
-       - 연장하지 않은 연수는 업체 cost = `sum_ic_price` 96%, payment = `sum_id_amount` 99%. 연장한 연수의 cost는 한 가지 식으로 설명되지 않아(94/224) 미입금에 연장분을 더하지 않는다.
+       - 업체 cost = 기본 인보이스 + 연장 인보이스의 `sum_ic_price` 합, payment = 그 인보이스들의 `sum_id_amount` 합(`inv_summary`로 2,052건 모두 일치). 연장 인보이스 행 = 연장현황의 `sum_price`·`sum_amount`(84/84).
+       - 연장한 연수의 `legacy_invoices.sum_ic_price`(업체 인보이스 목록 값)는 연수 전체가 아니라 가장 최근 인보이스 하나의 금액이다. 그래서 관리자 회계 화면의 인보이스 총액·미입금이 연장 연수에서 틀리다(연장 안 한 4,767건은 맞다). **회계 화면 수정은 레오님 결정 대기**(고치면 core 입력에 인보이스 요약 표가 늘고 배포용 legacy 표도 하나 더 필요하다).
        - Payment Report(`report_load`)는 `s_tr_state[]`를 하나 이상 넣어야 오류(500)가 나지 않는다.
        - 변경요청(`reqchg_load`)은 전체 8건(2024년)뿐이라 관리자 '변경 요청' 화면은 옮길 데이터가 사실상 없다. 새 시스템 기능으로 정한다.
    - 연장·변경 추출 완료(11/9, 회계 세션): 연장 기록(`extend_load`, `tt_*`) 412건, 신입·연장·복귀·변경 탭(`freshman_load_*`). 관리자 포털 '연장 현황'·'변경 이력'은 `feat/admin-extend`(PR 대기). 업체는 연장해도 `tr_finish_date`를 그대로 두므로 종료일은 마지막 연장 종료일로 계산한다(core `finishOf`, 재학 281 → 295명). 남은 일: 배포용 `legacy_extend`(tt_* 열만) 업로드와 `functions/api` 읽기, 강사 포털 `lms_students()` 종료일. 추출 스크립트는 `scripts/extract/portal-extract-extend.js`(복귀 탭은 빈 쪽이 나올 때까지 넘기고, 기숙사 변경은 한 달씩 받아야 한다).
