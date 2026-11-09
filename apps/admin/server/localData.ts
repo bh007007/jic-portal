@@ -6,7 +6,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import type { IncomingMessage, ServerResponse } from 'node:http';
 import type { Plugin } from 'vite';
-import { CHANGE_COLUMNS, createDb, EXTENSION_COLUMNS, handleApi, INVOICE_ITEM_COLUMNS, LOCAL_COST_COLUMNS, POINT_HISTORY_COLUMNS, type Raw } from './core';
+import { BALANCE_COLUMNS, CHANGE_COLUMNS, createDb, EXTENSION_COLUMNS, handleApi, INVOICE_ITEM_COLUMNS, INVOICE_SUMMARY_COLUMNS, LOCAL_COST_COLUMNS, POINT_HISTORY_COLUMNS, type Raw } from './core';
 
 const pick = (cols: string[]) => (r: Raw) => Object.fromEntries(cols.map((c) => [c, r[c] ?? null]));
 
@@ -41,6 +41,9 @@ export function loadDir(dataDir: string) {
     courseChanges: readNdjson(path.join(dataDir, 'change_course.ndjson')).map(pick(CHANGE_COLUMNS)),
     dormChanges: readNdjson(path.join(dataDir, 'change_dorm.ndjson')).map(pick(CHANGE_COLUMNS)),
     comebacks: readNdjson(path.join(dataDir, 'change_comeback.ndjson')).map(pick(CHANGE_COLUMNS)),
+    // 연수 청구 합계: 인보이스별 합계(inv_summary, 기본 + 연장)와 업체 Check Balance(balance).
+    invoiceSummary: readNdjson(path.join(dataDir, 'inv_summary.ndjson')).map(pick(INVOICE_SUMMARY_COLUMNS)),
+    balances: readNdjson(path.join(dataDir, 'balance.ndjson')).map(pick(BALANCE_COLUMNS)),
   });
 }
 

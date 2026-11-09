@@ -1,7 +1,7 @@
 import { Link } from 'react-router-dom';
 import { fmt, useApi, type InvoiceList, type InvoiceRow } from '../api';
 import { downloadList, type Column } from '../csv';
-import { DownloadButton, Loading, PageTitle, Pagination, PayText, SizeSelect, currencyText } from '../components/ui';
+import { DownloadButton, ExtensionNote, Loading, PageTitle, Pagination, PayText, SizeSelect, currencyText, extensionCsv } from '../components/ui';
 import { useSearchForm } from '../useSearchForm';
 
 const KEYS = ['campus', 'nation', 'pay', 'currency', 'agency', 'field', 'q'] as const;
@@ -27,6 +27,7 @@ const COLUMNS: Column<InvoiceRow>[] = [
   ['통화', (r) => r.currency],
   ['납부 상태', (r) => r.pay],
   ['인보이스 총액', (r) => r.total],
+  ['연장 인보이스', extensionCsv],
   ['입금 매칭 합계', (r) => r.paid],
   ['미입금', (r) => r.remaining],
   ['현지 청구', (r) => r.localBilled],
@@ -175,7 +176,10 @@ export default function Invoices() {
                     <td className="left">{r.agency}{r.branch ? ` (${r.branch})` : ''}</td>
                     <td>{r.currency || '-'}</td>
                     <td className="nowrap"><PayText pay={r.pay} /></td>
-                    <td className={'num' + (r.total ? '' : ' muted')}>{r.hasInvoice ? fmt(r.total) : '-'}</td>
+                    <td className={'num' + (r.total ? '' : ' muted')}>
+                      {r.hasInvoice ? fmt(r.total) : '-'}
+                      <ExtensionNote count={r.extensionInvoices} partial={r.totalPartial} />
+                    </td>
                     <td className={'num' + (r.paid ? '' : ' muted')}>{r.hasInvoice ? fmt(r.paid) : '-'}</td>
                     <td className={'num' + (r.remaining ? ' text-red' : ' muted')}>{r.hasInvoice ? fmt(r.remaining) : '-'}</td>
                     <td className={'num' + (r.pointIn ? '' : ' muted')}>{r.hasInvoice ? fmt(r.pointIn) : '-'}</td>

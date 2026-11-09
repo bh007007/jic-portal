@@ -33,6 +33,10 @@ export interface DataInput {
   courseChanges?: Raw[];
   dormChanges?: Raw[];
   comebacks?: Raw[];
+  /** 연수의 인보이스별 합계(inv_summary: 기본 인보이스 1줄 + 연장 인보이스 줄, portal-extract-invoice-items.js). */
+  invoiceSummary?: Raw[];
+  /** 업체 회계 > Check Balance(balance_load): 연수 청구 합계 cost·납부 payment·연장 수 extend_count(portal-extract-balance.js). */
+  balances?: Raw[];
 }
 
 /** 인보이스 항목 표에서 읽는 열(직원 메모 ic_memo 는 읽지 않는다). localData 가 이 열만 골라 넘긴다. */
@@ -43,6 +47,11 @@ export const LOCAL_COST_COLUMNS = ['_tr_id', 'tc_id', 'ec_type', 'tc_type_name',
 export const EXTENSION_COLUMNS = ['tr_id', 'tt_id', 'tt_start_date', 'tt_finish_date', 'tt_week', 'tt_memo', 'tt_insert_dt', 'sum_price', 'sum_amount', 'tr_currency'];
 /** 코스·기숙사 변경, 복귀 탭에서 읽는 열(업체 화면의 New Course / New Dorm 칸과 이전 값, 변경 요청 건수). */
 export const CHANGE_COLUMNS = ['tr_id', 'ic_id', 'prev_chg_course', 'chg_course', 'chg_course_date', 'prev_chg_dorm', 'chg_dorm', 'chg_dorm_date', 'rqp_cnt'];
+
+/** 인보이스별 합계(inv_summary)에서 읽는 열. tt_insert_dt 가 비면 기본 인보이스, 있으면 연장 인보이스(tt_id). */
+export const INVOICE_SUMMARY_COLUMNS = ['_tr_id', 'tt_id', 'tt_insert_dt', 'week', 'start_date', 'finish_date', 'tr_currency', 'sum_ic_price', 'sum_id_amount', 'sum_tc_price', 'sum_td_amount'];
+/** 업체 Check Balance 에서 읽는 열. */
+export const BALANCE_COLUMNS = ['tr_id', 'tr_currency', 'tr_deposit_state', 'extend_count', 'cost', 'payment'];
 
 /** 포인트 내역에서 화면에 쓰는 열. 원본 행에는 학생·에이전시 정보가 200여 열 붙어 있어 줄여서 싣는다. */
 export const POINT_HISTORY_COLUMNS = ['tr_id', 'type', 'dt', 'point', 'php', 'ec_name', 'nickname', 'memo', 'campus'];
@@ -221,17 +230,52 @@ export function createDb(input: DataInput) {
   const all = enrollments.map((raw) => ({ raw, row: toRow(raw) }));
   const byTr = new Map(all.map((x) => [x.row.trId, x]));
   const invoiceByTr = new Map(invoices.map((i) => [String(i.tr_id), i]));
-  /** 인보이스 금액(설명은 아래 '회계' 절). 인보이스 목록·미납 목록·학생 상세가 같이 쓴다. */
-  const invoiceAmounts = (inv: Raw | undefined, pay: string) => {
-    const total = num(inv?.sum_ic_price);
-    const paid = num(inv?.sum_id_amount);
+  // 연수 청구 합계(11/9 확인): 업체 Check Balance 의 청구(cost)·납부(payment) = 기본 인보이스 + 연장 인보이스의 sum_ic_price·sum_id_amount 합이다
+  // (inv_summary 로 2,052건 모두 일치, 연장 인보이스 = 연장현황 sum_price·sum_amount 84/84).
+  // 업체 인보이스 목록 값(invoices.sum_ic_price)은 '가장 최근 인보이스 하나'의 금액이라 연장한 연수에서는 연수 전체가 아니다(연장 없는 4,767건은 같다).
+  // 그래서 ① 인보이스별 합계(inv_summary)가 있으면 그 합, ② 없으면 업체 Check Balance 의 cost·payment, ③ 둘 다 없으면 invoices 값을 쓴다.
+  const summaryByTr = new Map<string, Raw[]>();
+  for (const s of input.invoiceSummary ?? []) {
+    const k = str(s._tr_id);
+    if (!k) continue;
+    const l = summaryByTr.get(k) ?? [];
+    l.push(s);
+    summaryByTr.set(k, l);
+  }
+  const isExtInvoice = (s: Raw) => !!str(s.tt_insert_dt);
+  for (const l of summaryByTr.values()) l.sort((a, b) => Number(isExtInvoice(a)) - Number(isExtInvoice(b)) || str(a.start_date).localeCompare(str(b.start_date)));
+  const balanceByTr = new Map((input.balances ?? []).map((b) => [str(b.tr_id), b]));
+  /** 인보이스별 줄(학생 상세). 기본 인보이스가 먼저, 연장은 시작일 순. */
+  const invoiceParts = (trId: string) => {
+    let n = 0;
+    return (summaryByTr.get(trId) ?? []).map((s) => ({
+      label: isExtInvoice(s) ? `연장 ${++n}` : '기본',
+      start: str(s.start_date).slice(0, 10),
+      end: str(s.finish_date).slice(0, 10),
+      weeks: num(s.week),
+      total: num(s.sum_ic_price),
+      paid: num(s.sum_id_amount),
+    }));
+  };
+  /** 인보이스 금액(설명은 아래 '회계' 절과 위 청구 합계). 인보이스 목록·미납 목록·학생 상세가 같이 쓴다. */
+  const invoiceAmounts = (trId: string, inv: Raw | undefined, pay: string) => {
+    const parts = summaryByTr.get(trId);
+    const bal = balanceByTr.get(trId);
+    const sum = (k: string) => (parts ?? []).reduce((s, p) => s + num(p[k]), 0);
+    const total = parts?.length ? sum('sum_ic_price') : bal ? num(bal.cost) : num(inv?.sum_ic_price);
+    const paid = parts?.length ? sum('sum_id_amount') : bal ? num(bal.payment) : num(inv?.sum_id_amount);
+    const extCount = parts?.length ? parts.filter(isExtInvoice).length : bal ? num(bal.extend_count) : extByTr.get(trId)?.length ?? 0;
     return {
       total,
       paid,
       // 미납·부분납만. 입금 매칭이 음수(환불)인 행이 있어 총액을 넘지 않게 한다.
       remaining: pay !== '완납' && total > paid ? Math.min(total, total - paid) : 0,
-      localBilled: num(inv?.sum_tc_price),
-      localPaid: num(inv?.sum_td_amount),
+      localBilled: parts?.length ? sum('sum_tc_price') : num(inv?.sum_tc_price),
+      localPaid: parts?.length ? sum('sum_td_amount') : num(inv?.sum_td_amount),
+      /** 연장 인보이스 수 */
+      extensionInvoices: extCount,
+      /** 연장이 있는데 인보이스별 합계·Check Balance 가 없어 최근 인보이스 하나의 금액만 아는 경우 */
+      totalPartial: !parts?.length && !bal && extCount > 0,
     };
   };
   const dormByTr = new Map(dorms.map((d) => [String(d.tr_id), d]));
@@ -474,7 +518,7 @@ export function createDb(input: DataInput) {
           pickPlace: String(raw.tr_pick_place || ''),
           roomClear: yes(raw.tr_room_clear_yn),
           pointClear: yes(raw.tr_point_clear_yn),
-          invoice: inv ? { currency: String(inv.tr_currency || ''), ...invoiceAmounts(inv, row.pay), pointIn: pIn, pointOut: pOut, pointBalance: pIn - pOut } : null,
+          invoice: inv ? { currency: String(inv.tr_currency || ''), ...invoiceAmounts(row.trId, inv, row.pay), parts: invoiceParts(row.trId), pointIn: pIn, pointOut: pOut, pointBalance: pIn - pOut } : null,
           dormStay: dorm ? { type: String(dorm.do_name || ''), campus: String(dorm.ca_name || campusName(dorm.ca_code)), from: String(dorm.ic_departure_date || ''), to: String(dorm.ic_return_date || ''), weeks: num(dorm.ic_week) } : null,
           memos: MEMO_FIELDS.filter(([k]) => raw[k]).map(([k, kind]) => ({ kind, text: String(raw[k]) })),
           points: pointItems(row.trId),
@@ -736,7 +780,7 @@ export function createDb(input: DataInput) {
       agId: agencyIdOf(raw),
       currency: str(inv?.tr_currency || raw.tr_currency),
       hasInvoice: !!inv,
-      ...invoiceAmounts(inv, row.pay),
+      ...invoiceAmounts(row.trId, inv, row.pay),
       pointIn,
       pointOut,
       pointBalance: pointIn - pointOut,
