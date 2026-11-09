@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { loadCampuses, loadContents, loadCourses, useLoad, type Campus, type Course, type CourseContent, type Level } from '../../data';
+import { courseLabel, loadCampuses, loadContents, loadCourses, useLoad, type Campus, type Course, type CourseContent, type Level } from '../../data';
 import { errText, supabase } from '../../supabase';
 import { Box, Loading, Msg } from '../../ui';
 
@@ -21,14 +21,15 @@ const COURSE_FIELDS: [keyof CourseContent, string, string?][] = [
   ['reason_growth', '추천 이유: Growth (성장 확인)', '리포트 샘플과 확인된 사례만'],
   ['reason_environment', '추천 이유: Environment (학습 환경)'],
 ];
-const LEVEL_FIELDS: [keyof Level, string][] = [['lessons', '하루 수업 수'], ['intensity', '수업 강도'], ['budget', '예산 수준'], ['includes', '포함 내용']];
+// 단계·옵션(조건표 v2.1 '단계 구분'): 가격은 견적 사이트 값이라 넣지 않는다(CL-020). '기본'은 단계 선택 화면에서 먼저 골라 둘 옵션(Challenger 옵션만, CL-007)
+const LEVEL_FIELDS: ['lessons' | 'intensity' | 'includes', string][] = [['lessons', '수업량'], ['intensity', '수업 강도'], ['includes', '포함 내용']];
 
 // 12.3 콘텐츠 관리: 캠퍼스 소개, 코스 상세, 추천 이유, 단계 비교. 확인된 내용만 넣는다(원칙 C8).
 export default function AdminContent() {
   const { data, error, reload } = useLoad(async () => ({ campuses: await loadCampuses(), courses: await loadCourses(), contents: await loadContents() }));
   const [target, setTarget] = useState('campus:premium');
   const [campus, setCampus] = useState<Partial<Campus>>({});
-  const [course, setCourse] = useState<{ levels: Level[]; status: Course['status'] }>({ levels: [], status: 'open' });
+  const [course, setCourse] = useState<{ levels: Level[]; status: Course['status']; display_name: string }>({ levels: [], status: 'open', display_name: '' });
   const [content, setContent] = useState<Partial<CourseContent>>({});
   const [msg, setMsg] = useState<{ kind: 'ok' | 'err'; text: string } | null>(null);
   const [kind, id] = target.split(':');
@@ -39,7 +40,7 @@ export default function AdminContent() {
     if (kind === 'campus') setCampus(data.campuses.find((c) => c.id === id) ?? {});
     else {
       const c = data.courses.find((x) => x.id === id);
-      setCourse({ levels: c?.levels ?? [], status: c?.status ?? 'open' });
+      setCourse({ levels: c?.levels ?? [], status: c?.status ?? 'open', display_name: c?.display_name ?? '' });
       setContent(data.contents.find((x) => x.course_id === id) ?? { course_id: id });
     }
   }, [target, data]); // eslint-disable-line react-hooks/exhaustive-deps
@@ -52,7 +53,7 @@ export default function AdminContent() {
       kind === 'campus'
         ? [await supabase.from('campuses').update({ ...Object.fromEntries(CAMPUS_FIELDS.map(([k]) => [k, campus[k] || null])), status: campus.status, updated_at: now }).eq('id', id)]
         : [
-            await supabase.from('courses').update({ levels: course.levels, status: course.status, updated_at: now }).eq('id', id),
+            await supabase.from('courses').update({ levels: course.levels, status: course.status, display_name: course.display_name.trim() || null, updated_at: now }).eq('id', id),
             await supabase.from('course_contents').upsert({ course_id: id, ...Object.fromEntries(COURSE_FIELDS.map(([k]) => [k, content[k] || null])), updated_at: now }),
           ];
     const failed = results.find((r) => r.error);
@@ -71,7 +72,7 @@ export default function AdminContent() {
               </button>
               {data.courses.filter((x) => x.campus_id === c.id).map((x) => (
                 <button key={x.id} type="button" className={'btn btn-sm' + (target === `course:${x.id}` ? ' btn-primary' : '')} style={{ justifyContent: 'flex-start', marginLeft: 14 }} onClick={() => setTarget(`course:${x.id}`)}>
-                  {x.name}
+                  {courseLabel(x)}
                 </button>
               ))}
             </div>
@@ -107,6 +108,11 @@ export default function AdminContent() {
                   <option value="preparing">준비 중</option>
                 </select>
               </label>
+              <label>
+                화면 표시 이름
+                <input className="input" value={course.display_name} maxLength={40} onChange={(e) => setCourse({ ...course, display_name: e.target.value })} placeholder={data.courses.find((c) => c.id === id)?.name} />
+                <span className="hint">상담·코스 소개 화면에 보이는 이름. 견적·DB 에는 코스명({data.courses.find((c) => c.id === id)?.name})을 그대로 쓴다(예: Senior → 1:1 맞춤 과정)</span>
+              </label>
               {COURSE_FIELDS.map(([k, label, hint]) => (
                 <label key={k}>
                   {label}
@@ -116,10 +122,10 @@ export default function AdminContent() {
               ))}
               {course.levels.length > 0 && (
                 <div className="field">
-                  단계 비교
+                  단계·옵션
                   <div className="scroll">
                     <table className="tbl center">
-                      <thead><tr><th>단계</th>{LEVEL_FIELDS.map(([, l]) => <th key={l}>{l}</th>)}</tr></thead>
+                      <thead><tr><th>단계</th>{LEVEL_FIELDS.map(([, l]) => <th key={l}>{l}</th>)}<th>기본</th></tr></thead>
                       <tbody>
                         {course.levels.map((lv, i) => (
                           <tr key={lv.name}>
@@ -135,6 +141,14 @@ export default function AdminContent() {
                                 />
                               </td>
                             ))}
+                            <td>
+                              <input
+                                type="checkbox"
+                                aria-label={`${lv.name} 기본`}
+                                checked={!!lv.default}
+                                onChange={(e) => setCourse({ ...course, levels: course.levels.map((x, j) => ({ ...x, default: j === i ? e.target.checked : e.target.checked ? false : x.default })) })}
+                              />
+                            </td>
                           </tr>
                         ))}
                       </tbody>

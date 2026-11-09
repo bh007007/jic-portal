@@ -1,5 +1,5 @@
 import { Link, useParams } from 'react-router-dom';
-import { loadCampuses, loadContents, loadCourses, useLoad } from '../data';
+import { courseLabel, loadCampuses, loadContents, loadCourses, useLoad } from '../data';
 import { Box, Loading, PageHead, Text } from '../ui';
 
 // 3.8 코스 상세 (공통 템플릿): 소개·추천 대상 → 단계 비교 → 수업 구성 → 결과물·사례 → 사진·영상 → 견적
@@ -16,7 +16,7 @@ export default function CoursePage() {
   return (
     <>
       <PageHead
-        title={course.name}
+        title={courseLabel(course)}
         side={<><Link to={`/campuses/${course.campus_id}`}>{campus?.name}</Link><Link className="btn" to="/quote">견적 바로가기</Link></>}
       />
       <Box>
@@ -30,23 +30,22 @@ export default function CoursePage() {
         </div>
       </Box>
       {course.levels.length > 0 && (
-        <Box title="단계 비교">
+        <Box title="단계·옵션">
           <div className="box-body scroll">
             <table className="tbl center">
-              <thead><tr><th>단계</th><th>하루 수업 수</th><th>수업 강도</th><th>예산 수준</th><th className="left">포함 내용</th></tr></thead>
+              <thead><tr><th>단계·옵션</th><th>수업량</th><th>수업 강도</th><th className="left">포함 내용</th></tr></thead>
               <tbody>
                 {course.levels.map((l) => (
                   <tr key={l.name}>
                     <td className="strong">{l.name}</td>
                     <td><Text value={l.lessons} /></td>
                     <td><Text value={l.intensity} /></td>
-                    <td><Text value={l.budget} /></td>
                     <td className="left"><Text value={l.includes} /></td>
                   </tr>
                 ))}
               </tbody>
             </table>
-            <p className="muted" style={{ fontSize: 12, margin: '8px 0 0' }}>실제 금액은 견적에서 확인합니다.</p>
+            <p className="muted" style={{ fontSize: 12, margin: '8px 0 0' }}>단계마다 수업 수와 가격이 다릅니다. 실제 금액은 견적에서 확인합니다.</p>
           </div>
         </Box>
       )}
