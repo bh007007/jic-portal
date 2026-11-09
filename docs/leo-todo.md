@@ -13,7 +13,7 @@ Claude가 대신할 수 없는 일(키·비밀번호 입력, 계정 만들기, �
 
 ## 지금 할 일
 
-- **Supabase 마이그레이션 적용**: `supabase/migrations/20261109090000_schedule_copy.sql`(수업 관리 PR, 수업 복사 함수 1개). "적용하기"라고 말씀하시면 Claude가 한다. 출석 확인(`20261109080000`)은 11/9 적용했다.
+- **Supabase 마이그레이션 적용**: `supabase/migrations/20261109100000_legacy_prices.sql`(가격표 배포용 표, #63 다음 PR). "적용하기"라고 말씀하시면 Claude가 한다. 수업 복사(`20261109090000`)와 출석 확인(`20261109080000`)은 11/9 적용했다.
 
 - **샘플 새 표 올림(11/9)**: 연장 29·코스 변경 13·기숙사 변경 11·복귀 8·Check Balance 239건(가짜 샘플)을 Claude가 Supabase에 직접 넣었다(secret 키 없이). 인보이스별 합계(inv_summary)는 넣지 않았다(없으면 Check Balance로 계산). 전부 다시 올리려면 `scripts/upload-sample.ps1`(secret 키는 창에만 입력).
 - **강사 시험 계정**: 강사 포털을 보려면 Supabase Auth에 강사 계정이 하나 있어야 한다. 직원 계정(레오님)은 역할 없이도 들어가진다. 강사 계정이 필요하면 `docs/teacher-portal.md` '강사 계정 만들기'를 따른다.

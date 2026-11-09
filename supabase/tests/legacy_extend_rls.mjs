@@ -27,11 +27,13 @@ await db.exec(mig('20261109030000_legacy_extend.sql'));
 await db.exec(mig('20261109030000_legacy_extend.sql')); // 두 번째 실행
 await db.exec(mig('20261109060000_legacy_invoice_summary.sql'));
 await db.exec(mig('20261109060000_legacy_invoice_summary.sql')); // 두 번째 실행
+await db.exec(mig('20261109100000_legacy_prices.sql'));
+await db.exec(mig('20261109100000_legacy_prices.sql')); // 두 번째 실행
 ok('마이그레이션 2회 실행', true);
 
 const STAFF = '00000000-0000-0000-0000-0000000000c1';
 const OTHER = '00000000-0000-0000-0000-0000000000a1';
-const TABLES = ['legacy_extensions', 'legacy_course_changes', 'legacy_dorm_changes', 'legacy_comebacks', 'legacy_invoice_summary', 'legacy_balances'];
+const TABLES = ['legacy_extensions', 'legacy_course_changes', 'legacy_dorm_changes', 'legacy_comebacks', 'legacy_invoice_summary', 'legacy_balances', 'legacy_prices'];
 await db.exec(`
   insert into auth.users (id) values ('${STAFF}'), ('${OTHER}');
   insert into public.staff_users (user_id, name) values ('${STAFF}', '직원');
@@ -64,6 +66,6 @@ for (const t of TABLES) {
   await as(null, () => denied(`익명: ${t} 거부`, `select * from public.${t}`, /permission denied/));
 }
 
-console.log(`연장·변경·청구 합계 표 권한 시험: 통과 ${pass}, 실패 ${fails.length}`);
+console.log(`연장·변경·청구 합계·가격표 표 권한 시험: 통과 ${pass}, 실패 ${fails.length}`);
 for (const f of fails) console.log('  실패:', f);
 process.exit(fails.length ? 1 : 0);
