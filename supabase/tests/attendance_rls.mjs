@@ -186,6 +186,44 @@ await as(null, async () => {
   await denied('익명: 수업 거부', `select * from public.class_sessions`, PERM);
 });
 
+// ── 출석 확인·사유별 합계(20261109070000_attendance_summary.sql): 사유 인정 / 그날 승인된 결석 신청 / 무단
+await db.exec(mig('20261109070000_attendance_summary.sql'));
+await db.exec(mig('20261109070000_attendance_summary.sql')); // 두 번째 실행
+const Y = plus(today, -1);
+const S4 = '10000000-0000-0000-0000-000000000004';
+await db.exec(`
+  insert into public.class_sessions (id, day, start_time, campus, subject, teacher_id) values ('${S4}', '${Y}', '09:00', 'Premium', 'Grammar', '${TA}');
+  insert into public.attendance (session_id, student_no, result) values ('${S4}', '1001', 'AB'), ('${S4}', '1002', 'AB'), ('${S4}', '1003', 'AB'), ('${S4}', '1004', 'TA');
+  update public.attendance set excused = true where session_id = '${S4}' and student_no = '1003';
+  update public.attendance set late_min = 15 where session_id = '${S4}' and student_no = '1004';
+  insert into public.absence_requests (student_no, enrollment_id, absence_date, kind, reason, status) values
+    ('1002', 'tr2', '${Y}', 'sick', '가짜 사유', 'approved'),
+    ('1001', 'tr1', '${Y}', 'personal', '가짜 사유', 'pending');
+`);
+await as(U.teacher2, async () => {
+  const rows = await q(`select * from public.lms_attendance_summary('${Y}', '${Y}')`);
+  const by = Object.fromEntries(rows.map((r) => [r.student_no, r]));
+  ok('합계: 학생 4명', rows.length === 4, JSON.stringify(rows.map((r) => r.student_no)));
+  ok('합계: 신청 없음(처리 전 신청만) = 무단', by['1001']?.unexcused === 1 && by['1001']?.req_personal === 0);
+  ok('합계: 승인된 병결 신청 = 신청 인정', by['1002']?.req_sick === 1 && by['1002']?.unexcused === 0);
+  ok('합계: 사유 인정', by['1003']?.excused === 1 && by['1003']?.unexcused === 0);
+  ok('합계: 지각·지각 분', by['1004']?.late === 1 && by['1004']?.late_min === 15 && by['1004']?.absent === 0);
+  ok('합계: 무단이 많은 순서', rows[0].student_no === '1001');
+  ok('합계: 캠퍼스 거르기', (await q(`select * from public.lms_attendance_summary('${Y}', '${Y}', 'MCO')`)).length === 0);
+  ok('합계: 기간 92일 넘으면 0', (await q(`select * from public.lms_attendance_summary('${plus(today, -200)}', '${today}')`)).length === 0);
+  const d = await q(`select * from public.lms_student_attendance('1002', '${Y}', '${Y}')`);
+  ok('학생별: 결석 신청 종류·상태', d.length === 1 && d[0].result === 'AB' && d[0].request_kind === 'sick' && d[0].request_status === 'approved' && d[0].subject === 'Grammar' && d[0].start_time === '09:00', JSON.stringify(d));
+  const d1 = await q(`select * from public.lms_student_attendance('1001', '${Y}', '${Y}')`);
+  ok('학생별: 처리 전 신청도 보임', d1[0]?.request_kind === 'personal' && d1[0]?.request_status === 'pending');
+  ok('학생별: 사유 글은 없음', !('reason' in (d1[0] ?? {})));
+});
+await as(U.student, async () => {
+  ok('학생: 합계 0', (await q(`select * from public.lms_attendance_summary('${Y}', '${Y}')`)).length === 0);
+  ok('학생: 남의 학생별 0', (await q(`select * from public.lms_student_attendance('1002', '${Y}', '${Y}')`)).length === 0);
+});
+await as(U.nobody, async () => ok('역할 없음: 합계 0', (await q(`select * from public.lms_attendance_summary('${Y}', '${Y}')`)).length === 0));
+await as(null, () => denied('익명: 합계 거부', `select * from public.lms_attendance_summary('${Y}', '${Y}')`, PERM));
+
 // ── 퇴직한 강사(강사 목록 active = false)는 자기 수업도 못 고친다
 await db.exec(`update public.staff set active = false where id = '${TA}'`);
 await as(U.teacher, async () => ok('퇴직 강사: 0행', (await affected(mark(S1, '1002', `result = 'AB'`))) === 0));

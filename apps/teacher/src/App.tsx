@@ -16,6 +16,7 @@ import Staff from './pages/Staff';
 import Absences from './pages/Absences';
 import Attendance from './pages/Attendance';
 import AttendanceSession from './pages/AttendanceSession';
+import AttendanceSummary from './pages/AttendanceSummary';
 import Notices from './pages/Notices';
 import NotReady from './pages/NotReady';
 
@@ -56,6 +57,7 @@ export default function App() {
         <Route path="/staff" element={me.isManager ? <Staff /> : <Navigate to="/more" replace />} />
         <Route path="/absences" element={<Absences />} />
         <Route path="/attendance" element={<Attendance />} />
+        <Route path="/attendance/summary" element={<AttendanceSummary />} />
         <Route path="/attendance/:id" element={<AttendanceSession />} />
         <Route path="/notices" element={<Notices />} />
         <Route path="*" element={<NotReady title={t('noPage')} />} />

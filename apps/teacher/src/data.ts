@@ -198,3 +198,37 @@ export interface LmsNotice {
   created_at: string;
 }
 export const loadNotices = () => must<LmsNotice[]>(supabase.rpc('lms_notices'));
+
+// 출석 확인·사유별 합계(20261109070000_attendance_summary.sql). 결석 사유: 사유 인정 / 그날 승인된 결석 신청(종류) / 무단.
+export interface AttendanceSummaryRow {
+  student_no: string;
+  campus: string;
+  sessions: number;
+  present: number;
+  absent: number;
+  late: number;
+  unchecked: number;
+  late_min: number;
+  excused: number;
+  req_sick: number;
+  req_official: number;
+  req_personal: number;
+  unexcused: number;
+}
+export interface StudentAttendanceRow {
+  day: string;
+  start_time: string; // HH:MM
+  campus: string;
+  subject: string;
+  teacher_name: string;
+  room: string;
+  result: AttResult | null;
+  late_min: number | null;
+  excused: boolean;
+  request_kind: LmsAbsence['kind'] | null;
+  request_status: 'pending' | 'approved' | 'rejected' | null;
+}
+export const loadAttendanceSummary = (from: string, to: string, campus = '') =>
+  must<AttendanceSummaryRow[]>(supabase.rpc('lms_attendance_summary', { p_from: from, p_to: to, p_campus: campus }));
+export const loadStudentAttendance = (studentNo: string, from: string, to: string) =>
+  must<StudentAttendanceRow[]>(supabase.rpc('lms_student_attendance', { p_student_no: studentNo, p_from: from, p_to: to }));
