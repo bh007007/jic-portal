@@ -6,6 +6,7 @@ import { CURRENCIES, t } from '../i18n';
 import { supabase } from '../supabase';
 import { Box, Loading, Msg, OutLink, PageHead, Text } from '../ui';
 import { answerLabel, estimateLevel, isScoreModel, recommend, type Answers } from './engine';
+import { quoteParams, quoteUrl } from './quoteLink';
 import StudyPlan from './StudyPlan';
 
 const STEPS = ['질문', '추천 결과', '추천 이유', '단계 선택', '견적', '학습계획서'];
@@ -52,6 +53,14 @@ export default function Consult() {
   const weeksLabel = (w?: string) => (w ? answerLabel(set, 'weeks', w) : '-');
   // 견적에 넣을 코스·단계: 단계 이름에 코스명이 이미 있으면(TEP 8, Senior 4) 겹치지 않게
   const quoteCourse = course ? (pickedLevel && levels.length ? (pickedLevel.startsWith(course.name) ? pickedLevel : `${course.name} ${pickedLevel}`) : course.name) : '';
+  // 견적 사이트에 넘길 값(docs/quote-prefill.md): 캠퍼스·코스(견적 프로그램 이름)·희망 기간·에이전시. 학생 정보는 넘기지 않는다(P3).
+  const quoteQuery = quoteParams({
+    campusId: course?.campus_id,
+    courseId: course?.id,
+    level: pickedLevel,
+    weeks: answers.weeks,
+    agency: member ? [member.agency_name, member.branch].filter(Boolean).join(' ') : null,
+  });
   const levelAnswer = (qid: string) =>
     lc && qid === lc.question && unknownLevel ? `잘 모름 → 추정 ${estimated ? answerLabel(set, qid, estimated) : '(확인 중)'}` : answerLabel(set, qid, answers[qid]);
 
@@ -320,12 +329,12 @@ export default function Consult() {
                   </tbody>
                 </table>
                 <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
-                  <OutLink href={settings.quote_kr}>견적 사이트 KR</OutLink>
-                  <OutLink href={settings.quote_jp}>JP</OutLink>
-                  <OutLink href={settings.quote_usd}>USD</OutLink>
-                  <OutLink href={settings.quote_usd_new}>USD-New</OutLink>
+                  <OutLink href={quoteUrl(settings.quote_kr, quoteQuery)}>견적 사이트 KR</OutLink>
+                  <OutLink href={quoteUrl(settings.quote_jp, quoteQuery)}>JP</OutLink>
+                  <OutLink href={quoteUrl(settings.quote_usd, quoteQuery)}>USD</OutLink>
+                  <OutLink href={quoteUrl(settings.quote_usd_new, quoteQuery)}>USD-New</OutLink>
                 </div>
-                <p className="hint" style={{ margin: 0 }}>견적 사이트에 값을 미리 채우는 주소 형식은 결정 대기입니다. 지금은 위 값을 직접 넣어 견적을 받으세요.</p>
+                <p className="hint" style={{ margin: 0 }}>견적 사이트를 열 때 캠퍼스·코스·희망 기간을 함께 넘깁니다. 채워지지 않은 값(시작일, 기숙사, 챌린저 ESL·IELTS의 수업 강도)은 위 값을 보고 직접 고르세요.</p>
                 <div className="form-grid">
                   <label>
                     통화
