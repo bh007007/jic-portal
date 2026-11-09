@@ -212,16 +212,37 @@ export interface IntranetCtx {
    * 배포: 로그인한 계정 종류. 가드 공용 계정은 그 출입구(캠퍼스)로 고정한다. 로컬은 없음(관리자로 본다).
    * 직원은 역할(docs/roles.md, 11/9 승인): 관리자 또는 오피스(user_roles office), 오피스가 맡은 캠퍼스(null = 모든 캠퍼스).
    */
-  session?: { role: 'staff' | 'guard'; campus?: string | null; staffRole?: StaffRole; campuses?: string[] | null };
+  /** manager: 강사 포털 매니저(user_roles manager, 직원 아님). campuses 는 매니저 역할의 캠퍼스(null = 모든 캠퍼스) */
+  session?: { role: 'staff' | 'guard' | 'manager'; campus?: string | null; staffRole?: StaffRole; campuses?: string[] | null };
 }
 
-// ── 직원 역할(docs/roles.md '인트라넷' 표): 패널티 점수표 쓰기·접근 기록은 관리자만, Student File 은 오피스가 맡은 캠퍼스만.
+// ── 역할(docs/roles.md '인트라넷' 표): 패널티 점수표 쓰기·접근 기록은 관리자만, Student File 은 오피스·매니저가 맡은 캠퍼스만.
+// 매니저는 아래 경로만 쓴다(홈·외출·통금·가드 리포트·점수표 읽기, 패널티 승인은 무단결석만, 결석 신청 처리, 학교 여행 읽기, 내부 공지, Student File).
 export type StaffRole = 'admin' | 'office';
+type Access = StaffRole | 'manager' | 'guard';
 /** 관리자만 쓰는 경로. DB 도 같은 범위만 허용한다(20261109070000_intranet_roles.sql). */
 export const ADMIN_ROUTES = new Set(['PUT /penalty-rules', 'GET /audit']);
-const staffRoleOf = (ctx: IntranetCtx): StaffRole => ctx.session?.staffRole ?? 'admin';
-/** Student File 을 볼 수 있는 캠퍼스(null = 모든 캠퍼스). 관리자는 모두, 오피스는 맡은 캠퍼스. */
-const campusScope = (ctx: IntranetCtx): string[] | null => (staffRoleOf(ctx) === 'office' ? (ctx.session?.campuses ?? null) : null);
+/** 매니저가 쓰는 경로(20261109100000_intranet_manager.sql 이 DB 에서 같은 범위를 연다) */
+const MANAGER_ROUTES = [
+  /^GET \/(meta|summary|notices|outings|reports|penalties|penalty-rules|students|requests\/absences|trips)$/,
+  /^POST \/(notices|penalties\/decide|requests\/absences\/decide)$/,
+  /^GET \/(notices|students|trips)\/[\w-]+$/,
+  /^PUT \/notices\/[\w-]+$/,
+];
+/** 매니저가 승인·반려할 수 있는 위반 종류(수업 관련, '정할 것' 4) */
+export const MANAGER_PENALTY_KINDS = new Set(['absence']);
+const accessOf = (ctx: IntranetCtx): Access =>
+  ctx.session?.role === 'guard' ? 'guard' : ctx.session?.role === 'manager' ? 'manager' : (ctx.session?.staffRole ?? 'admin');
+const staffRoleOf = (ctx: IntranetCtx): StaffRole | null => {
+  const a = accessOf(ctx);
+  return a === 'admin' || a === 'office' ? a : null;
+};
+const canDecidePenalty = (ctx: IntranetCtx, p: Penalty) => p.status === 'pending' && (accessOf(ctx) !== 'manager' || MANAGER_PENALTY_KINDS.has(p.kind));
+/** Student File 을 볼 수 있는 캠퍼스(null = 모든 캠퍼스). 관리자는 모두, 오피스·매니저는 맡은 캠퍼스. */
+const campusScope = (ctx: IntranetCtx): string[] | null => {
+  const a = accessOf(ctx);
+  return a === 'office' || a === 'manager' ? (ctx.session?.campuses ?? null) : null;
+};
 const inScope = (ctx: IntranetCtx, campus: string) => {
   const scope = campusScope(ctx);
   return !scope || scope.includes(campus);
@@ -433,7 +454,7 @@ async function syncAbsencePenalties(ctx: IntranetCtx) {
 
 /** 직원 화면을 열 때 자동 후보(통금 위반, 무단결석)를 정리한다. */
 async function syncPenalties(ctx: IntranetCtx) {
-  await syncCurfewPenalties(ctx);
+  if (accessOf(ctx) !== 'manager') await syncCurfewPenalties(ctx); // 매니저는 무단결석 후보만 정리한다(DB 도 그 범위만 허용)
   await syncAbsencePenalties(ctx);
 }
 
@@ -723,6 +744,7 @@ async function listPenalties(ctx: IntranetCtx, q: URLSearchParams) {
         score,
         total: p.status === 'pending' ? (score === null ? null : after) : total,
         stage: !stagesSet ? null : before === next ? next : `${before} → ${next}`,
+        canDecide: canDecidePenalty(ctx, p), // 매니저는 무단결석만 승인·반려
       };
     })
     .filter((r) => r.status === tab)
@@ -752,6 +774,7 @@ async function decidePenalties(ctx: IntranetCtx, input: Record<string, unknown>)
 
   const rules = await loadRules(ctx);
   const all = await ctx.stores.penalties.all();
+  if (accessOf(ctx) === 'manager' && ids.some((id) => all.some((p) => p.id === id && !MANAGER_PENALTY_KINDS.has(p.kind)))) return fail(403, 'manager_absence_only');
   const nowIso = ctx.now().toISOString();
   let done = 0;
   const skipped: string[] = [];
@@ -1188,13 +1211,14 @@ export async function handleIntranetApi(ctx: IntranetCtx, method: string, pathna
     const p = pathname.replace(/^\/api/, '').replace(/\/+$/, '');
     const input = (body && typeof body === 'object' ? body : {}) as Record<string, unknown>;
     const route = `${method} ${p}`;
-    if (ADMIN_ROUTES.has(route) && staffRoleOf(ctx) !== 'admin') return fail(403, 'admin_only');
+    if (accessOf(ctx) === 'manager' && !MANAGER_ROUTES.some((r) => r.test(route))) return fail(403, 'manager_forbidden');
+    if (ADMIN_ROUTES.has(route) && accessOf(ctx) !== 'admin') return fail(403, 'admin_only');
     switch (route) {
       case 'GET /meta': {
         const m = ctx.db.meta();
         // actor: 배포에서는 로그인한 직원 이름(화면 오른쪽 위), 로컬은 화면이 입력한 이름. role·campus: 배포의 계정 종류(가드는 출입구)
         // staffRole·campuses: 직원 역할(관리자·오피스)과 Student File 캠퍼스 범위. 화면이 메뉴를 숨기는 데 쓴다(막는 것은 서버·DB)
-        const staff = ctx.session?.role !== 'guard';
+        const staff = accessOf(ctx) !== 'guard';
         return ok({
           source: m.source,
           refDate: m.refDate,
@@ -1293,7 +1317,14 @@ export async function handleIntranetApi(ctx: IntranetCtx, method: string, pathna
     if (rd && method === 'POST') return await decideDepartureRide(ctx, rd[1], input);
     const nt = p.match(/^\/notices\/([\w-]+)$/);
     if (nt && method === 'GET') return await openNotice(noticeCtx(ctx), nt[1]);
-    if (nt && method === 'PUT') return await updateNotice(noticeCtx(ctx), nt[1], input);
+    if (nt && method === 'PUT') {
+      // 매니저는 자기 글만 고친다(DB 도 author_id 로 막는다)
+      if (accessOf(ctx) === 'manager') {
+        const n = (await ctx.stores.notices.all()).find((x) => x.id === nt[1]);
+        if (n && n.author !== ctx.actor) return fail(403, 'own_notice_only');
+      }
+      return await updateNotice(noticeCtx(ctx), nt[1], input);
+    }
     const cn = p.match(/^\/counseling\/([\w-]+)(\/followup)?$/);
     if (cn && method === 'GET' && !cn[2]) return await openCounseling(counselingCtx(ctx), cn[1]);
     if (cn && method === 'PUT' && !cn[2]) return await updateCounseling(counselingCtx(ctx), cn[1], input);

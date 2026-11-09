@@ -32,11 +32,11 @@ import GuardAccounts from './pages/GuardAccounts';
 import StudentFiles from './pages/StudentFiles';
 
 /**
- * 배포: 로그인한 계정 종류로 나눈다. 직원은 메뉴 화면, 출입구 가드 공용 계정은 가드 태블릿만,
- * 둘 다 아니면 안내만 한다.
+ * 배포: 로그인한 계정 종류로 나눈다. 직원은 메뉴 화면, 강사 포털 매니저는 일부 메뉴만, 출입구 가드 공용 계정은 가드 태블릿만,
+ * 모두 아니면 안내만 한다.
  */
 function AccountGate({ children }: { children: ReactNode }) {
-  const { data, error } = useApi<{ role: 'staff' | 'guard' | null }>('/api/meta');
+  const { data, error } = useApi<{ role: 'staff' | 'guard' | 'manager' | null }>('/api/meta');
   if (!data && !error) return <div className="login" />;
   if (data?.role === 'guard') return <Guard />;
   if (error !== 'staff_only') return <>{children}</>;
@@ -47,7 +47,7 @@ function AccountGate({ children }: { children: ReactNode }) {
           <span className="brand-mark">JIC</span>
           <span className="brand-name">인트라넷</span>
         </div>
-        <p className="login-error">직원이나 가드 계정으로 등록되지 않았습니다. 관리자에게 등록을 요청하세요.</p>
+        <p className="login-error">직원·매니저·가드 계정으로 등록되지 않았습니다. 관리자에게 등록을 요청하세요.</p>
         <button type="button" className="btn" onClick={() => void signOut()}>
           로그아웃
         </button>

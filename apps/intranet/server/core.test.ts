@@ -769,5 +769,44 @@ expect('오피스: 맡은 캠퍼스 학생 상세 200', (await asOffice('GET', `
 expect('오피스(모든 캠퍼스): 다른 캠퍼스도 200', (await asRole('office', null)('GET', `/students/${otherSt.stId}`)).status === 200);
 expect('오피스: 패널티 승인·외출 목록은 그대로', (await asOffice('GET', '/penalties')).status === 200 && (await asOffice('GET', '/outings')).status === 200);
 
+// ── 매니저(강사 포털 manager, docs/roles.md): 인트라넷 일부만, 패널티 승인은 무단결석만, Student File 은 맡은 캠퍼스
+const mctx = { ...ctx, actor: '매니저 M', session: { role: 'manager' as const, campuses: [campus] } };
+const mcall = (m: string, p: string, body: any = null, q = ''): Promise<any> => handleIntranetApi(mctx, m, p, new URLSearchParams(q), body);
+const mm = (await mcall('GET', '/meta')).body;
+expect('매니저 meta: 역할·캠퍼스, 직원 역할 없음', mm.role === 'manager' && mm.staffRole === null && mm.campuses.join() === campus, mm);
+for (const [m, p] of [['GET', '/summary'], ['GET', '/outings'], ['GET', '/reports'], ['GET', '/penalties'], ['GET', '/penalty-rules'], ['GET', '/requests/absences'], ['GET', '/trips'], ['GET', '/notices'], ['GET', '/students']]) {
+  const x = await mcall(m, p);
+  expect(`매니저 열림: ${m} ${p}`, x.status === 200, [x.status, x.body]);
+}
+for (const [m, p, b] of [['GET', '/requests/overnights'], ['GET', '/requests/life'], ['GET', '/departures'], ['GET', '/counseling'], ['GET', '/settings'], ['PUT', '/settings', { curfew: '23:00', guards: [] }], ['PUT', '/penalty-rules', rulesNow], ['GET', '/audit'], ['GET', '/accounts'], ['GET', '/guard-accounts'], ['POST', '/trips', {}], ['POST', '/guard/scan', {}], ['POST', '/requests/overnights/decide', {}]] as [string, string, any?][]) {
+  const x = await mcall(m, p, b ?? null);
+  expect(`매니저 막힘: ${m} ${p}`, x.status === 403 && x.body.error === 'manager_forbidden', [x.status, x.body]);
+}
+const mpl = (await mcall('GET', '/penalties')).body.rows as any[];
+const mAbs = mpl.find((x) => x.kind === 'absence' && x.status === 'pending');
+const mOther = mpl.find((x) => x.kind !== 'absence' && x.status === 'pending');
+expect('매니저: 무단결석만 승인 가능 표시', !!mAbs && mAbs.canDecide === true && !!mOther && mOther.canDecide === false, mpl.map((x) => [x.kind, x.status, x.canDecide]));
+expect('직원은 모든 대기 건 승인 가능 표시', ((await call('GET', '/penalties')).body as any).rows.every((x: any) => x.canDecide));
+rr = await mcall('POST', '/penalties/decide', { ids: [mOther.id], approve: true });
+expect('매니저: 무단결석 아닌 건 승인 403', rr.status === 403 && rr.body.error === 'manager_absence_only', rr);
+rr = await mcall('POST', '/penalties/decide', { ids: [mAbs.id, mOther.id], approve: false });
+expect('매니저: 섞어 보내도 403(아무것도 바꾸지 않음)', rr.status === 403 && (await mcall('GET', '/penalties')).body.rows.some((x: any) => x.id === mAbs.id && x.status === 'pending'));
+rr = await mcall('POST', '/penalties/decide', { ids: [mAbs.id], approve: true });
+expect('매니저: 무단결석 승인', rr.status === 200 && rr.body.done === 1, rr);
+const msf = (await mcall('GET', '/students')).body;
+expect('매니저: Student File 은 맡은 캠퍼스만', msf.rows.length > 0 && msf.rows.every((x: any) => x.campus === campus), msf.campuses);
+rr = await mcall('GET', `/students/${otherSt.stId}`);
+expect('매니저: 다른 캠퍼스 학생 상세 403', rr.status === 403 && rr.body.error === 'campus_forbidden', rr.status);
+rr = await mcall('POST', '/notices', { title: '매니저 공지', content: '수업 시간 변경' });
+const mNotice = rr.body.id;
+expect('매니저: 공지 쓰기', rr.status === 201 && !!mNotice, rr);
+expect('매니저: 자기 공지 고치기', (await mcall('PUT', `/notices/${mNotice}`, { title: '매니저 공지(수정)', content: '수업 시간 변경' })).status === 200);
+const others = (await stores.notices.all()).find((n) => n.author !== '매니저 M')!;
+rr = await mcall('PUT', `/notices/${others.id}`, { title: 'x', content: 'y' });
+expect('매니저: 남의 공지 고치기 403', rr.status === 403 && rr.body.error === 'own_notice_only', rr);
+await stores.absences.put(req('abM', A, { date: '2026-11-26', periods: [], kind: 'sick' }) as Absence);
+rr = await mcall('POST', '/requests/absences/decide', { ids: ['abM'], approve: true, comment: '진단서 확인' });
+expect('매니저: 결석 신청 승인', rr.status === 200 && (await stores.absences.get('abM'))?.status === 'approved', rr);
+
 console.log(fails ? `\n${fails}건 실패` : '\n모두 통과');
 if (fails) process.exit(1);

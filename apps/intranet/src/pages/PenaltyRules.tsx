@@ -1,12 +1,11 @@
 import { useEffect, useState, type FormEvent } from 'react';
-import { api, ApiError, errorText, useApi, type Meta, type PenaltyRules as Rules } from '../api';
+import { api, ApiError, errorText, useAccess, useApi, type PenaltyRules as Rules } from '../api';
 import { Loading, PageTitle } from '../components/ui';
 
 /** 위반별 점수·승인 권한, 경고 단계 기준. 비워 두면 '미정'으로 보인다(HANDOFF 7: 아직 정하지 않음). */
 export default function PenaltyRules() {
   const { data, error, reload } = useApi<Rules>('/api/penalty-rules');
-  const { data: meta } = useApi<Meta>('/api/meta');
-  const readOnly = meta?.staffRole === 'office'; // 오피스는 읽기만(docs/roles.md). 서버·DB 도 막는다
+  const readOnly = useAccess().readOnlyRules; // 오피스·매니저는 읽기만(docs/roles.md). 서버·DB 도 막는다
   const [form, setForm] = useState<Rules | null>(null);
   const [message, setMessage] = useState<{ ok: boolean; text: string } | null>(null);
   const [busy, setBusy] = useState(false);

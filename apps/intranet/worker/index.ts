@@ -1,8 +1,9 @@
 /**
  * 인트라넷 배포 서버 (Cloudflare Workers: 정적 파일 + /api). 설정은 apps/intranet/wrangler.jsonc, 설명은 docs/intranet.md '배포'.
- * - 로그인: Supabase 계정 토큰(Authorization). 직원(staff_users)은 모든 직원 화면, 출입구 가드 공용 계정(guard_accounts)은
- *   가드 태블릿 API 만 쓴다. 가드의 캠퍼스는 계정의 출입구로 고정한다(RLS 도 같은 범위만 허용).
- * - 학생·연수: 직원은 직원 토큰으로, 가드는 서비스 키로 업체 원본을 읽는다(server/supabaseData.ts).
+ * - 로그인: Supabase 계정 토큰(Authorization). 직원(staff_users)은 직원 화면(관리자·오피스, docs/roles.md), 출입구 가드 공용 계정(guard_accounts)은
+ *   가드 태블릿 API 만 쓴다. 가드의 캠퍼스는 계정의 출입구로 고정한다(RLS 도 같은 범위만 허용). 강사 포털 매니저(user_roles manager)는
+ *   인트라넷 일부(core 의 MANAGER_ROUTES)만 쓴다.
+ * - 학생·연수: 직원은 직원 토큰으로, 가드·매니저는 서비스 키로 업체 원본을 읽는다(server/supabaseData.ts).
  * - 저장소: Supabase 테이블을 로그인한 계정의 토큰으로(server/supabaseStores.ts, RLS·DB 함수).
  *   가드 화면의 승인된 외박과 출입 QR 서명 비밀 값(keycard_secret)만 서비스 키로 읽는다(사유 없이).
  * - 계산은 로컬 개발 서버와 같은 core(server/core.ts).
@@ -79,6 +80,27 @@ export async function handleApi(req: Request, env: Env, fetchFn: typeof fetch = 
           actor: account.label,
           keycardSecret: keycard.fn,
           session: { role: 'guard', campus: account.campus },
+        },
+        req.method,
+        url.pathname,
+        url.searchParams,
+        body,
+      );
+      return json(status, out);
+    }
+
+    if (account.role === 'manager') {
+      // 강사 포털 매니저: 업체 원본을 못 읽어서 가드처럼 서비스 키로 읽고, core 가 허용한 경로(MANAGER_ROUTES)로만 내보낸다.
+      // 외박은 승인된 것만 사유 없이(통금 판정·Student File). 쓰기는 매니저 토큰이라 RLS(20261109100000_intranet_manager.sql)가 막는다
+      if (!env.SUPABASE_SERVICE_ROLE_KEY) return json(500, { error: 'server_config' });
+      const db = await caches.c.db(serviceHeaders(env.SUPABASE_SERVICE_ROLE_KEY));
+      const { status, body: out } = await handleIntranetApi(
+        {
+          ...base,
+          db,
+          stores: { ...stores, overnights: approvedOvernights(conf.url, env.SUPABASE_SERVICE_ROLE_KEY, fetchFn) },
+          actor: account.name,
+          session: { role: 'manager', campuses: account.campuses },
         },
         req.method,
         url.pathname,

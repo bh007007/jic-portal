@@ -1,6 +1,6 @@
 # JIC 포털 개발 인수인계 (썸머 매니저용)
 
-업체 포털(jicportal.com)을 대체할 JIC 자체 통합 시스템이다. 구조는 **관리자(인트라넷 포함)·학생·에이전시·강사(LMS) 4개 포털과 Supabase DB 하나**다(`docs/architecture.md`, 11/8). 첫 화면 https://jic-portal-916.pages.dev 에서 포털을 고른다(관리자 포털은 `/admin/`). 지금은 **관리자 화면(대시보드·학생·기숙사·회계·에이전시·기초관리·통계)** 이 동작하고, 나머지 화면은 디자인까지 되어 있다. 이 폴더를 Claude Code로 열면 Claude가 `CLAUDE.md`를 읽고 맥락을 이어받는다.
+업체 포털(jicportal.com)을 대체할 JIC 자체 통합 시스템이다. 구조는 **관리자(인트라넷 포함)·학생·에이전시·강사(LMS) 4개 포털과 Supabase DB 하나**다(`docs/architecture.md`, 11/8). 첫 화면 https://jic-portal-916.pages.dev 에서 포털을 고른다(관리자 포털은 `/admin/`). 4개 포털 모두 배포되어 있다(11/9): 관리자 포털(대시보드·학생·기숙사·회계·에이전시·기초관리·통계·사용자·권한)과 인트라넷 `/intranet/`, 강사 포털 `/teacher/`(성적·출석·수업 관리), 학생 포털·에이전시 포털(Workers). 데이터는 아직 가짜 샘플뿐이다(4장 표, 실제 데이터는 보안 점검 뒤). 이 폴더를 Claude Code로 열면 Claude가 `CLAUDE.md`를 읽고 맥락을 이어받는다.
 
 ## 0. 함께 일하기 (주소·계정·공동 개발)
 
@@ -111,13 +111,14 @@ jic-portal/
 | 화면 디자인 9개 | 완료 (`docs/design/`) |
 | 관리자 앱: 대시보드, 재학생·입학 예정·졸업생 목록, 학생 상세, 입학 배치별 명단(픽업·항공편, 배치 구성: 국적·성별·코스·기숙사·나이·에이전시), 기숙사 타입별 현황, 에이전시 목록·상세, 담당자 계정, 목록 엑셀(CSV) 다운로드 | 동작 (로컬 데이터 / 배포 주소는 샘플) |
 | 관리자 앱 회계: 인보이스(연수별 통화·납부 상태·입금 매칭 합계·포인트), 입금 매칭(미납·부분납 연수 입학일 순, 입금 원장), 포인트(재학생 잔액, 졸업 예정자 정산) | 동작 (11/8). 입금 원장은 `legacy_deposits`로 배포에도 연결(샘플 재업로드 후 보임) |
-| 관리자 앱 기초관리: 코스·기숙사(캠퍼스별 학생 수), 캠퍼스·배치(배치 일정·캠퍼스별 인원) | 동작 (11/8), 읽기 전용 |
+| 관리자 앱 기초관리: 코스·기숙사(캠퍼스별 학생 수), 캠퍼스·배치(배치 일정·캠퍼스별 인원), 휴일(학생수 달력·강사 포털에 표시), 사용자·권한(계정 목록, 직원 관리자·오피스와 강사 포털 역할 주기, 관리자만) | 동작 (11/8~11/9). 학생 상세에 강사 포털 성적·출석(4주) |
 | 관리자 앱 통계·마케팅: 학생수 달력(날짜별 재원·입국·귀국, 명단), 등록 현황(배치·월 × 인보이스 국적, 첫 인보이스·입국일 기준, 에이전시 검색, 작년 비교), 중단·연기 현황(+ 입학 전 캔슬), 체크 메모(에이전시·마케팅·아카데미 메모) | 동작 (11/8). 학생수·등록 합계를 업체 포털 같은 화면과 대조해 일치 확인(`docs/legacy-portal.md`) |
 | 파트너 포털 1차 (`apps/partner`, 사이트맵 0.1~12.7): 공개 대시보드, 로그인·등록 신청·승인, 상담 6단계·학습계획서, 캠퍼스·코스, 견적·공실·등록 링크, 자료실, 공지·프로모션, 방문 신청, JIC 관리자 화면 | 배포 (11/8): https://jic-partner.bh007007.workers.dev (Cloudflare Workers, main 자동 배포). Supabase 테이블·권한 반영·시험 완료. `docs/partner-portal.md` |
 | 학생 앱 1차 (`apps/student`): 홈, 결석·외박(여행 정보 포함) 신청·취소, 생활 요청(시설 수리·ID 카드 재발급 등), 학교 여행·액티비티 참가 신청, 출입 QR(1분마다 바뀌는 카드키 QR), 귀국 항공편 등록, 신청 내역(담당자 메모), 내 정보 (6개 언어: 한국어·영어, 일본어·중국어 간체·번체·베트남어는 원어민 검토 전 초안) | 동작 (11/8, 로컬 전용 `npm run student`). 배포는 학생 계정·정규화 스키마 이후. `docs/student-app.md` |
 | 인트라넷 1차 (`apps/intranet`): 가드 태블릿 외출·귀가(카드키 QR 카메라 읽기)·사건 리포트, 외출·귀가 기록·통금 확인, 패널티 승인(통금 위반·무단결석 자동 후보, 무단결석은 강사 포털 출석의 마감된 날 결석)·점수표, 결석·외박 신청 처리(외박 승인 밤은 통금 제외), 생활 요청 처리, 학교 여행 등록·참가 명단(1박 이상은 참가자 외박 허용), 학생 계정(만들기·비밀번호 초기화), 가드 계정(출입구 공용 계정 만들기·비밀번호·지우기), Student File(학생별 생활 기록), 상담 기록(확인할 일)·접근 기록, 내부 공지(읽음 확인), 귀국 일정·공항 이동 배차, 통금·근무자 설정 | 동작 (11/8, 로컬 전용 `npm run intranet`). 점수·경고 기준은 미정이라 비워 둠. `docs/intranet.md` |
-| 강사 포털(LMS) 1차 (`apps/teacher`, 휴대폰 기준): 학생(재학·30일 안 입학, 화면용 열만), 학생 상세·성적 입력(시험 종류별 영역·범위 확인, CEFR 추정 레벨), 수업 자료실 목차(드라이브 링크), 시험 종류·CEFR 대응, 강사 목록 | 동작 (11/8, 로컬 시험 서버로 확인). 배포는 `/teacher`(PR 머지 뒤). 출석은 업체 시간표 연결 뒤. `docs/teacher-portal.md` |
-| Supabase 테이블(`legacy_*` 원본 jsonb)·직원 로그인·Cloudflare Pages 배포 | 동작 중 (11/7): https://jic-portal-916.pages.dev , Supabase `jic-portal`(Singapore). 샘플 데이터만. 계정은 레오에게 요청. 설정 순서 `docs/setup-cloud.md` |
+| 강사 포털(LMS) (`apps/teacher`, 휴대폰 기준, 한국어·영어): 학생(재학·30일 안 입학, 마지막 연장 종료일 기준), 학생 상세(성적·출석 4주·결석 신청), 성적 입력(한 명씩·여러 명·수업으로 고르기, 범위·단위 확인, CEFR 추정 레벨), 수업 자료실 목차, **출석 체크**(수업 × 학생, 출석·결석·지각, 모두 출석, 결석 신청 표시, 매니저 마감·사유 인정), **출석 확인 · 사유별 합계·무단결석 목록**, **수업 관리**(수업 추가·지우기·하루 복사, 학생 넣기·빼기)·교실, 결석 신청 보기, 내부 공지, 시험 종류·CEFR 대응, 강사 목록 | 배포 (11/9): https://jic-portal-916.pages.dev/teacher/ . 운영 마이그레이션 적용. 역할별 쓰기(성적·자료 = 강사·매니저·관리자, 출석 = 그 수업 강사·체커·매니저, 수업 = 스케줄러·매니저). `docs/teacher-portal.md` |
+| 역할별 권한표 1단계 (`docs/roles.md`, 11/9 승인) | 동작 (11/9): 직원 관리자·오피스 구분(`is_admin()`, 역할 없는 직원은 관리자), 사용자·권한은 관리자만, 강사 포털 쓰기 역할별, 인트라넷 점수표·접근 기록은 관리자만·오피스 Student File 캠퍼스(인트라넷 담당 #59) |
+| Supabase 테이블(`legacy_*` 원본 jsonb, 연장·변경·Check Balance 포함)·직원 로그인·Cloudflare Pages 배포 | 동작 중 (11/7~): https://jic-portal-916.pages.dev , Supabase `jic-portal`(Singapore). 샘플 데이터만. 마이그레이션은 `20261109090000`까지 운영 적용(11/9). 계정은 레오에게 요청. 설정 순서 `docs/setup-cloud.md` |
 
 ## 5. 실제 데이터로 실행하기 (권한 있는 사람만)
 
@@ -159,10 +160,11 @@ jic-portal/
        - 변경요청(`reqchg_load`)은 전체 8건(2024년)뿐이라 관리자 '변경 요청' 화면은 옮길 데이터가 사실상 없다. 새 시스템 기능으로 정한다.
    - 연장·변경 추출 완료(11/9, 회계 세션): 연장 기록(`extend_load`, `tt_*`) 412건, 신입·연장·복귀·변경 탭(`freshman_load_*`). 관리자 포털 '연장 현황'·'변경 이력'은 #45로 머지했다. 업체는 연장해도 `tr_finish_date`를 그대로 두므로 종료일은 마지막 연장 종료일로 계산한다(core `finishOf`, 재학 281 → 295명, 업체 Check Balance 재학생과 294/295 일치). 배포용 연장·변경 표·`functions/api` 읽기(#46)와 강사 포털 `lms_students()` 종료일(#44)도 끝났다(운영 적용 11/9). 추출 스크립트는 `scripts/extract/portal-extract-extend.js`(복귀 탭 쪽 넘기기와 기숙사 변경 기간 나누기는 스크립트가 처리한다).
 3. **Supabase 정규화 스키마**: 지금은 `legacy_*`(원본 레코드 jsonb)를 통째로 읽어 계산한다. `docs/plan.md`의 데이터 모델 기준으로 학생·연수(enrollments)·배치·기숙사 테이블을 만들고 `functions/api`를 조건 조회로 바꾼다. 실제 데이터를 올리기 전에 필수. 테스트 DB에는 샘플 데이터만.
-4. **역할별 권한**: 지금은 `staff_users`에 있으면 전부 읽기. 역할 9개(학생, 선생님, 체커, 스케줄러, 매니저, 오피스, 관리자, 가드, 에이전시 지점)로 RLS 세분화.
+4. **역할별 권한**: 1단계 끝(11/9, `docs/roles.md` '적용 상태'). 남은 것: 스케줄러·매니저에게 관리자 포털 일부(대시보드·학생·통계·기초관리 읽기) 열기 — `legacy_*` RLS 를 넓히지 않고 Pages 서비스 키로 읽는 길을 쓰려면 Pages Secret `SUPABASE_SERVICE_ROLE_KEY`가 먼저 필요하다(`docs/leo-todo.md` 2번). 매니저의 인트라넷 일부·결석 승인은 인트라넷 담당.
 5. **파트너 포털 마무리**: Cloudflare Workers(`jic-partner`, `apps/partner/wrangler.jsonc`) 배포, 추천 조건표 승인본 입력(관리자 > 추천 규칙), 캠퍼스·코스 내용과 링크 입력(관리자 > 콘텐츠·설정). 결정 대기(견적 미리 채우기, 방문 신청 담당, Agent Hub 관계)는 `docs/partner-portal.md`. 다음은 2차 My Students(지점 계정 `legacy_am_id` ↔ 연수 `tr_am_id`).
-6. **학생 앱**: 1차(결석 신청) 완료. 테이블·권한 마이그레이션 완료(11/8, 시험 `supabase/tests/student_intranet_rls.mjs`). 학생 계정 생성 스크립트(`npm run student:accounts`)와 Supabase 로그인·첫 비밀번호 변경 화면 완료(11/8). 배포 서버(Workers `jic-student`, 신청 저장소를 Supabase로) 코드 완료(11/8). 남은 것은 Cloudflare `jic-student` 설정(`docs/student-app.md` '배포'), 시간표(LMS 연결 후), `docs/student-app.md`의 확인 필요 사항. **인트라넷**: 1차 완료(신청 처리·외박 허용·가드 리포트 포함). 배포는 JIC 포털 Pages 프로젝트 안 `/intranet`(11/8 결정, 한 번 로그인, 서버 `functions/intranet`). 남은 것은 Pages Secret `SUPABASE_SERVICE_ROLE_KEY`(가드 태블릿·학생/가드 계정 관리용)·가드 계정(인트라넷 '가드 계정' 화면)·`staff_campuses` 입력(`docs/intranet.md` '배포'), 통금 직후 크론, `docs/intranet.md`의 확인 필요 사항. 무단결석 후보는 11/9 강사 포털 출석과 연결했다(`20261109050000_absence_penalties.sql`). 역할별 권한(`docs/roles.md`)은 관리자·오피스 구분까지(11/9, 점수표 쓰기·접근 기록 관리자만, 오피스 Student File 맡은 캠퍼스만), 매니저에게 여는 것은 다음 단계.
+6. **학생 앱**: 1차(결석 신청) 완료. 테이블·권한 마이그레이션 완료(11/8, 시험 `supabase/tests/student_intranet_rls.mjs`). 학생 계정 생성 스크립트(`npm run student:accounts`)와 Supabase 로그인·첫 비밀번호 변경 화면 완료(11/8). 배포 서버(Workers `jic-student`, 신청 저장소를 Supabase로) 코드 완료(11/8). 남은 것은 Cloudflare `jic-student` 설정(`docs/student-app.md` '배포'), 시간표(LMS 연결 후), `docs/student-app.md`의 확인 필요 사항. **인트라넷**: 1차 완료(신청 처리·외박 허용·가드 리포트 포함). 배포는 JIC 포털 Pages 프로젝트 안 `/intranet`(11/8 결정, 한 번 로그인, 서버 `functions/intranet`). 남은 것은 Pages Secret `SUPABASE_SERVICE_ROLE_KEY`(가드 태블릿·학생/가드 계정 관리용)·가드 계정(인트라넷 '가드 계정' 화면)·`staff_campuses` 입력(`docs/intranet.md` '배포'), 통금 직후 크론, `docs/intranet.md`의 확인 필요 사항. 무단결석 후보는 11/9 강사 포털 출석과 연결했다(`20261109050000_absence_penalties.sql`). 역할별 권한(`docs/roles.md`)은 관리자·오피스 구분까지(11/9, 점수표 쓰기·접근 기록 관리자만, 오피스 Student File 맡은 캠퍼스만), 매니저(인트라넷 일부, 무단결석 승인, 결석 신청 처리)도 11/9에 열었다. 매니저 상담 기록은 다음 단계.
 7. **서버 작업**: 정기 동기화·알림 같은 예약 작업은 Cloudflare Workers(크론). 화면 배포와 빌드 확인은 이미 연결됨.
+8. **업체 출석 옮기기**(보안 점검 뒤): `scripts/extract/portal-extract-attendance.js`로 받은 교사·교실·출석·마감을 `staff`·`classrooms`·`class_sessions`·`attendance`·`attendance_closings`로 옮기는 스크립트. 그 전까지는 강사 포털 '수업 관리'에서 수업을 만들고 출석을 받는다. 반복 규칙 시간표(요일·기간, `class_enrollments`)는 업체 교시표(`schedule_detail`) 구조를 본 뒤.
 
 ## 7. 결정이 필요한 것
 
