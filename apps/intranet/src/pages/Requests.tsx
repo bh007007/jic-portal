@@ -243,6 +243,7 @@ export default function Requests({ kind }: { kind: Kind }) {
                         )}
                         {r.reason}
                         {r.contact && <div className="muted small">연락처 {r.contact}</div>}
+                        {r.minor && <div className={'small' + (r.guardianConsent ? '' : ' text-red')}>미성년 · {r.guardianConsent ? '보호자 동의 받음(학생 표시)' : '보호자 동의 표시 없음'}</div>}
                         {r.companionInfo.length > 0 && (
                           <div className="small">
                             동행{' '}

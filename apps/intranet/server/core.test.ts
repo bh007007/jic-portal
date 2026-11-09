@@ -197,6 +197,7 @@ pl = (await call('GET', '/penalties')).body as any;
 expect('대기 중 외박은 통금 판정에 영향 없음: C 후보 그대로', pl.rows.some((x: any) => x.stId === C && x.date === '2026-11-05'), pl.rows.map((x: any) => x.stId));
 let rq = (await call('GET', '/requests/overnights')).body as any;
 expect('외박 대기 1건, 1박', rq.counts.pending === 1 && rq.overnights[0].nights === 1 && rq.overnights[0].name, rq);
+expect('외박 행: 성년이면 미성년 표시 없음, 보호자 동의 표시 false(11/10 결정 I11)', rq.overnights[0].minor === false && rq.overnights[0].guardianConsent === false, rq.overnights[0]);
 r = await call('POST', '/requests/overnights/decide', { ids: ['ov1'], approve: true, comment: '보호자 확인' });
 expect('외박 승인 done 1', (r.body as any).done === 1, r.body);
 pl = (await call('GET', '/penalties')).body as any;
