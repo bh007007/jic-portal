@@ -81,6 +81,10 @@ export interface StudentDetail {
       remaining: number;
       localBilled: number;
       localPaid: number;
+      extensionInvoices: number;
+      totalPartial: boolean;
+      /** 인보이스별(기본 + 연장) 청구·입금. 인보이스별 합계가 없는 환경에서는 빈 배열 */
+      parts: { label: string; start: string; end: string; weeks: number; total: number; paid: number }[];
       pointIn: number;
       pointOut: number;
       pointBalance: number;
@@ -311,14 +315,18 @@ export interface InvoiceRow extends EnrollmentRow {
   agId: string;
   currency: string;
   hasInvoice: boolean;
-  /** 해외 인보이스 총액(sum_ic_price) */
+  /** 해외 인보이스 청구 합계(기본 + 연장 인보이스 sum_ic_price) */
   total: number;
-  /** 입금 매칭 합계(sum_id_amount) */
+  /** 입금 매칭 합계(기본 + 연장 인보이스 sum_id_amount) */
   paid: number;
   /** 총액 − 입금 매칭, 미납·부분납만(완납은 0) */
   remaining: number;
   localBilled: number;
   localPaid: number;
+  /** 연장 인보이스 수 */
+  extensionInvoices: number;
+  /** 연장이 있는데 최근 인보이스 하나의 금액만 아는 경우(인보이스별 합계·Check Balance 없음) */
+  totalPartial: boolean;
   pointIn: number;
   pointOut: number;
   pointBalance: number;

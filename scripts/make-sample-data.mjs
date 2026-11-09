@@ -456,6 +456,31 @@ write('change_course', changeCourse);
 write('change_dorm', changeDorm);
 write('change_comeback', changeComeback);
 
+// ── 인보이스별 합계(inv_summary)와 업체 Check Balance(balance). 무작위 없이 위 값에서 만든다(seed10 자리, 기존 값은 그대로).
+// 실제 추출본처럼 기본 인보이스 1줄(tt_insert_dt 비어 있음) + 연장 인보이스 줄(연장현황의 sum_price·sum_amount),
+// Check Balance 의 cost·payment = 그 합이다.
+const invSummary = [], balance = [];
+const DEPOSIT_STATE = { 미납: 'NONE', 부분납: 'PART', 완납: 'FULL' };
+for (const inv of invoices) {
+  const e = enrollmentByTr.get(inv.tr_id);
+  const exts = extend.filter((t) => t.tr_id === inv.tr_id);
+  invSummary.push({
+    _tr_id: inv.tr_id, tt_id: '0', tt_tr_id: inv.tr_id, tt_insert_dt: null, week: e.tr_total_week, start_date: e.tr_start_date, finish_date: e.tr_finish_date,
+    tr_currency: inv.tr_currency, sum_ic_price: inv.sum_ic_price, sum_id_amount: inv.sum_id_amount, sum_tc_price: inv.sum_tc_price, sum_td_amount: inv.sum_td_amount,
+  });
+  for (const t of exts) {
+    invSummary.push({
+      _tr_id: inv.tr_id, tt_id: t.tt_id, tt_tr_id: inv.tr_id, tt_insert_dt: t.tt_insert_dt, week: t.tt_week, start_date: t.tt_start_date, finish_date: t.tt_finish_date,
+      tr_currency: inv.tr_currency, sum_ic_price: t.sum_price, sum_id_amount: t.sum_amount, sum_tc_price: '0', sum_td_amount: '0',
+    });
+  }
+  const cost = Number(inv.sum_ic_price) + exts.reduce((s, t) => s + Number(t.sum_price), 0);
+  const payment = Number(inv.sum_id_amount) + exts.reduce((s, t) => s + Number(t.sum_amount), 0);
+  balance.push({ tr_id: inv.tr_id, tr_currency: inv.tr_currency, tr_deposit_state: DEPOSIT_STATE[e.tr_deposit_name] ?? 'NONE', tr_state: e.tr_state, extend_count: String(exts.length), cost: String(cost), payment: String(payment) });
+}
+write('inv_summary', invSummary);
+write('balance', balance);
+
 write('point_history', pointHistory);
 write('students', students);
 write('enrollments', enrollments);

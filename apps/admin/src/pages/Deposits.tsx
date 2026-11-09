@@ -1,7 +1,7 @@
 import { Link } from 'react-router-dom';
 import { fmt, useApi, weekday, type DepositList, type DepositRow, type InvoiceRow, type UnpaidList } from '../api';
 import { downloadList, type Column } from '../csv';
-import { DownloadButton, Loading, PageTitle, Pagination, PayText, SizeSelect, STATUS_LABEL, currencyText } from '../components/ui';
+import { DownloadButton, ExtensionNote, Loading, PageTitle, Pagination, PayText, SizeSelect, STATUS_LABEL, currencyText, extensionCsv } from '../components/ui';
 import { useSearchForm } from '../useSearchForm';
 
 const KEYS = ['scope', 'campus', 'currency', 'pay', 'agency', 'sort', 'from', 'to', 'match', 'confirm', 'field', 'q'] as const;
@@ -27,6 +27,7 @@ const UNPAID_COLUMNS: Column<InvoiceRow>[] = [
   ['통화', (r) => r.currency],
   ['납부 상태', (r) => r.pay],
   ['인보이스 총액', (r) => r.total],
+  ['연장 인보이스', extensionCsv],
   ['입금 매칭 합계', (r) => r.paid],
   ['미입금', (r) => r.remaining],
   ['납부 기한', (r) => r.dueDate],
@@ -221,7 +222,10 @@ function Unpaid({ sf }: { sf: SearchForm }) {
                     <td className="nowrap">{STATUS_LABEL[r.status] ?? r.status}</td>
                     <td>{r.currency || '-'}</td>
                     <td className="nowrap"><PayText pay={r.pay} /></td>
-                    <td className={'num' + (r.total ? '' : ' muted')}>{r.hasInvoice ? fmt(r.total) : '-'}</td>
+                    <td className={'num' + (r.total ? '' : ' muted')}>
+                      {r.hasInvoice ? fmt(r.total) : '-'}
+                      <ExtensionNote count={r.extensionInvoices} partial={r.totalPartial} />
+                    </td>
                     <td className={'num' + (r.paid ? '' : ' muted')}>{r.hasInvoice ? fmt(r.paid) : '-'}</td>
                     <td className={'num' + (r.remaining ? ' text-red' : ' muted')}>{r.hasInvoice ? fmt(r.remaining) : '-'}</td>
                     <td className={'nowrap' + (r.dueDate && r.dueDate < data.refDate ? ' text-red' : '')}>{r.dueDate || '-'}</td>

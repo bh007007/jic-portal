@@ -90,3 +90,12 @@ const PAY_CLASS: Record<string, string> = { 완납: 'text-blue', 부분납: 'tex
 export function PayText({ pay }: { pay: string }) {
   return <span className={PAY_CLASS[pay] ?? ''}>{pay || '-'}</span>;
 }
+
+/** 인보이스 총액 칸 아래 줄: 연장 인보이스를 더했는지, 최근 인보이스 하나만 아는지. */
+export function ExtensionNote({ count, partial }: { count: number; partial: boolean }) {
+  if (!count) return null;
+  return <div className="muted" style={{ fontSize: 11 }}>{partial ? '최근 인보이스만' : `연장 ${count} 포함`}</div>;
+}
+
+/** 엑셀 열: 인보이스 총액에 연장이 들어갔는지 */
+export const extensionCsv = (r: { extensionInvoices: number; totalPartial: boolean }) => (r.extensionInvoices ? (r.totalPartial ? `연장 ${r.extensionInvoices}(최근 인보이스만)` : `연장 ${r.extensionInvoices} 포함`) : '');

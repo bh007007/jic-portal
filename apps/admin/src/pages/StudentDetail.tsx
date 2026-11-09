@@ -137,11 +137,23 @@ export default function StudentDetail() {
                 </thead>
                 <tbody>
                   <tr>
-                    <td rowSpan={3}>학비</td>
-                    <td className="left">인보이스 총액</td>
+                    <td rowSpan={3 + (latest.invoice.parts.length > 1 ? latest.invoice.parts.length : 0)}>학비</td>
+                    <td className="left">
+                      인보이스 총액
+                      {latest.invoice.extensionInvoices > 0 && (
+                        <span className="muted" style={{ fontSize: 12 }}> ({latest.invoice.totalPartial ? '최근 인보이스만' : `기본 + 연장 ${latest.invoice.extensionInvoices}`})</span>
+                      )}
+                    </td>
                     <td className="num">{latest.invoice.currency} {fmt(latest.invoice.total)}</td>
-                    <td rowSpan={3}><PayText pay={latest.pay} /></td>
+                    <td rowSpan={3 + (latest.invoice.parts.length > 1 ? latest.invoice.parts.length : 0)}><PayText pay={latest.pay} /></td>
                   </tr>
+                  {latest.invoice.parts.length > 1 &&
+                    latest.invoice.parts.map((p) => (
+                      <tr key={p.label} style={{ fontSize: 12 }}>
+                        <td className="left muted" style={{ paddingLeft: 20 }}>{p.label} {p.start && `${p.start} ~ ${p.end}`}</td>
+                        <td className="num muted">{fmt(p.total)}{p.paid ? ` (입금 ${fmt(p.paid)})` : ''}</td>
+                      </tr>
+                    ))}
                   <tr><td className="left">입금 매칭 합계</td><td className="num strong">{latest.invoice.currency} {fmt(latest.invoice.paid)}</td></tr>
                   <tr>
                     <td className="left">미입금</td>
@@ -162,7 +174,15 @@ export default function StudentDetail() {
         </div>
       )}
 
-      {latest?.invoiceDetail && latest.invoice && <InvoiceItems d={latest.invoiceDetail} currency={latest.invoice.currency} total={latest.invoice.total} />}
+      {latest?.invoiceDetail && latest.invoice && (
+        // 항목은 기본 인보이스의 것이라, 연장이 있으면 기본 인보이스 금액과 맞춰 본다.
+        <InvoiceItems
+          d={latest.invoiceDetail}
+          currency={latest.invoice.currency}
+          total={latest.invoice.parts.length > 1 ? latest.invoice.parts[0].total : latest.invoice.total}
+          totalLabel={latest.invoice.parts.length > 1 ? '기본 인보이스' : '인보이스 총액'}
+        />
+      )}
 
       {data.enrollments.filter((e) => e.points.length > 0).map((en) => (
         <Panel key={en.trId} title={<>포인트 내역 <small>({en.batch} · {en.start} ~ {en.end} · {en.points.length}건 · 1P = 1페소)</small></>}>
@@ -218,7 +238,7 @@ export default function StudentDetail() {
 }
 
 /** 최신 연수의 인보이스 항목: 학생 가격 − 에이전시 공제, 현지 비용(PHP). 업체 '현지 인보이스 납부 > 편집' 화면과 같은 값. */
-function InvoiceItems({ d, currency, total }: { d: InvoiceDetail; currency: string; total: number }) {
+function InvoiceItems({ d, currency, total, totalLabel }: { d: InvoiceDetail; currency: string; total: number; totalLabel: string }) {
   const period = (i: InvoiceItem) => [i.weeks ? `${i.weeks}주` : '', i.from && i.to ? `${i.from} ~ ${i.to}` : ''].filter(Boolean).join(' · ');
   const money = (c: string, n: number) => `${c || currency} ${fmt(n)}`;
   const net = d.itemsTotal - d.agencyTotal;
@@ -252,7 +272,7 @@ function InvoiceItems({ d, currency, total }: { d: InvoiceDetail; currency: stri
           <tr><th colSpan={4} className="left">학생 가격 합계</th><td className="num">{money('', d.itemsTotal)}</td></tr>
           {d.agency.length > 0 && <tr><th colSpan={4} className="left">에이전시 공제 합계</th><td className="num">− {money('', d.agencyTotal)}</td></tr>}
           <tr><th colSpan={4} className="left">학생 가격 − 공제</th><td className="num strong">{money('', net)}</td></tr>
-          <tr><th colSpan={4} className="left">인보이스 총액</th><td className={'num' + (net === total ? ' muted' : ' strong')}>{money('', total)}</td></tr>
+          <tr><th colSpan={4} className="left">{totalLabel}</th><td className={'num' + (net === total ? ' muted' : ' strong')}>{money('', total)}</td></tr>
         </tfoot>
       </table>
 

@@ -111,7 +111,15 @@ powershell -ExecutionPolicy Bypass -File scripts/split-export.ps1
 powershell -ExecutionPolicy Bypass -File scripts/split-export.ps1 -Source data/raw/jic_portal_invoice_items_2026-11-08.json.gz -DictPath docs/data-dictionary-invoice.md
 ```
 
-학생 상세의 '인보이스 항목'(학생 가격 − 에이전시 공제, 현지 비용)이 이 표를 읽는다. 표가 없으면 그 칸은 나오지 않는다.
+학생 상세의 '인보이스 항목'(학생 가격 − 에이전시 공제, 현지 비용)이 이 표를 읽는다. 표가 없으면 그 칸은 나오지 않는다. 같은 추출의 `inv_summary`(연수마다 기본 인보이스 1줄 + 연장 인보이스 줄)로 회계 화면의 청구 합계를 계산한다.
+
+### 업체 Check Balance 추출 (청구·납부 합계)
+
+[scripts/extract/portal-extract-balance.js](scripts/extract/portal-extract-balance.js)를 같은 방법으로 실행한다(1분 안쪽, 읽기 전용). 연수마다 업체가 계산한 청구 합계(`cost`, 기본 + 연장 인보이스)·납부(`payment`)·연장 수만 받는다. 업체 인보이스 목록의 `sum_ic_price`는 최근 인보이스 하나의 금액이라, 인보이스별 합계가 없는 연수(출국일 ±1년 밖)의 청구 합계를 이 값으로 맞춘다.
+
+```powershell
+powershell -ExecutionPolicy Bypass -File scripts/split-export.ps1 -Source data/raw/jic_portal_balance_2026-11-09.json.gz -DictPath docs/data-dictionary-balance.md
+```
 
 ## 데이터 원칙
 
