@@ -23,14 +23,11 @@ import Notices from './pages/Notices';
 import NoticeDetail from './pages/NoticeDetail';
 import Visit from './pages/Visit';
 import AdminLayout from './pages/admin/AdminLayout';
-import AdminRequests from './pages/admin/AdminRequests';
-import AdminMembers from './pages/admin/AdminMembers';
+import AdminMoved from './pages/admin/AdminMoved';
 import AdminRules from './pages/admin/AdminRules';
 import AdminContent from './pages/admin/AdminContent';
 import AdminResources from './pages/admin/AdminResources';
 import AdminNotices from './pages/admin/AdminNotices';
-import AdminVisits from './pages/admin/AdminVisits';
-import AdminStats from './pages/admin/AdminStats';
 import AdminSettings from './pages/admin/AdminSettings';
 
 /** 승인된 파트너 또는 JIC 직원만. 로그인 전이면 로그인으로, 승인 전이면 대기 화면. */
@@ -86,14 +83,14 @@ export default function App() {
         <Route path="/notices/:id" element={<Member><NoticeDetail /></Member>} />
         <Route path="/visit" element={<Member><Visit /></Member>} />
         <Route path="/students" element={<Preparing title="My Students" />} />
-        <Route path="/admin" element={<Staff><AdminRequests /></Staff>} />
-        <Route path="/admin/members" element={<Staff><AdminMembers /></Staff>} />
+        <Route path="/admin" element={<Staff><AdminMoved /></Staff>} />
+        <Route path="/admin/members" element={<Staff><AdminMoved /></Staff>} />
         <Route path="/admin/rules" element={<Staff><AdminRules /></Staff>} />
         <Route path="/admin/content" element={<Staff><AdminContent /></Staff>} />
         <Route path="/admin/resources" element={<Staff><AdminResources /></Staff>} />
         <Route path="/admin/notices" element={<Staff><AdminNotices /></Staff>} />
-        <Route path="/admin/visits" element={<Staff><AdminVisits /></Staff>} />
-        <Route path="/admin/stats" element={<Staff><AdminStats /></Staff>} />
+        <Route path="/admin/visits" element={<Staff><AdminMoved /></Staff>} />
+        <Route path="/admin/stats" element={<Staff><AdminMoved /></Staff>} />
         <Route path="/admin/settings" element={<Staff><AdminSettings /></Staff>} />
         <Route path="*" element={<Preparing title="페이지를 찾을 수 없습니다" />} />
       </Routes>
