@@ -39,7 +39,7 @@ npm run student
 - 한 줄: 시작~끝 시각, 과목(없으면 '수업'), 강사 부르는 이름·교실·1:1/그룹, 결과. 결과는 출석·지각 N분·결석·사유 인정(강사 포털 매니저가 정함)·체크 전(오늘까지)·예정(앞날)이다.
 - 주 합계(수업·출석·지각·결석, 사유 인정은 따로)를 위에 보이고, 결석·지각이 있으면 "다르면 담당 선생님께 말하거나 결석 신청"을 안내한다.
 - 강사 메모(`attendance.note`)와 체크한 사람은 내보내지 않는다.
-- 배포: DB 함수 `student_timetable(시작, 끝)`(`20261109130000_student_timetable.sql`, 학생 본인만, 31일 안). 로컬: 강사 포털에 로컬 실행이 없어 `.local-db/student/timetable-<source>.ndjson`(한 줄 = `{"stId", "id", "day", "time", "minutes", "kind", "subject", "teacher", "room", "result", "lateMin", "excused"}`)을 넣었을 때만 수업이 보인다.
+- 배포: DB 함수 `student_timetable(시작, 끝)`(`20261109140000_student_timetable.sql`, 학생 본인만, 31일 안). 로컬: 강사 포털에 로컬 실행이 없어 `.local-db/student/timetable-<source>.ndjson`(한 줄 = `{"stId", "id", "day", "time", "minutes", "kind", "subject", "teacher", "room", "result", "lateMin", "excused"}`)을 넣었을 때만 수업이 보인다.
 - 규칙은 `server/timetable.ts`(주 계산·합계, 파일·네트워크 의존 없음).
 
 ## 외박·여행 신청

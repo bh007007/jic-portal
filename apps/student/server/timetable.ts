@@ -1,7 +1,7 @@
 /**
  * 학생 앱 '시간표': 강사 포털(LMS)의 수업(class_sessions)과 출석(attendance)에서 이 학생이 든 수업을 주 단위로 보여 준다.
  * 수업·출석은 강사 포털이 쓰고 학생 앱은 읽기만 한다(원칙 L1). 결석 사유 인정은 강사 포털 매니저가 정한다.
- * 배포: DB 함수 student_timetable(학생 본인만, 20261109130000_student_timetable.sql), 로컬: 파일(강사 포털에 로컬 실행이 없어 비어 있다).
+ * 배포: DB 함수 student_timetable(학생 본인만, 20261109140000_student_timetable.sql), 로컬: 파일(강사 포털에 로컬 실행이 없어 비어 있다).
  * 강사 메모(attendance.note)와 다른 학생은 내보내지 않는다. 파일·네트워크 의존 없음.
  */
 
