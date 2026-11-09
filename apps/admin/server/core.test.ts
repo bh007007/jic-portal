@@ -132,6 +132,54 @@ const base = (over: Partial<DataInput> = {}): DataInput => ({
   const ended = db.listEnrollments(new URLSearchParams('tab=all&all=1')).rows.filter((r) => extTr.has(r.trId));
   expect('샘플: 연장 연수의 종료일 = 마지막 연장 종료일', ended.every((r) => r.end === ext.rows.filter((x) => x.trId === r.trId).reduce((m, x) => (x.extEnd > m ? x.extEnd : m), '')), ended.slice(0, 3));
   expect('샘플: 변경 이력 세 탭 모두 있음', (() => { const c = db.changes(new URLSearchParams('')); return c.tabCounts.course > 0 && c.tabCounts.dorm > 0 && c.tabCounts.comeback > 0; })());
+  const pr = db.prices(new URLSearchParams(''));
+  expect('샘플: 가격표 코스·기숙사·기타비용·커미션이 있고 가격 없는 코스 1개(TOEIC)', pr.hasData && pr.tabCounts.course > 0 && pr.tabCounts.dorm > 0 && pr.tabCounts.etc > 0 && pr.tabCounts.comm === 3 && pr.coursesWithoutPrice === 1, { counts: pr.tabCounts, without: pr.coursesWithoutPrice });
+}
+
+// ── 7. 가격표(/api/prices)
+{
+  const prices: DataInput['prices'] = {
+    course_code: [
+      { co_id: '1', co_name: 'ESL-Core', co_type: 'REG', ca_code: 'PREMIUM', co_use_yn: 'Y' },
+      { co_id: '2', co_name: 'Family 8W', co_type: 'FAMILY', co_week_only: '8', ca_code: 'CHALLENGER', co_use_yn: 'Y' },
+      { co_id: '3', co_name: 'TOEIC', co_type: 'REG', ca_code: 'PREMIUM', co_use_yn: 'Y' },
+    ],
+    price_course: [
+      { cc_co_id: '1', cc_week: '4', cc_won: '1512000', cc_usd: '1120', cc_yen: '168000', cc_peso: '0', cc_start_date: '2024-01-01', cc_finish_date: '2099-12-31' },
+      { cc_co_id: '1', cc_week: '4', cc_won: '1430000', cc_usd: '1060', cc_yen: '159000', cc_peso: '0', cc_start_date: '2023-01-01', cc_finish_date: '2023-12-31' },
+      { cc_co_id: '2', cc_week: '8', cc_won: '3000000', cc_usd: '2200', cc_yen: '0', cc_peso: '0', cc_start_date: '2024-01-01', cc_finish_date: '2099-12-31' },
+    ],
+    dorm_code: [{ do_id: '9', do_name: 'Stay Out(C)', do_type: 'NONROOM', ca_code: 'CHALLENGER', do_use_yn: 'Y' }],
+    price_dorm: [{ dc_do_id: '9', dc_won: '0', dc_usd: '0', dc_yen: '0', dc_peso: '0', dc_start_date: '2024-01-01', dc_finish_date: '2099-12-31' }],
+    price_setting: [{ cs_1w: '40', cs_2w: '65', cs_3w: '85', cs_4w: '100', cs_5w: '125', cs_6w: '150', cs_7w: '175', cs_8w: '200', cs_1w_more: '25', cs_start_date: '2020-01-01', cs_finish_date: '2099-12-31', cs_use_yn: 'Y' }],
+    price_etc: [
+      { ec_id: '1', ec_name: 'SSP', ec_type: 'SSP', ec_peso: '6500', ec_start_date: '2024-01-01', ec_finish_date: '2099-12-31', ec_use_yn: 'Y', ec_order: '1' },
+      { ec_id: '2', ec_name: 'Old Book', ec_type: 'BOOK', ec_peso: '800', ec_start_date: '2023-01-01', ec_finish_date: '2024-12-31', ec_use_yn: 'Y', ec_order: '9' },
+      { ec_id: '3', ec_name: 'Unused', ec_type: 'BOOK', ec_peso: '500', ec_use_yn: 'N' },
+    ],
+    promo: [{ prm_id: '1', prm_kind: 'DC', prm_name: 'Winter', prm_target: 'DORM', prm_currency: 'KRW', prm_reg_start_date: '2026-10-01', prm_reg_finish_date: '2026-12-31', prm_use_yn: 'Y', prm_allow_stacking_yn: 'N' }],
+    comm_rule: [
+      { acr_id: '3', acr_level: 'AGENCY', acr_type: 'BASE', ag_name: 'Agency A', acr_rate: '0.2500', is_now: '1' },
+      { acr_id: '1', acr_level: 'ACADEMY', acr_type: 'BASE', acr_rate: '0.2800', is_now: '1' },
+      { acr_id: '2', acr_level: 'ACADEMY', acr_type: 'EXTEND', acr_rate: '0.2000', is_now: '0' },
+    ],
+  };
+  const db = createDb(base({ prices }));
+  const c = db.prices(new URLSearchParams(''));
+  expect('코스: 지금 적용분만 2줄(지난 가격 빼고), 코스 이름·캠퍼스·종류 붙음', c.total === 2 && c.rows[0].name === 'Family 8W' && c.rows[0].campus === 'Challenger' && c.rows[0].kind === '가족' && c.rows[0].weekOnly === 8, c.rows);
+  expect('코스: 4개 통화 값과 기준 주 수', c.rows[1].usd === 1120 && c.rows[1].krw === 1512000 && c.rows[1].jpy === 168000 && c.rows[1].php === 0 && c.rows[1].weeks === 4, c.rows[1]);
+  expect('기간별 값(4주 = 100)과 8주 넘을 때 값', JSON.stringify(c.setting?.weeks) === '[40,65,85,100,125,150,175,200]' && c.setting?.more === 25, c.setting);
+  expect('가격 없는 코스 1개(TOEIC)', c.coursesWithoutPrice === 1, c.coursesWithoutPrice);
+  expect('전체 기간이면 지난 가격도 3줄', db.prices(new URLSearchParams('current=0')).total === 3);
+  const e = db.prices(new URLSearchParams('tab=etc'));
+  expect('기타비용: 끝난 항목·사용 안 함 빼고 SSP 1줄, 페소 6,500', e.total === 1 && e.rows[0].name === 'SSP' && e.rows[0].php === 6500, e.rows);
+  expect('기숙사: 방 없음 표시', db.prices(new URLSearchParams('tab=dorm')).rows[0].kind === '방 없음');
+  expect('프로모션: 등록 기간 안이면 적용', db.prices(new URLSearchParams('tab=promo')).total === 1);
+  const m = db.prices(new URLSearchParams('tab=comm&current=0'));
+  expect('커미션: 학원 전체가 먼저, 비율은 %(28·20·25)', m.rows.map((r) => `${r.level}-${r.kind}-${r.rate}`).join() === '학원 전체-기본-28,학원 전체-연장-20,에이전시-기본-25', m.rows.map((r) => [r.level, r.kind, r.rate]));
+  expect('커미션: is_now=0 은 지금 적용분에서 빠짐', db.prices(new URLSearchParams('tab=comm')).total === 2);
+  expect('가격표가 없으면 hasData false', createDb(base()).prices(new URLSearchParams('')).hasData === false);
+  expect('/api/prices 200', handleApi(db, '/api/prices', new URLSearchParams('tab=etc')).status === 200);
 }
 
 console.log(fails ? `\n${fails}건 실패` : '\n모두 통과');

@@ -22,6 +22,7 @@
 - 인보이스 금액(2026-11-08 건수로 확인): 해외 총액 `sum_ic_price`, 입금 매칭 `sum_id_amount`, 현지 청구·납부 `sum_tc_price`·`sum_td_amount`(PHP). `sum_td_amount`는 해외 총액이 아니다. 미입금은 총액 − 입금 매칭을 미납·부분납에만 계산한다(`core.ts` invoiceAmounts). 단 `invoices.sum_ic_price`는 최근 인보이스 하나의 금액이라, 연수 청구 합계는 기본 + 연장 인보이스로 본다(2026-11-09: 인보이스별 합계 `inv_summary` → 업체 Check Balance `balance`의 cost·payment → 없으면 `invoices` 순, 업체 값과 4,991건 일치).
 - 인보이스 항목(추가 추출, 열 목록 `docs/data-dictionary-invoice.md`): 학생 가격 `inv_invoice_cost_st`, 에이전시 공제 `inv_invoice_cost_ag`(커미션 등), 현지 비용·납부 `inv_etc`. 연수마다 최신 `ic_ver`만 쓰며 총액 = 학생 가격 − 공제(98% 일치). `inv_invoice_deposit`에는 받는 계좌 열이 있어 앱에서 읽지 않는다. 배포(Supabase)에는 아직 없다.
 - 연장(추가 추출 `extend`, 2026-11-09): 업체는 연장해도 `tr_finish_date`(원래 종료일)를 바꾸지 않고 연장 기간 `tt_*`를 따로 둔다. 그래서 종료일(`end`)과 재학 여부는 마지막 연장 종료일까지 본다(`core.ts` `finishOf`). 연장 표가 없는 배포에서는 아직 원래 종료일이다.
+- 가격표(추가 추출 `price_*`·`promo`·`comm_rule`·`course_code`·`dorm_code`, 2026-11-09, 개인정보 없음): 업체 '예상 금액' 화면 코드의 가격표와 기초코드·커미션 목록(`docs/legacy-portal-probes.md`). 코스 가격은 `cc_week` 주 기준(대부분 4주), 기간별 값 `cs_*`는 4주 = 100. 관리자 기초관리 '가격표'(`core.ts` prices)가 읽는다. 배포(Supabase)에는 아직 없다.
 - 디자인 원본: `docs/design/*.dc.html` (캔버스 형식, 텍스트로 읽어 참고). 스타일: Noto Sans KR 13px, 주색 #24427A, 로고 #D52B1E, 회색 검색 박스 + 표 위 진한 선. AI 느낌의 카드·배지·설명 문구는 쓰지 않는다.
 
 ## 환경

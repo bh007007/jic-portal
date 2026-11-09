@@ -156,6 +156,55 @@ export interface ChangeList extends Paged<ChangeRow> {
   facets: { years: string[]; nations: string[]; campuses: string[] };
 }
 
+export type PriceTab = 'course' | 'dorm' | 'etc' | 'promo' | 'comm';
+/** 가격표 한 줄. 탭마다 쓰는 칸이 다르다(코스: weeks·weekOnly, 기숙사: gender·max, 기타비용: point·order·memo, 프로모션: target·currency·showStart…, 커미션: level·rate·minWeek…). */
+export interface PriceRow {
+  key: string;
+  campus: string;
+  name: string;
+  kind: string;
+  start: string;
+  end: string;
+  active: boolean;
+  krw?: number;
+  usd?: number;
+  jpy?: number;
+  php?: number;
+  weeks?: number;
+  weekOnly?: number;
+  gender?: string;
+  max?: number;
+  point?: string;
+  order?: number;
+  memo?: string;
+  type?: string;
+  target?: string;
+  currency?: string;
+  country?: string;
+  note?: string;
+  stacking?: boolean;
+  priority?: number;
+  showStart?: string;
+  showEnd?: string;
+  level?: string;
+  minWeek?: number;
+  maxWeek?: number;
+  rate?: number;
+}
+export interface PriceList {
+  refDate: string;
+  tab: PriceTab;
+  current: boolean;
+  hasData: boolean;
+  tabCounts: Record<PriceTab, number>;
+  facets: { campuses: string[]; kinds: string[] };
+  /** 기간별 값(4주 = 100). 1주~8주, 8주 넘으면 1주마다 more */
+  setting: { weeks: number[]; more: number; start: string; end: string } | null;
+  coursesWithoutPrice: number;
+  total: number;
+  rows: PriceRow[];
+}
+
 export interface InvoiceItem {
   type: string;
   label: string;
