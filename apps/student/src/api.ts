@@ -67,6 +67,9 @@ export function useApi<T>(path: string) {
 
 export const createAbsence = (input: AbsenceInput) => api<Absence>('/api/absences', { method: 'POST', body: input });
 export const cancelAbsence = (id: string) => api<Absence>(`/api/absences/${encodeURIComponent(id)}/cancel`, { method: 'POST', body: {} });
+/** 진단서 사진(11/10 결정 I10): image 는 data URL(화면이 줄여서 보낸다) */
+export const uploadAbsenceDoc = (id: string, image: string) => api<Absence>(`/api/absences/${encodeURIComponent(id)}/document`, { method: 'POST', body: { image } });
+export const readAbsenceDoc = (id: string) => api<{ image: string }>(`/api/absences/${encodeURIComponent(id)}/document`);
 export const createOvernight = (input: OvernightInput) => api<OvernightRow>('/api/overnights', { method: 'POST', body: input });
 export const cancelOvernight = (id: string) => api<OvernightRow>(`/api/overnights/${encodeURIComponent(id)}/cancel`, { method: 'POST', body: {} });
 export const createLife = (input: LifeInput) => api<LifeRow>('/api/life-requests', { method: 'POST', body: input });

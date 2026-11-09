@@ -35,7 +35,7 @@ http://127.0.0.1:5177 을 연다. 가드 태블릿은 http://127.0.0.1:5177/guar
 | `/penalties` | 패널티 승인 | 승인 대기·완료·반려 탭, 발생일·캠퍼스·위반 종류·학생 검색, 한 건씩 또는 선택해서 승인·반려, 경고 단계 기준 |
 | `/penalty-rules` | 패널티 점수표 | 위반별 점수·승인 권한, 경고 단계(1~3단계) 기준 점수 |
 | `/settings` | 통금·근무자 설정 | 통금 시각, 가드 태블릿 근무자 목록 |
-| `/requests/absences` | 결석 신청 처리 | 학생 앱에서 낸 결석 신청. 대기·승인·반려·학생 취소 탭, 결석일·캠퍼스·종류·학생 검색, 처리 메모(학생에게 보임)와 함께 승인·반려 |
+| `/requests/absences` | 결석 신청 처리 | 학생 앱에서 낸 결석 신청. 대기·승인·반려·학생 취소 탭, 결석일·캠퍼스·종류·학생 검색, 처리 메모(학생에게 보임)와 함께 승인·반려 병결이 이틀 이상 이어진 신청에는 '진단서 필요 · 아직 없음'(빨간 글씨) 또는 '사진 보기'(새 창, 11/10 결정 I10)가 보인다 |
 | `/requests/overnights` | 외박·여행 신청 처리 | 학생 앱에서 낸 외박·여행 신청. 같은 방식. 행선지·숙소·비상 연락처와 같이 가는 학생(이름, 그 학생도 같은 기간에 신청했는지)을 함께 본다. 승인하면 그 밤들이 통금 확인에서 빠진다 18세 미만 학생은 '미성년 · 보호자 동의 받음(학생 표시)'(표시가 없으면 빨간 글씨)으로 보인다(11/10 결정 I11) |
 | `/trips` | 학교 여행 | 다가오는 여행 / 지난 여행 탭, 캠퍼스(그 캠퍼스 + 전체)·제목·장소 검색. 일정(박 수), 신청 / 정원(차면 빨간색), 비용, 신청 마감, 상태(신청 받는 중·신청 마감·여행 취소, 마감일이 지나면 '마감일 지남') |
 | `/trips/new`, `/trips/:id/edit` | 여행 등록·수정 | 대상 캠퍼스(전체 또는 캠퍼스), 제목, 장소, 집합(선택), 출발일, 돌아오는 날, 신청 마감일, 정원, 비용(PHP), 안내(1000자, 학생에게 보임) |
@@ -215,7 +215,8 @@ apps/intranet/
 | `GET /api/audit?from=&to=&action=&q=` | 접근 기록(최근 500건) |
 | `GET /api/students?q=&campus=&sort=score|breaches|name` | Student File 목록(재학생) |
 | `GET /api/students/:stId` | Student File 상세 |
-| `GET /api/requests/absences?tab=&from=&to=&campus=&kind=&q=` | 결석 신청 목록 |
+| `GET /api/requests/absences?tab=&from=&to=&campus=&kind=&q=` | 결석 신청 목록(줄마다 진단서 필요·있음) |
+| `GET /api/requests/absences/:id/document` | 진단서 사진 `{ image }`(직원·매니저, 배포는 로그인한 사람 토큰으로 Storage `absence-docs`) |
 | `GET /api/requests/overnights?tab=&from=&to=&campus=&q=` | 외박 신청 목록(기간이 조회 범위와 겹치는 건) |
 | `GET /api/requests/life?tab=&category=&campus=&q=` | 생활 요청 목록(탭: received·in_progress·done·rejected·cancelled) |
 | `POST /api/requests/life/:id/handle` | 생활 요청 처리 `{ status: in_progress·done·rejected, reply }` |

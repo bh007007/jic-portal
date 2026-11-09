@@ -132,6 +132,34 @@ ok('승인된 건 취소 불가', x.status === 409 && x.body.error === 'not_pend
 x = await api('GET', '/api/absences', tF);
 ok('신청 목록: 최신순 2건', x.status === 200 && x.body.rows.length === 2 && x.body.rows[0].id === abs2, x.body.rows?.map((y) => y.id));
 
+// ── 진단서 사진(11/10 결정 I10): 승인된 병결(오늘) 다음 날 병결 → 이틀 이어져 진단서 필요. Storage 'absence-docs'(RLS)
+const jpgUrl = 'data:image/jpeg;base64,' + Buffer.from([0xff, 0xd8, 0xff, 0xe0, 9, 8, 7, 6]).toString('base64');
+x = await api('POST', '/api/absences', tF, { date: od(1), kind: 'sick', periods: [], reason: '열 계속' });
+const absDoc = x.body.id;
+let aD = await findAbs(tF, absDoc);
+ok('병결 이틀 이어짐: 진단서 필요, 아직 없음', aD?.documentRequired === true && aD.hasDocument === false, aD);
+x = await api('POST', `/api/absences/${absDoc}/document`, tF, { image: jpgUrl });
+ok('진단서 올리기 200(학생 토큰으로 Storage, 붙이기 함수)', x.status === 200 && x.body.hasDocument === true, x);
+const docRow = (await sql(`select document_path from public.absence_requests where id = $1`, [absDoc]))[0];
+ok('DB: 경로 = 학생번호/신청번호.jpg, Storage 에 파일', docRow?.document_path === `${F}/${absDoc}.jpg` && (await sql(`select count(*)::int n from storage.objects where bucket_id = 'absence-docs' and name = $1`, [docRow.document_path]))[0].n === 1, docRow);
+x = await api('GET', `/api/absences/${absDoc}/document`, tF);
+ok('올린 사진 보기', x.status === 200 && x.body.image === jpgUrl, x.body);
+const storageGet = async (token, path) => fetch(`${SB}/storage/v1/object/authenticated/absence-docs/${path}`, { headers: { apikey: 'anon-key', Authorization: `Bearer ${token}` } });
+const bTok = await tokenOf((await sql(`select student_no from public.student_users where student_no <> $1 and student_no <> $2 order by student_no limit 1`, [A, F]))[0].student_no);
+ok('다른 학생은 Storage 에서 직접 받아도 못 봄(400)', (await storageGet(bTok, docRow.document_path)).status === 400);
+const bUp = await fetch(`${SB}/storage/v1/object/absence-docs/${F}/${absDoc}.jpg`, {
+  method: 'POST',
+  headers: { apikey: 'anon-key', Authorization: `Bearer ${bTok}`, 'Content-Type': 'image/jpeg', 'x-upsert': 'true' },
+  body: Buffer.from([0xff, 0xd8, 0xff, 0]),
+});
+ok('다른 학생은 남의 폴더에 못 올림(403)', bUp.status === 403, bUp.status);
+const badType = await fetch(`${SB}/storage/v1/object/absence-docs/${F}/x.txt`, { method: 'POST', headers: { apikey: 'anon-key', Authorization: `Bearer ${tF}`, 'Content-Type': 'text/plain' }, body: 'x' });
+ok('사진이 아닌 종류는 버킷이 막음', badType.status === 415, badType.status);
+x = await api('POST', `/api/absences/${absDoc}/document`, tF, { image: 'data:image/jpeg;base64,' + 'A'.repeat(1_500_000) });
+ok('너무 큰 사진은 413(본문 상한) 또는 image_too_large', x.status === 413 || x.body.error === 'image_too_large', x.status);
+const attachOther = await sql(`select public.absence_attach_document($1, $2)`, [absDoc, `${F}/${absDoc}.png`], { role: 'authenticated', sub: (await sql(`select user_id::text from public.student_users where student_no = $1`, [F]))[0].user_id }).catch((e) => e);
+ok('붙이기 함수: Storage 에 없는 파일이면 document_missing', String(attachOther?.message ?? attachOther).includes('document_missing'), String(attachOther?.message ?? attachOther));
+
 // ── 외박(11/10 결정 I11: 출발일은 내일부터, 최대 14박). 날짜는 오늘(필리핀) 기준이라 그 기간에 재학하는 계정 학생으로 시험한다
 const tO = tF;
 const ovBody = { reason: '여행', destination: 'Baguio', contact: '+63 917 555 0000' };
@@ -282,8 +310,8 @@ const ttOther = await sql(`select count(*)::int n from public.student_timetable(
 ok('DB 함수: 학생 본인 것만', ttOther[0].n === 1, ttOther);
 
 // ── DB에 실제로 남은 것
-const rows = await sql(`select status, created_by::text = (select user_id::text from public.student_users where student_no = $1) mine from public.absence_requests where student_no = $1 order by created_at`, [A]);
-ok('DB: 결석 2건(승인·취소), 작성자 = 학생 계정', rows.length === 2 && rows[0].status === 'approved' && rows[1].status === 'cancelled' && rows.every((y) => y.mine), rows);
+const rows = await sql(`select status, document_path is not null doc, created_by::text = (select user_id::text from public.student_users where student_no = $1) mine from public.absence_requests where student_no = $1 order by created_at`, [F]);
+ok('DB: 결석 3건(승인·취소·진단서 붙은 대기), 작성자 = 학생 계정', rows.length === 3 && rows[0].status === 'approved' && rows[1].status === 'cancelled' && rows[2].status === 'pending' && rows[2].doc && rows.every((y) => y.mine), rows);
 
 await sbs.close();
 console.log(fails ? `${fails}건 실패` : '모두 통과');

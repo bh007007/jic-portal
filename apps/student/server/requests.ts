@@ -31,6 +31,8 @@ export interface Absence extends RequestBase {
   date: string; // YYYY-MM-DD
   periods: number[]; // 빈 배열 = 종일
   kind: AbsenceKind;
+  /** 진단서 사진 경로(Storage 'absence-docs' 의 '<학생번호>/<신청 번호>.jpg', 11/10 결정 I10). 없으면 null */
+  documentPath?: string | null;
 }
 /**
  * 외박·여행: 출발일 밤부터 복귀일 전날 밤까지 기숙사에서 자지 않는다. 그 밤들은 통금 판정에서 빠진다.
@@ -68,8 +70,23 @@ export const nightsBetween = (from: string, until: string) => Math.round((Date.p
 /** 필리핀 날짜(UTC+8) */
 export const manilaDate = (d: Date) => new Date(d.getTime() + 8 * 3600e3).toISOString().slice(0, 10);
 
-/** 결석 신청은 지난 날짜도 3일 전까지 받는다(11/10 결정 I10). 진단서 사진(병결 연속 2일 이상)은 Storage 와 함께 다음에 넣는다. */
+/** 결석 신청은 지난 날짜도 3일 전까지 받는다(11/10 결정 I10). */
 export const ABSENCE_PAST_DAYS = 3;
+/** 병결이 연속 며칠 이상이면 진단서 사진이 필요한지(11/10 결정 I10) */
+export const SICK_DOC_DAYS = 2;
+
+/**
+ * 진단서 사진이 필요한 병결인지: 대기·승인 중인 병결이 앞뒤 날의 병결과 이어져 연속 2일 이상이면 그 병결들 모두.
+ * 신청을 막지는 않는다(학생이 신청 상세에서 사진을 올리고, 직원은 '진단서 필요·없음'을 보고 처리한다).
+ */
+export function needsMedicalDoc(all: Absence[], a: Absence): boolean {
+  if (a.kind !== 'sick' || !(a.status === 'pending' || a.status === 'approved')) return false;
+  const days = new Set(all.filter((x) => x.stId === a.stId && x.kind === 'sick' && (x.status === 'pending' || x.status === 'approved')).map((x) => x.date));
+  let run = 1;
+  for (let d = addDays(a.date, -1); days.has(d); d = addDays(d, -1)) run++;
+  for (let d = addDays(a.date, 1); days.has(d); d = addDays(d, 1)) run++;
+  return run >= SICK_DOC_DAYS;
+}
 
 // ── 외박 규칙(11/10 결정 I11): 떠나는 날 하루 전까지 신청, 한 번에 최대 14박, 미성년은 보호자 동의 표시
 export const OVERNIGHT_LEAD_DAYS = 1;

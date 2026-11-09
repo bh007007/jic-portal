@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useParams } from 'react-router-dom';
-import { ApiError, cancelAbsence, useApi, type AbsenceList } from '../api';
+import { ApiError, cancelAbsence, readAbsenceDoc, uploadAbsenceDoc, useApi, type AbsenceList } from '../api';
+import { shrinkImage } from '../components/image';
 import { periodsText, StatusText } from '../components/absence';
 import { LoadError, Loading, SubTitle } from '../components/Layout';
 import { dayOfWeek, ymd, ymdhm } from '../format';
@@ -12,6 +13,7 @@ export default function RequestDetail() {
   const { data, error, reload } = useApi<AbsenceList>('/api/absences');
   const [busy, setBusy] = useState(false);
   const [actionError, setActionError] = useState<string | null>(null);
+  const [docImage, setDocImage] = useState<string | null>(null);
 
   if (error) return <LoadError onRetry={reload} />;
   if (!data) return <Loading />;
@@ -28,6 +30,29 @@ export default function RequestDetail() {
       setActionError(errorText(t, (err as ApiError).code));
     }
     setBusy(false);
+  }
+
+  // 진단서 사진(11/10 결정 I10): 휴대폰에서 줄여 올리고, 올린 사진은 눌러서 본다
+  async function upload(file: File | undefined) {
+    if (!a || !file) return;
+    setBusy(true);
+    setActionError(null);
+    try {
+      await uploadAbsenceDoc(a.id, await shrinkImage(file));
+      setDocImage(null);
+      reload();
+    } catch (err) {
+      setActionError(errorText(t, (err as ApiError).code ?? (err as Error).message));
+    }
+    setBusy(false);
+  }
+  async function view() {
+    if (!a) return;
+    try {
+      setDocImage((await readAbsenceDoc(a.id)).image);
+    } catch (err) {
+      setActionError(errorText(t, (err as ApiError).code));
+    }
   }
 
   return (
@@ -79,8 +104,32 @@ export default function RequestDetail() {
                   <td className="pre">{a.comment}</td>
                 </tr>
               )}
+              {(a.documentRequired || a.hasDocument) && (
+                <tr>
+                  <th>{t('doc.title')}</th>
+                  <td>
+                    {a.hasDocument ? (
+                      <button type="button" className="more" onClick={view}>
+                        {t('doc.uploaded')} · {t('doc.view')}
+                      </button>
+                    ) : (
+                      <span className="text-red">{t('doc.required')}</span>
+                    )}
+                  </td>
+                </tr>
+              )}
             </tbody>
           </table>
+          {docImage && <img className="doc-image" src={docImage} alt={t('doc.title')} />}
+          {a.status === 'pending' && (a.documentRequired || a.kind === 'sick') && (
+            <div className="pad">
+              <p className="form-hint">{t('doc.hint')}</p>
+              <label className="btn btn-block">
+                {busy ? t('doc.uploading') : a.hasDocument ? t('doc.replace') : t('doc.upload')}
+                <input type="file" accept="image/*" capture="environment" hidden disabled={busy} onChange={(e) => void upload(e.target.files?.[0])} />
+              </label>
+            </div>
+          )}
           {actionError && (
             <p className="form-error pad" role="alert">
               {actionError}

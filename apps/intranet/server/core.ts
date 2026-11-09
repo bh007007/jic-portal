@@ -24,7 +24,8 @@ import { decideRide, rideState, type Departure, type DepartureStore, type RideSt
 import { handleLifeRequest, LIFE_CATEGORIES, LIFE_REPLY_MAX, type LifeRequestStore, type LifeStatus } from '../../student/server/lifeRequests';
 import { PENALTY_KIND_OF, REPORT_KINDS, REPORT_LABEL, REPORT_NOTE_MAX, type IncidentReport, type ReportKind } from './reports';
 import { createNotice, listNotices, noticeSummary, openNotice, updateNotice, type Notice, type NoticeCtx, type NoticeRead } from './notices';
-import { COMMENT_MAX, decideRequest, isMinorOn, nightsBetween, overnightFor, type Absence, type Overnight, type RequestStatus, type RequestStore } from '../../student/server/requests';
+import { COMMENT_MAX, decideRequest, isMinorOn, needsMedicalDoc, nightsBetween, overnightFor, type Absence, type Overnight, type RequestStatus, type RequestStore } from '../../student/server/requests';
+import { toDataUrl, type FileStore } from '../../student/server/files';
 import { readKeycard, type KeycardSecret } from '../../student/server/keycard';
 import type { AccountAdmin } from '../../student/server/accountAdmin';
 import { createAccounts, listAccounts, resetAccount, type AccountAction, type AccountsCtx } from './studentAccounts';
@@ -257,6 +258,8 @@ export interface IntranetCtx {
   accountsUnavailable?: 'local' | 'server_config';
   /** 가드 계정 관리(서비스 키, 배포 직원 요청만). 없으면 '가드 계정' 화면은 안내만 */
   guardAdmin?: GuardAdmin;
+  /** 진단서 사진(11/10 결정 I10): 배포는 로그인한 직원·매니저 토큰으로 Storage 'absence-docs', 로컬은 학생 앱과 같은 폴더 */
+  absenceDocs?: FileStore;
   studentEmailDomain?: string;
   /**
    * 배포: 로그인한 계정 종류. 가드 공용 계정은 그 출입구(캠퍼스)로 고정한다. 로컬은 없음(관리자로 본다).
@@ -279,6 +282,7 @@ const MANAGER_ROUTES = [
   /^GET \/(meta|summary|notices|outings|reports|penalties|penalty-rules|students|requests\/absences|trips|counseling)$/,
   /^POST \/(notices|penalties\/decide|requests\/absences\/decide|counseling)$/,
   /^GET \/(notices|students|trips|counseling)\/[\w-]+$/,
+  /^GET \/requests\/absences\/[\w-]+\/document$/,
   /^PUT \/(notices|counseling)\/[\w-]+$/,
   /^POST \/counseling\/[\w-]+\/followup$/,
 ];
@@ -927,7 +931,9 @@ async function listRequests(ctx: IntranetCtx, kind: RequestKind, q: URLSearchPar
     tab === 'pending' ? day(a).localeCompare(day(b)) : (b.decidedAt ?? b.updatedAt).localeCompare(a.decidedAt ?? a.updatedAt);
 
   if (kind === 'absences') {
-    const all = (await ctx.stores.absences.listAll()).map((a) => ({ ...a, ...requestRow(ctx, a) }));
+    const list = await ctx.stores.absences.listAll();
+    // 병결 연속 2일 이상이면 진단서 사진이 필요하다(11/10 결정 I10). 사진은 상세 버튼으로 본다
+    const all = list.map((a) => ({ ...a, ...requestRow(ctx, a), documentRequired: needsMedicalDoc(list, a), hasDocument: !!a.documentPath }));
     for (const a of all) counts[a.status]++;
     const rows = all
       .filter((a) => match(a) && (!from || a.date >= from) && (!to || a.date <= to) && (!absKind || a.kind === absKind))
@@ -1412,6 +1418,13 @@ export async function handleIntranetApi(ctx: IntranetCtx, method: string, pathna
     }
     if (tr && !tr[2] && method === 'PUT') return await saveTripRoute(ctx, tr[1], input);
     if (tr && tr[2] && method === 'POST') return await tripStatusRoute(ctx, tr[1], input);
+    const ad = p.match(/^\/requests\/absences\/([\w-]+)\/document$/);
+    if (ad && method === 'GET') {
+      const x = await ctx.stores.absences.get(ad[1]);
+      if (!x?.documentPath || !ctx.absenceDocs) return fail(404, 'not_found');
+      const f = await ctx.absenceDocs.get(x.documentPath);
+      return f ? ok({ image: toDataUrl(f) }) : fail(404, 'not_found');
+    }
     const lr = p.match(/^\/requests\/life\/([\w-]+)\/handle$/);
     if (lr && method === 'POST') return await handleLifeRequestRoute(ctx, lr[1], input);
     const rd = p.match(/^\/departures\/([\w-]+)\/ride$/);

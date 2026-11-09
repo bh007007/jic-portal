@@ -10,6 +10,7 @@ import { studentFromToken, tokenCache, tokenSubject } from './supabaseAuth';
 import { decideRide, rideState, type Departure, type Ride } from './departures';
 import { handleLifeRequest, LIFE_OPEN_MAX, type LifeRequest } from './lifeRequests';
 import { ageOn, decideRequest, newOvernight, nightsBetween, overnightFor, type Absence, type Overnight, type RequestStore } from './requests';
+import type { FileStore, StoredFile } from './files';
 import { memoryTripStore, removeSignup, saveTrip, tripPermits, type Trip } from './trips';
 import { KEYCARD_PERIOD, keycardCode, readKeycard } from './keycard';
 import { mondayOf, type ClassMark, type TimetableSource, type TimetableView } from './timetable';
@@ -43,7 +44,9 @@ const SECRET = 'a'.repeat(64);
 let n = 0;
 const now = new Date('2026-11-08T02:00:00Z');
 const stId = '30095'; // 샘플: 재학 2026-07-26 ~ 2026-11-13
-const ctx = (who: string | null = stId) => ({ db, store, overnights, departures, rides, life, trips, keycardSecret: async () => SECRET, stId: who, localLogin: true, now: () => now, newId: () => 'r' + ++n });
+const docFiles = new Map<string, StoredFile>();
+const absenceDocs: FileStore = { put: async (p, f) => void docFiles.set(p, f), get: async (p) => docFiles.get(p) ?? null };
+const ctx = (who: string | null = stId) => ({ db, store, overnights, departures, rides, life, trips, keycardSecret: async () => SECRET, absenceDocs, stId: who, localLogin: true, now: () => now, newId: () => 'r' + ++n });
 const call = (m: string, p: string, body: unknown = null, who: string | null = stId) => handleStudentApi(ctx(who), m, p, body);
 const TRIP = { destination: 'Manila', contact: '+63 917 123 4567' };
 let fails = 0;
@@ -432,6 +435,31 @@ expect('시간표: 날짜가 아니면 이번 주', tv.from === '2026-11-02', tv
 tv = (await call('GET', '/timetable')).body as TimetableView;
 expect('시간표: 출석 자료가 없으면 아직 없음', tv.available === false && tv.days.every((d) => d.classes.length === 0), tv);
 expect('시간표: 로그인 전 401', (await tcall('/timetable', null)).status === 401);
+
+// ── 진단서 사진(11/10 결정 I10): 병결 연속 2일 이상이면 필요, 신청 상세에서 올리고 본다
+{
+  const jpg = 'data:image/jpeg;base64,' + btoa(String.fromCharCode(0xff, 0xd8, 0xff, 0xe0, 1, 2, 3, 4));
+  r = await call('POST', '/absences', { date: '2026-11-12', kind: 'sick', periods: [], reason: '열' });
+  const d1 = (r.body as Absence).id;
+  let al = (await call('GET', '/absences')).body as any;
+  expect('병결 하루만이면 진단서 필요 없음', al.rows.find((x: any) => x.id === d1)?.documentRequired === false, al.rows.find((x: any) => x.id === d1));
+  r = await call('POST', '/absences', { date: '2026-11-13', kind: 'sick', periods: [], reason: '열 계속' });
+  const d2 = (r.body as Absence).id;
+  al = (await call('GET', '/absences')).body as any;
+  expect('병결이 이틀 이어지면 둘 다 진단서 필요', al.rows.filter((x: any) => [d1, d2].includes(x.id)).every((x: any) => x.documentRequired && !x.hasDocument), al.rows.filter((x: any) => [d1, d2].includes(x.id)));
+  expect('사진이 아니면 400', err(await call('POST', `/absences/${d2}/document`, { image: 'data:image/jpeg;base64,AAAA' })) === 'invalid_image');
+  expect('종류를 속인 파일 400', err(await call('POST', `/absences/${d2}/document`, { image: 'data:image/png;base64,' + btoa('\xff\xd8\xffabc') })) === 'invalid_image');
+  expect('남의 신청에 올리기 404', (await call('POST', `/absences/${d2}/document`, { image: jpg }, '30140')).status === 404);
+  r = await call('POST', `/absences/${d2}/document`, { image: jpg });
+  expect('진단서 올리기 200: 있음, 경로는 학생번호/신청번호.jpg', r.status === 200 && (r.body as any).hasDocument === true && docFiles.has(`${stId}/${d2}.jpg`), r);
+  r = await call('GET', `/absences/${d2}/document`);
+  expect('올린 사진 보기(같은 data URL)', (r.body as any).image === jpg, r);
+  expect('남이 보기 404', (await call('GET', `/absences/${d2}/document`, null, '30140')).status === 404);
+  await call('POST', `/absences/${d1}/cancel`, {});
+  expect('취소한 신청에는 못 올림 409', err(await call('POST', `/absences/${d1}/document`, { image: jpg })) === 'not_pending');
+  al = (await call('GET', '/absences')).body as any;
+  expect('하루를 취소하면 남은 병결은 진단서 필요 없음', al.rows.find((x: any) => x.id === d2)?.documentRequired === false && al.rows.find((x: any) => x.id === d2)?.hasDocument === true);
+}
 
 console.log(fails ? `\n${fails}건 실패` : '\n모두 통과');
 if (fails) process.exit(1);

@@ -12,6 +12,7 @@ import { dbCache } from '../server/supabaseData';
 import { tokenCache } from '../server/supabaseAuth';
 import { supabaseStores } from '../server/supabaseStores';
 import { serviceKeycardSecret, type KeycardSecret } from '../server/keycard';
+import { IMAGE_BODY_LIMIT, supabaseFiles } from '../server/files';
 
 export interface Env {
   /** 정적 파일(apps/student/dist) */
@@ -46,7 +47,9 @@ function cachesFor(env: Required<Omit<Env, 'ASSETS'>>, fetchFn: typeof fetch) {
 async function readBody(req: Request): Promise<{ ok: true; body: unknown } | { ok: false; status: number; error: string }> {
   if (req.method !== 'POST' && req.method !== 'PUT') return { ok: true, body: null };
   const text = await req.text();
-  if (new TextEncoder().encode(text).length > BODY_LIMIT) return { ok: false, status: 413, error: 'body_too_large' };
+  // 진단서 사진(…/document)은 사진 크기까지 받는다(11/10 결정 I10)
+  const limit = /\/document$/.test(new URL(req.url).pathname) ? IMAGE_BODY_LIMIT : BODY_LIMIT;
+  if (new TextEncoder().encode(text).length > limit) return { ok: false, status: 413, error: 'body_too_large' };
   try {
     return { ok: true, body: text ? JSON.parse(text) : null };
   } catch {
@@ -75,6 +78,8 @@ export async function handleApi(req: Request, env: Env, fetchFn: typeof fetch = 
         db,
         ...stores,
         keycardSecret: keycard,
+        // 진단서 사진: 학생 토큰으로 Storage(RLS 가 자기 폴더만 쓰게 한다)
+        absenceDocs: token ? supabaseFiles(conf.url, { apikey: conf.key, Authorization: `Bearer ${token}` }, 'absence-docs', fetchFn) : undefined,
         stId: session?.stId ?? null,
         mustChangePassword: session?.mustChangePassword ?? false,
         localLogin: false,

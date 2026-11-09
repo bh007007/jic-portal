@@ -9,6 +9,7 @@ import {
   ABSENCE_PAST_DAYS,
   cancelRequest,
   isMinorOn,
+  needsMedicalDoc,
   newAbsence,
   newOvernight,
   nightsBetween,
@@ -25,6 +26,7 @@ import {
   type OvernightInput,
   type OvernightStore,
 } from './requests';
+import { parseImageDataUrl, toDataUrl, type FileStore } from './files';
 
 import { AIRPORTS, departureEnrollment, rideState, saveDeparture, type DepartureInput, type DepartureStore, type RideStore } from './departures';
 import {
@@ -63,6 +65,8 @@ export interface StudentCtx {
   timetable?: TimetableSource;
   /** 카드키 QR 비밀 값(server/keycard.ts). 없으면 출입 QR 을 만들지 않는다. */
   keycardSecret?: KeycardSecret;
+  /** 진단서 사진(11/10 결정 I10, server/files.ts). 배포는 Storage 'absence-docs', 로컬은 파일. 없으면 사진을 받지 않는다 */
+  absenceDocs?: FileStore;
   /** 로그인한 학생 번호. 없으면 null. */
   stId: string | null;
   /** 학생번호 + 생년월일 로그인(/api/login)을 열지. 로컬 개발 서버에서만 true. */
@@ -162,12 +166,36 @@ async function putDeparture(ctx: StudentCtx, stId: string, input: DepartureInput
 const byNewest = (a: { submittedAt: string }, b: { submittedAt: string }) => b.submittedAt.localeCompare(a.submittedAt);
 
 async function listAbsences(ctx: StudentCtx, stId: string) {
-  const rows = (await ctx.store.listByStudent(stId)).sort(byNewest);
+  const mine = await ctx.store.listByStudent(stId);
+  // 병결 연속 2일 이상이면 진단서 사진이 필요하다(11/10 결정 I10). 신청 상세에서 올린다
+  const rows = mine.sort(byNewest).map((a) => ({ ...a, documentRequired: needsMedicalDoc(mine, a), hasDocument: !!a.documentPath }));
   // 11/10 결정 I10: 신청 화면의 날짜는 minDate(오늘부터 3일 전)부터
   const minDate = new Date(Date.parse(localToday(ctx.now())) - ABSENCE_PAST_DAYS * 864e5).toISOString().slice(0, 10);
   return { refDate: ctx.db.refDate, periodCount: PERIOD_COUNT, reasonMax: REASON_MAX, windows: requestWindows(ctx.db, stId), minDate, rows };
 }
 export type AbsenceList = Awaited<ReturnType<typeof listAbsences>>;
+
+/** 진단서 사진 올리기: 내 신청, 대기 중일 때만. 다시 올리면 바꾼다. 경로는 '<학생번호>/<신청 번호>.<확장자>' */
+async function uploadAbsenceDoc(ctx: StudentCtx, stId: string, id: string, input: Record<string, unknown>): Promise<Result> {
+  if (!ctx.absenceDocs) return fail(503, 'documents_unavailable');
+  const a = await ctx.store.get(id);
+  if (!a || a.stId !== stId) return fail(404, 'not_found');
+  if (a.status !== 'pending') return fail(409, 'not_pending');
+  const img = parseImageDataUrl(input.image);
+  if (!img.ok) return fail(400, img.error);
+  const path = `${stId}/${a.id}.${img.ext}`;
+  await ctx.absenceDocs.put(path, img.file);
+  await ctx.store.put({ ...a, documentPath: path, updatedAt: ctx.now().toISOString() });
+  return ok((await listAbsences(ctx, stId)).rows.find((r) => r.id === id));
+}
+
+/** 내가 올린 진단서 사진 보기 */
+async function readAbsenceDoc(ctx: StudentCtx, stId: string, id: string): Promise<Result> {
+  const a = await ctx.store.get(id);
+  if (!a || a.stId !== stId || !a.documentPath || !ctx.absenceDocs) return fail(404, 'not_found');
+  const f = await ctx.absenceDocs.get(a.documentPath);
+  return f ? ok({ image: toDataUrl(f) }) : fail(404, 'not_found');
+}
 
 async function createAbsence(ctx: StudentCtx, stId: string, input: AbsenceInput): Promise<Result> {
   const out = newAbsence({ ...ctx, stId }, await ctx.store.listByStudent(stId), input);
@@ -312,6 +340,9 @@ export async function handleStudentApi(ctx: StudentCtx, method: string, pathname
       return pr ? ok(pr) : fail(401, 'unauthorized');
     }
     if (p === '/absences' && method === 'GET') return ok(await listAbsences(ctx, stId));
+    const dm = p.match(/^\/absences\/([\w-]+)\/document$/);
+    if (dm && method === 'POST') return await uploadAbsenceDoc(ctx, stId, dm[1], input);
+    if (dm && method === 'GET') return await readAbsenceDoc(ctx, stId, dm[1]);
     if (p === '/absences' && method === 'POST') return await createAbsence(ctx, stId, input);
     if (p === '/overnights' && method === 'GET') return ok(await listOvernights(ctx, stId));
     if (p === '/overnights' && method === 'POST') return await createOvernight(ctx, stId, input);
