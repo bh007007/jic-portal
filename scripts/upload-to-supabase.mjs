@@ -108,7 +108,7 @@ for (const [table, file, idOf, cols, how] of PLAN) {
   });
   await upload(table, [...byId.values()], how);
 }
-// 가격표(20261109110000_legacy_prices.sql): 표 8개를 합쳐 한 번에 올린다(표가 없으면 건너뜀).
+// 가격표(20261109130000_legacy_prices.sql): 표 8개를 합쳐 한 번에 올린다(표가 없으면 건너뜀).
 const priceRows = Object.entries(PRICE_COLUMNS).flatMap(([t, cols]) =>
   read(t + '.ndjson').map((r, i) => ({ id: `${t}:${i}`, data: { _table: t, ...Object.fromEntries(cols.map((c) => [c, r[c] ?? null])) } })),
 );

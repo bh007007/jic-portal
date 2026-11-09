@@ -61,7 +61,7 @@ async function readAll(c: Conf, table: string): Promise<Raw[]> {
   return out;
 }
 
-// 나중에 더한 표(연장·변경 20261109030000_legacy_extend.sql, 청구 합계 20261109060000_legacy_invoice_summary.sql, 가격표 20261109110000_legacy_prices.sql)는 마이그레이션 전에도 나머지 화면이 동작하도록 표가 없으면 빈 목록으로 본다.
+// 나중에 더한 표(연장·변경 20261109030000_legacy_extend.sql, 청구 합계 20261109060000_legacy_invoice_summary.sql, 가격표 20261109130000_legacy_prices.sql)는 마이그레이션 전에도 나머지 화면이 동작하도록 표가 없으면 빈 목록으로 본다.
 async function readOptional(c: Conf, table: string): Promise<Raw[]> {
   try {
     return await readAll(c, table);

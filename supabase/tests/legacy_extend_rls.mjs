@@ -27,8 +27,8 @@ await db.exec(mig('20261109030000_legacy_extend.sql'));
 await db.exec(mig('20261109030000_legacy_extend.sql')); // 두 번째 실행
 await db.exec(mig('20261109060000_legacy_invoice_summary.sql'));
 await db.exec(mig('20261109060000_legacy_invoice_summary.sql')); // 두 번째 실행
-await db.exec(mig('20261109110000_legacy_prices.sql'));
-await db.exec(mig('20261109110000_legacy_prices.sql')); // 두 번째 실행
+await db.exec(mig('20261109130000_legacy_prices.sql'));
+await db.exec(mig('20261109130000_legacy_prices.sql')); // 두 번째 실행
 ok('마이그레이션 2회 실행', true);
 
 const STAFF = '00000000-0000-0000-0000-0000000000c1';
