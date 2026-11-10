@@ -16,7 +16,7 @@ import { approvedOvernights, supabaseStores } from '../server/supabaseStores';
 import { serviceKeycardSecret, type KeycardSecret } from '../../student/server/keycard';
 import { supabaseAccountAdmin } from '../../student/server/accountAdmin';
 import { supabaseGuardAdmin } from '../server/guardAccounts';
-import { supabaseFiles } from '../../student/server/files';
+import { IMAGE_BODY_LIMIT, supabaseFiles } from '../../student/server/files';
 import { DEFAULT_EMAIL_DOMAIN } from '../../student/server/accounts';
 
 export interface Env {
@@ -48,7 +48,9 @@ export async function handleApi(req: Request, env: Env, fetchFn: typeof fetch = 
   let body: unknown = null;
   if (req.method === 'POST' || req.method === 'PUT') {
     const text = await req.text();
-    if (new TextEncoder().encode(text).length > BODY_LIMIT) return json(413, { error: 'body_too_large' });
+    // 학생 사진 올리기(POST /api/photos/<학생번호>, 11/10 결정 I9)만 사진 크기까지 받는다
+    const limit = /^\/api\/photos\/[\w-]+\/?$/.test(new URL(req.url).pathname) ? IMAGE_BODY_LIMIT : BODY_LIMIT;
+    if (new TextEncoder().encode(text).length > limit) return json(413, { error: 'body_too_large' });
     try {
       body = text ? JSON.parse(text) : null;
     } catch {
@@ -122,6 +124,7 @@ export async function handleApi(req: Request, env: Env, fetchFn: typeof fetch = 
         actor: account.name,
         session: { role: 'staff', staffRole: account.staffRole, campuses: account.campuses },
         absenceDocs: supabaseFiles(conf.url, userHeaders(conf, token), 'absence-docs', fetchFn), // 진단서 사진(직원 토큰, Storage RLS)
+        studentPhotos: supabaseFiles(conf.url, userHeaders(conf, token), 'student-photos', fetchFn), // 학생 사진(직원 토큰, Storage RLS, 11/10 결정 I9)
         // 학생 계정 관리는 서비스 키로(Auth Admin API). 계정 작업 경로에서만 쓰인다
         accounts: env.SUPABASE_SERVICE_ROLE_KEY ? supabaseAccountAdmin(conf.url, env.SUPABASE_SERVICE_ROLE_KEY, env.STUDENT_EMAIL_DOMAIN || DEFAULT_EMAIL_DOMAIN, fetchFn) : undefined,
         accountsUnavailable: env.SUPABASE_SERVICE_ROLE_KEY ? undefined : 'server_config',

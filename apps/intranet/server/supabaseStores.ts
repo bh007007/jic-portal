@@ -15,6 +15,7 @@ import type { AuditLog, CounselingNote, CounselingRemote } from './counseling';
 import type { AttendanceRow, AttendanceSource, DocRepo, Outing, Penalty, PenaltyRules, Repo, Settings, Stores } from './core';
 import type { Notice, NoticeRead } from './notices';
 import type { IncidentReport } from './reports';
+import type { PhotoLog, StudentPhoto } from './photos';
 import { serviceHeaders } from './supabaseData';
 
 const q = encodeURIComponent;
@@ -222,6 +223,27 @@ function rulesStore(rest: Rest): DocRepo<PenaltyRules> {
       // 종류·단계는 고정(core 의 validRules)이고 점수·승인 권한·기준점만 바꾼다
       for (const k of v.kinds) await rest('PATCH', `penalty_rules?code=eq.${q(k.code)}`, { score: k.score, approver: k.approver }, 'return=minimal');
       for (let i = 0; i < v.stages.length; i++) await rest('PATCH', `penalty_stages?stage=eq.${i + 1}`, { min_score: v.stages[i].min }, 'return=minimal');
+    },
+  };
+}
+
+// ── 학생 사진 올린 기록(11/10 결정 I9, 20261110160000_student_photos.sql): 직원만 읽고, 기록은 DB 함수(파일이 Storage 에 있어야 함)
+function photoStore(rest: Rest, names: Names): PhotoLog {
+  const toPhoto = async (r: Row): Promise<StudentPhoto> => ({
+    id: String(r.id),
+    stId: String(r.student_no),
+    path: String(r.path),
+    contentType: String(r.content_type),
+    size: Number(r.size_bytes),
+    source: r.source === 'vendor' ? 'vendor' : 'staff',
+    uploadedBy: (await names(r.uploaded_by)) ?? '',
+    uploadedAt: iso(r.uploaded_at)!,
+  });
+  return {
+    all: async () => Promise.all((await rest('GET', 'student_photos?select=*&order=uploaded_at.asc')).map(toPhoto)),
+    async add(v) {
+      const out = await rest<Row | Row[]>('POST', 'rpc/student_photo_record', { p_student_no: v.stId, p_path: v.path, p_content_type: v.contentType, p_size: v.size });
+      return toPhoto(Array.isArray(out) ? out[0] : out);
     },
   };
 }
@@ -451,6 +473,7 @@ function storesFrom(rest: Rest, userId: string | null): Stores {
     ...counselingStores(rest),
     ...noticeStores(rest),
     reports: reportStore(rest),
+    photos: photoStore(rest, names),
     departures: departureStore(rest),
     rides: rideStore(rest, names, userId),
     lifeRequests: lifeRequestStore(rest, names),

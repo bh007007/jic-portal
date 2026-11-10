@@ -25,7 +25,8 @@ import { handleLifeRequest, LIFE_CATEGORIES, LIFE_REPLY_MAX, type LifeRequestSto
 import { PENALTY_KIND_OF, REPORT_KINDS, REPORT_LABEL, REPORT_NOTE_MAX, type IncidentReport, type ReportKind } from './reports';
 import { createNotice, listNotices, noticeSummary, openNotice, updateNotice, type Notice, type NoticeCtx, type NoticeRead } from './notices';
 import { COMMENT_MAX, decideRequest, isMinorOn, needsMedicalDoc, nightsBetween, overnightFor, type Absence, type Overnight, type RequestStatus, type RequestStore } from '../../student/server/requests';
-import { toDataUrl, type FileStore } from '../../student/server/files';
+import { parseImageDataUrl, toDataUrl, type FileStore } from '../../student/server/files';
+import { latestPhotos, photoPath, STUDENT_NO, type PhotoLog } from './photos';
 import { readKeycard, type KeycardSecret } from '../../student/server/keycard';
 import type { AccountAdmin } from '../../student/server/accountAdmin';
 import { createAccounts, listAccounts, resetAccount, type AccountAction, type AccountsCtx } from './studentAccounts';
@@ -238,6 +239,8 @@ export interface Stores {
   accountAudit?: (action: AccountAction, stNo: string, campus: string) => Promise<void>;
   /** 배포: 가드 계정 만들기·비밀번호·지우기 접근 기록(DB 함수 guard_account_audit) */
   guardAudit?: (action: GuardAction, label: string, campus: string) => Promise<void>;
+  /** 학생 사진 올린 기록(11/10 결정 I9, photos.ts). 없으면 '사진 관리'는 안내만 */
+  photos?: PhotoLog;
   /** 학생 앱과 같이 쓰는 귀국 항공편과, 직원이 쓰는 공항 이동 배차 */
   departures: DepartureStore;
   rides: RideStore;
@@ -261,6 +264,8 @@ export interface IntranetCtx {
   guardAdmin?: GuardAdmin;
   /** 진단서 사진(11/10 결정 I10): 배포는 로그인한 직원·매니저 토큰으로 Storage 'absence-docs', 로컬은 학생 앱과 같은 폴더 */
   absenceDocs?: FileStore;
+  /** 학생 사진 파일(11/10 결정 I9): 배포는 로그인한 직원 토큰으로 Storage 'student-photos', 로컬은 폴더 */
+  studentPhotos?: FileStore;
   studentEmailDomain?: string;
   /**
    * 배포: 로그인한 계정 종류. 가드 공용 계정은 그 출입구(캠퍼스)로 고정한다. 로컬은 없음(관리자로 본다).
@@ -1157,6 +1162,74 @@ function currentRows(ctx: IntranetCtx) {
   return ctx.db.listEnrollments(new URLSearchParams({ tab: 'current', all: '1' })).rows;
 }
 
+// ── 학생 사진(11/10 결정 I9, photos.ts): 직원(관리자·오피스)만. 오피스는 맡은 캠퍼스 학생만(Student File 과 같은 범위)
+const photoReady = (ctx: IntranetCtx) => !!ctx.stores.photos && !!ctx.studentPhotos;
+/** 학생의 대표 연수 캠퍼스(Student File 과 같은 기준). 학생이 없으면 null */
+function mainCampus(ctx: IntranetCtx, stId: string): string | null {
+  const d = ctx.db.studentDetail(stId);
+  if (!d) return null;
+  const main = d.enrollments.find((e) => e.status === 'current') ?? d.enrollments.find((e) => e.status === 'upcoming') ?? d.enrollments[0] ?? null;
+  return main?.campus ?? '';
+}
+
+/** 사진 관리 목록: 재학·입학 예정 학생(학생 한 명에 한 줄)과 지금 사진 여부. 사진 자체는 싣지 않는다 */
+async function listPhotos(ctx: IntranetCtx, q: URLSearchParams) {
+  const scope = q.get('scope') === 'upcoming' ? 'upcoming' : 'current';
+  const latest = latestPhotos(ctx.stores.photos ? await ctx.stores.photos.all() : []);
+  const seen = new Set<string>();
+  const all = ctx.db
+    .listEnrollments(new URLSearchParams({ tab: scope, all: '1' }))
+    .rows.filter((r) => inScope(ctx, r.campus) && !seen.has(r.stId) && seen.add(r.stId))
+    .map((r) => {
+      const ph = latest.get(r.stId);
+      return { stId: r.stId, name: r.name, nation: r.nation, campus: r.campus, course: r.course, start: r.start, end: r.end, hasPhoto: !!ph, uploadedAt: ph?.uploadedAt ?? null, uploadedBy: ph?.uploadedBy ?? null };
+    });
+  const campus = q.get('campus') ?? '';
+  const kw = (q.get('q') ?? '').trim().toLowerCase();
+  const missing = q.get('missing') === '1';
+  const rows = all
+    .filter((r) => (!campus || r.campus === campus) && (!kw || r.name.toLowerCase().includes(kw) || r.stId.includes(kw)) && (!missing || !r.hasPhoto))
+    .sort((a, b) => Number(a.hasPhoto) - Number(b.hasPhoto) || a.name.localeCompare(b.name));
+  return {
+    ready: photoReady(ctx),
+    scope,
+    counts: { all: all.length, withPhoto: all.filter((r) => r.hasPhoto).length, missing: all.filter((r) => !r.hasPhoto).length },
+    campuses: [...new Set(all.map((r) => r.campus))].sort(),
+    rows,
+  };
+}
+
+export type PhotoList = Awaited<ReturnType<typeof listPhotos>>;
+
+/** 학생 한 명의 지금 사진(data URL)과 올린 기록 */
+async function getPhoto(ctx: IntranetCtx, stId: string): Promise<Result> {
+  const campus = mainCampus(ctx, stId);
+  if (campus === null) return fail(404, 'not_found');
+  if (!inScope(ctx, campus)) return fail(403, 'campus_forbidden');
+  if (!photoReady(ctx)) return fail(503, 'photos_unavailable');
+  const history = (await ctx.stores.photos!.all()).filter((p) => p.stId === stId).sort((a, b) => b.uploadedAt.localeCompare(a.uploadedAt) || b.id.localeCompare(a.id));
+  if (!history.length) return fail(404, 'no_photo');
+  const f = await ctx.studentPhotos!.get(history[0].path);
+  if (!f) return fail(404, 'no_photo');
+  return ok({ stId, image: toDataUrl(f), uploadedAt: history[0].uploadedAt, uploadedBy: history[0].uploadedBy, history: history.map(({ uploadedAt, uploadedBy, source }) => ({ uploadedAt, uploadedBy, source })) });
+}
+
+/** 사진 올리기: 화면이 줄여 보낸 data URL(1MB 까지) → 저장소 → 기록 */
+async function uploadPhoto(ctx: IntranetCtx, stId: string, input: Record<string, unknown>): Promise<Result> {
+  if (!STUDENT_NO.test(stId)) return fail(400, 'invalid_student');
+  const campus = mainCampus(ctx, stId);
+  if (campus === null) return fail(404, 'not_found');
+  if (!inScope(ctx, campus)) return fail(403, 'campus_forbidden');
+  if (!photoReady(ctx)) return fail(503, 'photos_unavailable');
+  const img = parseImageDataUrl(input.image);
+  if (!img.ok) return fail(400, img.error);
+  const id = ctx.newId();
+  const path = photoPath(stId, id, img.ext);
+  await ctx.studentPhotos!.put(path, img.file);
+  const rec = await ctx.stores.photos!.add({ id, stId, path, contentType: img.file.contentType, size: img.file.bytes.length, uploadedBy: ctx.actor ?? '', uploadedAt: ctx.now().toISOString() });
+  return ok({ stId, uploadedAt: rec.uploadedAt, uploadedBy: rec.uploadedBy }, 201);
+}
+
 async function studentFile(ctx: IntranetCtx, stId: string) {
   const d = ctx.db.studentDetail(stId);
   if (!d) return null;
@@ -1225,6 +1298,8 @@ async function studentFile(ctx: IntranetCtx, stId: string) {
       .sort((a, b) => b.trip.start.localeCompare(a.trip.start) || b.createdAt.localeCompare(a.createdAt)),
     departure: main ? ((await ctx.stores.departures.get(`dep-${main.trId}`)) as Departure | null) : null,
     attendance,
+    // 학생 사진(I9): 직원(관리자·오피스)만 있는지와 올린 날을 받고, 사진은 화면이 /photos/<학생번호> 로 따로 받는다. 매니저는 받지 않는다
+    photo: staffRoleOf(ctx) && ctx.stores.photos ? ((p) => (p ? { uploadedAt: p.uploadedAt } : null))(latestPhotos(await ctx.stores.photos.all()).get(stId)) : undefined,
   };
 }
 export type StudentFile = Exclude<NonNullable<Awaited<ReturnType<typeof studentFile>>>, 'forbidden'>;
@@ -1349,6 +1424,9 @@ export async function handleIntranetApi(ctx: IntranetCtx, method: string, pathna
         return await createCounseling(counselingCtx(ctx), input);
       case 'GET /audit':
         return ok(await listAudit(counselingCtx(ctx), q));
+      case 'GET /photos':
+        if (!staffRoleOf(ctx)) return fail(403, 'photo_staff_only');
+        return ok(await listPhotos(ctx, q));
       case 'GET /students':
         return ok(await studentFiles(ctx, q));
       case 'GET /summary':
@@ -1446,6 +1524,11 @@ export async function handleIntranetApi(ctx: IntranetCtx, method: string, pathna
     if (cn && method === 'GET' && !cn[2]) return await openCounseling(counselingCtx(ctx), cn[1]);
     if (cn && method === 'PUT' && !cn[2]) return await updateCounseling(counselingCtx(ctx), cn[1], input);
     if (cn && method === 'POST' && cn[2]) return await setFollowUp(counselingCtx(ctx), cn[1], input);
+    const ph = p.match(/^\/photos\/([\w-]+)$/);
+    if (ph && (method === 'GET' || method === 'POST')) {
+      if (!staffRoleOf(ctx)) return fail(403, 'photo_staff_only');
+      return method === 'GET' ? await getPhoto(ctx, ph[1]) : await uploadPhoto(ctx, ph[1], input);
+    }
     const sf = route.match(/^GET \/students\/(\w+)$/);
     if (sf) {
       const file = await studentFile(ctx, sf[1]);

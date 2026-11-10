@@ -6,9 +6,9 @@
 import { useCallback, useEffect, useState } from 'react';
 import { authHeaders, authMode, onSessionChange, signOut } from './auth';
 import { apiUrl } from './base';
-import type { DepartureList, GuardView, LifeRequestList, OutingList, OutingRow, PenaltyList, PenaltyRules, ReportList, RequestList, Settings, StudentFile, StudentFileList, Summary, TripDetail, TripList } from '../server/core';
+import type { DepartureList, GuardView, LifeRequestList, OutingList, OutingRow, PenaltyList, PenaltyRules, PhotoList, ReportList, RequestList, Settings, StudentFile, StudentFileList, Summary, TripDetail, TripList } from '../server/core';
 
-export type { DepartureList, GuardView, LifeRequestList, OutingList, OutingRow, PenaltyList, PenaltyRules, ReportList, RequestList, Settings, StudentFile, StudentFileList, Summary, TripDetail, TripList };
+export type { DepartureList, GuardView, LifeRequestList, OutingList, OutingRow, PenaltyList, PenaltyRules, PhotoList, ReportList, RequestList, Settings, StudentFile, StudentFileList, Summary, TripDetail, TripList };
 export type PenaltyRow = PenaltyList['rows'][number];
 export type { AuditList, CounselingDetail, CounselingList } from '../server/counseling';
 export type { NoticeDetail, NoticeList } from '../server/notices';
@@ -242,6 +242,14 @@ const MESSAGES: Record<string, string> = {
   manager_absence_only: '매니저는 무단결석만 승인·반려할 수 있습니다.',
   own_notice_only: '내가 쓴 공지만 고칠 수 있습니다.',
   campus_forbidden: '맡은 캠퍼스의 학생만 볼 수 있습니다.',
+  // 학생 사진(11/10 결정 I9)
+  photo_staff_only: '학생 사진은 직원(관리자·오피스)만 볼 수 있습니다.',
+  photos_unavailable: '사진 저장소가 아직 준비되지 않았습니다.',
+  no_photo: '올린 사진이 없습니다.',
+  invalid_image: '사진 파일(JPG·PNG·WEBP)만 올릴 수 있습니다.',
+  image_too_large: '사진이 너무 큽니다. 다른 사진을 고르세요.',
+  invalid_student: '학생번호가 올바르지 않습니다.',
+  body_too_large: '보낸 내용이 너무 큽니다.',
   unauthorized: '로그인이 필요합니다.',
 };
 export const errorText = (code: string) =>
