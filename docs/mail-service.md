@@ -92,7 +92,7 @@
 6. **보내기 한도**: Authentication → Rate Limits의 메일 보내기 한도(외부 SMTP를 켜면 시간당 30통이 기본)를 시간당 100통 정도로 올린다.
 7. **가입 허용·시험**: `docs/leo-todo.md` 5의 ①②(가입 허용, Redirect URL)를 확인한다. 그다음 시험 지점으로 가입 → 인증 메일 받기 → 관리자 포털 '계정·방문·통계'에서 승인까지 해 본다.
    - 이 프로젝트의 모든 인증 메일(직원 초대·비밀번호 재설정 포함)이 이제 Resend로 나간다.
-   - 기본 메일 문구는 영어다. 바꾸려면 Authentication → Emails → Templates에서 고친다.
+   - 기본 메일 문구는 영어다. 9장의 한국어·영어 초안을 Authentication → Emails → Templates에 붙여 넣는다.
 
 ## 7. 그다음 (기능 순서가 오면)
 
@@ -107,3 +107,49 @@
 - 메일 서비스에는 **에이전시 이메일**이 들어간다(주소록, 발송 기록). 학생 이메일은 보내지 않는다(원칙 P3, CL-035).
 - 인보이스 메일에는 학생 이름과 금액이 들어간다. 첨부 대신 **로그인해서 보는 링크**를 보내면 메일 서비스에 남는 개인정보가 줄어든다(제안).
 - 서비스 키는 Supabase 대시보드와 Workers 비밀 값에만 둔다. 저장소와 채팅에는 두지 않는다.
+
+## 9. 인증 메일 문구 초안 (6장 7번에서 붙여 넣기)
+
+Supabase 기본 인증 메일은 영어이고 JIC 이름이 없다. 아래는 **초안**이다. 기획이 문구를 확인한 뒤 레오님이 Authentication → Emails → Templates에 붙여 넣는다.
+- 한국어를 먼저 쓰고 영어를 아래에 둔다. 에이전시 포털 화면이 한국어 먼저라서다(다른 언어는 준비 중).
+- `{{ .ConfirmationURL }}`·`{{ .Email }}`은 Supabase가 채우는 값이라 그대로 둔다.
+- 링크는 한 번만 쓸 수 있고 시간이 지나면 끝난다(만료 시간은 Authentication → Providers → Email 설정에서 본다).
+- 대표 등록 신청과 직원 가입은 같은 'Confirm signup' 메일을 쓴다. 그래서 문구는 둘 다에 맞게 썼다.
+
+**Confirm signup (가입 인증)**
+
+제목: `[JIC] 이메일 인증 / Confirm your email`
+
+```html
+<p>JIC 에이전시 포털에 가입해 주셔서 감사합니다.</p>
+<p>아래 링크를 눌러 이메일({{ .Email }})을 인증해 주세요.</p>
+<p><a href="{{ .ConfirmationURL }}">이메일 인증하기</a></p>
+<p>지점 대표 아이디는 인증 뒤 JIC 담당자가 승인하면 쓸 수 있습니다. 지점 직원 아이디는 인증 뒤 로그인하면 바로 열립니다.<br>
+가입한 적이 없다면 이 메일은 무시하셔도 됩니다.</p>
+<hr>
+<p>Thank you for signing up for the JIC Agency Portal.</p>
+<p>Please confirm your email ({{ .Email }}) by clicking the link below.</p>
+<p><a href="{{ .ConfirmationURL }}">Confirm email</a></p>
+<p>Branch owner accounts can be used after JIC approves them. Branch staff accounts open as soon as you log in.<br>
+If you did not sign up, you can ignore this email.</p>
+<p>JIC English Academy</p>
+```
+
+**Reset password (비밀번호 재설정)**
+
+제목: `[JIC] 비밀번호 재설정 / Reset your password`
+
+```html
+<p>JIC 포털 비밀번호 재설정을 요청하셨습니다.</p>
+<p><a href="{{ .ConfirmationURL }}">새 비밀번호 정하기</a></p>
+<p>요청하지 않았다면 이 메일은 무시하셔도 됩니다. 비밀번호는 바뀌지 않습니다.</p>
+<hr>
+<p>You asked to reset your JIC Portal password.</p>
+<p><a href="{{ .ConfirmationURL }}">Set a new password</a></p>
+<p>If you did not ask for this, you can ignore this email. Your password will not change.</p>
+<p>JIC English Academy</p>
+```
+
+**Change email address (이메일 변경)**: 지금 에이전시 포털에는 이메일을 바꾸는 화면이 없다(아이디 이메일은 JIC 담당자가 바꾼다). 기본 문구 그대로 둔다.
+
+**Invite user (초대)**: 관리자 포털이 직원 계정을 만들 때 쓰는 경우에만 나간다. 에이전시 직원 아이디는 초대 메일을 쓰지 않는다(대표가 이메일을 등록하고 직원이 직접 가입, CL-032). 기본 문구 그대로 둔다.

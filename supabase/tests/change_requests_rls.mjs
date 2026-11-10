@@ -27,6 +27,8 @@ await db.exec(mig('20261107000000_legacy_tables.sql'));
 await db.exec(mig('20261110100000_change_requests.sql'));
 await db.exec(mig('20261110100000_change_requests.sql')); // 두 번째 실행
 await db.exec(mig('20261110203000_change_request_search_path.sql')); // 상태 길 함수 search_path 고정(보안 진단) 뒤에도 같은 결과
+await db.exec(mig('20261110213000_change_request_fk_indexes.sql'));
+await db.exec(mig('20261110213000_change_request_fk_indexes.sql')); // 성능 진단 인덱스, 두 번째 실행
 ok('마이그레이션 2회 실행', true);
 
 const STAFF = '00000000-0000-0000-0000-0000000000c1';

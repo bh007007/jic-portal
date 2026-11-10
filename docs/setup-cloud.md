@@ -152,7 +152,7 @@ Supabase 대시보드 **Advisors → Security Advisor**(또는 Claude의 Supabas
 - **유출 비밀번호 검사 꺼짐**: Authentication → Sign In / Providers → Email의 'Prevent use of leaked passwords'(HaveIBeenPwned). Pro 요금제 기능이라 학원 계정 이전 때 켠다(`docs/leo-todo.md` 9).
 
 **성능 진단(같은 날, 지금 규모에서는 급하지 않음)**: 실제 데이터를 올리기 전에 각 담당이 자기 표를 정리한다. 관리자·에이전시·강사 포털 표는 `20261110143500_perf_policies_indexes.sql`로 정리했다(정책 12개 `(select auth.uid())`, 외래 키 인덱스 14개, 시험 `partner_reco_rls.mjs`·`roles_rls.mjs`). 남은 것은 인트라넷·학생 앱 표(`airport_rides`, `guard_accounts`, `internal_notice_reads`, `internal_notices`, `student_users`의 정책과 그 표들의 외래 키)다.
-- 인덱스 없는 외래 키 25개(대부분 처리한 사람 `*_by` 열).
+- 인덱스 없는 외래 키 25개(대부분 처리한 사람 `*_by` 열). 같은 날 밤 다시 보니 15개이고, 그중 관리자 앱 변경 요청 표 4개는 `20261110213000_change_request_fk_indexes.sql`로 정리했다. 나머지 11개는 인트라넷·학생 앱 표다.
 - 정책에서 `auth.uid()`를 행마다 다시 계산하는 곳 20개: `(select auth.uid())`로 바꾼다.
 - 같은 역할·동작에 허용 정책이 여러 개인 표 31곳: 직원용 `*_staff_all`과 본인용 정책을 하나로 합칠 수 있다.
 - 한 번도 안 쓴 인덱스 13개: 샘플 규모라 안 쓰인 것이라 지우지 않는다.
