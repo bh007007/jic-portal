@@ -73,7 +73,7 @@ export const MENU: MenuGroup[] = [
     key: 'menu.costs',
     items: [
       { to: '/quote', key: 'menu.quote', ready: true },
-      { to: '/tuition', key: 'menu.tuition' },
+      { to: '/tuition', key: 'menu.tuition', ready: true },
       { to: '/vacancy', key: 'menu.vacancy', ready: true },
       { to: '/register', key: 'menu.register', ready: true },
       { to: '/invoices', key: 'menu.invoices', phase2: true },
