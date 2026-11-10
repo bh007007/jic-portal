@@ -1,13 +1,15 @@
 import { Link } from 'react-router-dom';
-import { courseLabel, isActivePromotion, loadCampuses, loadCourses, loadSettings, useLoad, type Notice } from '../data';
+import { byCountryOrder, courseLabel, isActivePromotion, loadCampuses, loadCourses, loadSettings, useLoad, type Notice } from '../data';
+import { useAuth } from '../auth';
 import { t } from '../i18n';
 import { must, supabase } from '../supabase';
 import { Box, OutLink, TAG_COLOR } from '../ui';
 
 // 1.2 로그인 후 홈(CL-040, 11/10): 상담 시작(가장 크게) → 바로가기 4개(견적·공실·자료실·방문 신청) → 캠퍼스 상태
-// → 공지·프로모션 → 새 영상(JIC Play, 준비 중) → 뉴스레터 최신호. 공지·프로모션·영상의 국가별 순서는 CL-036(개발 예정).
+// → 공지·프로모션(국가별 순서, CL-036) → 새 영상(JIC Play, 준비 중) → 뉴스레터 최신호.
 // 2차에는 대표 홈에 처리할 인보이스·내 학생 요약을 더한다.
 export default function Home() {
+  const { member } = useAuth();
   const { data } = useLoad(async () => {
     const [campuses, courses, settings, notices] = await Promise.all([
       loadCampuses(),
@@ -17,8 +19,10 @@ export default function Home() {
     ]);
     return { campuses, courses, settings, notices };
   });
-  const notices = (data?.notices ?? []).filter((n) => n.kind === 'notice').slice(0, 5);
-  const promos = (data?.notices ?? []).filter((n) => n.kind === 'promotion' && isActivePromotion(n)).slice(0, 3);
+  // 국가별 우선 순서(CL-036): 고정·최신 순서를 내 나라 순서로 다시 줄 세운다(노출 국가는 DB 정책이 거름)
+  const ordered = byCountryOrder(data?.notices ?? [], member?.country);
+  const notices = ordered.filter((n) => n.kind === 'notice').slice(0, 5);
+  const promos = ordered.filter((n) => n.kind === 'promotion' && isActivePromotion(n)).slice(0, 3);
   const s = data?.settings ?? {};
 
   return (

@@ -2,8 +2,9 @@ import { useState, type FormEvent } from 'react';
 import type { Notice } from '../../../../partner/src/data';
 import { Loading, Panel } from '../../components/ui';
 import { db, errText, must, Status, useLoad, type Note } from './common';
+import { CountryFields, countryText, orderText } from './CountryFields';
 
-const EMPTY = { kind: 'notice' as Notice['kind'], tag: '안내', title: '', body: '', target: '', pinned: false, starts_on: '', ends_on: '', published: true };
+const EMPTY = { kind: 'notice' as Notice['kind'], tag: '안내', title: '', body: '', target: '', pinned: false, starts_on: '', ends_on: '', published: true, countries: [] as string[], country_order: {} as Record<string, number> };
 
 /** 공지·프로모션(에이전시 포털 12.5): 작성, 상단 고정, 게시 기간. 11/10 에이전시 포털에서 옮겼다 */
 export default function Notices() {
@@ -15,7 +16,7 @@ export default function Notices() {
 
   const pick = (n: Notice) => {
     setEdit(n.id);
-    setF({ kind: n.kind, tag: n.tag, title: n.title, body: n.body ?? '', target: n.target ?? '', pinned: n.pinned, starts_on: n.starts_on ?? '', ends_on: n.ends_on ?? '', published: n.published });
+    setF({ kind: n.kind, tag: n.tag, title: n.title, body: n.body ?? '', target: n.target ?? '', pinned: n.pinned, starts_on: n.starts_on ?? '', ends_on: n.ends_on ?? '', published: n.published, countries: n.countries ?? [], country_order: n.country_order ?? {} });
     setMsg(null);
     window.scrollTo(0, 0);
   };
@@ -88,6 +89,8 @@ export default function Notices() {
                   <label><input type="checkbox" checked={f.published} onChange={(e) => setF({ ...f, published: e.target.checked })} /> 게시</label>
                 </td>
               </tr>
+              {/* 국가별 콘텐츠(CL-036) */}
+              <CountryFields countries={f.countries} order={f.country_order} onChange={(countries, country_order) => setF({ ...f, countries, country_order })} />
             </tbody>
           </table>
           <div className="form-actions">
@@ -99,15 +102,16 @@ export default function Notices() {
       <Panel title={<>목록 <small>({data.length}건)</small></>}>
         <div className="grid-box">
           <table className="tbl center">
-            <thead><tr><th>구분</th><th>말머리</th><th className="left">제목</th><th>기간</th><th>고정</th><th>게시</th><th>작성일</th><th>관리</th></tr></thead>
+            <thead><tr><th>구분</th><th>말머리</th><th className="left">제목</th><th>기간</th><th>노출 국가</th><th>고정</th><th>게시</th><th>작성일</th><th>관리</th></tr></thead>
             <tbody>
-              {data.length === 0 && <tr className="empty"><td colSpan={8}>글이 없습니다.</td></tr>}
+              {data.length === 0 && <tr className="empty"><td colSpan={9}>글이 없습니다.</td></tr>}
               {data.map((n) => (
                 <tr key={n.id}>
                   <td className="nowrap">{n.kind === 'promotion' ? '프로모션' : '공지'}</td>
                   <td>{n.tag}</td>
                   <td className="left strong">{n.title}</td>
                   <td className="muted nowrap">{n.starts_on || n.ends_on ? `${n.starts_on ?? ''} ~ ${n.ends_on ?? ''}` : '-'}</td>
+                  <td className="nowrap">{countryText(n.countries)}{orderText(n.country_order) && <div className="muted" style={{ fontSize: 12 }}>순서 {orderText(n.country_order)}</div>}</td>
                   <td>{n.pinned ? 'Y' : ''}</td>
                   <td className={n.published ? '' : 'muted'}>{n.published ? 'Y' : 'N'}</td>
                   <td className="muted nowrap">{n.created_at.slice(0, 10)}</td>
