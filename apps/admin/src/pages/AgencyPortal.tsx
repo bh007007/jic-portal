@@ -155,15 +155,22 @@ interface Member {
   legacy_am_id: string | null;
   login_count: number;
   last_login_at: string | null;
+  /** 지점 대표(owner) 또는 대표가 등록한 직원(staff), CL-032 */
+  role?: 'owner' | 'staff';
+  owner_id?: string | null;
 }
 
 function Members() {
-  const { rows, error, reload } = useRows<Member[]>(() => supabase!.from('agency_members').select('user_id, email, agency_name, branch, country, contact_name, phone, status, legacy_am_id, login_count, last_login_at').order('agency_name'));
+  const { rows, error, reload } = useRows<Member[]>(() => supabase!.from('agency_members').select('user_id, email, agency_name, branch, country, contact_name, phone, status, legacy_am_id, login_count, last_login_at, role, owner_id').order('agency_name'));
   const [kw, setKw] = useState('');
   const [msg, setMsg] = useState<{ ok: boolean; text: string } | null>(null);
   if (!rows) return <Loading error={error} />;
   const k = kw.trim().toLowerCase();
-  const list = rows.filter((m) => !k || `${m.agency_name} ${m.branch ?? ''} ${m.email} ${m.contact_name ?? ''}`.toLowerCase().includes(k));
+  // 대표 아래에 그 지점 직원을 붙여 보인다(CL-032)
+  const staffOf = (id: string) => rows.filter((x) => x.role === 'staff' && x.owner_id === id);
+  const ordered = rows.filter((m) => m.role !== 'staff').flatMap((m) => [m, ...staffOf(m.user_id)]);
+  const list = ordered.filter((m) => !k || `${m.agency_name} ${m.branch ?? ''} ${m.email} ${m.contact_name ?? ''}`.toLowerCase().includes(k));
+  const staffCount = rows.filter((m) => m.role === 'staff').length;
   const update = async (m: Member, patch: Partial<Member>, done: string) => {
     if (patch.status === 'suspended' && !window.confirm(`${m.agency_name} ${m.branch ?? ''} 계정을 정지할까요? 정지하면 에이전시 포털에서 아무것도 볼 수 없습니다.`)) return;
     const { error: e } = await supabase!.from('agency_members').update(patch).eq('user_id', m.user_id);
@@ -172,28 +179,29 @@ function Members() {
   };
   return (
     <Panel
-      title={<>지점 계정 <small>({rows.length}개)</small></>}
+      title={<>지점 계정 <small>(대표 {rows.length - staffCount} · 직원 {staffCount})</small></>}
       extra={<input type="search" placeholder="에이전시·지점·아이디" aria-label="검색" value={kw} onChange={(e) => setKw(e.target.value)} style={{ height: 28, padding: '0 8px', border: '1px solid #c5cad2', borderRadius: 3 }} />}
     >
       <Status msg={msg} />
       <div className="grid-box">
         <table className="tbl center" style={{ minWidth: 960 }}>
-          <thead><tr><th className="left">에이전시 · 지점</th><th>국가</th><th className="left">담당자</th><th className="left">아이디</th><th>업체 담당자 번호</th><th>접속</th><th>최근 접속</th><th>상태</th></tr></thead>
+          <thead><tr><th className="left">에이전시 · 지점</th><th>구분</th><th>국가</th><th className="left">담당자</th><th className="left">아이디</th><th>업체 담당자 번호</th><th>접속</th><th>최근 접속</th><th>상태</th></tr></thead>
           <tbody>
-            {list.length === 0 && <tr className="empty"><td colSpan={8}>지점 계정이 없습니다.</td></tr>}
+            {list.length === 0 && <tr className="empty"><td colSpan={9}>지점 계정이 없습니다.</td></tr>}
             {list.map((m) => (
               <tr key={m.user_id}>
-                <td className="left strong">{m.agency_name} {m.branch}</td>
+                <td className={m.role === 'staff' ? 'left muted' : 'left strong'}>{m.role === 'staff' ? '└ ' : ''}{m.agency_name} {m.branch}</td>
+                <td>{m.role === 'staff' ? '직원' : '대표'}</td>
                 <td>{m.country}</td>
                 <td className="left">{m.contact_name}<div className="muted" style={{ fontSize: 12 }}>{m.phone}</div></td>
                 <td className="left">{m.email}</td>
                 <td>
-                  <input
+                  {m.role === 'staff' ? '-' : <input
                     aria-label="업체 포털 담당자 번호"
                     defaultValue={m.legacy_am_id ?? ''}
                     style={{ height: 26, width: 90 }}
                     onBlur={(e) => e.target.value !== (m.legacy_am_id ?? '') && update(m, { legacy_am_id: e.target.value.trim() || null }, '업체 담당자 번호를 저장했습니다.')}
-                  />
+                  />}
                 </td>
                 <td>{m.login_count}</td>
                 <td className="muted nowrap">{m.last_login_at?.slice(0, 10) ?? '-'}</td>
@@ -209,7 +217,7 @@ function Members() {
           </tbody>
         </table>
       </div>
-      <p className="muted" style={{ margin: '8px 0 0', fontSize: 12 }}>업체 담당자 번호는 '담당자 계정'의 담당자번호입니다. 2차 My Students에서 지점 학생을 연결할 때 씁니다.</p>
+      <p className="muted" style={{ margin: '8px 0 0', fontSize: 12 }}>업체 담당자 번호는 '담당자 계정'의 담당자번호입니다. 2차 My Students에서 지점 학생을 연결할 때 씁니다. 직원 아이디는 지점 대표가 등록·정지하고(JIC 승인 없음), 대표를 정지하면 그 지점 직원도 같이 막힙니다.</p>
     </Panel>
   );
 }

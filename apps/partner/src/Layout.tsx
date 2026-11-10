@@ -4,11 +4,12 @@ import { useAuth } from './auth';
 import { LANGS, t } from './i18n';
 import { supabase } from './supabase';
 import { adminUrl } from './adminPortal';
-import { MENU, type MenuItem } from './menu';
+import { menuFor, type MenuItem } from './menu';
 
 
 export default function Layout({ children }: { children: ReactNode }) {
-  const { session, member, staff, allowed } = useAuth();
+  const { session, member, staff, allowed, agencyStaff } = useAuth();
+  const menu = menuFor(agencyStaff);
   const navigate = useNavigate();
   const { pathname } = useLocation();
   // 로그인 전에는 메뉴를 눌러도 로그인으로 보낸다(대시보드만 공개, 원칙 P2)
@@ -19,7 +20,9 @@ export default function Layout({ children }: { children: ReactNode }) {
       {!it.ready && <span className="chip">{t(it.phase2 ? 'common.phase2' : 'common.preparing')}</span>}
     </NavLink>
   );
-  const who = member ? `${member.agency_name}${member.branch ? ' ' + member.branch : ''}` : staff ? 'JIC 관리자' : session?.user.email;
+  const who = member
+    ? `${member.agency_name}${member.branch ? ' ' + member.branch : ''}${member.role === 'staff' ? ` · ${member.contact_name || '직원'}(직원)` : ''}`
+    : staff ? 'JIC 관리자' : session?.user.email;
 
   const logout = async () => {
     await supabase.auth.signOut();
@@ -60,7 +63,7 @@ export default function Layout({ children }: { children: ReactNode }) {
           </Link>
           {/* CL-037 메뉴 구조. 묶음은 마우스를 올리거나 단추에 포커스하면 펼쳐진다 */}
           <nav className="nav" aria-label="주 메뉴">
-            {MENU.map((g) => {
+            {menu.map((g) => {
               if (g.to) {
                 return (
                   <NavLink key={g.key} to={go(g.to)} end={g.to === '/'} className={({ isActive }) => (isActive && allowed ? 'active' : '')}>

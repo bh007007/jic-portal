@@ -51,9 +51,9 @@ export default function Login() {
           <button type="submit" className="btn btn-primary btn-lg" disabled={busy}>{busy ? '확인 중…' : '로그인'}</button>
           <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 13 }}>
             <button type="button" className="link" onClick={forgot}>비밀번호 찾기</button>
-            <Link to="/signup">등록 신청</Link>
+            <span><Link to="/signup">등록 신청</Link> · <Link to="/signup/staff">직원 가입</Link></span>
           </div>
-          <p className="hint" style={{ margin: 0 }}>계정은 에이전시 지점 단위로 발급됩니다. 담당자가 바뀌면 같은 아이디를 인계하세요.</p>
+          <p className="hint" style={{ margin: 0 }}>대표 아이디는 지점 단위로 발급됩니다(등록 신청 → JIC 승인). 직원 아이디는 지점 대표가 이메일을 등록한 뒤 직원 가입으로 만듭니다.</p>
         </form>
       </Box>
     </div>

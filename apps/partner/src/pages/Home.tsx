@@ -8,8 +8,9 @@ import { Box, OutLink, TAG_COLOR } from '../ui';
 // 1.2 로그인 후 홈(CL-040, 11/10): 상담 시작(가장 크게) → 바로가기 4개(견적·공실·자료실·방문 신청) → 캠퍼스 상태
 // → 공지·프로모션(국가별 순서, CL-036) → 새 영상(JIC Play, 준비 중) → 뉴스레터 최신호.
 // 2차에는 대표 홈에 처리할 인보이스·내 학생 요약을 더한다.
+// 지점 직원 아이디(CL-032)는 상담·자료·공지만: 바로가기는 자료실만 보이고 캠퍼스 상자는 대표만 본다.
 export default function Home() {
-  const { member } = useAuth();
+  const { member, agencyStaff } = useAuth();
   const { data } = useLoad(async () => {
     const [campuses, courses, settings, notices] = await Promise.all([
       loadCampuses(),
@@ -37,12 +38,13 @@ export default function Home() {
       </section>
 
       <nav className="links" aria-label="바로가기">
-        <Link to="/quote"><strong>견적</strong><span>KR · JP · USD · USD-New</span></Link>
-        <Link to="/vacancy"><strong>공실 확인</strong><span>최종 확정은 JIC 담당자 확인</span></Link>
+        {!agencyStaff && <Link to="/quote"><strong>견적</strong><span>KR · JP · USD · USD-New</span></Link>}
+        {!agencyStaff && <Link to="/vacancy"><strong>공실 확인</strong><span>최종 확정은 JIC 담당자 확인</span></Link>}
         <Link to="/resources"><strong>자료실</strong><span>가격표 · 브로슈어 · 사진 · 규정</span></Link>
-        <Link to="/visit"><strong>방문 신청</strong><span>학교 방문 · 내 방문 내역</span></Link>
+        {!agencyStaff && <Link to="/visit"><strong>방문 신청</strong><span>학교 방문 · 내 방문 내역</span></Link>}
       </nav>
 
+      {!agencyStaff && (
       <Box title="캠퍼스" extra={<Link className="more" to="/campuses">캠퍼스·코스 ›</Link>}>
         <div className="box-body">
           <div className="cards">
@@ -63,6 +65,7 @@ export default function Home() {
           </div>
         </div>
       </Box>
+      )}
 
       <div className="row">
         <Box title="공지" extra={<Link className="more" to="/notices">더보기 +</Link>} className="grow-3">
