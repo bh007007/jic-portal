@@ -283,34 +283,40 @@ function Visits() {
 }
 
 // ── 사용 통계(12.7): 지점별 학습계획서 다운로드·접속 수(학생 정보 없이 숫자만, 원칙 P3)
-interface StatMember { user_id: string; agency_name: string; branch: string | null; country: string | null; login_count: number; last_login_at: string | null }
+interface StatMember { user_id: string; agency_name: string; branch: string | null; country: string | null; login_count: number; last_login_at: string | null; role?: 'owner' | 'staff'; owner_id?: string | null }
 interface Download { member_id: string; course_id: string | null; created_at: string }
 
 function Stats() {
-  const m = useRows<StatMember[]>(() => supabase!.from('agency_members').select('user_id, agency_name, branch, country, login_count, last_login_at'));
+  const m = useRows<StatMember[]>(() => supabase!.from('agency_members').select('user_id, agency_name, branch, country, login_count, last_login_at, role, owner_id'));
   const d = useRows<Download[]>(() => supabase!.from('plan_downloads').select('member_id, course_id, created_at'));
   if (!m.rows || !d.rows) return <Loading error={m.error || d.error} />;
   const month = new Date(Date.now() + 8 * 3600e3).toISOString().slice(0, 7);
+  // 지점 단위로 모은다: 대표 아이디 + 그 지점 직원 아이디(CL-032)
+  const branchOf = new Map(m.rows.map((x) => [x.user_id, x.role === 'staff' && x.owner_id ? x.owner_id : x.user_id]));
   const rows = m.rows
+    .filter((x) => x.role !== 'staff')
     .map((x) => {
-      const ds = d.rows!.filter((y) => y.member_id === x.user_id);
-      return { ...x, downloads: ds.length, thisMonth: ds.filter((y) => y.created_at.startsWith(month)).length };
+      const ids = m.rows!.filter((y) => branchOf.get(y.user_id) === x.user_id);
+      const ds = d.rows!.filter((y) => branchOf.get(y.member_id) === x.user_id);
+      const last = ids.map((y) => y.last_login_at ?? '').sort().pop() || null;
+      return { ...x, ids: ids.length, login_count: ids.reduce((s, y) => s + y.login_count, 0), last_login_at: last, downloads: ds.length, thisMonth: ds.filter((y) => y.created_at.startsWith(month)).length };
     })
     .sort((a, b) => b.downloads - a.downloads || b.login_count - a.login_count);
   const byCourse = new Map<string, number>();
   for (const y of d.rows) byCourse.set(y.course_id ?? '-', (byCourse.get(y.course_id ?? '-') ?? 0) + 1);
   return (
     <>
-      <Panel title="지점별 학습계획서·접속">
+      <Panel title="지점별 학습계획서·접속 (대표·직원 아이디 합계)">
         <div className="grid-box">
           <table className="tbl center" style={{ minWidth: 760 }}>
-            <thead><tr><th className="left">에이전시 · 지점</th><th>국가</th><th>학습계획서 (전체)</th><th>이번 달</th><th>접속 수</th><th>최근 접속</th></tr></thead>
+            <thead><tr><th className="left">에이전시 · 지점</th><th>국가</th><th>아이디</th><th>학습계획서 (전체)</th><th>이번 달</th><th>접속 수</th><th>최근 접속</th></tr></thead>
             <tbody>
-              {rows.length === 0 && <tr className="empty"><td colSpan={6}>지점 계정이 없습니다.</td></tr>}
+              {rows.length === 0 && <tr className="empty"><td colSpan={7}>지점 계정이 없습니다.</td></tr>}
               {rows.map((x) => (
                 <tr key={x.user_id}>
                   <td className="left strong">{x.agency_name} {x.branch}</td>
                   <td>{x.country}</td>
+                  <td title="대표 1 + 직원">{x.ids}</td>
                   <td className="strong">{x.downloads}</td>
                   <td>{x.thisMonth}</td>
                   <td>{x.login_count}</td>
