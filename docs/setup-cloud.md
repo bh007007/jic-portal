@@ -148,6 +148,7 @@ Supabase 대시보드 **Advisors → Security Advisor**(또는 Claude의 Supabas
   - `enrollment_of_student(연수, 학생번호)`: 둘이 맞는지만 참·거짓으로 돌려준다. 학생 신청 정책(WITH CHECK)이 써서 실행 권한을 거둘 수 없다. 실제 데이터를 올리기 전에 함수 안에 '본인·직원·강사만' 확인을 넣을지 학생 앱·인트라넷 담당과 정한다.
   - 트리거 함수 `handle_partner_signup`·`rls_auto_enable`: 아래에서 실행 권한을 거뒀다.
 - **트리거 함수 실행 권한**: `20261110131500_trigger_fn_privileges.sql`이 트리거 함수 5개의 실행 권한을 PUBLIC·anon·authenticated에서 거둔다. 트리거는 그대로 돈다(시험 `attendance_rls.mjs`·`partner_reco_rls.mjs`).
+- **함수 search_path(같은 날 저녁)**: 진단에 `change_request_next_ok`(변경 요청 상태 길)가 'Function Search Path Mutable'로 나왔다. `20261110203000_change_request_search_path.sql`로 빈 search_path 를 고정했다. 같은 일이 없게 CI `security_lint.mjs` 7번이 public 의 모든 함수를 본다(그때 정규화 표의 값 변환 함수 5개도 같이 고정, 운영에는 아직 없음).
 - **유출 비밀번호 검사 꺼짐**: Authentication → Sign In / Providers → Email의 'Prevent use of leaked passwords'(HaveIBeenPwned). Pro 요금제 기능이라 학원 계정 이전 때 켠다(`docs/leo-todo.md` 9).
 
 **성능 진단(같은 날, 지금 규모에서는 급하지 않음)**: 실제 데이터를 올리기 전에 각 담당이 자기 표를 정리한다. 관리자·에이전시·강사 포털 표는 `20261110143500_perf_policies_indexes.sql`로 정리했다(정책 12개 `(select auth.uid())`, 외래 키 인덱스 14개, 시험 `partner_reco_rls.mjs`·`roles_rls.mjs`). 남은 것은 인트라넷·학생 앱 표(`airport_rides`, `guard_accounts`, `internal_notice_reads`, `internal_notices`, `student_users`의 정책과 그 표들의 외래 키)다.

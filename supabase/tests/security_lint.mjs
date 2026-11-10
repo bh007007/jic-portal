@@ -5,6 +5,7 @@
 //   3. SECURITY DEFINER 함수는 익명이 실행할 수 없고, 로그인 사용자가 실행할 수 있으면 함수 안에서 역할을 확인한다. 예외는 UNGUARDED 목록뿐.
 //   4. SECURITY DEFINER 트리거 함수는 아무도 직접 실행할 수 없다(20261110131500_trigger_fn_privileges.sql 과 같은 규칙).
 //   5. 뷰는 security_invoker 로 만든다(보는 사람 권한으로 읽게).
+//   7. public 의 모든 함수는 search_path 를 고정한다(Supabase 진단 'Function Search Path Mutable', 11/10 change_request_next_ok).
 //   6. 실제로 읽어 보기: 샘플 학생·연수(가짜)와 에이전시 포털 기본 행을 넣고, 역할 없는 사용자·익명이 모든 표와 표를 돌려주는 DEFINER 함수에서 0행이다.
 // 규칙을 일부러 벗어나야 하면 아래 목록에 이유와 함께 더하고 docs/setup-cloud.md '보안 진단'에 적는다.
 //
@@ -101,6 +102,15 @@ for (const f of fns) {
   if (f.auth_x && !GUARD.test(f.src)) ok(`DEFINER 함수 ${sig}: 함수 안 역할 확인 또는 허용 목록`, UNGUARDED.has(f.name));
 }
 ok('DEFINER 함수 확인', true, `${fns.length}개`);
+
+// 7. 함수 search_path 고정(DEFINER 가 아니어도). 확장 기능이 만든 함수는 뺀다
+const loose = await q(`
+  select p.proname || '(' || pg_get_function_identity_arguments(p.oid) || ')' sig
+  from pg_proc p join pg_namespace n on n.oid = p.pronamespace
+  where n.nspname = 'public' and p.prokind in ('f', 'p')
+    and not exists (select 1 from pg_depend d where d.objid = p.oid and d.deptype = 'e')
+    and not exists (select 1 from unnest(coalesce(p.proconfig, '{}')) c where c like 'search_path=%')`);
+ok('함수 search_path 고정', loose.length === 0, loose.map((r) => r.sig).join(', '));
 
 // 5. 뷰
 const views = await q(`select c.relname, coalesce(array_to_string(c.reloptions, ','), '') opts from pg_class c join pg_namespace n on n.oid = c.relnamespace where n.nspname = 'public' and c.relkind in ('v','m')`);
