@@ -8,7 +8,7 @@
     "build": "tsc --noEmit && npm run test && vite build",
     "typecheck": "tsc --noEmit",
     "preview": "vite preview",
-    "test": "esbuild src/consult/engine.test.ts --bundle --platform=node --format=esm --outdir=node_modules/.cache/test --log-level=warning && node node_modules/.cache/test/engine.test.js"
+    "test": "esbuild src/consult/engine.test.ts src/menu.test.ts --bundle --platform=node --format=esm --outbase=src --outdir=node_modules/.cache/test --log-level=warning && node node_modules/.cache/test/consult/engine.test.js && node node_modules/.cache/test/menu.test.js"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.119.0",
