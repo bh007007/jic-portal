@@ -28,6 +28,9 @@ await db.exec(mig('20261110131500_trigger_fn_privileges.sql')); // 두 번째 �
 // 성능 정리(20261110143500_perf_policies_indexes.sql: 정책의 auth.uid() → (select auth.uid()), 외래 키 인덱스)를 먼저 적용한다. 아래 지점 계정 시험이 뜻이 그대로인지 같이 본다
 await db.exec(mig('20261110143500_perf_policies_indexes.sql'));
 await db.exec(mig('20261110143500_perf_policies_indexes.sql')); // 두 번째 실행
+// 국가별 콘텐츠(CL-036): 노출 국가·국가별 우선 순서, 정책에서 다른 나라 항목을 막는다
+await db.exec(mig('20261110163500_partner_country_targeting.sql'));
+await db.exec(mig('20261110163500_partner_country_targeting.sql')); // 두 번째 실행
 for (const fn of ['handle_partner_signup()', 'guard_member_update()']) {
   const r = (await db.query(`select has_function_privilege('anon', 'public.${fn}', 'execute') a, has_function_privilege('authenticated', 'public.${fn}', 'execute') u`)).rows[0];
   ok(`트리거 함수 ${fn}: 로그인 전·후 직접 실행 불가`, !r.a && !r.u, JSON.stringify(r));
@@ -86,6 +89,40 @@ await as(null, async () => {
     ok('익명: 규칙 못 읽음', /permission denied/.test(e.message));
   }
 });
+
+// 국가별 콘텐츠(CL-036): 지점은 '모든 국가'와 자기 나라 항목만 읽는다(정책). 직원은 모두
+await as(U.staff, () => db.exec(`update public.agency_members set country = '한국' where user_id = '${U.partner}'`));
+await db.exec(`
+  insert into public.partner_notices (kind, tag, title, published, countries, country_order) values
+    ('notice', '안내', '모든 나라 공지', true, '{}', '{}'),
+    ('notice', '안내', '한국 공지', true, '{한국}', '{"한국": 1}'),
+    ('notice', '안내', '일본 공지', true, '{일본,대만}', '{}');
+  insert into public.partner_resources (category, title, countries) values
+    ('가격표', '모든 나라 자료', '{}'), ('가격표', '한국 자료', '{한국}'), ('가격표', '베트남 자료', '{베트남}');
+`);
+const titles = async (t) => (await q(`select title from public.${t} where title like '%나라%' or title like '%한국%' or title like '%일본%' or title like '%베트남%' order by id`)).map((r) => r.title).join(',');
+await as(U.partner, async () => {
+  ok('한국 지점: 공지는 모든 나라·한국만', (await titles('partner_notices')) === '모든 나라 공지,한국 공지', await titles('partner_notices'));
+  ok('한국 지점: 자료는 모든 나라·한국만', (await titles('partner_resources')) === '모든 나라 자료,한국 자료', await titles('partner_resources'));
+  ok('한국 지점: 내 나라 = 한국', (await q(`select public.partner_country() c`))[0].c === '한국');
+  ok('한국 지점: 우선 순서 읽힘', (await q(`select country_order->>'한국' o from public.partner_notices where title = '한국 공지'`))[0]?.o === '1');
+});
+await as(U.pending, async () => {
+  ok('승인 전 계정: 공지·자료 0', (await titles('partner_notices')) === '' && (await titles('partner_resources')) === '');
+  ok('승인 전 계정: 내 나라 없음', (await q(`select public.partner_country() c`))[0].c === null);
+});
+await as(U.staff, async () => ok('직원: 나라와 상관없이 모두', (await titles('partner_notices')).split(',').length === 3 && (await titles('partner_resources')).split(',').length === 3));
+await as(U.staff, () => db.exec(`update public.agency_members set country = null where user_id = '${U.partner}'`));
+await as(U.partner, async () => ok('국가 없는 지점: 모든 나라 항목만', (await titles('partner_notices')) === '모든 나라 공지'));
+await as(U.staff, () => db.exec(`update public.agency_members set country = '한국' where user_id = '${U.partner}'`));
+try {
+  await db.exec(`insert into public.partner_notices (kind, tag, title, country_order) values ('notice', '안내', '잘못된 순서', '[1,2]')`);
+  fails.push('우선 순서는 객체만 받아야 함');
+} catch {
+  ok('우선 순서는 객체만', true);
+}
+const anonFn = (await q(`select has_function_privilege('anon', 'public.partner_country()', 'execute') a`))[0].a;
+ok('partner_country(): 익명 실행 불가', !anonFn);
 
 // 방문 신청·학습계획서 기록(정책을 (select auth.uid()) 로 바꾼 뒤에도 같은 뜻인지): 본인 것만 넣고 읽는다
 const fails0 = async (sql) => db.query(sql).then(() => false, () => true);

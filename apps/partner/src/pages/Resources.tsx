@@ -1,5 +1,6 @@
 import { useState } from 'react';
-import { fmtSize, today, useLoad, type Resource } from '../data';
+import { byCountryOrder, fmtSize, today, useLoad, type Resource } from '../data';
+import { useAuth } from '../auth';
 import { RESOURCE_BUCKET, RESOURCE_CATEGORIES } from '../shared';
 import { t } from '../i18n';
 import { errText, must, supabase } from '../supabase';
@@ -15,9 +16,11 @@ export default function Resources() {
   const [cat, setCat] = useState('');
   const [kw, setKw] = useState('');
   const [err, setErr] = useState('');
+  const { member } = useAuth();
   if (!data) return <Loading error={error} />;
 
-  const list = data.filter((r) => (!cat || r.category === cat) && (!kw || `${r.title} ${r.description ?? ''}`.toLowerCase().includes(kw.toLowerCase())));
+  // 국가별 우선 순서(CL-036): 내 나라에 순서가 정해진 자료가 먼저
+  const list = byCountryOrder(data, member?.country).filter((r) => (!cat || r.category === cat) && (!kw || `${r.title} ${r.description ?? ''}`.toLowerCase().includes(kw.toLowerCase())));
   const open = async (r: Resource) => {
     setErr('');
     if (r.link_url) return void window.open(r.link_url, '_blank', 'noopener');

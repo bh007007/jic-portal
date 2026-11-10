@@ -2,7 +2,7 @@ import { useCallback, useEffect, useState } from 'react';
 import { must, supabase } from './supabase';
 import { today } from './shared';
 
-export { courseLabel, fmtSize, today } from './shared';
+export { byCountryOrder, courseLabel, fmtSize, today } from './shared';
 
 export interface Campus {
   id: string;
@@ -137,6 +137,9 @@ export interface Notice {
   ends_on: string | null;
   published: boolean;
   created_at: string;
+  /** 노출 국가(비면 모든 국가)와 국가별 우선 순서(CL-036) */
+  countries?: string[];
+  country_order?: Record<string, number>;
 }
 
 export interface Resource {
@@ -150,6 +153,8 @@ export interface Resource {
   link_url: string | null;
   updated_on: string;
   created_at: string;
+  countries?: string[];
+  country_order?: Record<string, number>;
 }
 
 /** 비동기 조회를 컴포넌트 상태로. reload 로 다시 부른다. */

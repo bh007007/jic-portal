@@ -1,5 +1,6 @@
 import { Link, useSearchParams } from 'react-router-dom';
-import { isActivePromotion, useLoad, type Notice } from '../data';
+import { byCountryOrder, isActivePromotion, useLoad, type Notice } from '../data';
+import { useAuth } from '../auth';
 import { t } from '../i18n';
 import { must, supabase } from '../supabase';
 import { Box, Loading, PageHead, TAG_COLOR } from '../ui';
@@ -8,6 +9,7 @@ import { Box, Loading, PageHead, TAG_COLOR } from '../ui';
 export default function Notices() {
   const [params, setParams] = useSearchParams();
   const tab = params.get('tab') ?? 'notice';
+  const { member } = useAuth();
   const { data, error } = useLoad(() =>
     must<Notice[]>(supabase.from('partner_notices').select('*').order('pinned', { ascending: false }).order('created_at', { ascending: false })),
   );
@@ -15,7 +17,8 @@ export default function Notices() {
   const notices = data.filter((n) => n.kind === 'notice');
   const live = data.filter((n) => n.kind === 'promotion' && isActivePromotion(n));
   const past = data.filter((n) => n.kind === 'promotion' && !isActivePromotion(n));
-  const list = tab === 'promotion' ? live : tab === 'past' ? past : notices;
+  // 국가별 우선 순서(CL-036): 내 나라에 순서가 정해진 글이 먼저
+  const list = byCountryOrder(tab === 'promotion' ? live : tab === 'past' ? past : notices, member?.country);
 
   return (
     <>

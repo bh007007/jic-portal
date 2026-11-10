@@ -1,9 +1,9 @@
+import { COUNTRIES } from '../shared';
 import { useState, type FormEvent } from 'react';
 import { Link } from 'react-router-dom';
 import { errText, supabase } from '../supabase';
 import { Box, Msg } from '../ui';
 
-const COUNTRIES = ['한국', '일본', '대만', '중국', '베트남', '사우디아라비아', '태국', '몽골', '기타'];
 
 // 0.2 등록 신청: 지점 계정 신청 → JIC 관리자 승인 후 로그인 가능
 export default function Signup() {
