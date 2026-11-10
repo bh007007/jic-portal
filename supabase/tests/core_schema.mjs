@@ -127,6 +127,7 @@ await as(STAFF, async () => {
 await db.exec(mig('20261110120000_core_schema_more.sql'));
 await db.exec(mig('20261110130000_core_schema_accounting.sql'));
 await db.exec(mig('20261110130000_core_schema_accounting.sql')); // 두 번째 실행
+await db.exec(mig('20261110203000_change_request_search_path.sql')); // 값 변환 함수 search_path 고정 뒤에도 같은 결과(보안 진단)
 await put('legacy_invoices', nd('invoices.ndjson'), (r) => r.tr_id);
 await put('legacy_dorm_assignments', nd('dorm_assignments.ndjson'), (r) => r.tr_id);
 await put('legacy_deposits', nd('deposits.ndjson'), (r) => r.dp_id);
