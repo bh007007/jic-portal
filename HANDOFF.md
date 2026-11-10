@@ -2,6 +2,8 @@
 
 업체 포털(jicportal.com)을 대체할 JIC 자체 통합 시스템이다. 구조는 **관리자(인트라넷 포함)·학생·에이전시·강사(LMS) 4개 포털과 Supabase DB 하나**다(`docs/architecture.md`, 11/8). 첫 화면 https://jic-portal-916.pages.dev 에서 포털을 고른다(관리자 포털은 `/admin/`). 4개 포털 모두 배포되어 있다(11/9): 관리자 포털(대시보드·학생·기숙사·회계·에이전시·기초관리·통계·사용자·권한)과 인트라넷 `/intranet/`, 강사 포털 `/teacher/`(성적·출석·수업 관리), 학생 포털·에이전시 포털(Workers). 데이터는 아직 가짜 샘플뿐이다(4장 표, 실제 데이터는 보안 점검 뒤). 이 폴더를 Claude Code로 열면 Claude가 `CLAUDE.md`를 읽고 맥락을 이어받는다.
 
+> **원본 문서(11/10 공동 작업 방식)**: 원칙 `docs/principles.md`, 승인된 변경 `docs/change-log.md`, 메뉴 `docs/menus.md`, 공용 DB `docs/db-schema.md`, 합의 `docs/agreements/`. Change Log·적용 지시서에 있는 것만 만들고, 차이 목록(P-·L-·N-) 항목은 결정 전까지 개발하지 않는다(`CLAUDE.md`).
+
 ## 0. 함께 일하기 (주소·계정·공동 개발)
 
 ### 주소

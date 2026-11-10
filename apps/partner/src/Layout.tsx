@@ -67,7 +67,7 @@ export default function Layout({ children }: { children: ReactNode }) {
             <span className="off">
               {t('nav.students')} <span className="chip">{t('common.preparing')}</span>
             </span>
-            {/* 관리 화면은 관리자 포털 '에이전시' 메뉴(11/10 이전) */}
+            {/* 관리 화면은 관리자 포털 '파트너 포털 관리' 메뉴(11/10 이전, CL-025) */}
             {staff && <a href={adminUrl('agency-portal')}>{t('nav.admin')} ↗</a>}
           </nav>
         </div>

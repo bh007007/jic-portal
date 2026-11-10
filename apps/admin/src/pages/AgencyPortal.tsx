@@ -4,10 +4,10 @@ import { supabase } from '../supabase';
 import { Loading, PageTitle, Panel } from '../components/ui';
 
 /**
- * 에이전시 포털 관리(1단계, 11/10 결정 '에이전시 관리 화면을 관리자 포털로 옮긴다', docs/leo-todo.md D-4).
+ * 파트너 포털 관리 › 계정·방문·통계(11/10 D-4 1단계, 메뉴 그룹은 CL-025 '파트너 포털 관리').
  * 직원이 매일 쓰는 가입 승인·지점 계정·방문 신청·사용 통계를 관리자 포털 한 번 로그인으로 처리한다. 표는 파트너 포털 표 그대로
  * (agency_requests·agency_members·visit_requests·plan_downloads, 20261107010000_partner_portal.sql), 권한은 직원(is_staff, RLS).
- * 추천 규칙·콘텐츠·자료실·공지·링크 설정은 2단계로 옮겼다('에이전시 포털 콘텐츠', AgencyContent.tsx).
+ * 추천 규칙·콘텐츠·자료실·공지·링크 설정은 '추천·콘텐츠·공지'(AgencyContent.tsx).
  */
 type Tab = 'requests' | 'members' | 'visits' | 'stats';
 const TABS: [Tab, string][] = [['requests', '가입 승인'], ['members', '지점 계정'], ['visits', '방문 신청'], ['stats', '사용 통계']];
@@ -18,14 +18,14 @@ export default function AgencyPortal() {
   if (!supabase) {
     return (
       <>
-        <PageTitle title="에이전시 포털 관리" path="홈 > 에이전시 > 에이전시 포털 관리" />
+        <PageTitle title="계정·방문·통계" path="홈 > 파트너 포털 관리 > 계정·방문·통계" />
         <div className="state-msg">에이전시 포털 계정·신청은 Supabase에 있어 배포 주소(로그인한 직원)에서만 보입니다. 로컬 데이터 실행에는 없습니다.</div>
       </>
     );
   }
   return (
     <>
-      <PageTitle title="에이전시 포털 관리" path="홈 > 에이전시 > 에이전시 포털 관리" />
+      <PageTitle title="계정·방문·통계" path="홈 > 파트너 포털 관리 > 계정·방문·통계" />
       <div className="toolbar">
         <span>
           {TABS.map(([k, label]) => (
@@ -34,7 +34,7 @@ export default function AgencyPortal() {
             </button>
           ))}
         </span>
-        <span className="toolbar-right muted" style={{ fontSize: 12 }}>추천 규칙·콘텐츠·자료실·공지는 <Link to="/agency-content">에이전시 포털 콘텐츠</Link></span>
+        <span className="toolbar-right muted" style={{ fontSize: 12 }}>추천 규칙·콘텐츠·자료실·공지는 <Link to="/agency-content">추천·콘텐츠·공지</Link></span>
       </div>
       {tab === 'requests' && <Requests />}
       {tab === 'members' && <Members />}
