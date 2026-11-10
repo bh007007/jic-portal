@@ -11,8 +11,13 @@ import { isDate, nightsBetween, type Outcome, type Overnight } from './requests'
 /** open 신청 받는 중 · closed 신청 마감(직원이 일찍 닫음) · cancelled 여행 취소 */
 export type TripStatus = 'open' | 'closed' | 'cancelled';
 export const TRIP_STATUSES: TripStatus[] = ['open', 'closed', 'cancelled'];
-/** applied 참가 신청 · cancelled 학생이 취소 · removed 직원이 명단에서 뺌(사유는 학생에게 보인다) */
-export type SignupStatus = 'applied' | 'cancelled' | 'removed';
+/**
+ * applied 참가 신청 · waiting 대기(정원이 차서, 11/10 결정 I12) · cancelled 학생이 취소 · removed 직원이 명단에서 뺌(사유는 학생에게 보인다).
+ * 참가 신청이 빠지거나 정원이 늘면 대기자를 신청한 순서대로 참가로 올린다(promotions, 배포는 DB 함수 trip_promote).
+ */
+export type SignupStatus = 'applied' | 'waiting' | 'cancelled' | 'removed';
+/** 아직 살아 있는 신청(참가 또는 대기) */
+export const isLive = (s: Pick<TripSignup, 'status'>) => s.status === 'applied' || s.status === 'waiting';
 
 export const TRIP_TITLE_MAX = 100;
 export const TRIP_PLACE_MAX = 100;
@@ -66,6 +71,8 @@ export interface TripStore {
   signupsByStudent(stId: string): Promise<TripSignup[]>;
   getSignup(id: string): Promise<TripSignup | null>;
   putSignup(s: TripSignup): Promise<void>;
+  /** 대기 순서(1부터). 학생은 남의 신청을 못 읽어서 저장소가 센다(배포는 DB 함수 trip_waiting_no) */
+  waitingNo?(s: TripSignup): Promise<number | null>;
 }
 
 const done = <T>(value: T, status = 200): Outcome<T> => ({ ok: true, status, value });
@@ -161,7 +168,10 @@ export function tripEnrollment(db: Db, stId: string, t: Pick<Trip, 'start' | 'en
   );
 }
 
-/** 학생: 참가 신청. 신청 받는 중, 마감일 전, 자리 있음, 여행 날짜가 연수 기간 안, 같은 여행에 이미 신청하지 않았을 때. */
+/**
+ * 학생: 참가 신청. 신청 받는 중, 마감일 전, 여행 날짜가 연수 기간 안, 같은 여행에 이미 신청(참가·대기)하지 않았을 때.
+ * 정원이 찼으면 대기로 받는다(11/10 결정 I12). 배포에서는 DB 함수가 같은 규칙으로 참가·대기를 정한다.
+ */
 export function signUp(
   ctx: { db: Db; stId: string; now: () => Date; newId: () => string; today: string },
   t: Trip | null,
@@ -170,27 +180,27 @@ export function signUp(
   if (!t || !visibleTo(t, studentCampuses(ctx.db, ctx.stId))) return fail(404, 'not_found');
   if (t.status === 'cancelled') return fail(409, 'trip_cancelled');
   if (t.status === 'closed' || ctx.today > t.deadline) return fail(409, 'trip_closed');
-  if (mine.some((s) => s.tripId === t.id && s.status === 'applied')) return fail(409, 'already_applied');
-  if (t.taken >= t.capacity) return fail(409, 'trip_full');
+  if (mine.some((s) => s.tripId === t.id && isLive(s))) return fail(409, 'already_applied');
   const e = tripEnrollment(ctx.db, ctx.stId, t);
   if (!e) return fail(400, 'outside_enrollment');
   const at = ctx.now().toISOString();
-  return done({ id: ctx.newId(), tripId: t.id, stId: ctx.stId, trId: e.trId, status: 'applied', createdAt: at, updatedAt: at, reason: null, handledAt: null, handledBy: null }, 201);
+  const status: SignupStatus = t.taken >= t.capacity ? 'waiting' : 'applied';
+  return done({ id: ctx.newId(), tripId: t.id, stId: ctx.stId, trId: e.trId, status, createdAt: at, updatedAt: at, reason: null, handledAt: null, handledBy: null }, 201);
 }
 
-/** 학생: 신청 취소. 신청 마감일까지만(그 뒤에는 담당 직원에게 말한다). */
+/** 학생: 신청 취소(참가·대기). 신청 마감일까지만(그 뒤에는 담당 직원에게 말한다). */
 export function cancelSignup(cur: TripSignup | null, t: Trip | null, stId: string, now: Date, today: string): Outcome<TripSignup> {
   if (!cur || cur.stId !== stId || !t) return fail(404, 'not_found');
-  if (cur.status !== 'applied') return fail(409, 'not_applied');
+  if (!isLive(cur)) return fail(409, 'not_applied');
   if (t.status === 'cancelled') return fail(409, 'trip_cancelled');
   if (today > t.deadline) return fail(409, 'deadline_passed');
   return done({ ...cur, status: 'cancelled', updatedAt: now.toISOString() });
 }
 
-/** 직원: 명단에서 빼기(사유 필수, 학생에게 보인다). 다시 넣으려면 학생이 다시 신청한다. */
+/** 직원: 명단에서 빼기(참가·대기, 사유 필수, 학생에게 보인다). 다시 넣으려면 학생이 다시 신청한다. */
 export function removeSignup(cur: TripSignup | null, input: { reason?: unknown }, actor: string | null, now: Date): Outcome<TripSignup> {
   if (!cur) return fail(404, 'not_found');
-  if (cur.status !== 'applied') return fail(409, 'not_applied');
+  if (!isLive(cur)) return fail(409, 'not_applied');
   const reason = text(input.reason);
   if (!reason) return fail(400, 'reason_required');
   if (reason.length > REMOVE_REASON_MAX) return fail(400, 'reason_too_long');
@@ -198,7 +208,30 @@ export function removeSignup(cur: TripSignup | null, input: { reason?: unknown }
   return done({ ...cur, status: 'removed', reason, handledAt: at, handledBy: actor, updatedAt: at });
 }
 
-/** 로컬 저장소용: 신청 목록에서 여행별 참가 신청 수를 센다(배포는 DB 의 seats_taken). */
+/** 대기 순서(신청한 순, 같으면 번호 순). 대기가 아니면 null */
+export function waitingPosition(signups: TripSignup[], s: TripSignup): number | null {
+  if (s.status !== 'waiting') return null;
+  const line = signups.filter((x) => x.tripId === s.tripId && x.status === 'waiting').sort((a, b) => a.createdAt.localeCompare(b.createdAt) || a.id.localeCompare(b.id));
+  return line.findIndex((x) => x.id === s.id) + 1;
+}
+
+/**
+ * 대기자를 참가로 올린다(로컬·메모리 저장소가 신청이 빠지거나 정원이 바뀔 때 부른다. 배포는 DB 함수 trip_promote).
+ * 취소된 여행은 올리지 않는다. 남은 자리만큼 신청한 순서대로. 바꿀 행을 돌려준다.
+ */
+export function promotions(t: Pick<Trip, 'id' | 'capacity' | 'status'>, signups: TripSignup[], nowIso: string): TripSignup[] {
+  if (t.status === 'cancelled') return [];
+  const mine = signups.filter((s) => s.tripId === t.id);
+  const room = t.capacity - mine.filter((s) => s.status === 'applied').length;
+  if (room <= 0) return [];
+  return mine
+    .filter((s) => s.status === 'waiting')
+    .sort((a, b) => a.createdAt.localeCompare(b.createdAt) || a.id.localeCompare(b.id))
+    .slice(0, room)
+    .map((s) => ({ ...s, status: 'applied' as const, updatedAt: nowIso }));
+}
+
+/** 로컬 저장소용: 신청 목록에서 여행별 참가 신청 수를 센다(배포는 DB 의 seats_taken). 대기는 세지 않는다. */
 export function withTaken(trips: Omit<Trip, 'taken'>[], signups: TripSignup[]): Trip[] {
   const n = new Map<string, number>();
   for (const s of signups) if (s.status === 'applied') n.set(s.tripId, (n.get(s.tripId) ?? 0) + 1);
@@ -236,23 +269,30 @@ export function tripPermits(trips: Trip[], signups: TripSignup[]): Overnight[] {
   return out;
 }
 
-/** 메모리 저장소(core 시험용). 참가 신청 수는 로컬 파일 저장소처럼 읽을 때 센다. */
+/** 메모리 저장소(core 시험용). 참가 신청 수는 로컬 파일 저장소처럼 읽을 때 센다. 대기자 올리기도 로컬 파일 저장소와 같다. */
 export function memoryTripStore(): TripStore {
   const trips = new Map<string, Omit<Trip, 'taken'>>();
   const signups = new Map<string, TripSignup>();
   const all = () => withTaken([...trips.values()], [...signups.values()]);
+  const promote = (tripId: string) => {
+    const t = trips.get(tripId);
+    if (t) for (const p of promotions(t, [...signups.values()], new Date().toISOString())) signups.set(p.id, p);
+  };
   return {
     listTrips: async () => all(),
     getTrip: async (id) => all().find((t) => t.id === id) ?? null,
     async putTrip(t) {
       const { taken: _taken, ...row } = t;
       trips.set(t.id, row);
+      promote(t.id);
     },
     listSignups: async (tripId) => [...signups.values()].filter((s) => !tripId || s.tripId === tripId).map((s) => ({ ...s })),
     signupsByStudent: async (stId) => [...signups.values()].filter((s) => s.stId === stId).map((s) => ({ ...s })),
     getSignup: async (id) => (signups.has(id) ? { ...signups.get(id)! } : null),
     async putSignup(s) {
       signups.set(s.id, { ...s });
+      promote(s.tripId);
     },
+    waitingNo: async (s) => waitingPosition([...signups.values()], s),
   };
 }

@@ -302,15 +302,20 @@ export function tripStore(rest: Rest): TripStore {
     },
     async putSignup(x) {
       const cur = await reads.getSignup(x.id);
-      if (!cur && x.status === 'applied') {
+      // 참가·대기는 DB 함수가 그때의 정원으로 정한다(11/10 결정 I12)
+      if (!cur && (x.status === 'applied' || x.status === 'waiting')) {
         await rest('POST', 'rpc/trip_sign_up', { p_trip: x.tripId, p_enrollment: x.trId, p_id: x.id });
         return;
       }
-      if (cur?.status === 'applied' && x.status === 'cancelled') {
+      if ((cur?.status === 'applied' || cur?.status === 'waiting') && x.status === 'cancelled') {
         await rest('POST', 'rpc/trip_cancel_signup', { p_id: x.id }, 'return=minimal');
         return;
       }
       throw new StoreError(409, 'unsupported_update');
+    },
+    async waitingNo(s) {
+      if (s.status !== 'waiting') return null;
+      return ((await rest<number | null>('POST', 'rpc/trip_waiting_no', { p_id: s.id })) as number | null) ?? null;
     },
   };
 }

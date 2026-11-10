@@ -7,8 +7,16 @@
  * 지금은 요청 때마다 legacy_* 전체를 읽어 계산한다(샘플 규모용). 실제 데이터를 올리기 전에
  * 정규화된 테이블과 조건 조회로 바꾼다(HANDOFF.md).
  */
-import { createDb, handleApi, type Db, type PriceTable, type Raw } from '../../apps/admin/server/core';
-import { N_BATCH_COLUMNS, N_ENROLLMENT_COLUMNS, N_STUDENT_COLUMNS, toLegacyEnrollments, toLegacyStudents, type NBatch, type NEnrollment, type NStudent } from '../../apps/admin/server/normalized';
+import { createDb, handleApi, type DataInput, type Db, type PriceTable, type Raw } from '../../apps/admin/server/core';
+import {
+  N_BALANCE_COLUMNS, N_BATCH_COLUMNS, N_DEPOSIT_COLUMNS, N_DORM_COLUMNS, N_ENROLLMENT_COLUMNS, N_EXTENSION_COLUMNS, N_INVOICE_COLUMNS, N_INVOICE_LINE_COLUMNS,
+  N_INVOICE_PART_COLUMNS, N_LOCAL_CHARGE_COLUMNS, N_POINT_COLUMNS, N_STUDENT_COLUMNS,
+  toLegacyBalances, toLegacyDeposits, toLegacyDorms, toLegacyEnrollments, toLegacyExtensions, toLegacyInvoiceLines, toLegacyInvoices, toLegacyInvoiceSummary,
+  toLegacyLocalCosts, toLegacyPointHistory, toLegacyStudents,
+  type NBalance, type NBatch, type NDeposit, type NDorm, type NEnrollment, type NExtension, type NInvoice, type NInvoiceLine, type NInvoicePart, type NLocalCharge,
+  type NPoint, type NStudent,
+} from '../../apps/admin/server/normalized';
+
 
 interface Env {
   VITE_SUPABASE_URL?: string;
@@ -87,6 +95,60 @@ async function readStudentsAndEnrollments(c: Conf): Promise<{ students: Raw[]; e
   return { students, enrollments };
 }
 
+// 회계 이력·기숙사 배정: 정규화 표(3단계, load_accounting_from_legacy() 로 채움)의 invoices 가 채워져 있으면 정규화 표를 어댑터로,
+// 아니면(지금 운영) legacy_* 를 읽는다. 연장도 금액이 정규화 표에 있어 같이 바꾼다. 시험은 core_schema_adapter.mjs.
+type Accounting = Pick<DataInput, 'invoices' | 'dorms' | 'deposits' | 'pointHistory' | 'extensions' | 'invoiceSummary' | 'balances' | 'invoiceItems' | 'invoiceAgencyItems' | 'localCosts'>;
+async function readAccounting(c: Conf): Promise<Accounting> {
+  let ni: NInvoice[] = [];
+  try {
+    ni = await readRows<NInvoice>(c, 'invoices', N_INVOICE_COLUMNS, 'enrollment_id');
+  } catch (e) {
+    if (!isMissingTable(e)) throw e;
+  }
+  if (ni.length) {
+    const [nx, np, nb, nl, nlc, ndp, npt, ndo] = await Promise.all([
+      readRows<NExtension>(c, 'enrollment_extensions', N_EXTENSION_COLUMNS, 'id'),
+      readRows<NInvoicePart>(c, 'invoice_parts', N_INVOICE_PART_COLUMNS, 'id'),
+      readRows<NBalance>(c, 'vendor_balances', N_BALANCE_COLUMNS, 'enrollment_id'),
+      readRows<NInvoiceLine>(c, 'invoice_lines', N_INVOICE_LINE_COLUMNS, 'id'),
+      readRows<NLocalCharge>(c, 'local_charges', N_LOCAL_CHARGE_COLUMNS, 'id'),
+      readRows<NDeposit>(c, 'deposits', N_DEPOSIT_COLUMNS, 'id'),
+      readRows<NPoint>(c, 'point_ledger', N_POINT_COLUMNS, 'id'),
+      readRows<NDorm>(c, 'enrollment_dorms', N_DORM_COLUMNS, 'enrollment_id'),
+    ]);
+    return {
+      invoices: toLegacyInvoices(ni),
+      dorms: toLegacyDorms(ndo),
+      deposits: toLegacyDeposits(ndp),
+      pointHistory: toLegacyPointHistory(npt),
+      extensions: toLegacyExtensions(nx),
+      invoiceSummary: toLegacyInvoiceSummary(np),
+      balances: toLegacyBalances(nb),
+      invoiceItems: toLegacyInvoiceLines(nl, 'student'),
+      invoiceAgencyItems: toLegacyInvoiceLines(nl, 'agency'),
+      localCosts: toLegacyLocalCosts(nlc),
+    };
+  }
+  const [invoices, dorms, deposits, pointHistory, extensions, invoiceSummary, balances, itemRows] = await Promise.all([
+    readAll(c, 'legacy_invoices'),
+    readAll(c, 'legacy_dorm_assignments'),
+    readAll(c, 'legacy_deposits'),
+    readAll(c, 'legacy_point_history'),
+    readOptional(c, 'legacy_extensions'),
+    readOptional(c, 'legacy_invoice_summary'),
+    readOptional(c, 'legacy_balances'),
+    readOptional(c, 'legacy_invoice_items'),
+  ]);
+  // 인보이스 항목: 표 하나(legacy_invoice_items)에 학생 가격·에이전시 공제·현지 비용 3개 표
+  const items = byTable(itemRows);
+  return {
+    invoices, dorms, deposits, pointHistory, extensions, invoiceSummary, balances,
+    invoiceItems: items.inv_invoice_cost_st ?? [],
+    invoiceAgencyItems: items.inv_invoice_cost_ag ?? [],
+    localCosts: items.inv_etc ?? [],
+  };
+}
+
 // 나중에 더한 표(연장·변경 20261109030000_legacy_extend.sql, 청구 합계 20261109060000_legacy_invoice_summary.sql, 가격표 20261109130000_legacy_prices.sql, 인보이스 항목 20261110090000_legacy_invoice_items.sql)는 마이그레이션 전에도 나머지 화면이 동작하도록 표가 없으면 빈 목록으로 본다.
 async function readOptional(c: Conf, table: string): Promise<Raw[]> {
   try {
@@ -118,50 +180,32 @@ async function loadDb(c: Conf): Promise<Db> {
   const staff = await rest<boolean>(c, 'rpc/is_staff', { method: 'POST', body: '{}' });
   if (staff !== true) throw new HttpError(403, '직원 계정으로 등록되지 않았습니다. 관리자에게 등록을 요청하세요.');
 
-  const [metaRows, { students, enrollments }, invoices, dorms, agencies, agents, deposits, pointHistory, rooms, extensions, courseChanges, dormChanges, comebacks, invoiceSummary, balances, priceRows, itemRows] = await Promise.all([
+  const [metaRows, { students, enrollments }, accounting, agencies, agents, rooms, courseChanges, dormChanges, comebacks, priceRows] = await Promise.all([
     rest<{ data: Raw }[]>(c, 'legacy_meta?select=data&id=eq.current'),
     readStudentsAndEnrollments(c),
-    readAll(c, 'legacy_invoices'),
-    readAll(c, 'legacy_dorm_assignments'),
+    readAccounting(c),
     readAll(c, 'legacy_agencies'),
     readAll(c, 'legacy_agents'),
-    readAll(c, 'legacy_deposits'),
-    readAll(c, 'legacy_point_history'),
     readAll(c, 'legacy_rooms'),
-    readOptional(c, 'legacy_extensions'),
     readOptional(c, 'legacy_course_changes'),
     readOptional(c, 'legacy_dorm_changes'),
     readOptional(c, 'legacy_comebacks'),
-    readOptional(c, 'legacy_invoice_summary'),
-    readOptional(c, 'legacy_balances'),
     readOptional(c, 'legacy_prices'),
-    readOptional(c, 'legacy_invoice_items'),
   ]);
   // 가격표: 표 하나(legacy_prices)에 data._table 로 담긴 9개 표(환율 포함)를 다시 나눈다
   const prices = byTable(priceRows) as Partial<Record<PriceTable, Raw[]>>;
-  // 인보이스 항목: 표 하나(legacy_invoice_items)에 학생 가격·에이전시 공제·현지 비용 3개 표
-  const items = byTable(itemRows);
   const db = createDb({
     meta: metaRows[0]?.data ?? { counts: {}, extracted_at: null },
     enrollments,
     students,
-    invoices,
-    dorms,
+    ...accounting,
     agencies,
     agents,
-    deposits,
-    pointHistory,
     rooms,
-    extensions,
     courseChanges,
     dormChanges,
     comebacks,
-    invoiceSummary,
-    balances,
     prices,
-    invoiceItems: items.inv_invoice_cost_st ?? [],
-    invoiceAgencyItems: items.inv_invoice_cost_ag ?? [],
-    localCosts: items.inv_etc ?? [],
   });
 
   for (const [k, v] of cache) if (now - v.at >= TTL) cache.delete(k);

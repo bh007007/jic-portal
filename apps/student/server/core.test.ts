@@ -11,7 +11,7 @@ import { decideRide, rideState, type Departure, type Ride } from './departures';
 import { handleLifeRequest, LIFE_OPEN_MAX, type LifeRequest } from './lifeRequests';
 import { ageOn, decideRequest, newOvernight, nightsBetween, overnightFor, type Absence, type Overnight, type RequestStore } from './requests';
 import type { FileStore, StoredFile } from './files';
-import { memoryTripStore, removeSignup, saveTrip, tripPermits, type Trip } from './trips';
+import { memoryTripStore, promotions, removeSignup, saveTrip, tripPermits, waitingPosition, type Trip, type TripSignup } from './trips';
 import { KEYCARD_PERIOD, keycardCode, readKeycard } from './keycard';
 import { mondayOf, type ClassMark, type TimetableSource, type TimetableView } from './timetable';
 
@@ -337,7 +337,19 @@ expect('같은 여행 두 번 409', r.status === 409 && err(r) === 'already_appl
 r = await call('POST', `/trips/${T2.id}/signup`, {}, '30140');
 expect('다른 학생이 정원 1 여행 신청', r.status === 201, r);
 r = await call('POST', `/trips/${T2.id}/signup`, {});
-expect('자리 없음 409', r.status === 409 && err(r) === 'trip_full', r);
+expect('정원이 차면 대기로 신청 201(대기 1번, 11/10 결정 I12)', r.status === 201 && (r.body as any).mine.status === 'waiting' && (r.body as any).mine.waitingNo === 1 && (r.body as any).full === true && (r.body as any).canCancel === true, r);
+expect('대기 중 다시 신청 409', err(await call('POST', `/trips/${T2.id}/signup`, {})) === 'already_applied');
+expect('대기는 참가 수에 안 셈(남은 자리 0, 참가 1)', ((await call('GET', `/trips/${T2.id}`)).body as any).taken === 1);
+r = await call('POST', `/trips/${T2.id}/cancel`, {}, '30140');
+expect('참가자가 취소하면 대기 1번이 참가로 올라감', r.status === 200 && ((await call('GET', `/trips/${T2.id}`)).body as any).mine.status === 'applied', r);
+{
+  const W = (id: string, at: string, status: TripSignup['status'] = 'waiting'): TripSignup => ({ id, tripId: 'TW', stId: id, trId: '', status, createdAt: at, updatedAt: at, reason: null, handledAt: null, handledBy: null });
+  const line = [W('a', '1', 'applied'), W('b', '3'), W('c', '2'), W('d', '4'), W('e', '0', 'cancelled')];
+  const pr = promotions({ id: 'TW', capacity: 3, status: 'open' }, line, 'now');
+  expect('대기자 올리기: 남은 2자리에 신청 순(c, b)', pr.map((p) => p.id).join() === 'c,b' && pr.every((p) => p.status === 'applied' && p.updatedAt === 'now'), pr);
+  expect('취소된 여행은 올리지 않음', promotions({ id: 'TW', capacity: 3, status: 'cancelled' }, line, 'now').length === 0);
+  expect('대기 순서(신청 순, 대기만 셈)', waitingPosition(line, line[3]) === 3 && waitingPosition(line, line[0]) === null);
+}
 expect('취소된 여행 409', err(await call('POST', `/trips/${T4.id}/signup`, {})) === 'trip_cancelled');
 expect('마감 지난 여행 409', err(await call('POST', `/trips/${T5.id}/signup`, {})) === 'trip_closed');
 expect('연수 기간 밖 400', err(await call('POST', `/trips/${T6.id}/signup`, {})) === 'outside_enrollment');

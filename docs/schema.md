@@ -37,19 +37,39 @@
 - 배포 읽기(`functions/api`): `enrollments` 표가 채워져 있으면 학생·연수를 정규화 표에서 어댑터로 읽고, 표가 없거나 비어 있으면(지금 운영) `legacy_*`를 읽는다. 둘 다 번호 순.
 - 시험 `supabase/tests/core_schema_adapter.mjs`: 정규화 경로와 legacy 경로의 응답을 목록 26개 + 학생 상세 전부 + 에이전시 상세로 비교한다. 가짜 샘플(CI)과 실제 추출본(로컬, 값 출력 없이 건수만, 11/10: 학생 상세 5,537명·에이전시 30곳) 모두 같았다.
 
+## 3단계: 회계 이력·기숙사 배정 (`20261110130000_core_schema_accounting.sql`, 11/10)
+
+학생별 회계 이력은 옮기기로 정해져 있다(HANDOFF 7장). 운영 화면(쓰기)을 옮길지는 따로 정한다. 열은 관리자 core가 실제로 읽는 것만 두었다(core를 실제 데이터로 돌려 입력 표마다 읽은 열 이름을 모아 정함).
+
+| 표 | 키 | 업체 원본 | 주요 열 |
+| --- | --- | --- | --- |
+| `invoices` | 연수 | `legacy_invoices` | 통화, 해외 총액·입금 매칭, 현지 청구·납부(PHP). 총액은 '최근 인보이스 하나'의 금액 |
+| `invoice_parts` | `<연수>-<tt_id>` | `legacy_invoice_summary` | 기본 + 연장 인보이스별 기간·주 수·금액(연수 청구 합계는 이것의 합) |
+| `vendor_balances` | 연수 | `legacy_balances` | 업체 Check Balance 청구·납부, 연장 횟수 |
+| `invoice_lines` | legacy 행 id | `legacy_invoice_items`(학생 가격·에이전시 공제) | 쪽(student·agency), 판(ic_ver), 항목, 통화, 금액, 주 수, 기간, 코스·기숙사 이름, 사용·취소 |
+| `local_charges` | legacy 행 id | `legacy_invoice_items`(inv_etc) | 현지 비용 청구(tc)와 납부(td), PHP |
+| `deposits` | dp_id | `legacy_deposits` | 입금일, 입금자, 통화·금액·수수료, 확인, 사용, 매칭 건수·금액·통화·에이전시, 잔액. **받는 계좌 열은 없다** |
+| `point_ledger` | legacy 행 id | `legacy_point_history` | D 충전·U 사용, 시각, 포인트, 항목, 입력 직원, 메모 |
+| `enrollment_dorms` | 연수 | `legacy_dorm_assignments` | 기숙사 이름·약칭·종류(NONROOM), 캠퍼스, 기간, 주 수, 취소 |
+| `enrollment_extensions` + | | `legacy_extensions` | 연장 인보이스 금액·입금·통화를 더했다 |
+
+- 채우기: `load_accounting_from_legacy()`(서비스 키만, `load_core_from_legacy()` 다음에). 연수에 없는 행은 건너뛴다.
+- 배포 읽기: `invoices` 표가 채워져 있으면 회계 입력 10개(인보이스·기숙사 배정·입금·포인트·연장·인보이스별 합계·Check Balance·항목 둘·현지 비용)를 정규화 표에서 어댑터로 읽는다. 아니면 `legacy_*`.
+- 시험: `core_schema_adapter.mjs`가 학생·연수와 회계를 모두 정규화 표에서 읽은 응답을 legacy 경로와 비교한다. 가짜 샘플과 실제 추출본(로컬, 값 출력 없이, 11/10) 모두 같았다. `core_schema.mjs`는 회계 표 권한(직원만 읽기·아무도 직접 못 씀)과 불러오기를 본다.
+
 ## 다음 단계
 
 | 단계 | 내용 | 정할 것 |
 | --- | --- | --- |
-| 2 | 기준 코드·배정: 업체 캠퍼스·코스·기숙사 코드(`course_code`·`dorm_code`), 기숙사 배정(`dorm_assignments`), 가격표·환율 | 파트너 `campuses`·`courses`(소개)와 업체 코드 표의 관계: 업체 코드 표를 따로 두고(`course_codes`·`dorm_types`) 소개 표가 코드를 가리키게 하는 안 |
-| 3 | 회계: 인보이스(`invoices`, 인보이스별 합계·항목), 입금(`deposits`·매칭, 계좌 열 제외), 포인트 원장 | 회계 운영 화면을 옮길지(HANDOFF 7장) |
+| 2 | 기준 코드: 업체 캠퍼스·코스·기숙사 코드(`course_code`·`dorm_code`), 가격표·환율, 방·침대(`legacy_rooms`), 공실 설정(방 목표·국가 목표·예외·마감, `legacy-portal-probes.md` '공실 설정') | 파트너 `campuses`·`courses`(소개)와 업체 코드 표의 관계: 업체 코드 표를 따로 두고(`course_codes`·`dorm_types`) 소개 표가 코드를 가리키게 하는 안 |
+| 3 | 회계 이력: 11/10(위). 남은 것은 회계 운영 화면(쓰기)을 옮길 때 쓰기 정책 | 회계 운영 화면을 옮길지(HANDOFF 7장) |
 | 4 | 에이전시·담당자: 업체 `ag_*`·`am_*` → 파트너 포털 `agency_members`의 `legacy_am_id`와 연결 | 파트너 2차 My Students와 같이 |
-| 5 | 배포 읽기 바꾸기: 어댑터와 학생·연수 전환은 11/10(위). 남은 것은 다른 표(2~4단계)를 같은 방식으로 옮기고, 그다음 화면별 조건 조회(목록은 쪽 단위)로 바꾸는 것 | |
+| 5 | 배포 읽기 바꾸기: 학생·연수(11/10)와 회계·기숙사 배정(11/10)은 어댑터로 전환. 남은 것은 에이전시·담당자·방·변경 이력·가격표를 같은 방식으로 옮기고, 그다음 화면별 조건 조회(목록은 쪽 단위)로 바꾸는 것 | |
 | 6 | 다른 포털 읽기: 강사 포털 `lms_students()`, 학생 앱 배포 서버, 인트라넷이 `legacy_*` 대신 정규화 표를 읽는다 | 각 포털 담당과 같이 |
 
 ## 학원 계정 새 프로젝트에 적용하는 순서
 
 1. 새 프로젝트에 `supabase/migrations` 전체를 순서대로 적용한다(이 파일 포함).
 2. 가짜 샘플을 `legacy_*`에 올린다(`node scripts/upload-to-supabase.mjs`).
-3. SQL Editor(서비스 권한)에서 `select * from public.load_core_from_legacy();` → 표마다 건수가 나온다.
+3. SQL Editor(서비스 권한)에서 `select * from public.load_core_from_legacy();` 다음에 `select * from public.load_accounting_from_legacy();` → 표마다 건수가 나온다.
 4. 실제 데이터는 보안 점검 뒤 같은 순서로 올린다. 업체 포털을 쓰는 동안은 추출 → `legacy_*` 올리기 → 3번을 다시 돌린다.

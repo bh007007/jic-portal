@@ -192,3 +192,169 @@ export function toLegacyEnrollments(rows: NEnrollment[], students: NStudent[], b
     };
   });
 }
+
+// ── 3단계: 회계 이력·기숙사 배정(20261110130000_core_schema_accounting.sql). core 가 읽는 열만(11/10 core 를 돌려 모은 목록).
+
+export interface NExtension {
+  id: string;
+  enrollment_id: string;
+  start_date: string | null;
+  finish_date: string | null;
+  weeks: number | null;
+  memo: string;
+  registered_at: string | null;
+  price: number | null;
+  paid: number | null;
+  currency: string;
+}
+export interface NInvoice {
+  enrollment_id: string;
+  currency: string;
+  total: number | null;
+  paid: number | null;
+  local_total: number | null;
+  local_paid: number | null;
+}
+export interface NInvoicePart {
+  id: string;
+  enrollment_id: string;
+  part_no: string;
+  registered_at: string | null;
+  weeks: number | null;
+  start_date: string | null;
+  finish_date: string | null;
+  total: number | null;
+  paid: number | null;
+  local_total: number | null;
+  local_paid: number | null;
+}
+export interface NBalance {
+  enrollment_id: string;
+  cost: number | null;
+  payment: number | null;
+  extend_count: number | null;
+}
+export interface NInvoiceLine {
+  id: string;
+  enrollment_id: string;
+  side: 'student' | 'agency';
+  version: number | null;
+  item_type: string;
+  item_name: string;
+  currency: string;
+  price: number | null;
+  weeks: number | null;
+  start_date: string | null;
+  end_date: string | null;
+  course_name: string;
+  dorm_name: string;
+  in_use: boolean;
+  canceled: boolean;
+}
+export interface NLocalCharge {
+  id: string;
+  enrollment_id: string;
+  charge_no: string;
+  charge_type: string;
+  charge_name: string;
+  currency: string;
+  price: number | null;
+  rest_amount: number | null;
+  payment_no: string;
+  payment_currency: string;
+  payment_amount: number | null;
+  paid_at: string | null;
+}
+export interface NDeposit {
+  id: string;
+  deposited_at: string | null;
+  payer_name: string;
+  memo: string;
+  currency: string;
+  amount: number | null;
+  fee: number | null;
+  amount_total: number | null;
+  confirmed: boolean;
+  in_use: boolean;
+  matched_count: number | null;
+  matched_amount: number | null;
+  matched_currency: string;
+  matched_agency: string;
+  balance: number | null;
+}
+export interface NPoint {
+  id: string;
+  enrollment_id: string;
+  kind: string;
+  at: string | null;
+  points: number | null;
+  item_name: string;
+  staff_name: string;
+  memo: string;
+}
+export interface NDorm {
+  enrollment_id: string;
+  dorm_name: string;
+  dorm_short: string;
+  dorm_type: string;
+  campus_name: string;
+  campus_code: string;
+  start_date: string | null;
+  end_date: string | null;
+  weeks: number | null;
+  canceled: boolean;
+}
+
+export const N_EXTENSION_COLUMNS = 'id,enrollment_id,start_date,finish_date,weeks,memo,registered_at,price,paid,currency';
+export const N_INVOICE_COLUMNS = 'enrollment_id,currency,total,paid,local_total,local_paid';
+export const N_INVOICE_PART_COLUMNS = 'id,enrollment_id,part_no,registered_at,weeks,start_date,finish_date,total,paid,local_total,local_paid';
+export const N_BALANCE_COLUMNS = 'enrollment_id,cost,payment,extend_count';
+export const N_INVOICE_LINE_COLUMNS = 'id,enrollment_id,side,version,item_type,item_name,currency,price,weeks,start_date,end_date,course_name,dorm_name,in_use,canceled';
+export const N_LOCAL_CHARGE_COLUMNS = 'id,enrollment_id,charge_no,charge_type,charge_name,currency,price,rest_amount,payment_no,payment_currency,payment_amount,paid_at';
+export const N_DEPOSIT_COLUMNS = 'id,deposited_at,payer_name,memo,currency,amount,fee,amount_total,confirmed,in_use,matched_count,matched_amount,matched_currency,matched_agency,balance';
+export const N_POINT_COLUMNS = 'id,enrollment_id,kind,at,points,item_name,staff_name,memo';
+export const N_DORM_COLUMNS = 'enrollment_id,dorm_name,dorm_short,dorm_type,campus_name,campus_code,start_date,end_date,weeks,canceled';
+
+/** 금액·횟수는 업체 원본처럼 글자로(core 는 num() 으로 읽는다). */
+const n = (v: number | string | null | undefined) => (v == null ? null : String(v));
+
+export const toLegacyExtensions = (rows: NExtension[]): Raw[] =>
+  rows.map((x) => ({
+    tr_id: x.enrollment_id, tt_id: x.id, tt_start_date: x.start_date, tt_finish_date: x.finish_date, tt_week: n(x.weeks),
+    tt_memo: txt(x.memo), tt_insert_dt: manilaText(x.registered_at), sum_price: n(x.price), sum_amount: n(x.paid), tr_currency: x.currency,
+  }));
+export const toLegacyInvoices = (rows: NInvoice[]): Raw[] =>
+  rows.map((i) => ({ tr_id: i.enrollment_id, tr_currency: i.currency, sum_ic_price: n(i.total), sum_id_amount: n(i.paid), sum_tc_price: n(i.local_total), sum_td_amount: n(i.local_paid) }));
+export const toLegacyInvoiceSummary = (rows: NInvoicePart[]): Raw[] =>
+  rows.map((p) => ({
+    _tr_id: p.enrollment_id, tt_id: p.part_no, tt_insert_dt: manilaText(p.registered_at), week: n(p.weeks), start_date: p.start_date, finish_date: p.finish_date,
+    sum_ic_price: n(p.total), sum_id_amount: n(p.paid), sum_tc_price: n(p.local_total), sum_td_amount: n(p.local_paid),
+  }));
+export const toLegacyBalances = (rows: NBalance[]): Raw[] =>
+  rows.map((b) => ({ tr_id: b.enrollment_id, cost: n(b.cost), payment: n(b.payment), extend_count: n(b.extend_count) }));
+export const toLegacyInvoiceLines = (rows: NInvoiceLine[], side: NInvoiceLine['side']): Raw[] =>
+  rows
+    .filter((l) => l.side === side)
+    .map((l) => ({
+      _tr_id: l.enrollment_id, ic_ver: n(l.version), ic_type: l.item_type, ic_type_name: txt(l.item_name), ic_currency: l.currency, ic_price: n(l.price),
+      ic_week: n(l.weeks), ic_departure_date: l.start_date, ic_return_date: l.end_date, co_name: txt(l.course_name), do_name: txt(l.dorm_name),
+      ic_use_yn: l.in_use ? 'Y' : 'N', ic_cancel_yn: l.canceled ? 'Y' : 'N',
+    }));
+export const toLegacyLocalCosts = (rows: NLocalCharge[]): Raw[] =>
+  rows.map((c) => ({
+    _tr_id: c.enrollment_id, tc_id: txt(c.charge_no), ec_type: txt(c.charge_type), tc_type_name: txt(c.charge_name), tc_currency: txt(c.currency), tc_price: n(c.price),
+    rest_amount: n(c.rest_amount), td_id: txt(c.payment_no), td_currency: txt(c.payment_currency), td_amount: n(c.payment_amount), td_deposit_dt: manilaText(c.paid_at),
+  }));
+export const toLegacyDeposits = (rows: NDeposit[]): Raw[] =>
+  rows.map((d) => ({
+    dp_id: d.id, dp_deposit_dt: manilaText(d.deposited_at), dp_name: d.payer_name, dp_memo: txt(d.memo), dp_currency: d.currency, dp_amount: n(d.amount),
+    dp_fee: n(d.fee), dp_amount_total: n(d.amount_total), dp_confirm_yn: d.confirmed ? 'Y' : 'N', dp_use_yn: d.in_use ? 'Y' : 'N', cnt: n(d.matched_count),
+    sum_id_amount: n(d.matched_amount), id_currency: txt(d.matched_currency), match_ag_name: txt(d.matched_agency), balance: n(d.balance),
+  }));
+export const toLegacyPointHistory = (rows: NPoint[]): Raw[] =>
+  rows.map((p) => ({ tr_id: p.enrollment_id, type: p.kind, dt: manilaText(p.at), point: n(p.points), ec_name: txt(p.item_name), nickname: txt(p.staff_name), memo: txt(p.memo) }));
+export const toLegacyDorms = (rows: NDorm[]): Raw[] =>
+  rows.map((d) => ({
+    tr_id: d.enrollment_id, do_name: d.dorm_name, do_name_short: txt(d.dorm_short), do_type: txt(d.dorm_type), ca_name: d.campus_name, ca_code: d.campus_code,
+    ic_departure_date: d.start_date, ic_return_date: d.end_date, ic_week: n(d.weeks), ic_cancel_yn: d.canceled ? 'Y' : 'N',
+  }));

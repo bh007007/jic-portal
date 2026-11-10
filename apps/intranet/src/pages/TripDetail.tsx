@@ -147,7 +147,7 @@ export default function TripDetail() {
       <section className="panel">
         <div className="panel-head">
           <h2>
-            참가 명단 <small>(신청 {applied.length}명)</small>
+            참가 명단 <small>(신청 {applied.length}명{data.waiting > 0 ? ` · 대기 ${data.waiting}명` : ''})</small>
           </h2>
         </div>
         <div className="panel-body">
@@ -177,9 +177,12 @@ export default function TripDetail() {
                     </td>
                     <td>{s.campus}</td>
                     <td className="nowrap">{mdhm(s.createdAt)}</td>
-                    <td className={SIGNUP_STATUS_CLASS[s.status]}>{SIGNUP_STATUS[s.status]}</td>
+                    <td className={SIGNUP_STATUS_CLASS[s.status]}>
+                      {SIGNUP_STATUS[s.status]}
+                      {s.waitingNo ? ` ${s.waitingNo}번` : ''}
+                    </td>
                     <td className="left life-handle">
-                      {s.status === 'applied' && editable ? (
+                      {(s.status === 'applied' || s.status === 'waiting') && editable ? (
                         <div className="trip-remove">
                           <input
                             type="text"

@@ -78,12 +78,12 @@ button.link { border: 0; background: none; padding: 0; font: inherit; cursor: po
 .hero .sub { font-size: 14px; color: #dce3ef; }
 .hero .cta { display: inline-flex; align-items: center; min-height: 48px; padding: 0 28px; border-radius: 4px; background: #fff; color: var(--primary); font-size: 15px; font-weight: 700; text-decoration: none; }
 
-.links { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 1px; background: var(--line); border: 1px solid var(--line); border-radius: 4px; overflow: hidden; }
+.links { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(220px, 100%), 1fr)); gap: 1px; background: var(--line); border: 1px solid var(--line); border-radius: 4px; overflow: hidden; }
 .links a { background: #fff; padding: 18px 20px; display: flex; flex-direction: column; gap: 4px; text-decoration: none; color: var(--ink); }
 .links a strong { font-size: 16px; }
 .links a span { font-size: 13px; color: var(--ink-3); }
 
-.cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 16px; }
+.cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(280px, 100%), 1fr)); gap: 16px; }
 .card { background: #fff; border: 1px solid var(--line); border-radius: 4px; padding: 20px; display: flex; flex-direction: column; gap: 10px; text-decoration: none; color: var(--ink); }
 .card.off { background: var(--head-bg); color: var(--ink-3); }
 .card .card-title { display: flex; align-items: baseline; justify-content: space-between; gap: 8px; }
@@ -121,7 +121,7 @@ button.link { border: 0; background: none; padding: 0; font: inherit; cursor: po
 .form input, .form select, .form textarea, .input { height: 36px; padding: 0 10px; border: 1px solid #c5cad2; border-radius: 3px; background: #fff; font: inherit; font-size: 14px; font-weight: 400; color: var(--ink); width: 100%; }
 .form textarea, textarea.input { height: auto; min-height: 90px; padding: 8px 10px; line-height: 1.6; resize: vertical; }
 .form .hint { font-size: 12px; font-weight: 400; color: var(--ink-3); }
-.form-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 14px 20px; }
+.form-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(240px, 100%), 1fr)); gap: 14px 20px; }
 .form-actions { display: flex; flex-wrap: wrap; gap: 8px; justify-content: flex-end; }
 .msg { padding: 10px 14px; border-radius: 3px; font-size: 13px; }
 .msg.ok { background: #eef7ef; color: var(--green); border: 1px solid #cfe5d1; }
@@ -141,7 +141,7 @@ button.link { border: 0; background: none; padding: 0; font: inherit; cursor: po
 .steps li.now .dot { background: var(--primary); color: #fff; border-color: var(--primary); }
 .steps li.now .label { font-weight: 700; }
 .steps li:last-child .bar { display: none; }
-.options { display: grid; grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); gap: 10px; }
+.options { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(190px, 100%), 1fr)); gap: 10px; }
 .option { display: flex; align-items: center; gap: 10px; min-height: 52px; padding: 10px 16px; border: 1px solid #c5cad2; border-radius: 4px; background: #fff; font: inherit; font-size: 15px; text-align: left; cursor: pointer; }
 .option[aria-pressed='true'] { border: 2px solid var(--primary); padding: 9px 15px; background: var(--primary-soft); font-weight: 700; color: var(--primary); }
 .pick { border: 1px solid #c5cad2; border-radius: 4px; padding: 18px 20px; display: flex; flex-direction: column; gap: 8px; }
@@ -149,7 +149,7 @@ button.link { border: 0; background: none; padding: 0; font: inherit; cursor: po
 .pick .badge { align-self: flex-start; font-size: 12px; font-weight: 700; padding: 2px 8px; background: #eef0f3; color: #333; border-radius: 2px; }
 .pick.first .badge { background: var(--primary); color: #fff; }
 .pick .name { font-size: 24px; font-weight: 700; }
-.reasons { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 14px; }
+.reasons { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(240px, 100%), 1fr)); gap: 14px; }
 .reason { border: 1px solid var(--line); border-radius: 4px; padding: 18px 20px; display: flex; flex-direction: column; gap: 8px; }
 .reason .key { font-size: 12px; font-weight: 700; letter-spacing: 0.4px; color: var(--primary); }
 
