@@ -19,7 +19,7 @@ export async function startPgSupabase({ port = 0 } = {}) {
   await db.exec(`
     create role anon nologin; create role authenticated nologin; create role service_role nologin bypassrls;
     create schema auth;
-    create table auth.users (id uuid primary key, email text);
+    create table auth.users (id uuid primary key, email text, email_confirmed_at timestamptz default now(), raw_user_meta_data jsonb);
     create function auth.uid() returns uuid language sql stable as $$ select nullif(current_setting('request.jwt.claim.sub', true), '')::uuid $$;
     grant usage on schema public, auth to anon, authenticated, service_role;
     -- Storage 흉내(버킷·파일 표와 RLS, 파일 내용은 data 열). 실제 Supabase 는 파일을 따로 두고 이 표에는 이름·메타만 있다
@@ -68,11 +68,19 @@ export async function startPgSupabase({ port = 0 } = {}) {
     chain = run.catch(() => {});
     return run;
   };
+  // unconfirmed: 가입(/auth/v1/signup)으로 만든 사람은 인증 전(실제 Supabase 의 Confirm email 과 같게). 관리자·시험용은 인증된 채로
   const addUser = (u) =>
     serial(async () => {
       users.set(u.id, { ...u, email: u.email.toLowerCase() });
-      await db.query('insert into auth.users (id, email) values ($1, $2) on conflict do nothing', [u.id, u.email.toLowerCase()]);
+      await db.query('insert into auth.users (id, email, email_confirmed_at, raw_user_meta_data) values ($1, $2, $3, $4::jsonb) on conflict do nothing',
+        [u.id, u.email.toLowerCase(), u.unconfirmed ? null : new Date().toISOString(), JSON.stringify(u.user_metadata ?? {})]);
     });
+  const confirmUser = (x) =>
+    serial(async () => {
+      x.unconfirmed = false;
+      await db.query('update auth.users set email_confirmed_at = now() where id = $1', [x.id]);
+    });
+  const resentAt = new Map();
   /** SQL 을 역할로 실행(role: 'authenticated' + sub 면 그 사용자, 없으면 관리자) */
   const sql = (q, params = [], { role, sub } = {}) =>
     serial(async () => {
@@ -211,12 +219,42 @@ export async function startPgSupabase({ port = 0 } = {}) {
       if (p === '/__user' && req.method === 'POST') return send(res, 200, await addUser(body));
       if (p === '/auth/v1/token' && u.searchParams.get('grant_type') === 'password') {
         const x = [...users.values()].find((v) => v.email === String(body.email).toLowerCase() && v.password === body.password);
+        if (x?.unconfirmed) return send(res, 400, { code: 400, error_code: 'email_not_confirmed', msg: 'Email not confirmed' });
         if (x) x.lastSignIn = new Date().toISOString();
         return x ? send(res, 200, session(x)) : send(res, 400, { code: 400, error_code: 'invalid_credentials', msg: 'Invalid login credentials' });
       }
       if (p === '/auth/v1/token' && u.searchParams.get('grant_type') === 'refresh_token') {
         const id = refresh.get(body.refresh_token);
         return id ? send(res, 200, session(users.get(id))) : send(res, 400, { error_code: 'refresh_token_not_found', msg: 'Invalid Refresh Token' });
+      }
+      // 가입: 인증 전 사용자를 만들고 세션 없이 돌려준다(이미 있는 주소면 실제 Supabase 처럼 오류 없이 같은 모양)
+      if (p === '/auth/v1/signup' && req.method === 'POST') {
+        const email = String(body.email || '').toLowerCase();
+        if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)) return send(res, 400, { code: 400, error_code: 'validation_failed', msg: 'Unable to validate email address: invalid format' });
+        if (String(body.password || '').length < 6) return send(res, 422, { code: 422, error_code: 'weak_password', msg: 'Password should be at least 6 characters.' });
+        let x = [...users.values()].find((v) => v.email === email);
+        if (!x) {
+          x = { id: crypto.randomUUID(), email, password: body.password, user_metadata: body.data ?? {}, unconfirmed: true };
+          await addUser(x);
+          x = users.get(x.id);
+        }
+        resentAt.set(email, Date.now());
+        return send(res, 200, { ...userJson(x), confirmation_sent_at: new Date().toISOString() });
+      }
+      // 인증 메일 다시 보내기: 같은 주소는 60초에 한 번(실제 Supabase 기본값)
+      if (p === '/auth/v1/resend' && req.method === 'POST') {
+        const email = String(body.email || '').toLowerCase();
+        const left = 60 - Math.floor((Date.now() - (resentAt.get(email) ?? 0)) / 1000);
+        if (left > 0) return send(res, 429, { code: 429, error_code: 'over_email_send_rate_limit', msg: `For security purposes, you can only request this after ${left} seconds.` });
+        resentAt.set(email, Date.now());
+        return send(res, 200, {});
+      }
+      // 시험용: 인증 메일의 링크를 누른 것처럼
+      if (p === '/__confirm' && req.method === 'POST') {
+        const x = [...users.values()].find((v) => v.email === String(body.email || '').toLowerCase());
+        if (!x) return send(res, 404, { msg: 'User not found' });
+        await confirmUser(x);
+        return send(res, 200, {});
       }
       if (p === '/auth/v1/user' && req.method === 'GET') return bearer() ? send(res, 200, userJson(bearer())) : send(res, 401, { error_code: 'bad_jwt', msg: 'invalid JWT' });
       if (p === '/auth/v1/user' && req.method === 'PUT') {

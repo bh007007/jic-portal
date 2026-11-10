@@ -3,6 +3,7 @@ import { Link, Navigate, useSearchParams } from 'react-router-dom';
 import { useAuth } from '../auth';
 import { errText, supabase } from '../supabase';
 import { Box, Msg } from '../ui';
+import { ResendBox } from './Signup';
 
 // 0.1 로그인
 export default function Login() {
@@ -13,6 +14,7 @@ export default function Login() {
   const [password, setPassword] = useState('');
   const [busy, setBusy] = useState(false);
   const [msg, setMsg] = useState<{ kind: 'ok' | 'err'; text: string } | null>(null);
+  const [unconfirmed, setUnconfirmed] = useState(false);
 
   if (session && allowed) return <Navigate to={next} replace />;
   if (session && !allowed) return <Navigate to="/" replace />;
@@ -24,6 +26,7 @@ export default function Login() {
     const { error } = await supabase.auth.signInWithPassword({ email: email.trim(), password });
     setBusy(false);
     if (error) setMsg({ kind: 'err', text: errText(error) });
+    setUnconfirmed(Boolean(error && /not confirmed/i.test(error.message)));
   };
 
   const forgot = async () => {
@@ -48,6 +51,7 @@ export default function Login() {
             <input type="password" autoComplete="current-password" required value={password} onChange={(e) => setPassword(e.target.value)} />
           </label>
           {msg && <Msg kind={msg.kind}>{msg.text}</Msg>}
+          {unconfirmed && <ResendBox email={email} />}
           <button type="submit" className="btn btn-primary btn-lg" disabled={busy}>{busy ? '확인 중…' : '로그인'}</button>
           <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 13 }}>
             <button type="button" className="link" onClick={forgot}>비밀번호 찾기</button>

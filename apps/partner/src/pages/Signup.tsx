@@ -1,14 +1,37 @@
 import { COUNTRIES } from '../shared';
 import { useState, type FormEvent } from 'react';
 import { Link } from 'react-router-dom';
-import { errText, supabase } from '../supabase';
+import { errText, resendSignupEmail, supabase } from '../supabase';
 import { Box, Msg } from '../ui';
 
 
 // 0.2 등록 신청: 지점 대표 아이디 신청 → JIC 관리자 승인 후 로그인 가능.
 // staff: 지점 직원 가입(CL-032). 대표가 등록해 둔 이메일로 가입하고 인증하면, 로그인할 때 그 지점 직원 아이디가 된다(JIC 승인 없음).
+// 두 화면은 다른 컴포넌트로 둔다(같은 컴포넌트에서 조건부로 return 하면 /signup ↔ /signup/staff 이동 때 훅 순서가 바뀌어 깨진다).
 export default function Signup({ staff = false }: { staff?: boolean }) {
-  if (staff) return <StaffSignup />;
+  return staff ? <StaffSignup /> : <OwnerSignup />;
+}
+
+/** 인증 메일이 안 왔을 때: 스팸함 안내 + 다시 보내기 */
+export function ResendBox({ email }: { email: string }) {
+  const [msg, setMsg] = useState<{ kind: 'ok' | 'err'; text: string } | null>(null);
+  const [busy, setBusy] = useState(false);
+  const resend = async () => {
+    setBusy(true);
+    const err = await resendSignupEmail(email);
+    setBusy(false);
+    setMsg(err ? { kind: 'err', text: err } : { kind: 'ok', text: `${email}로 인증 메일을 다시 보냈습니다.` });
+  };
+  return (
+    <div style={{ fontSize: 13, lineHeight: 1.7 }}>
+      <span className="muted">메일이 안 왔으면 스팸함을 먼저 보세요. 링크는 한 번만 쓸 수 있고 시간이 지나면 끝납니다.</span>{' '}
+      <button type="button" className="btn btn-sm" onClick={resend} disabled={busy}>{busy ? '보내는 중…' : '인증 메일 다시 보내기'}</button>
+      {msg && <Msg kind={msg.kind}>{msg.text}</Msg>}
+    </div>
+  );
+}
+
+function OwnerSignup() {
   const [f, setF] = useState({ agency_name: '', branch: '', country: '한국', contact_name: '', phone: '', email: '', password: '', message: '' });
   const [busy, setBusy] = useState(false);
   const [done, setDone] = useState(false);
@@ -44,6 +67,7 @@ export default function Signup({ staff = false }: { staff?: boolean }) {
               1. <strong>{f.email}</strong>로 보낸 인증 메일의 링크를 누르세요.<br />
               2. JIC 관리자가 신청을 확인하고 승인하면 로그인할 수 있습니다.
             </p>
+            <ResendBox email={f.email} />
             <Link className="btn" to="/">처음으로</Link>
           </div>
         </Box>
@@ -127,6 +151,7 @@ function StaffSignup() {
               1. <strong>{f.email}</strong>로 보낸 인증 메일의 링크를 누르세요.<br />
               2. 로그인하면 지점 대표가 등록한 이메일인지 확인하고 바로 지점 직원 아이디로 열립니다.
             </p>
+            <ResendBox email={f.email} />
             <Link className="btn" to="/login">로그인</Link>
           </div>
         </Box>
