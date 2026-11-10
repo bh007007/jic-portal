@@ -22,7 +22,7 @@ Claude가 대신할 수 없는 일(키·비밀번호 입력, 계정 만들기, �
 
 여러 세션의 결정 대기를 한곳에 모았다. 자세한 내용은 아래 각 절에 있다. 위에서부터 먼저 정하면 개발이 바로 이어지는 것이다.
 
-**답만 주시면 Claude가 하는 것**: 운영 DB에 아직 안 들어간 마이그레이션 2개 적용(11/10 확인) — 회계 #86 `20261110090000_legacy_invoice_items.sql`(배포 학생 상세 '인보이스 항목', 샘플 올리기는 5-2), 회계 #90 `20261110100000_change_requests.sql`(관리자 포털 '변경 요청' 화면이 이 표를 쓴다). 시험 지점 계정 연결(5-1, 계정은 레오님이 만든 뒤). 정규화 스키마(`core_schema`·`core_schema_more`)는 11/10 결정대로 학원 계정 새 프로젝트에서 적용한다.
+**답만 주시면 Claude가 하는 것**: 시험 지점 계정 연결(5-1, 계정은 레오님이 만든 뒤). 운영 DB 마이그레이션은 11/10 오후 #86(`legacy_invoice_items`)·#90(`change_requests`)까지 모두 적용했다(레오님 "적용해"). 남은 `core_schema`·`core_schema_more`·`core_schema_accounting`은 11/10 결정대로 학원 계정 새 프로젝트에서 적용한다.
 
 **먼저 정하면 좋은 것**
 | # | 결정 | 지금 | Claude 제안 | 어디 |
@@ -37,7 +37,7 @@ Claude가 대신할 수 없는 일(키·비밀번호 입력, 계정 만들기, �
 - 서비스 키 2곳(학생 포털 Worker, JIC 포털 Pages). 아래 '직접 해 주셔야 하는 일' 1·2.
 - **견적 프로그램 미리 채우기 코드**: baguiojic Cloudflare 계정의 견적 프로그램에 `docs/quote-prefill.md`의 코드를 넣는다(JIC 포털 저장소에서는 못 고침). 넣기 전에는 견적 화면이 열리기만 하고 값은 직접 고른다.
 - 학원 공식 계정으로 옮기기(8). 썸머 매니저 초대 수락은 끝났다(11/10 확인: 직원 계정 로그인 기록 있음).
-- 에이전시 가입을 받으려면 가입 허용 + 메일 발송 서비스(5). 회계 #86 운영 적용(5-2).
+- 에이전시 가입을 받으려면 가입 허용 + 메일 발송 서비스(5). 인보이스 항목 가짜 샘플 올리기(5-2, 서비스 키).
 
 **회계·기초관리 세션 결정(그 세션 공유 노트)** — 11/10 모두 정해졌다
 - ~~Closing Status 조사 허용 여부~~: 11/10 허용(조회 주소는 `CLAUDE.md` 데이터 규칙). 공실 설정 화면 조회도 같은 날 허용.
@@ -106,7 +106,7 @@ Claude가 대신할 수 없는 일(키·비밀번호 입력, 계정 만들기, �
 | 4-2 | 매니저에게 인트라넷 열기(선택) | 관리자 포털 → 사용자·권한 → 그 사람에게 '매니저' 주기(캠퍼스 선택). 2번 서비스 키가 먼저 있어야 한다 | 매니저는 인트라넷에서 홈·외출·패널티 승인(무단결석, 맡은 캠퍼스만)·결석 신청 처리·Student File(맡은 캠퍼스)·공지를 쓴다(`docs/intranet.md` '직원 역할') |
 | 5 | 에이전시 가입 허용 | ① Supabase → Authentication → Sign In / Providers → **Allow new users to sign up** 켜기(Confirm email은 켠 채로) ② URL Configuration → Redirect URLs에 `https://jic-partner.bh007007.workers.dev/**` 있는지 확인 ③ **메일 발송 서비스 연결**: 기본 메일은 Supabase 팀원 주소로만 가서 에이전시는 인증 메일을 못 받는다. Authentication → Emails → SMTP Settings(보내는 주소·서비스 결정 필요, 학원 계정 이전과 같이) | 에이전시 포털 등록 신청 → 인증 메일 → 관리자 포털에서 승인 |
 | 5-1 | 시험 지점 계정(선택) | Supabase → Authentication → Users → Add user → Create new user(Auto Confirm User 체크). 그 이메일을 Claude에게 알려 주거나 SQL Editor에서 `insert into public.agency_members (user_id, email, agency_name, branch, status) select id, email, '시험 에이전시', '시험 지점', 'active' from auth.users where email = '…' on conflict (user_id) do nothing;` | 메일 설정 전에도 에이전시가 보는 화면을 그대로 시험한다. 끝나면 관리자 포털 지점 계정에서 '정지' |
-| 5-2 | 회계 #86 운영 적용(인보이스 항목) | 마이그레이션 `20261110090000_legacy_invoice_items.sql`은 Claude에게 '적용해'라고 하면 된다. 가짜 샘플 올리기는 서비스 키가 필요해 레오님 PowerShell에서 `$env:SUPABASE_URL`·`$env:SUPABASE_SERVICE_ROLE_KEY`를 넣고 `node scripts/upload-to-supabase.mjs` | 배포 학생 상세에 '인보이스 항목' 표가 나온다 |
+| 5-2 | 인보이스 항목 가짜 샘플 올리기 | 마이그레이션 `20261110090000_legacy_invoice_items.sql`은 11/10 운영 적용 끝(표는 비어 있음). 남은 것: 레오님 PowerShell에서 `$env:SUPABASE_URL`·`$env:SUPABASE_SERVICE_ROLE_KEY`를 넣고 `node scripts/upload-to-supabase.mjs`(가짜 샘플만) | 배포 학생 상세에 '인보이스 항목' 표가 나온다 |
 | 6 | 학생 포털 로그인 시험 | https://jic-student.bh007007.workers.dev 에서 샘플 학생번호 + 생년월일 8자리로 로그인한다. 값은 `data-sample/tables/students.ndjson`의 `st_id`·`st_birthday`(가짜 데이터). 1번을 마친 뒤 한다 | 첫 로그인 → 비밀번호 변경 → 홈 |
 | 7 | 업체 포털 출석 추출 | 업체 포털(jicportal.com)에 관리자로 로그인한 브라우저의 Console에 `scripts/extract/portal-extract-attendance.js`를 붙여 넣는다(지난 90일, 5~15분, 읽기 전용, 비밀번호·급여·계좌·메모 열은 받지 않음). 받은 파일은 `data/raw/`로 옮긴다 | 강사 포털 출석을 업체 기록으로 이어 가려면(교사·교실·출석·마감). LMS 구조 조사는 11/9 회계 세션이 마쳤다 |
 | 8 | **학원 공식 계정으로 옮기기**(11/9 결정: 소유 = JIC 어학원·레오님 Owner, 주 개발 = 썸머 매니저, 보조 = 레오님 개인 계정) | `docs/accounts.md` 5장 순서대로: 어학원 공용 이메일로 계정 → GitHub 조직에 저장소 이전 → Supabase 운영 프로젝트 이전 + 개발용 프로젝트 새로 → Cloudflare 새로 연결(Preview = 개발용 DB) → 썸머 매니저 초대 | 서비스가 어학원에 남고, 레오님 개인 계정은 운영 키·실제 데이터에 손대지 않는다 |
