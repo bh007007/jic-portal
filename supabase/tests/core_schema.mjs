@@ -29,6 +29,8 @@ await db.exec(mig('20261109030000_legacy_extend.sql'));
 await db.exec(mig('20261110110000_core_schema.sql'));
 await db.exec(mig('20261110110000_core_schema.sql')); // 두 번째 실행
 ok('마이그레이션 2회 실행', true);
+// 3단계(회계) 권한 시험용: 업체 원본 표와 회계 정규화 표. 1단계 규칙 시험은 위 파일만으로 돈다(보강이 load_core_from_legacy 를 바꾸므로 아래 회계 시험 직전에 올린다)
+for (const f of ['20261107020000_legacy_deposits.sql', '20261108000000_legacy_point_history.sql', '20261109060000_legacy_invoice_summary.sql', '20261110090000_legacy_invoice_items.sql']) await db.exec(mig(f));
 
 // 가짜 샘플 업체 원본
 const students = nd('students.ndjson');
@@ -121,6 +123,37 @@ await as(STAFF, async () => {
   await denied('직원: 연수 고치기 거부', `update public.enrollments set courses = 'x'`, /permission denied/);
 });
 
-console.log(`정규화 스키마 1단계 시험: 통과 ${pass}, 실패 ${fails.length}`, byStatus);
+// 6) 3단계 회계·기숙사 배정(20261110120000 보강 + 20261110130000): 불러오기·권한
+await db.exec(mig('20261110120000_core_schema_more.sql'));
+await db.exec(mig('20261110130000_core_schema_accounting.sql'));
+await db.exec(mig('20261110130000_core_schema_accounting.sql')); // 두 번째 실행
+await put('legacy_invoices', nd('invoices.ndjson'), (r) => r.tr_id);
+await put('legacy_dorm_assignments', nd('dorm_assignments.ndjson'), (r) => r.tr_id);
+await put('legacy_deposits', nd('deposits.ndjson'), (r) => r.dp_id);
+const ph = nd('point_history.ndjson');
+for (let i = 0; i < ph.length; i++) await db.query(`insert into public.legacy_point_history (id, data) values ($1, $2::jsonb)`, [`${ph[i].tr_id}-${ph[i].dt}-${ph[i].type}-${i}`, JSON.stringify(ph[i])]);
+await put('legacy_invoice_summary', nd('inv_summary.ndjson'), (r) => `${r._tr_id}-${r.tt_id}`);
+await put('legacy_balances', nd('balance.ndjson'), (r) => r.tr_id);
+for (const t of ['inv_invoice_cost_st', 'inv_invoice_cost_ag', 'inv_etc']) {
+  const rows = nd(`${t}.ndjson`);
+  for (let i = 0; i < rows.length; i++) await db.query(`insert into public.legacy_invoice_items (id, data) values ($1, $2::jsonb)`, [`${t}:${i}`, JSON.stringify({ _table: t, ...rows[i] })]);
+}
+await as(STAFF, () => denied('직원: 회계 불러오기 함수 거부', `select * from public.load_accounting_from_legacy()`, /permission denied/));
+const acc = async () => Object.fromEntries((await as(null, () => db.query('select * from public.load_accounting_from_legacy()'), 'service_role')).rows.map((r) => [r.tbl, r.row_count]));
+await as(null, () => db.query(`select * from public.load_core_from_legacy()`), 'service_role');
+const a1 = await acc();
+const a2 = await acc();
+ok('회계 불러오기: 표마다 행이 있고 두 번 돌려도 같음', Object.values(a1).every((n) => n > 0) && JSON.stringify(a1) === JSON.stringify(a2), JSON.stringify(a1));
+const extPriced = (await db.query(`select count(*)::int n from public.enrollment_extensions where price is not null`)).rows[0].n;
+ok('연장 금액이 채워짐', extPriced === extensions.length, `${extPriced}/${extensions.length}`);
+ok('입금 원장에 계좌 열 없음', (await db.query(`select count(*)::int n from information_schema.columns where table_name = 'deposits' and (column_name like 'bk_%' or column_name like '%acct%')`)).rows[0].n === 0);
+for (const t of ['invoices', 'invoice_parts', 'vendor_balances', 'invoice_lines', 'local_charges', 'deposits', 'point_ledger', 'enrollment_dorms']) {
+  await as(STAFF, async () => ok(`직원: ${t} 읽기`, (await db.query(`select * from public.${t} limit 1`)).rows.length === 1));
+  await as(OTHER, async () => ok(`직원 아님: ${t} 0행`, (await db.query(`select * from public.${t}`)).rows.length === 0));
+  await as(null, () => denied(`익명: ${t} 거부`, `select * from public.${t}`, /permission denied/));
+  await as(STAFF, () => denied(`직원: ${t} 쓰기 거부`, `delete from public.${t}`, /permission denied/));
+}
+
+console.log(`정규화 스키마 시험(1·3단계): 통과 ${pass}, 실패 ${fails.length}`, byStatus);
 for (const f of fails) console.log('  실패:', f);
 process.exit(fails.length ? 1 : 0);
