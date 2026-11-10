@@ -43,6 +43,7 @@ import {
   TRIP_TITLE_MAX,
   tripNights,
   tripPermits,
+  waitingPosition,
   type Trip,
   type TripStore,
 } from '../../student/server/trips';
@@ -1012,11 +1013,13 @@ async function tripDetail(ctx: IntranetCtx, id: string) {
   const t = await ctx.stores.trips.getTrip(id);
   if (!t) return null;
   const today = localDate(ctx.now().getTime());
-  const signups = (await ctx.stores.trips.listSignups(id))
-    .map((x) => ({ ...x, ...requestRow(ctx, x) }))
-    // 참가 신청을 먼저(신청 순), 취소·제외는 뒤에
-    .sort((a, b) => Number(b.status === 'applied') - Number(a.status === 'applied') || a.createdAt.localeCompare(b.createdAt));
-  return { today, trip: tripRow(t, today), campuses: tripCampuses(ctx), limits: TRIP_LIMITS, signups };
+  const list = await ctx.stores.trips.listSignups(id);
+  // 참가 신청(신청 순) → 대기(대기 순서, 11/10 결정 I12) → 취소·제외
+  const rank = (s: { status: string }) => (s.status === 'applied' ? 0 : s.status === 'waiting' ? 1 : 2);
+  const signups = list
+    .map((x) => ({ ...x, ...requestRow(ctx, x), waitingNo: waitingPosition(list, x) }))
+    .sort((a, b) => rank(a) - rank(b) || a.createdAt.localeCompare(b.createdAt) || a.id.localeCompare(b.id));
+  return { today, trip: tripRow(t, today), campuses: tripCampuses(ctx), limits: TRIP_LIMITS, signups, waiting: list.filter((s) => s.status === 'waiting').length };
 }
 export type TripDetail = NonNullable<Awaited<ReturnType<typeof tripDetail>>>;
 

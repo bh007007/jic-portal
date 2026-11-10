@@ -16,7 +16,7 @@ import { handleStudentApi } from './core';
 import type { Departure, Ride } from './departures';
 import type { LifeRequest } from './lifeRequests';
 import type { Absence, Overnight, RequestStore } from './requests';
-import { withTaken, type Trip, type TripSignup, type TripStore } from './trips';
+import { promotions, waitingPosition, withTaken, type Trip, type TripSignup, type TripStore } from './trips';
 import type { KeycardSecret } from './keycard';
 import type { ClassMark, TimetableSource } from './timetable';
 import { tokenCache, type SupabaseConf } from './supabaseAuth';
@@ -67,19 +67,27 @@ export function fileStore<T extends { id: string; stId: string }>(file: string):
 /** 학교 여행과 참가 신청 파일(학생 앱·인트라넷이 같이 씀). 참가 신청 수(taken)는 저장하지 않고 읽을 때 센다. */
 export function tripFileStore(tripsFile: string, signupsFile: string): TripStore {
   const trips = () => withTaken(readRows<Trip>(tripsFile), readRows<TripSignup>(signupsFile));
+  // 참가 신청이 빠지거나 정원이 늘면 대기자를 순서대로 참가로(11/10 결정 I12, 배포는 DB 함수 trip_promote)
+  const promote = (tripId: string) => {
+    const t = readRows<Trip>(tripsFile).find((x) => x.id === tripId);
+    if (t) for (const p of promotions(t, readRows<TripSignup>(signupsFile), new Date().toISOString())) putRow(signupsFile, p);
+  };
   return {
     listTrips: async () => trips(),
     getTrip: async (id) => trips().find((t) => t.id === id) ?? null,
     async putTrip(t) {
       const { taken: _taken, ...row } = t;
       putRow(tripsFile, row);
+      promote(t.id);
     },
     listSignups: async (tripId) => readRows<TripSignup>(signupsFile).filter((s) => !tripId || s.tripId === tripId),
     signupsByStudent: async (stId) => readRows<TripSignup>(signupsFile).filter((s) => s.stId === stId),
     getSignup: async (id) => readRows<TripSignup>(signupsFile).find((s) => s.id === id) ?? null,
     async putSignup(s) {
       putRow(signupsFile, s);
+      promote(s.tripId);
     },
+    waitingNo: async (s) => waitingPosition(readRows<TripSignup>(signupsFile), s),
   };
 }
 

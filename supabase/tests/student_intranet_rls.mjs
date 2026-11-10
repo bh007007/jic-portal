@@ -39,6 +39,8 @@ await db.exec(mig('20261108150000_overnight_travel.sql'));
 await db.exec(mig('20261108150000_overnight_travel.sql'));
 await db.exec(mig('20261108160000_school_trips.sql'));
 await db.exec(mig('20261108160000_school_trips.sql'));
+await db.exec(mig('20261110140000_trip_waitlist.sql')); // 11/10 결정 I12 대기자
+await db.exec(mig('20261110140000_trip_waitlist.sql'));
 await db.exec(mig('20261108170000_keycard_qr.sql'));
 await db.exec(mig('20261108170000_keycard_qr.sql'));
 await db.exec(mig('20261108180000_student_account_admin.sql'));
@@ -349,7 +351,8 @@ await as(U.stA, async () => {
 });
 await as(U.stB, async () => {
   ok('학생B는 A 참가 신청을 못 봄', (await count(`select count(*) n from trip_signups`)) === 0);
-  await denied('정원이 차면 신청 못 함', `select trip_sign_up('${trip1}', 'trB')`, /trip_full/);
+  await denied('다른 캠퍼스 여행은 정원과 상관없이 신청 못 함(대기도 아님)', `select trip_sign_up('${trip1}', 'trB')`, /outside_enrollment/);
+  await denied('학생이 대기자 올리기 함수', `select trip_promote('${trip1}')`, PERM);
   await q(`select trip_sign_up('${trip2}', 'trB')`);
   ok('전체 캠퍼스 여행은 다른 캠퍼스 학생도 신청', (await count(`select count(*) n from trip_signups`)) === 1);
   await denied('학생B가 A 신청 취소', `select trip_cancel_signup('${suA}')`, /not_found/);
@@ -392,10 +395,37 @@ await as(U.staffC, async () => {
   await denied('직원이 참가 신청을 직접 바꾸기', `update trip_signups set status = 'cancelled'`, PERM);
 });
 await as(U.stA, async () => {
-  const mine = (await one(`select id from trip_signups where trip_id = '${trip1}' and status = 'applied'`)).id;
+  const mine = (await one(`select id from trip_signups where trip_id = '${trip1}' and status in ('applied', 'waiting')`)).id;
   await denied('취소된 여행의 신청 취소', `select trip_cancel_signup('${mine}')`, /trip_cancelled/);
   await denied('취소된 여행 신청', `select trip_sign_up('${trip1}', 'trA')`, /trip_cancelled/);
 });
+// ── 대기자(11/10 결정 I12, 20261110140000_trip_waitlist.sql): 정원이 차면 대기, 참가가 빠지거나 정원이 늘면 신청 순서대로 참가로
+let tripW;
+await as(U.staffC, async () => (tripW = (await one(tripSql({ title: '대기 시험', campus: '', capacity: 1 }))).id));
+const suW = {};
+await as(U.stA, async () => (suW.a = (await one(`select trip_sign_up('${tripW}', 'trA') id`)).id));
+await as(U.stB, async () => {
+  suW.b = (await one(`select trip_sign_up('${tripW}', 'trB') id`)).id;
+  ok('정원이 차면 대기로 신청, 참가 수는 그대로', (await one(`select status from trip_signups where id = '${suW.b}'`)).status === 'waiting' && (await one(`select seats_taken from trips where id = '${tripW}'`)).seats_taken === 1);
+  ok('본인 대기 순서 1번', (await one(`select trip_waiting_no('${suW.b}') n`)).n === 1);
+  ok('남의 신청 번호로는 대기 순서를 못 봄', (await one(`select trip_waiting_no('${suW.a}') n`)).n === null);
+  await denied('대기 중 다시 신청', `select trip_sign_up('${tripW}', 'trB')`, /already_applied/);
+});
+await as(U.guardC, async () => ok('가드는 대기 신청을 못 봄(참가만)', (await count(`select count(*) n from trip_signups where trip_id = '${tripW}'`)) === 1));
+await as(U.stA, async () => {
+  await q(`select trip_cancel_signup('${suW.a}')`);
+  ok('참가자가 취소하면 대기 1번이 참가로, 참가 수 1', (await one(`select seats_taken from trips where id = '${tripW}'`)).seats_taken === 1);
+  suW.a2 = (await one(`select trip_sign_up('${tripW}', 'trA') id`)).id;
+});
+await as(U.stB, async () => ok('대기자가 참가로 올라감', (await one(`select status from trip_signups where id = '${suW.b}'`)).status === 'applied'));
+await as(U.staffP, async () => {
+  ok('다시 신청한 학생A는 대기', (await one(`select status from trip_signups where id = '${suW.a2}'`)).status === 'waiting');
+  ok('직원이 정원을 늘림', (await affected(`update trips set capacity = 2 where id = '${tripW}'`)) === 1);
+  ok('정원을 늘리면 대기자가 참가로(트리거)', (await one(`select status from trip_signups where id = '${suW.a2}'`)).status === 'applied' && (await one(`select seats_taken from trips where id = '${tripW}'`)).seats_taken === 2);
+  await q(`select trip_remove_signup('${suW.b}', '확인')`);
+  ok('참가자를 명단에서 빼면 참가 수를 다시 셈', (await one(`select seats_taken from trips where id = '${tripW}'`)).seats_taken === 1);
+});
+
 await as(null, async () => {
   await denied('익명 여행 읽기', `select * from trips`, PERM);
   await denied('익명 참가 신청', `select trip_sign_up('${trip2}', 'trA')`, PERM);

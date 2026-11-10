@@ -27,7 +27,7 @@ export default function TripDetail() {
   const today = data.today;
 
   async function act(kind: 'apply' | 'cancel') {
-    if (!window.confirm(t(kind === 'apply' ? 'trip.confirmApply' : 'trip.confirmCancel'))) return;
+    if (!window.confirm(t(kind === 'apply' ? (r.full ? 'trip.confirmWait' : 'trip.confirmApply') : 'trip.confirmCancel'))) return;
     setBusy(true);
     setActionError(null);
     try {
@@ -93,7 +93,7 @@ export default function TripDetail() {
             <tr>
               <th>{t('trip.mine')}</th>
               <td>
-                {t(`trip.my.${r.mine.status}`)} · {ymdhm(r.mine.status === 'applied' ? r.mine.createdAt : r.mine.updatedAt)}
+                {t(`trip.my.${r.mine.status}`, { n: r.mine.waitingNo ?? '' })} · {ymdhm(r.mine.status === 'applied' || r.mine.status === 'waiting' ? r.mine.createdAt : r.mine.updatedAt)}
               </td>
             </tr>
           )}
@@ -116,10 +116,11 @@ export default function TripDetail() {
           {actionError}
         </p>
       )}
+      {(r.mine?.status === 'waiting' || (r.canApply && r.full)) && <p className="form-hint pad">{t('trip.waitingNote')}</p>}
       {r.canApply && (
         <div className="pad">
           <button type="button" className="btn btn-primary btn-block" disabled={busy} onClick={() => act('apply')}>
-            {t('trip.apply')}
+            {t(r.full ? 'trip.applyWaiting' : 'trip.apply')}
           </button>
         </div>
       )}

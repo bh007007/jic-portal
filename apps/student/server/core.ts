@@ -39,7 +39,7 @@ import {
   type LifeRequestStore,
 } from './lifeRequests';
 import { keycardCode, type KeycardSecret } from './keycard';
-import { cancelSignup, seatsLeft, signUp, studentCampuses, tripNights, visibleTo, type Trip, type TripSignup, type TripStore } from './trips';
+import { cancelSignup, isLive, seatsLeft, signUp, studentCampuses, tripNights, visibleTo, type Trip, type TripSignup, type TripStore } from './trips';
 import { timetableView, type TimetableSource } from './timetable';
 
 export { ABSENCE_KINDS, PERIOD_COUNT, REASON_MAX } from './requests';
@@ -214,18 +214,21 @@ async function cancelLife(ctx: StudentCtx, stId: string, id: string): Promise<Re
 
 // ── 학교 여행·액티비티: 내 캠퍼스(또는 전체)의 다가오는 여행과, 내가 신청했던 여행(지난 것·취소된 것 포함)
 /** 여행 하나를 학생 화면용으로: 올린 직원·명단에서 뺀 직원은 내보내지 않는다. canApply·why 는 신청 규칙(signUp)을 그대로 돌려 본다. */
-function tripForStudent(ctx: StudentCtx, stId: string, t: Trip, mine: TripSignup[], today: string) {
+function tripForStudent(ctx: StudentCtx, stId: string, t: Trip, mine: TripSignup[], today: string, waitingOrder: Map<string, number> = new Map()) {
   // 같은 여행에 여러 번 신청했으면(취소·제외 뒤 다시 신청) 지금 신청, 없으면 가장 나중 것
   const here = mine.filter((s) => s.tripId === t.id).sort((a, b) => a.createdAt.localeCompare(b.createdAt));
-  const own = here.find((s) => s.status === 'applied') ?? here[here.length - 1] ?? null;
+  const own = here.find((s) => isLive(s)) ?? here[here.length - 1] ?? null;
   const trial = signUp({ db: ctx.db, stId, now: ctx.now, newId: () => '', today }, t, mine);
+  const waitingNo = own?.status === 'waiting' ? (waitingOrder.get(own.id) ?? null) : null;
   const cancel = own ? cancelSignup(own, t, stId, ctx.now(), today) : null;
   const { createdBy: _by, ...rest } = t;
   return {
     ...rest,
     nights: tripNights(t),
     left: seatsLeft(t),
-    mine: own ? { id: own.id, status: own.status, createdAt: own.createdAt, updatedAt: own.updatedAt, reason: own.reason } : null,
+    mine: own ? { id: own.id, status: own.status, createdAt: own.createdAt, updatedAt: own.updatedAt, reason: own.reason, waitingNo: own.status === 'waiting' ? waitingNo : null } : null,
+    // 정원이 차면 신청은 대기로 들어간다(11/10 결정 I12)
+    full: seatsLeft(t) === 0,
     canApply: trial.ok,
     why: trial.ok ? null : trial.error,
     canCancel: !!cancel?.ok,
@@ -238,10 +241,13 @@ async function tripRows(ctx: StudentCtx, stId: string) {
   const campuses = studentCampuses(ctx.db, stId);
   const [trips, mine] = await Promise.all([ctx.trips.listTrips(), ctx.trips.signupsByStudent(stId)]);
   const signed = new Set(mine.map((s) => s.tripId));
+  // 대기 순서: 학생은 남의 신청을 못 읽으므로(배포 RLS) 저장소가 내 대기의 순서를 알려 준다
+  const waitingOrder = new Map<string, number>();
+  for (const s of mine) if (s.status === 'waiting') waitingOrder.set(s.id, (await ctx.trips.waitingNo?.(s)) ?? 0);
   const rows = trips
     .filter((t) => signed.has(t.id) || (visibleTo(t, campuses) && t.status !== 'cancelled' && t.end >= today))
     .sort((a, b) => a.start.localeCompare(b.start) || a.title.localeCompare(b.title))
-    .map((t) => tripForStudent(ctx, stId, t, mine, today));
+    .map((t) => tripForStudent(ctx, stId, t, mine, today, waitingOrder));
   return { today, rows };
 }
 export type TripList = Awaited<ReturnType<typeof tripRows>>;
@@ -258,7 +264,7 @@ async function tripSignUp(ctx: StudentCtx, stId: string, id: string): Promise<Re
 
 async function tripCancel(ctx: StudentCtx, stId: string, id: string): Promise<Result> {
   const today = localToday(ctx.now());
-  const mine = (await ctx.trips.signupsByStudent(stId)).find((s) => s.tripId === id && s.status === 'applied') ?? null;
+  const mine = (await ctx.trips.signupsByStudent(stId)).find((s) => s.tripId === id && isLive(s)) ?? null;
   const out = cancelSignup(mine, await ctx.trips.getTrip(id), stId, ctx.now(), today);
   if (!out.ok) return fail(out.status, out.error);
   await ctx.trips.putSignup(out.value);
