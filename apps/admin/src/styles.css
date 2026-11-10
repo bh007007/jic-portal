@@ -140,7 +140,7 @@ button, input, select { font: inherit; }
 .field select, .field input[type='text'], .field input[type='date'] { flex: 1 1 auto; min-width: 0; height: 32px; padding: 0 8px; border: 1px solid #c5cad2; border-radius: 3px; background: #fff; font-size: 13px; color: var(--ink); }
 .field .narrow { flex: 0 0 96px; }
 .field label { display: inline-flex; align-items: center; gap: 4px; white-space: nowrap; }
-.field[role='radiogroup'] { flex-wrap: wrap; gap: 6px 12px; }
+.field[role='radiogroup'], .field[role='group'] { flex-wrap: wrap; gap: 6px 12px; }
 .nowrap { white-space: nowrap; }
 .search-actions { display: flex; justify-content: center; gap: 6px; }
 .toolbar { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px; }
