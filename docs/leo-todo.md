@@ -18,7 +18,7 @@ Claude가 대신할 수 없는 일(키·비밀번호 입력, 계정 만들기, �
 
 **R-007·008·009 문서(11/10 밤)**: 기획 요청 세 건을 문서로 정리했다. 각 문서 끝에 결정할 것이 있다.
 - R-007 인보이스·서류 데이터 출처 `docs/invoice-documents.md`: 데이터는 대부분 있다. 다만 인보이스는 지금 업체 포털에서 만들어서 'JIC 발행 후 자동 발송'에는 발행 위치 결정(R7-1)이 먼저다. 견적 PDF는 저장된 곳이 없다(R7-5).
-- R-008 메일 서비스 `docs/mail-service.md`: **A안 Resend 하나(추천)**. Cloudflare Email Service는 거래 메일만 허용이라 뉴스레터를 못 보낸다. 레오님 결정(R8-1)과 보내는 주소·도메인(R8-2·3)이 필요하다.
+- R-008 메일 서비스 `docs/mail-service.md`: **11/10 레오님 결정: A안 Resend 하나.** 설정은 아래 5 ③(문서 6장). 보내는 주소·도메인(R8-2)과 DNS 관리자(R8-3)를 정해야 한다. 기획 Change Log에도 결정을 올려 주세요.
 - R-009 가격표·견적 연결 `docs/price-quote-link.md`: 코스·기숙사 가격은 견적 프로그램과 거의 같다(87/93). **현지 비용(SSP·픽업) 5건은 값이 다르다** → 실제 가격표를 운영에 올리기 전에 기준값을 정해야 한다(R9-2).
 
 **받아야 할 자료**: ① **시제품 V74 파일**(CL-030 화면 옮기기, CL-031 디자인 기준, CL-039 주니어·가족 캠프에 필요) ② Day 1 차이 목록(`JIC_2차계획안_Day1_현황과범위_1110.xlsx`) ③ v1.2 합의 문서 4종(`docs/agreements/`).
@@ -111,7 +111,7 @@ Claude가 대신할 수 없는 일(키·비밀번호 입력, 계정 만들기, �
 | 4-3 | 업체 교시표 알려 주기(I2) | 교시마다 시작 시각(예: 1교시 08:00, 2교시 08:55 …)을 Claude에게 알려 주거나, 업체 포털의 교시 설정 화면 주소를 알려 준다 | 결석 신청한 교시의 수업만 무단결석에서 뺀다. 강사 포털 결석 신청 기한(수업 30분 전, 원칙 S4)도 이것으로 계산한다 |
 | 4-1 | 오피스 직원 역할 주기(역할 PR 적용 뒤) | 관리자 포털 → 기초관리 → 사용자·권한 → 그 직원 줄에서 '오피스' 주기(캠퍼스 선택) | 권한표대로 오피스는 사용자·권한을 못 열고 강사 포털은 읽기만 한다. 주지 않으면 모든 직원이 관리자다 |
 | 4-2 | 매니저에게 인트라넷 열기(선택) | 관리자 포털 → 사용자·권한 → 그 사람에게 '매니저' 주기(캠퍼스 선택). 2번 서비스 키가 먼저 있어야 한다 | 매니저는 인트라넷에서 홈·외출·패널티 승인(무단결석, 맡은 캠퍼스만)·결석 신청 처리·Student File(맡은 캠퍼스)·공지를 쓴다(`docs/intranet.md` '직원 역할') |
-| 5 | 에이전시 가입 허용 | ① Supabase → Authentication → Sign In / Providers → **Allow new users to sign up** 켜기(Confirm email은 켠 채로) ② URL Configuration → Redirect URLs에 `https://jic-partner.bh007007.workers.dev/**` 있는지 확인 ③ **메일 발송 서비스 연결**: 기본 메일은 Supabase 팀원 주소로만 가서 에이전시는 인증 메일을 못 받는다. Authentication → Emails → SMTP Settings(보내는 주소·서비스 결정 필요, 학원 계정 이전과 같이. 제안은 `docs/mail-service.md`) | 에이전시 포털 등록 신청 → 인증 메일 → 관리자 포털에서 승인 |
+| 5 | 에이전시 가입 허용 | ① Supabase → Authentication → Sign In / Providers → **Allow new users to sign up** 켜기(Confirm email은 켠 채로) ② URL Configuration → Redirect URLs에 `https://jic-partner.bh007007.workers.dev/**` 있는지 확인 ③ **메일 발송 서비스 연결(Resend, 11/10 결정)**: 기본 메일은 Supabase 팀원 주소로만 가서 에이전시는 인증 메일을 못 받는다. `docs/mail-service.md` 6장 순서대로: 어학원 공용 이메일로 Resend 가입 → 도메인 추가·DNS 기록 → 보내기 전용 API 키 → Authentication → Emails → SMTP Settings(Host `smtp.resend.com`, Port `465`, Username `resend`, Password = API 키) → Rate Limits 올리기. 키는 채팅에 붙이지 않는다 | 에이전시 포털 등록 신청 → 인증 메일 → 관리자 포털에서 승인 |
 | 5-1 | 시험 지점 계정(선택) | Supabase → Authentication → Users → Add user → Create new user(Auto Confirm User 체크). 그 이메일을 Claude에게 알려 주거나 SQL Editor에서 `insert into public.agency_members (user_id, email, agency_name, branch, status) select id, email, '시험 에이전시', '시험 지점', 'active' from auth.users where email = '…' on conflict (user_id) do nothing;` | 메일 설정 전에도 에이전시가 보는 화면을 그대로 시험한다. 끝나면 관리자 포털 지점 계정에서 '정지' |
 | 5-2 | 인보이스 항목 가짜 샘플 올리기 | 마이그레이션 `20261110090000_legacy_invoice_items.sql`은 11/10 운영 적용 끝(표는 비어 있음). 남은 것: 레오님 PowerShell에서 `$env:SUPABASE_URL`·`$env:SUPABASE_SERVICE_ROLE_KEY`를 넣고 `node scripts/upload-to-supabase.mjs`(가짜 샘플만) | 배포 학생 상세에 '인보이스 항목' 표가 나온다 |
 | 6 | 학생 포털 로그인 시험 | https://jic-student.bh007007.workers.dev 에서 샘플 학생번호 + 생년월일 8자리로 로그인한다. 값은 `data-sample/tables/students.ndjson`의 `st_id`·`st_birthday`(가짜 데이터). 1번을 마친 뒤 한다 | 첫 로그인 → 비밀번호 변경 → 홈 |
