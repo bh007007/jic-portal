@@ -2,7 +2,7 @@ import { useState, type FormEvent } from 'react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../auth';
 import { errText, supabase } from '../supabase';
-import { Box, Msg } from '../ui';
+import { Box, Loading, Msg } from '../ui';
 
 // 비밀번호 재설정 메일의 링크로 들어오는 화면. 링크를 누르면 임시 로그인 상태가 된다.
 export default function ResetPassword() {
@@ -10,6 +10,7 @@ export default function ResetPassword() {
   const [pw, setPw] = useState('');
   const [msg, setMsg] = useState<{ kind: 'ok' | 'err'; text: string } | null>(null);
 
+  if (session === undefined) return <Loading />;
   const submit = async (e: FormEvent) => {
     e.preventDefault();
     if (pw.length < 8) return setMsg({ kind: 'err', text: '비밀번호는 8자 이상으로 정하세요.' });
