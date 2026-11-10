@@ -23,6 +23,10 @@ import Notices from './pages/Notices';
 import NoticeDetail from './pages/NoticeDetail';
 import Visit from './pages/Visit';
 import AdminMoved from './pages/admin/AdminMoved';
+import CoursesIndex from './pages/CoursesIndex';
+import Newsletter from './pages/Newsletter';
+import { PENDING_ROUTES } from './menu';
+import { t } from './i18n';
 
 /** 승인된 파트너 또는 JIC 직원만. 로그인 전이면 로그인으로, 승인 전이면 대기 화면. */
 function Member({ children }: { children: ReactNode }) {
@@ -69,7 +73,13 @@ export default function App() {
         <Route path="/consult" element={<Member><Consult /></Member>} />
         <Route path="/campuses" element={<Member><Campuses /></Member>} />
         <Route path="/campuses/:id" element={<Member><CampusPage /></Member>} />
+        <Route path="/courses" element={<Member><CoursesIndex /></Member>} />
         <Route path="/courses/:id" element={<Member><CoursePage /></Member>} />
+        <Route path="/newsletter" element={<Member><Newsletter /></Member>} />
+        {/* CL-037 메뉴 중 아직 화면이 없는 곳: 준비 중(시제품 V74를 받아 옮김, CL-030·039) 또는 2차 */}
+        {PENDING_ROUTES.map((it) => (
+          <Route key={it.to} path={it.to} element={<Member><Preparing title={t(it.key)} /></Member>} />
+        ))}
         <Route path="/quote" element={<Member><Quote /></Member>} />
         <Route path="/vacancy" element={<Member><Vacancy /></Member>} />
         <Route path="/register" element={<Member><Register /></Member>} />

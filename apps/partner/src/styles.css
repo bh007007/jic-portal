@@ -45,6 +45,18 @@ h1, h2, h3 { margin: 0; }
 .nav a { color: var(--ink); text-decoration: none; padding: 8px 0; border-bottom: 2px solid transparent; }
 .nav a.active { color: var(--primary); font-weight: 700; border-bottom-color: var(--primary); }
 .nav .off { color: var(--ink-4); padding: 8px 0; }
+/* CL-037 메뉴 묶음: 마우스를 올리거나 포커스하면 펼친다 */
+.nav { align-items: center; }
+.nav-group { position: relative; }
+.nav-head { padding: 8px 0; border: 0; border-bottom: 2px solid transparent; background: none; font: inherit; color: var(--ink); cursor: pointer; }
+.nav-group.active .nav-head { color: var(--primary); font-weight: 700; border-bottom-color: var(--primary); }
+.nav-drop { display: none; position: absolute; top: 100%; left: -14px; z-index: 30; min-width: 230px; padding: 6px 0; background: #fff; border: 1px solid var(--line); border-top: 2px solid var(--primary); }
+.nav-group:hover .nav-drop, .nav-group:focus-within .nav-drop { display: block; }
+.nav-drop a { display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 7px 14px; border-bottom: 0; font-size: 14px; font-weight: 400; white-space: nowrap; }
+.nav-drop a:hover, .nav-drop a.active { background: var(--primary-soft); border-bottom: 0; }
+.nav-sub { margin-top: 4px; padding-top: 4px; border-top: 1px solid var(--line-3); }
+.nav-sub-title { display: block; padding: 4px 14px; font-size: 12px; color: var(--ink-3); }
+.nav-sub a { padding-left: 26px; }
 .chip { font-size: 11px; padding: 1px 5px; border: 1px solid #c5cad2; border-radius: 3px; color: var(--ink-3); font-weight: 400; }
 button.link { border: 0; background: none; padding: 0; font: inherit; cursor: pointer; text-decoration: underline; }
 
