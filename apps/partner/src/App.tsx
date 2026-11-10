@@ -25,6 +25,7 @@ import Visit from './pages/Visit';
 import AdminMoved from './pages/admin/AdminMoved';
 import CoursesIndex from './pages/CoursesIndex';
 import Newsletter from './pages/Newsletter';
+import Tuition from './pages/Tuition';
 import { PENDING_ROUTES } from './menu';
 import { t } from './i18n';
 
@@ -76,6 +77,7 @@ export default function App() {
         <Route path="/courses" element={<Member><CoursesIndex /></Member>} />
         <Route path="/courses/:id" element={<Member><CoursePage /></Member>} />
         <Route path="/newsletter" element={<Member><Newsletter /></Member>} />
+        <Route path="/tuition" element={<Member><Tuition /></Member>} />
         {/* CL-037 메뉴 중 아직 화면이 없는 곳: 준비 중(시제품 V74를 받아 옮김, CL-030·039) 또는 2차 */}
         {PENDING_ROUTES.map((it) => (
           <Route key={it.to} path={it.to} element={<Member><Preparing title={t(it.key)} /></Member>} />

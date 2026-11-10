@@ -40,3 +40,4 @@ jobs:
       - run: node supabase/tests/core_schema.mjs
       - run: node supabase/tests/core_schema_adapter.mjs
       - run: node supabase/tests/security_lint.mjs
+      - run: node supabase/tests/partner_tuition_rls.mjs
