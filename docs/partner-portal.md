@@ -38,6 +38,14 @@
 4. 승인 전 계정이나 정지된 계정은 로그인해도 '계정 확인' 화면만 보이고, 어떤 데이터도 읽을 수 없다.
 5. 지점 계정에 업체 포털 담당자 번호(`legacy_am_id`)를 적어 두면, 2차 My Students에서 그 지점 학생을 연결할 수 있다. 업체 연수 기록에는 모든 건에 담당자 번호(`tr_am_id`)가 있다.
 
+**지점 직원 아이디(CL-032, 11/10 레오님 결정)**
+6. 지점 대표가 '내 계정 › 직원 아이디'에서 직원 이름·이메일을 등록한다(`agency_staff_invites`). 연결 전 등록은 이메일마다 하나다(어느 지점 직원인지 하나로 정해지게).
+7. 직원이 `/signup/staff`에서 그 이메일로 가입하고 인증 메일을 누른다. 등록 신청(`agency_requests`)은 생기지 않는다.
+8. 직원이 로그인하면 `claim_agency_staff_invite()`가 인증된 이메일과 등록을 맞춰 직원 행을 만든다(`agency_members.role = 'staff'`, `owner_id` = 대표). JIC 승인은 없다(R-010). 직원 비밀번호는 본인만 안다.
+9. 대표가 정지·해제한다(`set_agency_staff_status`). 대표 아이디가 정지되면 직원도 같이 막힌다(`is_partner()`). 대표 행의 에이전시명·지점·국가가 바뀌면 직원 행도 같이 바뀐다.
+10. 직원은 상담·자료·공지만 본다(`docs/menus.md` 5장). 학비표(`partner_tuition()`)와 방문 신청은 DB에서도 대표만이다. 관리자 포털 '지점 계정'에서는 대표 아래에 직원이 붙어 보이고 JIC도 정지할 수 있다.
+11. 직원 가입에도 인증 메일이 필요하다. 운영에서는 Resend SMTP 연결(`docs/mail-service.md` 6장) 뒤에 쓸 수 있다.
+
 이 흐름을 쓰려면 Supabase에서 **Authentication → Sign In / Providers → Allow new users to sign up** 을 켜야 한다. 아무나 가입해도 승인 전에는 데이터를 하나도 볼 수 없다. 2026-11-07 가짜 계정으로 21개 항목을 확인했고, 시험 뒤 모두 되돌렸다. 스팸 가입이 늘면 Supabase의 캡차(Turnstile) 설정을 켠다.
 
 **인증 메일(11/10 확인)**: Supabase 기본 메일은 조직 팀원 주소로만 보내고 시간당 몇 통으로 막혀 있다(공식 문서 'Send emails with custom SMTP'). 에이전시 주소로 인증 메일을 보내려면 Authentication → Emails → SMTP Settings에 메일 발송 서비스를 연결해야 한다(보내는 주소·서비스는 결정 대기, `docs/leo-todo.md` 5). 그 전에 지점 화면을 시험하려면 Supabase Users에서 계정을 직접 만들고(Auto Confirm) `agency_members`에 연결한다(같은 문서 5-1).

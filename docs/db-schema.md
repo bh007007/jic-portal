@@ -4,7 +4,7 @@
 
 - **원본 관계**: 공동 작업 방식(11/10 안)에서 공용 DB 설계의 원본은 이 저장소다. 기획의 '공용 DB 설계표'(엑셀)와 다른 곳은 차이 목록으로 맞추고, 테이블 변경은 DB 관리자(지정 필요)가 승인한다(`docs/collab.md`).
 - **정규화 표 계획**은 `docs/schema.md`, 권한(역할)은 `docs/roles.md`, 업체 원본 열 뜻은 `docs/data-dictionary*.md`.
-- 마이그레이션 49개, 표 76개, 뷰 1개. 모든 표에 RLS 가 켜져 있는지는 CI 시험 `supabase/tests/security_lint.mjs`가 본다.
+- 마이그레이션 52개, 표 77개, 뷰 1개. 모든 표에 RLS 가 켜져 있는지는 CI 시험 `supabase/tests/security_lint.mjs`가 본다.
 
 ## 표 목록
 
@@ -31,13 +31,14 @@
 | 관리자 앱 | `change_request_log` | 5 | 켜짐 | 1 | 20261110100000_change_requests |
 | 관리자 앱 | `change_requests` | 20 | 켜짐 | 3 | 20261110100000_change_requests |
 | 관리자 앱 | `staff_users` | 4 | 켜짐 | 1 | 20261107000000_legacy_tables |
-| 에이전시(파트너) 포털 | `agency_members` | 16 | 켜짐 | 3 | 20261107010000_partner_portal |
+| 에이전시(파트너) 포털 | `agency_members` | 18 | 켜짐 | 4 | 20261107010000_partner_portal |
 | 에이전시(파트너) 포털 | `agency_requests` | 14 | 켜짐 | 2 | 20261107010000_partner_portal |
+| 에이전시(파트너) 포털 | `agency_staff_invites` | 7 | 켜짐 | 4 | 20261110193000_agency_staff |
 | 에이전시(파트너) 포털 | `campuses` | 11 | 켜짐 | 2 | 20261107010000_partner_portal |
 | 에이전시(파트너) 포털 | `course_contents` | 11 | 켜짐 | 2 | 20261107010000_partner_portal |
 | 에이전시(파트너) 포털 | `courses` | 8 | 켜짐 | 2 | 20261107010000_partner_portal |
-| 에이전시(파트너) 포털 | `partner_notices` | 12 | 켜짐 | 2 | 20261107010000_partner_portal |
-| 에이전시(파트너) 포털 | `partner_resources` | 11 | 켜짐 | 2 | 20261107010000_partner_portal |
+| 에이전시(파트너) 포털 | `partner_notices` | 14 | 켜짐 | 2 | 20261107010000_partner_portal |
+| 에이전시(파트너) 포털 | `partner_resources` | 13 | 켜짐 | 2 | 20261107010000_partner_portal |
 | 에이전시(파트너) 포털 | `partner_settings` | 4 | 켜짐 | 2 | 20261107010000_partner_portal |
 | 에이전시(파트너) 포털 | `plan_downloads` | 4 | 켜짐 | 2 | 20261107010000_partner_portal |
 | 에이전시(파트너) 포털 | `recommendation_rules` | 9 | 켜짐 | 2 | 20261107010000_partner_portal |
@@ -345,8 +346,10 @@
 | `approved_by` | uuid | 가능 |  |
 | `created_at` | timestamp with time zone |  | `now()` |
 | `updated_at` | timestamp with time zone |  | `now()` |
+| `role` | text |  | `'owner'::text` |
+| `owner_id` | uuid | 가능 |  |
 
-정책: `agency_members_staff_all`(ALL, authenticated), `members_self_read`(SELECT, authenticated), `members_self_update`(UPDATE, authenticated)
+정책: `agency_members_staff_all`(ALL, authenticated), `members_owner_read`(SELECT, authenticated), `members_self_read`(SELECT, authenticated), `members_self_update`(UPDATE, authenticated)
 
 ### `agency_requests`
 
@@ -368,6 +371,20 @@
 | `created_at` | timestamp with time zone |  | `now()` |
 
 정책: `agency_requests_staff_all`(ALL, authenticated), `requests_self_read`(SELECT, authenticated)
+
+### `agency_staff_invites`
+
+| 열 | 형식 | 비움 | 기본값 |
+| --- | --- | --- | --- |
+| `id` | bigint |  |  |
+| `owner_id` | uuid |  | `auth.uid()` |
+| `email` | text |  |  |
+| `name` | text |  | `''::text` |
+| `created_at` | timestamp with time zone |  | `now()` |
+| `claimed_by` | uuid | 가능 |  |
+| `claimed_at` | timestamp with time zone | 가능 |  |
+
+정책: `agency_staff_invites_staff_all`(ALL, authenticated), `invites_owner_delete`(DELETE, authenticated), `invites_owner_insert`(INSERT, authenticated), `invites_owner_read`(SELECT, authenticated)
 
 ### `campuses`
 
@@ -436,6 +453,8 @@
 | `published` | boolean |  | `true` |
 | `created_at` | timestamp with time zone |  | `now()` |
 | `created_by` | uuid | 가능 |  |
+| `countries` | ARRAY |  | `'{}'::text[]` |
+| `country_order` | jsonb |  | `'{}'::jsonb` |
 
 정책: `notices_partner_read`(SELECT, authenticated), `partner_notices_staff_all`(ALL, authenticated)
 
@@ -454,6 +473,8 @@
 | `updated_on` | date |  | `CURRENT_DATE` |
 | `created_at` | timestamp with time zone |  | `now()` |
 | `created_by` | uuid | 가능 |  |
+| `countries` | ARRAY |  | `'{}'::text[]` |
+| `country_order` | jsonb |  | `'{}'::jsonb` |
 
 정책: `partner_resources_staff_all`(ALL, authenticated), `resources_partner_read`(SELECT, authenticated)
 

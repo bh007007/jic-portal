@@ -95,3 +95,28 @@ export const MENU: MenuGroup[] = [
 export const PENDING_ROUTES: MenuItem[] = MENU.flatMap((g) => [
   ...(g.items ?? []).flatMap((it) => ('sub' in it ? it.sub : [it])),
 ]).filter((it) => !it.ready);
+
+/**
+ * 지점 직원 아이디가 볼 수 있는 화면(CL-032, 11/10 레오님 결정 '적힌 그대로': 상담·자료·공지, 1차).
+ * 소개·코스·생활·비용·등록·방문 신청·My Students·직원 관리는 지점 대표만. 학비표·방문 신청은 DB에서도 막는다(20261110193000_agency_staff.sql).
+ * 상담 결과에서 여는 코스 상세(/courses/:id)는 상담의 일부라 연다(코스 목록 메뉴는 대표만).
+ */
+export const STAFF_PATHS = ['/consult', '/play', '/resources', '/evidence', '/playbook', '/faq', '/notices', '/newsletter', '/account'];
+export const staffCanSee = (path: string) =>
+  path === '/' || STAFF_PATHS.some((p) => path === p || path.startsWith(p + '/')) || /^\/courses\/[^/]+$/.test(path);
+
+/** 지점 직원이면 볼 수 있는 메뉴만 남긴다(빈 묶음·소제목은 뺀다) */
+export function menuFor(agencyStaff: boolean): MenuGroup[] {
+  if (!agencyStaff) return MENU;
+  const keep = (it: MenuItem) => staffCanSee(it.to) && !/^\/courses\/?$/.test(it.to);
+  type Entry = NonNullable<MenuGroup['items']>[number];
+  return MENU.flatMap<MenuGroup>((g) => {
+    if (g.to) return staffCanSee(g.to) ? [g] : [];
+    const items = (g.items ?? []).flatMap<Entry>((it) => {
+      if (!('sub' in it)) return keep(it) ? [it] : [];
+      const sub = it.sub.filter(keep);
+      return sub.length ? [{ ...it, sub }] : [];
+    });
+    return items.length ? [{ ...g, items }] : [];
+  });
+}

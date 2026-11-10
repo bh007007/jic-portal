@@ -1,5 +1,5 @@
 import type { ReactNode } from 'react';
-import { Navigate, Route, Routes, useLocation } from 'react-router-dom';
+import { Link, Navigate, Route, Routes, useLocation } from 'react-router-dom';
 import { useAuth } from './auth';
 import { configured } from './supabase';
 import Layout from './Layout';
@@ -26,17 +26,27 @@ import AdminMoved from './pages/admin/AdminMoved';
 import CoursesIndex from './pages/CoursesIndex';
 import Newsletter from './pages/Newsletter';
 import Tuition from './pages/Tuition';
-import { PENDING_ROUTES } from './menu';
+import { PENDING_ROUTES, staffCanSee } from './menu';
 import { t } from './i18n';
 
-/** 승인된 파트너 또는 JIC 직원만. 로그인 전이면 로그인으로, 승인 전이면 대기 화면. */
+/** 승인된 파트너 또는 JIC 직원만. 로그인 전이면 로그인으로, 승인 전이면 대기 화면. 지점 직원 아이디는 상담·자료·공지만(CL-032). */
 function Member({ children }: { children: ReactNode }) {
-  const { session, allowed } = useAuth();
+  const { session, allowed, agencyStaff } = useAuth();
   const loc = useLocation();
   if (session === undefined) return <Loading />;
   if (!session) return <Navigate to={`/login?next=${encodeURIComponent(loc.pathname + loc.search)}`} replace />;
   if (!allowed) return <Pending />;
+  if (agencyStaff && !staffCanSee(loc.pathname)) return <OwnerOnly />;
   return <>{children}</>;
+}
+
+function OwnerOnly() {
+  return (
+    <div className="state">
+      지점 대표 아이디만 볼 수 있는 화면입니다. 직원 아이디는 상담·자료·공지를 볼 수 있습니다.
+      <div style={{ marginTop: 12 }}><Link className="btn" to="/">홈으로</Link></div>
+    </div>
+  );
 }
 
 /** 관리자 화면은 11/10 모두 관리자 포털로 옮겼다. 예전 주소로 들어온 직원에게 옮긴 곳을 알려 준다 */
@@ -69,6 +79,7 @@ export default function App() {
         <Route path="/" element={<Root />} />
         <Route path="/login" element={<Login />} />
         <Route path="/signup" element={<Signup />} />
+        <Route path="/signup/staff" element={<Signup staff />} />
         <Route path="/reset" element={<ResetPassword />} />
         <Route path="/account" element={<Member><Account /></Member>} />
         <Route path="/consult" element={<Member><Consult /></Member>} />
@@ -89,7 +100,7 @@ export default function App() {
         <Route path="/notices" element={<Member><Notices /></Member>} />
         <Route path="/notices/:id" element={<Member><NoticeDetail /></Member>} />
         <Route path="/visit" element={<Member><Visit /></Member>} />
-        <Route path="/students" element={<Preparing title="My Students" />} />
+        <Route path="/students" element={<Member><Preparing title="My Students" /></Member>} />
         <Route path="/admin/*" element={<Staff><AdminMoved /></Staff>} />
         <Route path="*" element={<Preparing title="페이지를 찾을 수 없습니다" />} />
       </Routes>

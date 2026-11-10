@@ -36,7 +36,7 @@ const createdIn = (t) =>
 const appOf = (f, t) =>
   t === 'staff_users' ? '관리자 앱'
   : t.startsWith('legacy_') ? '업체 원본(legacy)'
-  : /partner|reco/.test(f) ? '에이전시(파트너) 포털'
+  : /partner|reco|agency_staff/.test(f) ? '에이전시(파트너) 포털'
   : /teacher|attendance|lms|schedule|roles|user_directory|holidays|staff_name/.test(f) ? '강사 포털·공통 권한'
   : /intranet|keycard|guard|trip|overnight|nonacademic|absence|student_|notice|counsel/.test(f) ? '학생 앱·인트라넷'
   : /core_schema/.test(f) ? '정규화 표(학원 계정에서 적용)'

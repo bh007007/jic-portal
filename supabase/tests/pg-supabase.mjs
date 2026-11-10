@@ -92,6 +92,12 @@ export async function startPgSupabase({ port = 0 } = {}) {
     const out = [];
     for (const [k, v] of params) {
       if (['select', 'order', 'limit', 'offset'].includes(k)) continue;
+      // is.null·is.true·is.false(PostgREST 와 같게, 예: 연결 전 직원 등록 claimed_at=is.null)
+      const isM = v.match(/^(not\.)?is\.(null|true|false)$/);
+      if (isM) {
+        out.push(`${ident(k)} is ${isM[1] ? 'not ' : ''}${isM[2]}`);
+        continue;
+      }
       // eq 외에 기간 조회용 비교(gte·lte 등). 같은 열에 두 번 걸어도 된다(day=gte.…&day=lte.…)
       const m = v.match(/^(eq|neq|gt|gte|lt|lte)\.(.*)$/s);
       if (!m) throw Object.assign(new Error(`unsupported filter ${k}`), { http: 400 });

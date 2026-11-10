@@ -5,8 +5,10 @@ import { errText, supabase } from '../supabase';
 import { Box, Msg } from '../ui';
 
 
-// 0.2 등록 신청: 지점 계정 신청 → JIC 관리자 승인 후 로그인 가능
-export default function Signup() {
+// 0.2 등록 신청: 지점 대표 아이디 신청 → JIC 관리자 승인 후 로그인 가능.
+// staff: 지점 직원 가입(CL-032). 대표가 등록해 둔 이메일로 가입하고 인증하면, 로그인할 때 그 지점 직원 아이디가 된다(JIC 승인 없음).
+export default function Signup({ staff = false }: { staff?: boolean }) {
+  if (staff) return <StaffSignup />;
   const [f, setF] = useState({ agency_name: '', branch: '', country: '한국', contact_name: '', phone: '', email: '', password: '', message: '' });
   const [busy, setBusy] = useState(false);
   const [done, setDone] = useState(false);
@@ -82,6 +84,75 @@ export default function Signup() {
           <div className="form-actions">
             <Link className="btn btn-lg" to="/login">취소</Link>
             <button type="submit" className="btn btn-primary btn-lg" disabled={busy}>{busy ? '보내는 중…' : '신청'}</button>
+          </div>
+          <p className="muted" style={{ margin: 0, fontSize: 12 }}>지점 직원이면 이 신청 대신 <Link to="/signup/staff">직원 가입</Link>을 하세요(지점 대표가 먼저 직원 이메일을 등록합니다).</p>
+        </form>
+      </Box>
+    </div>
+  );
+}
+
+function StaffSignup() {
+  const [f, setF] = useState({ email: '', password: '' });
+  const [busy, setBusy] = useState(false);
+  const [done, setDone] = useState(false);
+  const [err, setErr] = useState('');
+  const set = (k: keyof typeof f) => (e: { target: { value: string } }) => setF((x) => ({ ...x, [k]: e.target.value }));
+
+  const submit = async (e: FormEvent) => {
+    e.preventDefault();
+    if (f.password.length < 8) {
+      setErr('비밀번호는 8자 이상으로 정하세요.');
+      return;
+    }
+    setBusy(true);
+    setErr('');
+    const { error } = await supabase.auth.signUp({
+      email: f.email.trim().toLowerCase(),
+      password: f.password,
+      options: { emailRedirectTo: `${location.origin}/login`, data: { portal: 'partner_staff' } },
+    });
+    setBusy(false);
+    if (error) setErr(errText(error));
+    else setDone(true);
+  };
+
+  if (done) {
+    return (
+      <div className="auth">
+        <Box title="직원 가입 완료">
+          <div className="box-body form">
+            <Msg kind="ok">가입을 받았습니다.</Msg>
+            <p style={{ margin: 0, lineHeight: 1.8 }}>
+              1. <strong>{f.email}</strong>로 보낸 인증 메일의 링크를 누르세요.<br />
+              2. 로그인하면 지점 대표가 등록한 이메일인지 확인하고 바로 지점 직원 아이디로 열립니다.
+            </p>
+            <Link className="btn" to="/login">로그인</Link>
+          </div>
+        </Box>
+      </div>
+    );
+  }
+
+  return (
+    <div className="auth">
+      <Box title="지점 직원 가입">
+        <form className="form box-body" onSubmit={submit}>
+          <Msg kind="warn">지점 대표가 '내 계정 › 직원 아이디'에서 먼저 이 이메일을 등록해야 합니다. 등록되지 않은 이메일은 가입해도 포털을 쓸 수 없습니다.</Msg>
+          <label>
+            아이디 (이메일)
+            <input type="email" autoComplete="username" required value={f.email} onChange={set('email')} />
+            <span className="hint">대표가 등록한 이메일과 같게</span>
+          </label>
+          <label>
+            비밀번호
+            <input type="password" autoComplete="new-password" required value={f.password} onChange={set('password')} />
+            <span className="hint">8자 이상. 비밀번호는 본인만 압니다</span>
+          </label>
+          {err && <Msg kind="err">{err}</Msg>}
+          <div className="form-actions">
+            <Link className="btn btn-lg" to="/login">취소</Link>
+            <button type="submit" className="btn btn-primary btn-lg" disabled={busy}>{busy ? '보내는 중…' : '가입'}</button>
           </div>
         </form>
       </Box>
