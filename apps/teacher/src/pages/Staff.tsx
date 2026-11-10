@@ -44,6 +44,7 @@ export default function Staff() {
       ) : (data ?? []).length === 0 ? (
         <div className="state">{t('noStaff')}</div>
       ) : (
+        <div style={{ overflowX: 'auto' }}>
         <table className="tbl">
           <thead>
             <tr><th>{t('name')}</th><th>{t('nickname')}</th><th>{t('campus')}</th><th>{t('vendorNo')}</th><th>{t('loginAcct')}</th><th /></tr>
@@ -61,6 +62,7 @@ export default function Staff() {
             ))}
           </tbody>
         </table>
+        </div>
       )}
 
       <Section title={t('addTeacher')}>

@@ -20,7 +20,7 @@ export default function Notices() {
   return (
     <>
       <PageHead title={t('nav.notices')} />
-      <div style={{ display: 'flex', gap: 6 }}>
+      <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
         {[['notice', `공지 (${notices.length})`], ['promotion', `진행 중 프로모션 (${live.length})`], ['past', `지난 프로모션 (${past.length})`]].map(([k, label]) => (
           <button key={k} type="button" className={'btn' + (tab === k ? ' btn-primary' : '')} onClick={() => setParams({ tab: k })}>{label}</button>
         ))}
