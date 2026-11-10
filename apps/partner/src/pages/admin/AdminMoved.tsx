@@ -16,8 +16,8 @@ const LINKS: { old: string; page: 'agency-portal' | 'agency-content'; tab: strin
 ];
 
 /**
- * 에이전시 포털의 관리자 화면은 11/10 모두 JIC 관리자 포털 '에이전시' 메뉴로 옮겼다(docs/leo-todo.md D-4 1·2단계).
- * 가입 승인·지점 계정·방문 신청·사용 통계는 '에이전시 포털 관리', 추천 규칙·캠퍼스·코스 내용·자료실·공지·링크 설정은 '에이전시 포털 콘텐츠'.
+ * 에이전시 포털의 관리자 화면은 11/10 모두 JIC 관리자 포털 '파트너 포털 관리' 메뉴로 옮겼다(docs/leo-todo.md D-4 1·2단계, CL-025).
+ * 메뉴 그룹 '파트너 포털 관리'(CL-025): 가입 승인·지점 계정·방문 신청·사용 통계는 '계정·방문·통계', 추천 규칙·캠퍼스·코스 내용·자료실·공지·링크 설정은 '추천·콘텐츠·공지'.
  * 예전 주소(/admin, /admin/rules …)로 들어오면 이 안내가 보인다.
  */
 export default function AdminMoved() {
@@ -30,14 +30,14 @@ export default function AdminMoved() {
       <Box title="관리자 포털로 옮겼습니다">
         <div className="box-body">
           <p style={{ marginTop: 0 }}>
-            에이전시 포털의 관리 화면은 이제 JIC 관리자 포털의 <strong>에이전시</strong> 메뉴에 있습니다. 같은 직원 계정으로 로그인합니다.
+            에이전시 포털의 관리 화면은 이제 JIC 관리자 포털의 <strong>파트너 포털 관리</strong> 메뉴에 있습니다. 같은 직원 계정으로 로그인합니다.
           </p>
           <p>
             <a className="btn btn-primary" href={adminUrl(here.page, here.tab)}>{here.label} 열기 ↗</a>
           </p>
           {(['agency-portal', 'agency-content'] as const).map((page) => (
             <div key={page} style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: 6, marginTop: 8 }}>
-              <span className="muted" style={{ fontSize: 12, minWidth: 130 }}>{page === 'agency-portal' ? '에이전시 포털 관리' : '에이전시 포털 콘텐츠'}</span>
+              <span className="muted" style={{ fontSize: 12, minWidth: 130 }}>{page === 'agency-portal' ? '계정·방문·통계' : '추천·콘텐츠·공지'}</span>
               {group(page).map((l) => (
                 <a key={l.old} className="btn btn-sm" href={adminUrl(l.page, l.tab)}>{l.label}</a>
               ))}
