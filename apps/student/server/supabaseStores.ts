@@ -66,6 +66,7 @@ export const toAbsence = (r: Row): Absence => ({
   decidedAt: iso(r.decided_at),
   decidedBy: null, // 처리한 직원은 학생에게 보이지 않는다
   comment: (r.staff_comment as string | null) ?? null,
+  documentPath: (r.document_path as string | null) ?? null,
 });
 export const toOvernight = (r: Row): Overnight => ({
   id: String(r.id),
@@ -105,6 +106,12 @@ function requestStore<T extends Absence | Overnight>(rest: Rest, table: string, 
       }
       if (cur.status === 'pending' && x.status === 'cancelled') {
         await rest('POST', `rpc/${cancelFn}`, { p_id: x.id }, 'return=minimal');
+        return;
+      }
+      // 진단서 사진을 붙인다(결석 신청만, 대기 중, 사진은 먼저 Storage 에 올린다. 11/10 결정 I10)
+      const path = (x as Absence).documentPath;
+      if (table === 'absence_requests' && cur.status === 'pending' && x.status === 'pending' && path && path !== (cur as Absence).documentPath) {
+        await rest('POST', 'rpc/absence_attach_document', { p_id: x.id, p_path: path }, 'return=minimal');
         return;
       }
       throw new StoreError(409, 'unsupported_update');

@@ -127,8 +127,10 @@ apps/student/
 | `GET /api/meta` | 데이터 종류(샘플/추출본), 기준일. 샘플일 때만 시험용 학생 |
 | `POST /api/login` | 로컬 전용. `{ stId, birthday: 'YYYYMMDD' }` 확인 |
 | `GET /api/me` | 학생 정보, 대표 연수, 연수 이력, 졸업 전 확인 |
-| `GET /api/absences` | 내 결석 신청, 신청 가능 기간, 교시 수 |
+| `GET /api/absences` | 내 결석 신청(줄마다 진단서 필요 `documentRequired`·있음 `hasDocument`), 신청 가능 기간, 교시 수 |
 | `POST /api/absences` | 결석 신청 `{ date, kind, periods, reason }` |
+| `POST /api/absences/:id/document` | 진단서 사진 올리기 `{ image: data URL }`(대기 중인 내 신청, JPG·PNG·WebP 1MB, 다시 올리면 바꿈) |
+| `GET /api/absences/:id/document` | 내가 올린 진단서 사진 `{ image }` |
 | `POST /api/absences/:id/cancel` | 대기 중인 내 신청 취소 |
 | `GET /api/overnights` | 내 외박 신청(박 수 포함), 신청 가능 기간, 출발일 하한 `minDate`·최대 박 수 `maxNights`·미성년 여부 `minor` |
 | `POST /api/overnights` | 외박 신청 `{ from, until, reason, destination, accommodation, contact, companions, guardianConsent }` |
@@ -147,7 +149,8 @@ apps/student/
 결석 신청 규칙(서버에서 확인):
 
 - 날짜는 재학 중이거나 입학 예정인 연수 기간 안. 연장으로 연수가 여러 개면 그중 하나에 들어가면 되고, 신청에는 그 연수 번호(`trId`)가 붙는다.
-- (11/10 결정 I10) 지난 날짜는 오늘(필리핀 날짜)부터 3일 전까지만 받는다(`too_old`). 병결 연속 2일 이상의 진단서 사진은 Supabase Storage와 함께 다음에 넣는다.
+- (11/10 결정 I10) 지난 날짜는 오늘(필리핀 날짜)부터 3일 전까지만 받는다(`too_old`).
+- (11/10 결정 I10) **진단서 사진**: 대기·승인 중인 병결이 앞뒤 날과 이어져 연속 2일 이상이면 그 병결들에 '진단서 필요'가 붙는다(`requests.ts` `needsMedicalDoc`). 신청은 막지 않고, 학생이 신청 상세에서 사진을 올린다(휴대폰에서 긴 변 1600px JPEG로 줄여 보냄, `src/components/image.ts`). 서버는 종류(파일 머리까지)·크기(1MB)를 보고 `<학생번호>/<신청 번호>.<확장자>`에 둔다(`server/files.ts`). 배포는 Supabase Storage 비공개 버킷 `absence-docs`(학생 토큰, 자기 폴더만 쓰고 봄)와 붙이기 함수 `absence_attach_document`(`20261110150000_absence_documents.sql`), 로컬은 `.local-db/student/absence-docs-<source>/`. 실제 학생 진단서는 보안 점검 뒤에만 받는다(지금 Supabase에는 가짜 샘플만).
 - 같은 날짜에 대기·승인 상태인 신청과 교시가 겹치면 거절한다(종일은 모든 교시와 겹친다). 취소·반려된 신청은 다시 낼 수 있다.
 - 학생은 대기 중인 자기 신청만 취소할 수 있다. 승인·반려는 인트라넷 '신청 처리'에서 하고(`docs/intranet.md`), 담당자 메모가 신청 상세에 보인다. 결석 승인은 LMS가 생기면 그쪽으로 옮길 수 있다(같은 `requests.ts`를 쓰면 된다).
 

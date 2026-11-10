@@ -14,7 +14,7 @@ import crypto from 'node:crypto';
 import type { IncomingMessage, ServerResponse } from 'node:http';
 import type { Plugin } from 'vite';
 import { loadDir } from '../../admin/server/localData';
-import { fileStore, localKeycardSecret, requestFiles, tripFileStore } from '../../student/server/localData';
+import { fileStore, localFiles, localKeycardSecret, requestFiles, tripFileStore } from '../../student/server/localData';
 import type { Departure, Ride } from '../../student/server/departures';
 import type { LifeRequest } from '../../student/server/lifeRequests';
 import type { Absence, Overnight } from '../../student/server/requests';
@@ -127,6 +127,7 @@ export function intranetLocalPlugin(dataDir: string, storeDir: string, studentSt
       const db = loadDir(dataDir);
       const source = db.meta().source;
       const req = requestFiles(studentStoreDir, source); // 학생 앱과 같은 파일
+      const absenceDocs = localFiles(req.absenceDocs); // 학생 앱이 올린 진단서 사진(같은 폴더)
       const stores: Stores = {
         absences: fileStore<Absence>(req.absences),
         overnights: fileStore<Overnight>(req.overnights),
@@ -178,7 +179,7 @@ export function intranetLocalPlugin(dataDir: string, storeDir: string, studentSt
           }
         }
         const { status, body: out } = await handleIntranetApi(
-          { db, stores, actor, keycardSecret, now: () => new Date(), newId: () => crypto.randomUUID() },
+          { db, stores, actor, keycardSecret, absenceDocs, now: () => new Date(), newId: () => crypto.randomUUID() },
           method,
           url.pathname,
           url.searchParams,

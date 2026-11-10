@@ -125,6 +125,26 @@ const ovId = '0c000000-0000-4000-8000-000000000001';
 await sb.sql(`insert into public.overnight_permissions (id, student_no, enrollment_id, leave_date, return_date, reason) values ($1, $2, $3, current_date, current_date + 1, '가족 방문')`, [ovId, sC, trC], as(U.student));
 x = await api('GET', '/api/requests/absences?tab=pending', tC);
 ok('결석 신청 목록', x.status === 200 && (x.body.absences ?? []).some((a) => a.id === absId), x.body);
+// 진단서 사진(11/10 결정 I10): 다음 날도 병결이면 이틀 이어져 진단서 필요. 학생이 Storage 에 올리고 붙이면 직원이 본다
+const absId2 = '0b000000-0000-4000-8000-000000000002';
+await sb.sql(`insert into public.absence_requests (id, student_no, enrollment_id, absence_date, kind, reason) values ($1, $2, $3, current_date + 1, 'sick', '감기 계속')`, [absId2, sC, trC], as(U.student));
+x = await api('GET', '/api/requests/absences?tab=pending', tC);
+ok('병결 이틀 이어짐: 직원 목록에 진단서 필요·없음', (x.body.absences ?? []).filter((a) => [absId, absId2].includes(a.id)).every((a) => a.documentRequired && !a.hasDocument), x.body.absences);
+const tStu = await login('s@students.example', 'studentpass1');
+const docPath = `${sC}/${absId}.jpg`;
+const upDoc = await fetch(`${sb.url}/storage/v1/object/absence-docs/${docPath}`, {
+  method: 'POST',
+  headers: { apikey: 'anon-key', Authorization: `Bearer ${tStu}`, 'Content-Type': 'image/jpeg', 'x-upsert': 'true' },
+  body: Buffer.from([0xff, 0xd8, 0xff, 0xe0, 1, 2]),
+});
+await sb.sql(`select public.absence_attach_document($1, $2)`, [absId, docPath], as(U.student));
+ok('학생이 진단서를 올리고 붙임', upDoc.status === 200 && (await sb.sql(`select document_path from public.absence_requests where id = $1`, [absId]))[0].document_path === docPath, upDoc.status);
+x = await api('GET', `/api/requests/absences/${absId}/document`, tC);
+ok('직원: 진단서 사진 보기(직원 토큰으로 Storage)', x.status === 200 && x.body.image === 'data:image/jpeg;base64,' + Buffer.from([0xff, 0xd8, 0xff, 0xe0, 1, 2]).toString('base64'), x.status);
+x = await api('GET', `/api/requests/absences/${absId2}/document`, tC);
+ok('진단서가 없는 신청은 404', x.status === 404, x.status);
+x = await api('GET', `/api/requests/absences/${absId}/document`, tG);
+ok('가드는 진단서 못 봄', x.status === 403 && x.body.error === 'guard_forbidden', x);
 x = await api('POST', '/api/requests/absences/decide', tC, { ids: [absId], approve: false, comment: '진단서 필요' });
 ok('결석 반려', x.status === 200, x);
 const adb = (await sb.sql(`select status, staff_comment, decided_by::text from public.absence_requests where id = $1`, [absId]))[0];
@@ -203,7 +223,7 @@ ok('오피스(Premium): Premium 상담만 보임', x.body.rows?.length === 1 && 
 
 // ── Student File
 x = await api('GET', `/api/students/${sC}`, tC);
-ok('Student File: 상담 제목·패널티·신청·항공편', x.status === 200 && x.body.counseling?.length === 1 && x.body.penalties?.length === 1 && x.body.absences?.length === 1 && x.body.departure?.flight === 'PR 468', {
+ok('Student File: 상담 제목·패널티·신청(결석 2: 진단서 시험 포함)·항공편', x.status === 200 && x.body.counseling?.length === 1 && x.body.penalties?.length === 1 && x.body.absences?.length === 2 && x.body.departure?.flight === 'PR 468', {
   c: x.body.counseling?.length, p: x.body.penalties?.length, a: x.body.absences?.length, d: x.body.departure,
 });
 x = await api('GET', `/api/students/${sC}`, tP);
@@ -536,6 +556,8 @@ x = await api('POST', '/api/penalties/decide', tM, { ids: [far.id], approve: fal
 ok('매니저(모든 캠퍼스): 같은 건 반려', x.status === 200 && x.body.done === 1, x);
 const absM = (await sb.sql(`insert into public.absence_requests (student_no, enrollment_id, absence_date, kind, reason) values ($1, $2, $3, 'sick', '감기') returning id::text`, [sAb2, await trOf(sAb2), manila]))[0].id;
 x = await api('POST', '/api/requests/absences/decide', tM, { ids: [absM], approve: true, comment: '확인' });
+x = await api('GET', `/api/requests/absences/${absId}/document`, tM);
+ok('매니저: 진단서 사진 보기(결석 신청 처리, 매니저 토큰으로 Storage)', x.status === 200 && x.body.image?.startsWith('data:image/jpeg;base64,'), x.status);
 ok('매니저: 결석 신청 승인(처리자 = 매니저)', x.status === 200 && (await sb.sql(`select decided_by::text from public.absence_requests where id = $1`, [absM]))[0].decided_by === mgrId, x);
 x = await api('POST', '/api/notices', tM, { title: '매니저 공지', content: '수업 시간 변경' });
 ok('매니저: 공지 쓰기(작성자 = 매니저)', x.status === 201 && (await sb.sql(`select author_id::text, author_name from public.internal_notices where id = $1`, [x.body.id]))[0]?.author_id === mgrId, x);

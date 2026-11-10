@@ -22,6 +22,23 @@ export default function Requests({ kind }: { kind: Kind }) {
   const [comment, setComment] = useState('');
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
+  // 진단서 사진(11/10 결정 I10): 눌렀을 때만 받아 새 창에 보인다(목록에는 사진을 싣지 않는다)
+  async function openDocument(id: string) {
+    const w = window.open('', '_blank');
+    try {
+      const { image } = await api<{ image: string }>(`/api/requests/absences/${encodeURIComponent(id)}/document`);
+      if (w) {
+        w.document.title = '진단서 사진';
+        const img = w.document.createElement('img');
+        img.src = image;
+        img.style.maxWidth = '100%';
+        w.document.body.appendChild(img);
+      }
+    } catch (e) {
+      w?.close();
+      setMessage(errorText((e as ApiError).code));
+    }
+  }
   const title = kind === 'absences' ? '결석 신청' : '외박·여행 신청';
   const pending = tab === 'pending';
   const rows: { id: string }[] = (kind === 'absences' ? data?.absences : data?.overnights) ?? [];
@@ -216,7 +233,21 @@ export default function Requests({ kind }: { kind: Kind }) {
                       <td>{r.campus}</td>
                       <td>{KIND_LABEL[r.kind] ?? r.kind}</td>
                       <td>{periodsText(r.periods)}</td>
-                      <td className="left memo-text">{r.reason}</td>
+                      <td className="left memo-text">
+                        {r.reason}
+                        {(r.documentRequired || r.hasDocument) && (
+                          <div className="small">
+                            진단서{' '}
+                            {r.hasDocument ? (
+                              <button type="button" className="link-btn" onClick={() => void openDocument(r.id)}>
+                                사진 보기
+                              </button>
+                            ) : (
+                              <span className="text-red">필요 · 아직 없음</span>
+                            )}
+                          </div>
+                        )}
+                      </td>
                       <td className="nowrap">{mdhm(r.submittedAt)}</td>
                       {!pending && <td>{STATUS_LABEL[r.status]}</td>}
                       {actions(r)}

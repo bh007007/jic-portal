@@ -198,6 +198,19 @@ expect('대기 중 외박은 통금 판정에 영향 없음: C 후보 그대로'
 let rq = (await call('GET', '/requests/overnights')).body as any;
 expect('외박 대기 1건, 1박', rq.counts.pending === 1 && rq.overnights[0].nights === 1 && rq.overnights[0].name, rq);
 expect('외박 행: 성년이면 미성년 표시 없음, 보호자 동의 표시 false(11/10 결정 I11)', rq.overnights[0].minor === false && rq.overnights[0].guardianConsent === false, rq.overnights[0]);
+// 진단서 사진(11/10 결정 I10): 같은 학생의 병결이 이틀 이어지면 필요, 붙은 사진은 보기로 받는다
+{
+  await stores.absences.put(req('ab1b', A, { date: '2026-11-10', periods: [], kind: 'sick', documentPath: `${A}/ab1b.jpg` }) as Absence);
+  const al = ((await call('GET', '/requests/absences')).body as any).absences as any[];
+  const r1 = al.find((x) => x.id === 'ab1'), r2 = al.find((x) => x.id === 'ab1b');
+  expect('병결 이틀(11/09·11/10): 둘 다 진단서 필요, 붙은 것만 있음', r1?.documentRequired && !r1.hasDocument && r2?.documentRequired && r2.hasDocument, [r1, r2]);
+  const docs = new Map([[`${A}/ab1b.jpg`, { bytes: new Uint8Array([0xff, 0xd8, 0xff, 1]), contentType: 'image/jpeg' }]]);
+  const dctx = { ...ctx, absenceDocs: { put: async () => undefined, get: async (p: string) => docs.get(p) ?? null } };
+  const dr = (await handleIntranetApi(dctx, 'GET', '/requests/absences/ab1b/document', new URLSearchParams(), null)) as any;
+  expect('진단서 사진 보기(data URL)', dr.status === 200 && dr.body.image === 'data:image/jpeg;base64,' + btoa(String.fromCharCode(0xff, 0xd8, 0xff, 1)), dr);
+  expect('사진이 없는 신청은 404', (await handleIntranetApi(dctx, 'GET', '/requests/absences/ab1/document', new URLSearchParams(), null)).status === 404);
+  await stores.absences.put({ ...(await stores.absences.get('ab1b'))!, status: 'cancelled' });
+}
 r = await call('POST', '/requests/overnights/decide', { ids: ['ov1'], approve: true, comment: '보호자 확인' });
 expect('외박 승인 done 1', (r.body as any).done === 1, r.body);
 pl = (await call('GET', '/penalties')).body as any;

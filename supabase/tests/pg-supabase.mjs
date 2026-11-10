@@ -11,7 +11,7 @@ import fs from 'node:fs';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 
 const REPO = fileURLToPath(new URL('../../', import.meta.url));
-const MIGRATIONS = ['20261107000000_legacy_tables.sql', '20261107020000_legacy_deposits.sql', '20261108000000_legacy_point_history.sql', '20261108010000_legacy_rooms.sql', '20261108100000_student_intranet.sql', '20261108120000_student_request_ids.sql', '20261108130000_intranet_deploy.sql', '20261108140000_nonacademic_requests.sql', '20261108150000_overnight_travel.sql', '20261108160000_school_trips.sql', '20261108170000_keycard_qr.sql', '20261108180000_student_account_admin.sql', '20261108190000_guard_account_admin.sql', '20261108200000_teacher_portal.sql', '20261108220000_lms_absences.sql', '20261108230000_holidays.sql', '20261109000000_attendance.sql', '20261109010000_roles.sql', '20261109040000_lms_students_extend.sql', '20261109050000_absence_penalties.sql', '20261109070000_intranet_roles.sql', '20261109080000_attendance_summary.sql', '20261109090000_schedule_copy.sql', '20261109100000_intranet_manager.sql', '20261109110000_intranet_manager_counseling.sql', '20261109140000_student_timetable.sql', '20261109170000_intranet_decisions.sql', '20261109180000_intranet_cron.sql', '20261110103000_intranet_decisions_2.sql', '20261110113000_overnight_rules.sql', '20261110123000_notice_roles.sql', '20261110140000_trip_waitlist.sql'];
+const MIGRATIONS = ['20261107000000_legacy_tables.sql', '20261107020000_legacy_deposits.sql', '20261108000000_legacy_point_history.sql', '20261108010000_legacy_rooms.sql', '20261108100000_student_intranet.sql', '20261108120000_student_request_ids.sql', '20261108130000_intranet_deploy.sql', '20261108140000_nonacademic_requests.sql', '20261108150000_overnight_travel.sql', '20261108160000_school_trips.sql', '20261108170000_keycard_qr.sql', '20261108180000_student_account_admin.sql', '20261108190000_guard_account_admin.sql', '20261108200000_teacher_portal.sql', '20261108220000_lms_absences.sql', '20261108230000_holidays.sql', '20261109000000_attendance.sql', '20261109010000_roles.sql', '20261109040000_lms_students_extend.sql', '20261109050000_absence_penalties.sql', '20261109070000_intranet_roles.sql', '20261109080000_attendance_summary.sql', '20261109090000_schedule_copy.sql', '20261109100000_intranet_manager.sql', '20261109110000_intranet_manager_counseling.sql', '20261109140000_student_timetable.sql', '20261109170000_intranet_decisions.sql', '20261109180000_intranet_cron.sql', '20261110103000_intranet_decisions_2.sql', '20261110113000_overnight_rules.sql', '20261110123000_notice_roles.sql', '20261110140000_trip_waitlist.sql', '20261110150000_absence_documents.sql'];
 
 export async function startPgSupabase({ port = 0 } = {}) {
   const { PGlite } = await import(process.env.PGLITE ? pathToFileURL(process.env.PGLITE).href : '@electric-sql/pglite');
@@ -22,6 +22,17 @@ export async function startPgSupabase({ port = 0 } = {}) {
     create table auth.users (id uuid primary key, email text);
     create function auth.uid() returns uuid language sql stable as $$ select nullif(current_setting('request.jwt.claim.sub', true), '')::uuid $$;
     grant usage on schema public, auth to anon, authenticated, service_role;
+    -- Storage 흉내(버킷·파일 표와 RLS, 파일 내용은 data 열). 실제 Supabase 는 파일을 따로 두고 이 표에는 이름·메타만 있다
+    create schema storage;
+    create table storage.buckets (id text primary key, name text not null, public boolean not null default false, file_size_limit bigint, allowed_mime_types text[]);
+    create table storage.objects (id uuid primary key default gen_random_uuid(), bucket_id text references storage.buckets (id), name text not null,
+      owner uuid default auth.uid(), metadata jsonb, data bytea, created_at timestamptz default now(), updated_at timestamptz default now(), unique (bucket_id, name));
+    alter table storage.objects enable row level security;
+    create function storage.foldername(name text) returns text[] language sql immutable as $$
+      select (string_to_array(name, '/'))[1:greatest(array_length(string_to_array(name, '/'), 1) - 1, 0)] $$;
+    grant usage on schema storage to anon, authenticated, service_role;
+    grant select, insert, update, delete on storage.objects to anon, authenticated, service_role;
+    grant select on storage.buckets to anon, authenticated, service_role;
   `);
   for (const f of MIGRATIONS) await db.exec(fs.readFileSync(`${REPO}supabase/migrations/${f}`, 'utf8'));
 
@@ -180,11 +191,14 @@ export async function startPgSupabase({ port = 0 } = {}) {
       res.writeHead(204, { 'Access-Control-Allow-Origin': '*', 'Access-Control-Allow-Methods': 'GET,POST,PUT,PATCH,DELETE,OPTIONS', 'Access-Control-Allow-Headers': req.headers['access-control-request-headers'] || '*' });
       return res.end();
     }
-    let raw = '';
-    for await (const c of req) raw += c;
-    const body = raw ? JSON.parse(raw) : null;
+    const chunks = [];
+    for await (const c of req) chunks.push(c);
+    const buf = Buffer.concat(chunks);
     const u = new URL(req.url, 'http://x');
     const p = u.pathname;
+    const isStorage = p.startsWith('/storage/v1/');
+    const raw = isStorage ? '' : buf.toString('utf8');
+    const body = raw ? JSON.parse(raw) : null;
     const bearer = () => users.get(tokens.get((req.headers.authorization || '').replace(/^Bearer\s+/i, '')));
     try {
       if (p === '/__sql' && req.method === 'POST') return send(res, 200, await sql(body.sql, body.params, body));
@@ -234,6 +248,38 @@ export async function startPgSupabase({ port = 0 } = {}) {
         for (const [t, id] of tokens) if (id === am[1]) tokens.delete(t);
         await serial(() => db.query('delete from auth.users where id = $1', [am[1]])); // 연결 표(on delete cascade)도 같이 지워진다
         return send(res, 200, {});
+      }
+      // ── Storage: 파일 올리기(POST/PUT, x-upsert)·내려받기(GET). 권한은 storage.objects RLS 그대로
+      const sm = p.match(/^\/storage\/v1\/object\/(?:authenticated\/)?([^/]+)\/(.+)$/);
+      if (sm) {
+        const bucket = decodeURIComponent(sm[1]);
+        const name = sm[2].split('/').map(decodeURIComponent).join('/');
+        const out = await serial(() =>
+          asRole(req, async () => {
+            const b = (await db.query('select * from storage.buckets where id = $1', [bucket])).rows[0];
+            if (!b) return { status: 400, body: { statusCode: '404', error: 'Bucket not found' } };
+            if (req.method === 'GET') {
+              const o = (await db.query('select data, metadata from storage.objects where bucket_id = $1 and name = $2', [bucket, name])).rows[0];
+              return o ? { status: 200, bin: Buffer.from(o.data), type: o.metadata?.mimetype ?? 'application/octet-stream' } : { status: 400, body: { statusCode: '404', error: 'not_found', message: 'Object not found' } };
+            }
+            const type = String(req.headers['content-type'] || '').split(';')[0];
+            if (b.file_size_limit && buf.length > Number(b.file_size_limit)) return { status: 413, body: { statusCode: '413', error: 'Payload too large' } };
+            if (b.allowed_mime_types && !b.allowed_mime_types.includes(type)) return { status: 415, body: { statusCode: '415', error: 'invalid_mime_type' } };
+            const meta = JSON.stringify({ mimetype: type, size: buf.length });
+            const upsert = req.headers['x-upsert'] === 'true';
+            await db.query(
+              `insert into storage.objects (bucket_id, name, metadata, data) values ($1, $2, $3::jsonb, $4)` +
+                (upsert ? ' on conflict (bucket_id, name) do update set metadata = excluded.metadata, data = excluded.data, updated_at = now()' : ''),
+              [bucket, name, meta, new Uint8Array(buf)],
+            );
+            return { status: 200, body: { Key: `${bucket}/${name}` } };
+          }),
+        );
+        if (out.bin) {
+          res.writeHead(200, { 'Content-Type': out.type, 'Access-Control-Allow-Origin': '*' });
+          return res.end(out.bin);
+        }
+        return send(res, out.status, out.body);
       }
       const rm = p.match(/^\/rest\/v1\/(.+)$/);
       if (rm) {

@@ -20,6 +20,7 @@ import { promotions, waitingPosition, withTaken, type Trip, type TripSignup, typ
 import type { KeycardSecret } from './keycard';
 import type { ClassMark, TimetableSource } from './timetable';
 import { tokenCache, type SupabaseConf } from './supabaseAuth';
+import { IMAGE_BODY_LIMIT, type FileStore } from './files';
 
 function readRows<T>(file: string): T[] {
   if (!fs.existsSync(file)) return [];
@@ -133,21 +134,43 @@ export function requestFiles(storeDir: string, source: string) {
     tripSignups: path.join(storeDir, `trip-signups-${source}.ndjson`),
     keycardSecret: path.join(storeDir, 'keycard-secret.txt'),
     timetable: path.join(storeDir, `timetable-${source}.ndjson`), // 강사 포털 수업·출석(읽기만, 로컬에는 강사 포털이 없어 넣었을 때만)
+    absenceDocs: path.join(storeDir, `absence-docs-${source}`), // 진단서 사진 폴더(11/10 결정 I10, 인트라넷도 읽음)
+  };
+}
+
+/** 사진 파일 폴더(로컬). 경로는 '<폴더>/<파일>', 종류는 확장자로 안다. 배포는 files.ts supabaseFiles */
+export function localFiles(dir: string): FileStore {
+  const TYPE: Record<string, string> = { jpg: 'image/jpeg', png: 'image/png', webp: 'image/webp' };
+  const full = (p: string) => {
+    if (!/^[\w-]+\/[\w.-]+$/.test(p) || p.includes('..')) throw new Error('invalid_path');
+    return path.join(dir, p);
+  };
+  return {
+    async put(p, f) {
+      fs.mkdirSync(path.dirname(full(p)), { recursive: true });
+      fs.writeFileSync(full(p), f.bytes);
+    },
+    async get(p) {
+      const file = full(p);
+      if (!fs.existsSync(file)) return null;
+      return { bytes: new Uint8Array(fs.readFileSync(file)), contentType: TYPE[path.extname(file).slice(1)] ?? 'application/octet-stream' };
+    },
   };
 }
 
 const BODY_LIMIT = 16 * 1024;
 
-function readJson(req: IncomingMessage): Promise<unknown> {
+/** limit: 사진을 받는 경로(진단서·학생 사진)는 IMAGE_BODY_LIMIT, 나머지는 BODY_LIMIT */
+export function readJson(req: IncomingMessage, limit = BODY_LIMIT): Promise<unknown> {
   return new Promise((resolve, reject) => {
     let size = 0;
     const chunks: Buffer[] = [];
     req.on('data', (c: Buffer) => {
       size += c.length;
-      if (size <= BODY_LIMIT) chunks.push(c);
+      if (size <= limit) chunks.push(c);
     });
     req.on('end', () => {
-      if (size > BODY_LIMIT) {
+      if (size > limit) {
         reject(new Error('body_too_large'));
         return;
       }
@@ -181,6 +204,7 @@ export function studentLocalPlugin(dataDir: string, storeDir: string, supabase?:
       const trips = tripFileStore(files.trips, files.tripSignups);
       const keycardSecret = localKeycardSecret(files.keycardSecret);
       const timetable = fileTimetable(files.timetable);
+      const absenceDocs = localFiles(files.absenceDocs);
       const tokens = supabase ? tokenCache(supabase) : null;
       server.config.logger.info(`[student-local] ${db.summary()} · 기준일 ${db.refDate} · 신청 파일 ${storeDir}${supabase ? ` · 로그인 Supabase(${supabase.url})` : ''}`);
 
@@ -195,7 +219,7 @@ export function studentLocalPlugin(dataDir: string, storeDir: string, supabase?:
         let body: unknown = null;
         if (method === 'POST' || method === 'PUT') {
           try {
-            body = await readJson(req);
+            body = await readJson(req, /\/document$/.test(req.url ?? '') ? IMAGE_BODY_LIMIT : BODY_LIMIT);
           } catch (e) {
             const code = (e as Error).message;
             send(code === 'body_too_large' ? 413 : 400, { error: code });
@@ -220,7 +244,7 @@ export function studentLocalPlugin(dataDir: string, storeDir: string, supabase?:
           stId = typeof header === 'string' && /^\d+$/.test(header) ? header : null;
         }
         const { status, body: out } = await handleStudentApi(
-          { db, store, overnights, departures, rides, life, trips, timetable, keycardSecret, stId, mustChangePassword, localLogin: !tokens, now: () => new Date(), newId: () => crypto.randomUUID() },
+          { db, store, overnights, departures, rides, life, trips, timetable, keycardSecret, absenceDocs, stId, mustChangePassword, localLogin: !tokens, now: () => new Date(), newId: () => crypto.randomUUID() },
           method,
           url.pathname,
           body,
