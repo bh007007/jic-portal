@@ -1,7 +1,7 @@
 import { Navigate, useLocation, useParams, useSearchParams } from 'react-router-dom';
 import type { ContentKind } from '../../../partner/src/contentKinds';
 import { supabase } from '../supabase';
-import { PageTitle, Panel } from '../components/ui';
+import { PageTitle } from '../components/ui';
 import { Members, Requests, Stats } from './AgencyPortal';
 import Visits from './agency/Visits';
 import Rules from './agency/Rules';
@@ -11,6 +11,7 @@ import Notices from './agency/Notices';
 import Settings from './agency/Settings';
 import ContentItems from './agency/ContentItems';
 import Photos from './agency/Photos';
+import Reasons from './agency/Reasons';
 
 /**
  * 파트너 포털 관리 메뉴 7개(CL-045, 화면 명세 4장): 지점 계정 / 상담 설정 / 화면 콘텐츠 / 사진·영상 / 공지·일정 / 방문 신청 / 통계·설정.
@@ -20,7 +21,6 @@ import Photos from './agency/Photos';
 type Screen = { key: string; label: string; render: () => JSX.Element };
 // 종류마다 새 화면(key): 탭을 바꾸면 입력 중이던 다른 종류의 칸·메시지가 남지 않게
 const items = (kind: ContentKind) => () => <ContentItems key={kind} kind={kind} />;
-const later = (text: string) => () => <Panel title="다음 단계"><p className="state-msg" style={{ margin: 0 }}>{text}</p></Panel>;
 
 export const PARTNER_MENUS: { key: string; label: string; screens: Screen[] }[] = [
   { key: 'accounts', label: '지점 계정', screens: [
@@ -29,7 +29,7 @@ export const PARTNER_MENUS: { key: string; label: string; screens: Screen[] }[] 
   ] },
   { key: 'consult', label: '상담 설정', screens: [
     { key: 'rules', label: '추천 규칙', render: () => <Rules /> },
-    { key: 'reasons', label: '추천 이유', render: later('추천 이유 3칸(코스 × 학생 목적 Q1·중요하게 생각하는 것 Q2·공통 + 증거, CL-050)은 다음 단계에서 만듭니다. 지금 추천 이유는 \'화면 콘텐츠 › 캠퍼스·코스 내용\'의 코스별 글 3칸입니다.') },
+    { key: 'reasons', label: '추천 이유', render: () => <Reasons /> },
     { key: 'playbook', label: '플레이북', render: items('playbook') },
     { key: 'evidence', label: '근거 자료', render: items('evidence') },
   ] },
