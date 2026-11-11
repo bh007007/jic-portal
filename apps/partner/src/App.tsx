@@ -33,6 +33,7 @@ import { AboutSection, SchoolStats, Teachers } from './pages/content/About';
 import { Activities, Calendar, Day } from './pages/content/Life';
 import Camps from './pages/content/Camps';
 import Contacts from './pages/content/Contacts';
+import { Arrivals, StudentDetail, StudentList } from './pages/students/MyStudents';
 import { PENDING_ROUTES, staffCanSee } from './menu';
 import { t } from './i18n';
 
@@ -120,7 +121,10 @@ export default function App() {
         <Route path="/notices" element={<Member><Notices /></Member>} />
         <Route path="/notices/:id" element={<Member><NoticeDetail /></Member>} />
         <Route path="/visit" element={<Member><Visit /></Member>} />
-        <Route path="/students" element={<Member><Preparing title="My Students" /></Member>} />
+        {/* My Students(CL-051): 2차 연동 전까지 예시 데이터로 화면 모양만 */}
+        <Route path="/students" element={<Member><StudentList /></Member>} />
+        <Route path="/students/arrivals" element={<Member><Arrivals /></Member>} />
+        <Route path="/students/:id" element={<Member><StudentDetail /></Member>} />
         <Route path="/admin/*" element={<Staff><AdminMoved /></Staff>} />
         <Route path="*" element={<Preparing title="페이지를 찾을 수 없습니다" />} />
       </Routes>
