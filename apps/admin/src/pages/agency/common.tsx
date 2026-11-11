@@ -2,10 +2,10 @@ import { useCallback, useEffect, useState } from 'react';
 import type { SupabaseClient } from '@supabase/supabase-js';
 import { supabase } from '../../supabase';
 
-// 파트너 포털 관리 › 추천·콘텐츠·공지(추천 규칙·캠퍼스·코스 내용·자료실·공지·링크 설정) 화면이 같이 쓰는 것.
+// 파트너 포털 관리(CL-045 메뉴 7개)의 추천 규칙·캠퍼스·코스 내용·다운로드 센터·공지·링크 설정·화면 콘텐츠 화면이 같이 쓰는 것.
 // 표와 권한은 에이전시 포털 표 그대로다(직원 is_staff, RLS: 20261107010000_partner_portal.sql). 이 화면들은 Supabase 가 있을 때만 열린다.
 
-/** 화면은 AgencyContent 가 Supabase 설정을 확인한 뒤에만 그리므로 여기서는 늘 있다 */
+/** 화면은 PartnerAdmin 이 Supabase 설정을 확인한 뒤에만 그리므로 여기서는 늘 있다 */
 export const db = () => supabase as SupabaseClient;
 
 /** select 결과에서 오류면 던지고 데이터만 돌려준다 */

@@ -160,7 +160,7 @@ export default function Users() {
           <tbody>
             <tr><td>관리자 포털(인트라넷 포함)</td><td>직원(staff_users) · {STAFF_ROLES.map(([, n, d]) => <div key={n}><strong>{n}</strong> <span className="muted">{d}</span></div>)}<span className="muted">역할이 없는 직원은 관리자</span></td><td className="muted">직원 등록은 Supabase(서비스 키), 이름·역할은 이 화면</td></tr>
             <tr><td>강사 포털(LMS)</td><td>{LMS_ROLES.map(([, n, d]) => <div key={n}><strong>{n}</strong> <span className="muted">{d}</span></div>)}</td><td>이 화면</td></tr>
-            <tr><td>에이전시 포털</td><td>에이전시 지점(agency_members)</td><td className="muted">가입 신청 → 관리자 포털 '파트너 포털 관리 › 계정·방문·통계'에서 승인</td></tr>
+            <tr><td>에이전시 포털</td><td>에이전시 지점(agency_members)</td><td className="muted">가입 신청 → 관리자 포털 '파트너 포털 관리 › 지점 계정'에서 승인</td></tr>
             <tr><td>학생 포털</td><td>학생(student_users, 학생번호 + 생년월일, 첫 로그인 때 변경)</td><td className="muted">npm run student:accounts (서비스 키)</td></tr>
             <tr><td>가드 태블릿</td><td>출입구 공용(guard_accounts)</td><td className="muted">Supabase 계정 + SQL(docs/intranet.md)</td></tr>
           </tbody>
