@@ -32,7 +32,7 @@ export default function Consult() {
   const { data, error } = useLoad(async () => {
     const [set, courses, contents, campuses, settings, tuition, life, reasons] = await Promise.all([
       loadRuleSet(), loadCourses(), loadContents(), loadCampuses(), loadSettings(),
-      // 학비표(CL-038). 대표 아이디·JIC 직원만 줄이 온다(직원 아이디·샘플 가격표면 0줄)
+      // 학비표(CL-038). 대표 아이디·JIC 직원만 줄이 온다(직원 아이디·샘플 가격표면 0줄). 직원 아이디는 계속 대표만(CL-043, 11/12 레오님 결정)
       supabase.rpc('partner_tuition').then((r) => (r.error ? [] : ((r.data ?? []) as TuitionRow[]))),
       // ③ 생활 자료(학생의 하루·액티비티·JIC Play, CL-045). 못 읽어도 상담은 계속한다
       // ② 추천 이유의 증거(사진·근거 자료)도 같이

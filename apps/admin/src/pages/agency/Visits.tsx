@@ -4,6 +4,20 @@ import {
 } from '../../../../partner/src/visits';
 import { Loading, Panel } from '../../components/ui';
 import { db, errText, must, Status, useLoad, type Note } from './common';
+import type { VisitHandler } from './VisitHandlers';
+
+/** 처리자 판단(DB visit_handler_ok 와 같게): 그 나라·캠퍼스에 지정된 사람이 없으면 직원 모두, 있으면 그 사람만 */
+export function handlerOk(handlers: VisitHandler[], me: string | null, kind: VisitHandler['kind'], country: string | null | undefined, campus: string | null | undefined) {
+  const scope = handlers.filter((h) => h.kind === kind && (kind === 'marketer' ? h.country === (country ?? '') : h.campus === (campus ?? '')));
+  return scope.length === 0 || (!!me && scope.some((h) => h.user_id === me));
+}
+/** 단계마다 누가(명세 4.6): 조율 시작·승인 요청 = 마케터, 확정·반려·다시 조율 = 센터장, 취소 = 둘 중 누구나 */
+export function stepAllowed(from: VisitStatus, to: VisitStatus, mkt: boolean, dir: boolean) {
+  if ((from === 'received' && to === 'scheduling') || to === 'approval') return mkt;
+  if (to === 'confirmed' || to === 'rejected' || to === 'done' || (from === 'approval' && to === 'scheduling')) return dir;
+  if (to === 'cancelled') return mkt || dir;
+  return false;
+}
 
 interface Member { user_id: string; agency_name: string; branch: string | null; country: string | null; contact_name: string | null; phone: string | null; email: string }
 const STATUS_CLASS: Partial<Record<VisitStatus, string>> = { confirmed: 'text-blue strong', rejected: 'text-red', cancelled: 'muted', done: 'muted' };
@@ -14,16 +28,18 @@ const actionLabel = (from: VisitStatus, to: VisitStatus) =>
 /**
  * 파트너 포털 관리 › 방문 신청(CL-046, 화면 명세 4.6). 모든 신청을 한 목록에, 줄마다 국가·캠퍼스를 앞에. 거르기: 국가·캠퍼스·상태·날짜.
  * 처리: 접수 → 일정 조율 중(유학원과 연락, 일정·메모) → 승인 요청(센터장에게) → 확정 / 반려(사유), 취소(사유). 단계 검사와 이력은 DB(20261111220000).
- * 단계마다 처리할 사람(그 나라 마케터·그 캠퍼스 센터장)은 11/12 권한 정리(Q-4) 뒤. 지금은 직원 모두. '확정' 때 노션 자동 기록은 해야 할 일.
+ * 단계마다 처리할 사람(11/12 결정 '명세대로'): 그 나라 마케터·그 캠퍼스 센터장(관리자 포털 '사용자·권한'에서 지정, 표 visit_handlers 20261112090000). 지정이 없으면 직원 모두. DB가 같은 규칙으로 막고, 화면은 버튼을 끈다. '확정' 때 노션 자동 기록은 해야 할 일.
  */
 export default function Visits() {
   const { data, error, reload } = useLoad(async () => {
-    const [visits, members, staff] = await Promise.all([
+    const [visits, members, staff, handlers, me] = await Promise.all([
       must<VisitRequest[]>(db().from('visit_requests').select('*').order('visit_date', { ascending: true })),
       must<Member[]>(db().from('agency_members').select('user_id, agency_name, branch, country, contact_name, phone, email')),
       db().rpc('staff_directory').then((r) => ((r.data ?? []) as { user_id: string; name: string }[])),
+      db().from('visit_handlers').select('id, user_id, kind, country, campus').then((r) => ((r.data ?? []) as VisitHandler[])),
+      db().auth.getUser().then((r) => r.data.user?.id ?? null),
     ]);
-    return { visits, members, staff };
+    return { visits, members, staff, handlers, me };
   });
   const [fl, setFl] = useState({ country: '', campus: '', status: 'open', from: '', to: '' });
   const [open, setOpen] = useState<number | null>(null);
@@ -51,6 +67,8 @@ export default function Visits() {
           v={current}
           member={who.get(current.member_id)}
           staffName={(id) => data.staff.find((s) => s.user_id === id)?.name ?? (id && who.get(id) ? `${who.get(id)!.agency_name} (에이전시)` : 'JIC')}
+          handlers={data.handlers}
+          me={data.me}
           onClose={() => setOpen(null)}
           onDone={(text) => { setMsg({ ok: true, text }); reload(); }}
         />
@@ -100,14 +118,20 @@ export default function Visits() {
             </tbody>
           </table>
         </div>
-        <p className="hint" style={{ margin: '8px 0 0', fontSize: 12, color: 'var(--ink-3)' }}>단계마다 처리할 사람(그 나라 마케터 → 그 캠퍼스 센터장)은 11/12 권한 정리 뒤 정합니다. 지금은 직원 모두 처리할 수 있고, 누가 처리했는지는 이력에 남습니다.</p>
+        <p className="hint" style={{ margin: '8px 0 0', fontSize: 12, color: 'var(--ink-3)' }}>일정 조율·승인 요청은 그 나라 마케터, 확정·반려는 그 캠퍼스 센터장이 합니다(관리자 포털 '사용자·권한 › 방문 신청 처리자'에서 지정). 아무도 지정되지 않은 나라·캠퍼스는 직원 모두 처리하고, 누가 처리했는지는 이력에 남습니다.</p>
       </Panel>
     </>
   );
 }
 
 /** 신청 한 건 처리: 방문 일정·안내 저장, 단계 이동(반려·취소는 사유), 메모, 이력 */
-function VisitDetail({ v, member, staffName, onClose, onDone }: { v: VisitRequest; member?: Member; staffName: (id: string | null) => string; onClose: () => void; onDone: (text: string) => void }) {
+function VisitDetail({ v, member, staffName, handlers, me, onClose, onDone }: { v: VisitRequest; member?: Member; staffName: (id: string | null) => string; handlers: VisitHandler[]; me: string | null; onClose: () => void; onDone: (text: string) => void }) {
+  const mkt = handlerOk(handlers, me, 'marketer', member?.country, v.campus);
+  const dir = handlerOk(handlers, me, 'director', member?.country, v.campus);
+  const assigned = (kind: VisitHandler['kind']) => {
+    const names = handlers.filter((h) => h.kind === kind && (kind === 'marketer' ? h.country === (member?.country ?? '') : h.campus === (v.campus ?? ''))).map((h) => staffName(h.user_id));
+    return names.length ? names.join(', ') : '지정 없음(직원 모두)';
+  };
   const ev = useLoad(() => must<VisitEvent[]>(db().from('visit_request_events').select('*').eq('request_id', v.id).order('created_at', { ascending: true })));
   const [f, setF] = useState({ schedule_date: v.schedule_date ?? '', schedule_time: v.schedule_time ?? '', staff_note: v.staff_note ?? '' });
   const [memo, setMemo] = useState('');
@@ -142,7 +166,8 @@ function VisitDetail({ v, member, staffName, onClose, onDone }: { v: VisitReques
     setMemo('');
     ev.reload();
   };
-  const editable = visitOpen(v.status);
+  // 방문 일정·안내는 그 나라 마케터나 그 캠퍼스 센터장(DB와 같음)
+  const editable = visitOpen(v.status) && (mkt || dir);
 
   return (
     <Panel title={<>방문 신청 처리 <small>{label}</small></>} extra={<button type="button" className="btn btn-xs" onClick={onClose}>닫기</button>}>
@@ -152,6 +177,7 @@ function VisitDetail({ v, member, staffName, onClose, onDone }: { v: VisitReques
           <tbody>
             <tr><th>상태</th><td className={STATUS_CLASS[v.status] ?? ''}>{VISIT_STATUS[v.status]}{v.decision_reason && <span className="muted"> · 사유: {v.decision_reason}</span>}</td><th>국가 · 캠퍼스</th><td>{member?.country ?? '-'} · {visitCampusName(v.campus)}</td></tr>
             <tr><th>에이전시</th><td>{member?.agency_name} {member?.branch}</td><th>담당자</th><td>{member?.contact_name} {member?.phone} {member?.email}</td></tr>
+            <tr><th>처리자</th><td colSpan={3}>마케터({member?.country ?? '-'}): {assigned('marketer')} · 센터장({visitCampusName(v.campus)}): {assigned('director')}{!(mkt || dir) && visitOpen(v.status) && <span className="text-red"> · 이 신청은 내 담당이 아닙니다</span>}</td></tr>
             <tr><th>희망일</th><td>{v.visit_date}{v.visit_date2 && ` · 2순위 ${v.visit_date2}`}{v.visit_time && ` · ${v.visit_time}`}</td><th>인원 · 픽업</th><td>{v.people}명 · {PICKUP[v.pickup ?? 'none']}</td></tr>
             <tr><th>방문 목적</th><td colSpan={3}>{(v.purposes ?? []).join(', ') || '-'}</td></tr>
             {v.purpose && <tr><th>요청사항</th><td colSpan={3} className="memo-text">{v.purpose}</td></tr>}
@@ -174,10 +200,13 @@ function VisitDetail({ v, member, staffName, onClose, onDone }: { v: VisitReques
         {editable && (
           <div className="form-actions" style={{ justifyContent: 'space-between', flexWrap: 'wrap', gap: 6 }}>
             <span style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
-              {VISIT_NEXT[v.status].filter((s) => s !== 'cancelled').map((s) => (
-                <button key={s} type="button" className={'btn' + (s === 'confirmed' || s === 'approval' || (s === 'scheduling' && v.status === 'received') ? ' btn-primary' : '')} onClick={() => step(s)}>{actionLabel(v.status, s)}</button>
-              ))}
-              {VISIT_NEXT[v.status].includes('cancelled') && <button type="button" className="btn text-red" onClick={() => step('cancelled')}>취소</button>}
+              {VISIT_NEXT[v.status].filter((s) => s !== 'cancelled').map((s) => {
+                const allowed = stepAllowed(v.status, s, mkt, dir);
+                return (
+                  <button key={s} type="button" className={'btn' + (s === 'confirmed' || s === 'approval' || (s === 'scheduling' && v.status === 'received') ? ' btn-primary' : '')} disabled={!allowed} title={allowed ? undefined : (s === 'approval' || (s === 'scheduling' && v.status === 'received') ? '그 나라 마케터가 합니다' : '그 캠퍼스 센터장이 합니다')} onClick={() => step(s)}>{actionLabel(v.status, s)}</button>
+                );
+              })}
+              {VISIT_NEXT[v.status].includes('cancelled') && <button type="button" className="btn text-red" disabled={!stepAllowed(v.status, 'cancelled', mkt, dir)} title={stepAllowed(v.status, 'cancelled', mkt, dir) ? undefined : '그 나라 마케터나 그 캠퍼스 센터장이 합니다'} onClick={() => step('cancelled')}>취소</button>}
             </span>
             <button type="submit" className="btn">일정·안내만 저장</button>
           </div>

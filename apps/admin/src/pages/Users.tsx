@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState } from 'react';
 import { supabase, useIsAdmin } from '../supabase';
 import { Loading, PageTitle, Panel } from '../components/ui';
+import VisitHandlers from './agency/VisitHandlers';
 
 // 원칙 C5의 역할(docs/roles.md, 11/9 승인). 학생·에이전시·가드는 각자 계정 표가 따로 있다(docs/architecture.md).
 // 직원 역할: 관리자 포털 직원(staff_users)에게만 뜻이 있다. 역할이 없으면 관리자다.
@@ -265,6 +266,9 @@ export default function Users() {
           </table>
         </div>
       )}
+
+      {/* 방문 신청 처리자(CL-046, 11/12 결정): 나라별 마케터, 캠퍼스별 센터장 */}
+      {rows && <VisitHandlers staff={rows.filter((a) => a.staff_role != null).map((a) => ({ user_id: a.user_id, label: a.staff_name ? `${a.staff_name} (${a.email})` : a.email }))} />}
     </>
   );
 }
