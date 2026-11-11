@@ -145,7 +145,7 @@
 
 ### 인트라넷 결정 반영 (11/9 밤, 인트라넷 담당)
 
-- 권한표에 없던 두 가지를 레오님 결정대로 넣었다(`docs/leo-todo.md` I4·I5). `20261109170000_intranet_decisions.sql`.
+- 권한표에 없던 두 가지를 레오님 결정대로 넣었다(결정 I4·I5, `docs/intranet.md`). `20261109170000_intranet_decisions.sql`.
 - 가드 계정(만들기·비밀번호·지우기)은 관리자만. 학생 계정은 관리자·오피스 둘 다. `guard_account_audit()`가 `is_admin()`을 본다.
 - 매니저의 무단결석 승인·반려는 맡은 캠퍼스(매니저 역할의 캠퍼스, 빈칸 = 모든 캠퍼스)만. `intranet_manager_campus_ok(캠퍼스)`, 정책 `penalties_manager_decide`.
 
