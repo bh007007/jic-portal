@@ -1,48 +1,11 @@
 import { useCallback, useEffect, useState } from 'react';
-import { Link, useSearchParams } from 'react-router-dom';
 import { supabase } from '../supabase';
-import { Loading, PageTitle, Panel } from '../components/ui';
+import { Loading, Panel } from '../components/ui';
 
 /**
- * 파트너 포털 관리 › 계정·방문·통계(11/10 D-4 1단계, 메뉴 그룹은 CL-025 '파트너 포털 관리').
- * 직원이 매일 쓰는 가입 승인·지점 계정·방문 신청·사용 통계를 관리자 포털 한 번 로그인으로 처리한다. 표는 파트너 포털 표 그대로
- * (agency_requests·agency_members·visit_requests·plan_downloads, 20261107010000_partner_portal.sql), 권한은 직원(is_staff, RLS).
- * 추천 규칙·콘텐츠·자료실·공지·링크 설정은 '추천·콘텐츠·공지'(AgencyContent.tsx).
+ * 파트너 포털 관리의 지점 계정(가입 승인·지점 계정)·방문 신청·사용 통계 화면(CL-045 메뉴 7개는 PartnerAdmin.tsx가 묶는다).
+ * 표는 파트너 포털 표 그대로(agency_requests·agency_members·visit_requests·plan_downloads, 20261107010000_partner_portal.sql), 권한은 직원(is_staff, RLS).
  */
-type Tab = 'requests' | 'members' | 'visits' | 'stats';
-const TABS: [Tab, string][] = [['requests', '가입 승인'], ['members', '지점 계정'], ['visits', '방문 신청'], ['stats', '사용 통계']];
-
-export default function AgencyPortal() {
-  const [params, setParams] = useSearchParams();
-  const tab = (TABS.find(([k]) => k === params.get('tab'))?.[0] ?? 'requests') as Tab;
-  if (!supabase) {
-    return (
-      <>
-        <PageTitle title="계정·방문·통계" path="홈 > 파트너 포털 관리 > 계정·방문·통계" />
-        <div className="state-msg">에이전시 포털 계정·신청은 Supabase에 있어 배포 주소(로그인한 직원)에서만 보입니다. 로컬 데이터 실행에는 없습니다.</div>
-      </>
-    );
-  }
-  return (
-    <>
-      <PageTitle title="계정·방문·통계" path="홈 > 파트너 포털 관리 > 계정·방문·통계" />
-      <div className="toolbar">
-        <span>
-          {TABS.map(([k, label]) => (
-            <button key={k} type="button" className={'btn btn-xs' + (tab === k ? ' btn-primary' : '')} style={{ marginRight: 4 }} onClick={() => setParams(k === 'requests' ? {} : { tab: k }, { replace: true })}>
-              {label}
-            </button>
-          ))}
-        </span>
-        <span className="toolbar-right muted" style={{ fontSize: 12 }}>추천 규칙·콘텐츠·자료실·공지는 <Link to="/agency-content">추천·콘텐츠·공지</Link></span>
-      </div>
-      {tab === 'requests' && <Requests />}
-      {tab === 'members' && <Members />}
-      {tab === 'visits' && <Visits />}
-      {tab === 'stats' && <Stats />}
-    </>
-  );
-}
 
 /** 조회 + 다시 읽기 */
 function useRows<T>(fn: () => PromiseLike<{ data: T | null; error: { message: string } | null }>) {
@@ -80,7 +43,7 @@ interface Req {
 }
 const REQ_LABEL = { pending: '대기', approved: '승인', rejected: '반려' };
 
-function Requests() {
+export function Requests() {
   const { rows, error, reload } = useRows<Req[]>(() => supabase!.from('agency_requests').select('*').order('created_at', { ascending: false }));
   const [done, setDone] = useState(false);
   const [notes, setNotes] = useState<Record<number, string>>({});
@@ -160,7 +123,7 @@ interface Member {
   owner_id?: string | null;
 }
 
-function Members() {
+export function Members() {
   const { rows, error, reload } = useRows<Member[]>(() => supabase!.from('agency_members').select('user_id, email, agency_name, branch, country, contact_name, phone, status, legacy_am_id, login_count, last_login_at, role, owner_id').order('agency_name'));
   const [kw, setKw] = useState('');
   const [msg, setMsg] = useState<{ ok: boolean; text: string } | null>(null);
@@ -235,7 +198,7 @@ interface Visit {
 type VisitMember = { user_id: string; agency_name: string; branch: string | null; contact_name: string | null; phone: string | null; email: string };
 const VISIT_STATUS: Record<string, string> = { received: '접수', confirmed: '확정', done: '방문 완료', cancelled: '취소' };
 
-function Visits() {
+export function Visits() {
   // 신청과 지점 계정을 따로 읽어 화면에서 잇는다(표를 묶어 읽는 조회에 기대지 않음)
   const { rows, error, reload } = useRows<Visit[]>(() => supabase!.from('visit_requests').select('id, member_id, visit_date, people, purpose, status, staff_note').order('visit_date', { ascending: true }));
   const mem = useRows<VisitMember[]>(() => supabase!.from('agency_members').select('user_id, agency_name, branch, contact_name, phone, email'));
@@ -286,7 +249,7 @@ function Visits() {
 interface StatMember { user_id: string; agency_name: string; branch: string | null; country: string | null; login_count: number; last_login_at: string | null; role?: 'owner' | 'staff'; owner_id?: string | null }
 interface Download { member_id: string; course_id: string | null; created_at: string }
 
-function Stats() {
+export function Stats() {
   const m = useRows<StatMember[]>(() => supabase!.from('agency_members').select('user_id, agency_name, branch, country, login_count, last_login_at, role, owner_id'));
   const d = useRows<Download[]>(() => supabase!.from('plan_downloads').select('member_id, course_id, created_at'));
   if (!m.rows || !d.rows) return <Loading error={m.error || d.error} />;

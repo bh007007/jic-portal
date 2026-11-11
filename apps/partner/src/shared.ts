@@ -1,6 +1,6 @@
 import type { Course } from './data';
 
-// 관리자 포털(apps/admin '파트너 포털 관리 › 추천·콘텐츠·공지')도 가져다 쓰는 값. Supabase·화면·문구(i18n)에 기대지 않아야 한다(관리자 앱이 이 파일만 읽어도 되게).
+// 관리자 포털(apps/admin '파트너 포털 관리')도 가져다 쓰는 값. Supabase·화면·문구(i18n)에 기대지 않아야 한다(관리자 앱이 이 파일만 읽어도 되게).
 
 /** 화면에 보이는 코스 이름(CL-009) */
 export const courseLabel = (c: Pick<Course, 'name' | 'display_name'>) => c.display_name || c.name;

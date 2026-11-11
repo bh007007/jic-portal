@@ -25,7 +25,11 @@ const MENU: { group?: string; items: { to: string; label: string }[] }[] = [
   { group: '회계', items: [{ to: '/invoices', label: '인보이스' }, { to: '/deposits', label: '입금 매칭' }, { to: '/points', label: '포인트' }] },
   { group: '에이전시', items: [{ to: '/agencies', label: '에이전시 목록' }, { to: '/agents', label: '담당자 계정' }] },
   // CL-025(11/10): 파트너 포털 관리(12.x)와 v1.2 신규 관리 기능은 '파트너 포털 관리' 메뉴 그룹으로
-  { group: '파트너 포털 관리', items: [{ to: '/agency-portal', label: '계정·방문·통계' }, { to: '/agency-content', label: '추천·콘텐츠·공지' }] },
+  // 파트너 포털 관리 메뉴 7개(CL-045, 화면 명세 4장)
+  { group: '파트너 포털 관리', items: [
+    { to: '/partner/accounts', label: '지점 계정' }, { to: '/partner/consult', label: '상담 설정' }, { to: '/partner/content', label: '화면 콘텐츠' },
+    { to: '/partner/media', label: '사진·영상' }, { to: '/partner/notices', label: '공지·일정' }, { to: '/partner/visits', label: '방문 신청' }, { to: '/partner/stats', label: '통계·설정' },
+  ] },
   { group: '기초관리', items: [{ to: '/codes', label: '코스·기숙사' }, { to: '/prices', label: '가격표' }, { to: '/batches', label: '캠퍼스·배치' }, { to: '/holidays', label: '휴일' }, { to: '/users', label: '사용자·권한' }] },
 ];
 // 관리자만 보는 메뉴(docs/roles.md: 사용자·권한은 오피스가 열 수 없다)

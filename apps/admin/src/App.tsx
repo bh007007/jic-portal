@@ -13,8 +13,7 @@ import Arrivals from './pages/Arrivals';
 import Agencies from './pages/Agencies';
 import AgencyDetail from './pages/AgencyDetail';
 import Agents from './pages/Agents';
-import AgencyPortal from './pages/AgencyPortal';
-import AgencyContent from './pages/AgencyContent';
+import PartnerAdmin, { OldPartnerRoute } from './pages/PartnerAdmin';
 import Invoices from './pages/Invoices';
 import Deposits from './pages/Deposits';
 import Points from './pages/Points';
@@ -61,8 +60,11 @@ export default function App() {
         <Route path="/agencies" element={<Agencies />} />
         <Route path="/agencies/:agId" element={<AgencyDetail />} />
         <Route path="/agents" element={<Agents />} />
-        <Route path="/agency-portal" element={<AgencyPortal />} />
-        <Route path="/agency-content" element={<AgencyContent />} />
+        {/* 파트너 포털 관리 메뉴 7개(CL-045). 11/11까지의 주소는 새 메뉴로 보낸다 */}
+        <Route path="/partner/:menu" element={<PartnerAdmin />} />
+        <Route path="/partner" element={<PartnerAdmin />} />
+        <Route path="/agency-portal" element={<OldPartnerRoute />} />
+        <Route path="/agency-content" element={<OldPartnerRoute />} />
         <Route path="/invoices" element={<Invoices />} />
         <Route path="/deposits" element={<Deposits />} />
         <Route path="/points" element={<Points />} />
