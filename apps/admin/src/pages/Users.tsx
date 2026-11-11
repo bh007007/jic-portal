@@ -8,6 +8,7 @@ import VisitHandlers from './agency/VisitHandlers';
 const STAFF_ROLES: [string, string, string][] = [
   ['admin', '관리자', '모든 화면, 사용자·권한, 회계 쓰기'],
   ['office', '오피스', '사용자·권한 없음, 회계 읽기만, 강사 포털 읽기만'],
+  ['director', '센터장', '캠퍼스를 골라 오피스와 함께 줌. 자기 캠퍼스 승인(방문 확정 등), 자기 캠퍼스 강사 포털 역할을 남에게 주기'],
 ];
 // 강사 포털(LMS) 역할
 const LMS_ROLES: [string, string, string][] = [
@@ -57,10 +58,11 @@ const kinds = (a: Account) =>
     a.student_no && '학생 포털',
   ].filter(Boolean) as string[];
 const day = (s: string | null) => (s ? s.slice(0, 10) : '-');
-/** DB is_admin() 과 같은 규칙: office 만 있으면 오피스, 아니면 관리자 */
+/** DB is_admin() 과 같은 규칙: admin 이 있거나 office·director 가 없으면 관리자(20261112110000). 센터장은 관리자가 아니다 */
 function staffLevel(a: Account) {
   const has = (k: string) => a.roles.some((r) => r.split(':')[0] === k);
-  return has('office') && !has('admin') ? '오피스' : '관리자';
+  if (has('admin') || !(has('office') || has('director'))) return '관리자';
+  return has('director') ? '센터장' : '오피스';
 }
 
 /**
@@ -127,7 +129,14 @@ export default function Users() {
   };
   const addRole = (a: Account) => {
     const p = pick[a.user_id] ?? { role: 'teacher', campus: '' };
-    run(`${a.email} ${roleName(p.campus ? `${p.role}:${p.campus}` : p.role)} 부여`, () => supabase!.from('user_roles').insert({ user_id: a.user_id, role: p.role, campus: p.campus }));
+    if (p.role === 'director' && !p.campus) return setMsg('센터장 부여 실패: 캠퍼스를 골라 주세요(센터장은 한 캠퍼스씩)');
+    // 센터장은 오피스와 함께 받는다(20261112110000): 오피스 역할이 없으면 같은 캠퍼스 오피스도 넣는다
+    const withOffice = p.role === 'director' && !a.roles.some((r) => r.split(':')[0] === 'office');
+    // 역할 없는 관리자에게 오피스·센터장을 주면 관리자가 아니게 된다(자기 자신이면 되돌릴 사람이 없어진다)
+    if ((p.role === 'office' || p.role === 'director') && staffLevel(a) === '관리자' && !a.roles.some((r) => r.split(':')[0] === 'admin')
+      && !window.confirm(`${a.email}은(는) 지금 관리자입니다. ${p.role === 'director' ? '센터장' : '오피스'} 역할을 주면 관리자가 아니게 됩니다(관리자로 두려면 '관리자' 역할을 먼저 주세요). 계속할까요?`)) return;
+    const rows = [{ user_id: a.user_id, role: p.role, campus: p.campus }, ...(withOffice ? [{ user_id: a.user_id, role: 'office', campus: p.campus }] : [])];
+    run(`${a.email} ${roleName(p.campus ? `${p.role}:${p.campus}` : p.role)}${withOffice ? ' + 오피스' : ''} 부여`, () => supabase!.from('user_roles').insert(rows));
   };
   const removeRole = (a: Account, r: string) => {
     const [role, campus = ''] = r.split(':');
@@ -159,7 +168,7 @@ export default function Users() {
             <tr><th className="left">포털</th><th className="left">계정 표 · 역할</th><th className="left">주는 곳</th></tr>
           </thead>
           <tbody>
-            <tr><td>관리자 포털(인트라넷 포함)</td><td>직원(staff_users) · {STAFF_ROLES.map(([, n, d]) => <div key={n}><strong>{n}</strong> <span className="muted">{d}</span></div>)}<span className="muted">역할이 없는 직원은 관리자</span></td><td className="muted">직원 등록은 Supabase(서비스 키), 이름·역할은 이 화면</td></tr>
+            <tr><td>관리자 포털(인트라넷 포함)</td><td>직원(staff_users) · {STAFF_ROLES.map(([, n, d]) => <div key={n}><strong>{n}</strong> <span className="muted">{d}</span></div>)}<span className="muted">역할이 없는 직원은 관리자. 센터장은 관리자가 아니다</span></td><td className="muted">직원 등록은 Supabase(서비스 키), 이름·역할은 이 화면</td></tr>
             <tr><td>강사 포털(LMS)</td><td>{LMS_ROLES.map(([, n, d]) => <div key={n}><strong>{n}</strong> <span className="muted">{d}</span></div>)}</td><td>이 화면</td></tr>
             <tr><td>에이전시 포털</td><td>에이전시 지점(agency_members)</td><td className="muted">가입 신청 → 관리자 포털 '파트너 포털 관리 › 지점 계정'에서 승인</td></tr>
             <tr><td>학생 포털</td><td>학생(student_users, 학생번호 + 생년월일, 첫 로그인 때 변경)</td><td className="muted">npm run student:accounts (서비스 키)</td></tr>

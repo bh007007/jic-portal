@@ -12,6 +12,7 @@ import { KEYCARD_PERIOD, keycardCode } from '../../student/server/keycard';
 import { AccountAdminError, type AccountAdmin, type LinkedAccount } from '../../student/server/accountAdmin';
 import type { GuardAccount, GuardAdmin } from './guardAccounts';
 import { handleIntranetApi, scheduledChecks, type AbsenceMark, type AttendanceRow, type Stores } from './core';
+import { staffRoleFrom } from './supabaseData';
 
 function memRepo<T extends { id: string }>() {
   const m = new Map<string, T>();
@@ -773,6 +774,12 @@ let rr: any;
 const asAdmin = asRole('admin', null);
 let mo = (await asOffice('GET', '/meta')).body;
 expect('meta: 오피스·맡은 캠퍼스', mo.staffRole === 'office' && mo.campuses.join() === campus, mo);
+// 센터장(director, 20261112110000)은 오피스처럼 관리자가 아니다. DB is_admin() 과 같은 규칙
+const sr = (rows: { role: string; campus: string | null }[]) => { const x = staffRoleFrom(rows); return `${x.staffRole}:${x.campuses === null ? '*' : x.campuses.join('|')}`; };
+expect('역할 없음 = 관리자', sr([]) === 'admin:*');
+expect('오피스+센터장 = 오피스, 캠퍼스 합침', sr([{ role: 'office', campus: 'Premium' }, { role: 'director', campus: 'Premium' }]) === 'office:Premium', sr([{ role: 'office', campus: 'Premium' }, { role: 'director', campus: 'Premium' }]));
+expect('센터장만 있어도 관리자 아님', sr([{ role: 'director', campus: 'Challenger' }]) === 'office:Challenger');
+expect('관리자 역할이 있으면 관리자', sr([{ role: 'director', campus: 'Challenger' }, { role: 'admin', campus: '' }]) === 'admin:*');
 const metaLocal = (await call('GET', '/meta')).body as any;
 expect('meta: 로컬(로그인 없음)은 관리자', metaLocal.staffRole === 'admin' && metaLocal.campuses === null, metaLocal);
 const rulesNow = (await asOffice('GET', '/penalty-rules')).body;
