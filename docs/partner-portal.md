@@ -24,7 +24,7 @@
 | 3.1~3.8 캠퍼스·코스 | `/campuses`, `/campuses/:id`, `/courses/:id` | 코스 상세는 공통 템플릿 |
 | 3.9 JIC 소개 | `/about/baguio`, `/about/why-jic`, `/about/teachers`, `/about/school` | 왜 바기오·주변, 왜 JIC, 선생님, 학교 현황(확인된 값만) |
 | 3.10 학생의 하루 · 캠프 · 학생 생활 | `/day`, `/camps`, `/life/calendar`, `/life/activities` | '예시 학생' 시간표(CL-030), 캠프 카드·브로슈어(CL-053), 활동 달력, 액티비티 |
-| 4 My Students | `/students` | 2차 (준비 중) |
+| 4 My Students | `/students`, `/students/arrivals`, `/students/:id` | CL-051 예시 화면(가짜 데이터, '예시'·'2차 연동 예정' 표시): 학생 목록 탭, 입학·픽업 일정, 상세 연수·학업(출석·CEFR·리포트)·생활(패널티 합계·경고 단계, 사유 안 보임)·비용(대표만). 연동(2차)은 명세 6.2 연결표대로 |
 | 5.1 견적 | `/quote` | KR·JP·USD·USD-New 링크(견적 프로그램 quote.baguiojic.workers.dev). 상담 견적 단계는 캠퍼스·코스·희망 기간을 주소에 담아 연다(`docs/quote-prefill.md`, 견적 프로그램 쪽 코드는 아직) |
 | 6.1 공실 | `/vacancy` | 업체 포털 공실 화면 링크 |
 | 7.1 등록 안내 | `/register` | 안내 문구 + 업체 포털 등록 링크 |
