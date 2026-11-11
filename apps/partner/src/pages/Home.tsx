@@ -1,5 +1,5 @@
 import { Link, useNavigate } from 'react-router-dom';
-import { loadItems, str, textOf, VideoCard } from '../content';
+import { campusCover, CoverPhoto, loadItems, str, textOf, usePhotos, VideoCard } from '../content';
 import { updateText } from '../contentKinds';
 import { byCountryOrder, courseLabel, isActivePromotion, loadCampuses, loadCourses, loadSettings, useLoad, type Notice } from '../data';
 import { useAuth } from '../auth';
@@ -16,6 +16,7 @@ import { toneOf } from '../tone';
 export default function Home() {
   const { member, agencyStaff } = useAuth();
   const navigate = useNavigate();
+  const cardPhotos = usePhotos(['campus_card', 'campus_hero']); // 사진 보관함 '캠퍼스 카드'(CL-047)
   const { data } = useLoad(async () => {
     const [campuses, courses, settings, notices, items] = await Promise.all([
       loadCampuses(),
@@ -64,7 +65,8 @@ export default function Home() {
             {(data?.campuses ?? []).map((c) => {
               const cs = (data?.courses ?? []).filter((x) => x.campus_id === c.id);
               return c.status === 'open' ? (
-                <Link key={c.id} className="card" data-tone={toneOf(c.id)} to={`/campuses/${c.id}`}>
+                <Link key={c.id} className="card has-cover" data-tone={toneOf(c.id)} to={`/campuses/${c.id}`}>
+                  <CoverPhoto photo={campusCover(cardPhotos, c.id)} />
                   <div className="card-title"><strong>{c.name}</strong><span className="muted" style={{ fontSize: 12 }}>코스 {cs.length}</span></div>
                   <span style={{ fontSize: 13, color: 'var(--ink-2)' }}>{c.tagline}</span>
                   <span style={{ fontSize: 13, lineHeight: 1.7 }}>{cs.map(courseLabel).join(' · ')}</span>
@@ -76,7 +78,8 @@ export default function Home() {
                   )}
                 </Link>
               ) : (
-                <div key={c.id} className="card off" data-tone={toneOf(c.id)}>
+                <div key={c.id} className="card off has-cover" data-tone={toneOf(c.id)}>
+                  <CoverPhoto photo={campusCover(cardPhotos, c.id)} />
                   <div className="card-title"><strong>{c.name}</strong><span className="chip">{t('common.preparing')}</span></div>
                 </div>
               );

@@ -1,5 +1,7 @@
 import { useState, type CSSProperties } from 'react';
-import { ContentPage, campusName, str, textOf, useItems } from '../../content';
+import { ContentPage, PhotoGrid, campusName, signMedia, str, textOf, useItems, usePhotos } from '../../content';
+import { MEDIA_BUCKET } from '../../contentKinds';
+import { supabase } from '../../supabase';
 import type { ContentItem } from '../../contentKinds';
 import { Sheet } from '../../consult/Sheet';
 import { t } from '../../i18n';
@@ -20,32 +22,56 @@ const STATE_STYLE: Record<string, CSSProperties> = {
  * 코스·생활 › 주니어·가족 캠프(CL-053, 명세 4.3 '캠프'). 상담 추천에는 나오지 않는다.
  * 캠프 카드 + 브로슈어 PDF 화면 안에서 보기·내려받기·링크 복사. 가격은 브로슈어 안에만 있고 화면 글에는 쓰지 않는다.
  * 대상 국가는 공통 칸 '노출 국가'(DB 정책이 거름). 업로드 일자는 최종 업데이트일(없으면 처음 넣은 날).
+ * 브로슈어는 관리자 포털에서 올린 PDF(비공개 저장소, 서명 주소)가 먼저, 없으면 브로슈어 주소(드라이브 등). 위에는 사진 보관함의 '캠프' 사진.
  */
 export default function Camps() {
   const { data, error } = useItems('camp');
-  const [pdf, setPdf] = useState<ContentItem | null>(null);
+  const [pdf, setPdf] = useState<{ it: ContentItem; url: string } | null>(null);
   const [copied, setCopied] = useState('');
+  const [err, setErr] = useState('');
+  const photos = usePhotos(['camp']);
+  const path = (it: ContentItem) => str(it, 'brochure_path');
+  const has = (it: ContentItem) => !!(path(it) || str(it, 'brochure_url'));
+  // 올린 PDF는 서명 주소(보기 1시간, 복사한 링크는 7일), 아니면 입력한 주소
+  const urlOf = async (it: ContentItem, seconds = 3600) => (path(it) ? (await signMedia([path(it)], seconds))[path(it)] ?? '' : str(it, 'brochure_url'));
+  const view = async (it: ContentItem) => {
+    setErr('');
+    const url = await urlOf(it);
+    if (!url) return setErr('브로슈어를 열지 못했습니다. 잠시 뒤 다시 해 보세요.');
+    setPdf({ it, url });
+  };
+  const download = async (it: ContentItem) => {
+    setErr('');
+    if (!path(it)) return void window.open(str(it, 'brochure_url'), '_blank', 'noopener');
+    const name = str(it, 'brochure_path_name') || `${textOf(it).title}.pdf`;
+    const { data: signed, error: e } = await supabase.storage.from(MEDIA_BUCKET).createSignedUrl(path(it), 300, { download: name });
+    if (e || !signed) return setErr('브로슈어를 내려받지 못했습니다.');
+    window.location.href = signed.signedUrl;
+  };
   const rank = (it: ContentItem) => {
     const i = STATE_ORDER.indexOf(str(it, 'state'));
     return i < 0 ? STATE_ORDER.length : i;
   };
   const list = [...(data ?? [])].sort((a, b) => rank(a) - rank(b));
   const copy = async (it: ContentItem) => {
+    const url = await urlOf(it, 7 * 24 * 3600);
+    if (!url) return setErr('링크를 만들지 못했습니다.');
     try {
-      await navigator.clipboard.writeText(str(it, 'brochure_url'));
+      await navigator.clipboard.writeText(url);
       setCopied(it.id);
-      setTimeout(() => setCopied(''), 2000);
+      setTimeout(() => setCopied(''), 2500);
     } catch {
-      window.prompt('브로슈어 주소를 복사하세요', str(it, 'brochure_url'));
+      window.prompt('브로슈어 링크를 복사하세요', url);
     }
   };
 
   return (
     <ContentPage title={t('menu.camps')} items={data} error={error}>
+      <PhotoGrid photos={photos} max={8} className="wide" />
+      {err && <div className="msg err" role="alert">{err}</div>}
       <div className="cards">
         {list.map((it) => {
           const points = str(it, 'points').split('\n').map((s) => s.trim()).filter(Boolean);
-          const url = str(it, 'brochure_url');
           const rows: [string, string][] = [
             ['시즌', str(it, 'season')], ['기간', str(it, 'period')], ['입학 가능일', str(it, 'start_dates')], ['대상', str(it, 'target')],
           ];
@@ -67,11 +93,11 @@ export default function Camps() {
                 <ul className="points">{points.slice(0, 3).map((p) => <li key={p}>{p}</li>)}</ul>
               )}
               <div className="camp-foot">
-                {url ? (
+                {has(it) ? (
                   <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
-                    <button type="button" className="btn btn-sm btn-primary" onClick={() => setPdf(it)}>브로슈어 보기</button>
-                    <a className="btn btn-sm" href={url} target="_blank" rel="noreferrer" download>내려받기</a>
-                    <button type="button" className="btn btn-sm" onClick={() => copy(it)}>{copied === it.id ? '복사했습니다' : '링크 복사'}</button>
+                    <button type="button" className="btn btn-sm btn-primary" onClick={() => view(it)}>브로슈어 보기</button>
+                    <button type="button" className="btn btn-sm" onClick={() => download(it)}>내려받기</button>
+                    <button type="button" className="btn btn-sm" onClick={() => copy(it)} title={path(it) ? '복사한 링크는 7일 동안 열립니다' : undefined}>{copied === it.id ? (path(it) ? '복사했습니다(7일)' : '복사했습니다') : '링크 복사'}</button>
                   </div>
                 ) : (
                   <span className="muted" style={{ fontSize: 13 }}>브로슈어 준비 중</span>
@@ -85,10 +111,10 @@ export default function Camps() {
         })}
       </div>
       {pdf && (
-        <Sheet title={`${textOf(pdf).title} 브로슈어`} onClose={() => setPdf(null)}>
-          <iframe className="pdf-frame" src={frameUrl(str(pdf, 'brochure_url'))} title={`${textOf(pdf).title} 브로슈어`} />
+        <Sheet title={`${textOf(pdf.it).title} 브로슈어`} onClose={() => setPdf(null)}>
+          <iframe className="pdf-frame" src={frameUrl(pdf.url)} title={`${textOf(pdf.it).title} 브로슈어`} />
           <p className="muted" style={{ fontSize: 12.5, margin: '10px 0 0' }}>
-            화면에 보이지 않으면 <a href={str(pdf, 'brochure_url')} target="_blank" rel="noreferrer">새 탭에서 열기 ↗</a>
+            화면에 보이지 않으면 <a href={pdf.url} target="_blank" rel="noreferrer">새 탭에서 열기 ↗</a>
           </p>
         </Sheet>
       )}

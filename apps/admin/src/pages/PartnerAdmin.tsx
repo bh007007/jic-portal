@@ -9,6 +9,7 @@ import Resources from './agency/Resources';
 import Notices from './agency/Notices';
 import Settings from './agency/Settings';
 import ContentItems from './agency/ContentItems';
+import Photos from './agency/Photos';
 
 /**
  * 파트너 포털 관리 메뉴 7개(CL-045, 화면 명세 4장): 지점 계정 / 상담 설정 / 화면 콘텐츠 / 사진·영상 / 공지·일정 / 방문 신청 / 통계·설정.
@@ -40,7 +41,7 @@ export const PARTNER_MENUS: { key: string; label: string; screens: Screen[] }[] 
     { key: 'camps', label: '캠프', render: items('camp') },
   ] },
   { key: 'media', label: '사진·영상', screens: [
-    { key: 'photos', label: '사진 보관함', render: later('사진 보관함(여러 장 끌어다 놓기, 화면 위치·순서·숨김·중심점·노출 국가, 가로 1600px 자동 축소, CL-047)은 다음 단계에서 만듭니다. 첫 사진은 시제품 콘텐츠 묶음을 한 번에 넣습니다.') },
+    { key: 'photos', label: '사진 보관함', render: () => <Photos /> },
     { key: 'videos', label: 'JIC Play 영상', render: items('video') },
     { key: 'downloads', label: '다운로드 센터', render: () => <Resources /> },
   ] },

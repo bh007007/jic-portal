@@ -1,5 +1,5 @@
-import { useState, type FormEvent } from 'react';
-import { CAMPUS_LABEL, I18N_LANGS, KINDS, PRICE_IN_TEXT, STATUS_LABEL, type ContentItem, type ContentKind } from '../../../../partner/src/contentKinds';
+import { useRef, useState, type FormEvent } from 'react';
+import { CAMPUS_LABEL, I18N_LANGS, KINDS, MEDIA_BUCKET, PRICE_IN_TEXT, STATUS_LABEL, type ContentItem, type ContentKind } from '../../../../partner/src/contentKinds';
 import { Loading, Panel } from '../../components/ui';
 import { db, errText, must, Status, useLoad, type Note } from './common';
 import { CountryFields, countryText } from './CountryFields';
@@ -19,34 +19,44 @@ export default function ContentItems({ kind }: { kind: ContentKind }) {
     must<ContentItem[]>(db().from('partner_content_items').select('*').eq('kind', kind).order('sort').order('updated_at', { ascending: false })),
   );
   const [edit, setEdit] = useState<string | null>(null);
+  const [orig, setOrig] = useState<ContentItem['data']>({}); // 고치기 전 칸(바꾼 PDF의 옛 파일을 저장 뒤 지운다)
   const [f, setF] = useState<Form>(empty);
   const [lang, setLang] = useState<string | null>(null);
   const [msg, setMsg] = useState<Note>(null);
   if (!data) return <Loading error={error} />;
 
   const setData = (k: string, v: string | boolean) => setF({ ...f, data: { ...f.data, [k]: v } });
+  const pdfKeys = def.fields.filter((x) => x.type === 'pdf').map((x) => x.key);
   const pick = (it: ContentItem) => {
     setEdit(it.id);
+    setOrig(it.data ?? {});
     setF({ campus: it.campus, title: it.title, body: it.body, data: it.data ?? {}, i18n: it.i18n ?? {}, countries: it.countries ?? [], country_order: it.country_order ?? {}, status: it.status, sort: it.sort, updated_on: it.updated_on, next_update: it.next_update });
     setMsg(null);
     window.scrollTo(0, 0);
   };
-  const reset = () => { setEdit(null); setF(empty()); setLang(null); };
-  const priceWarn = [f.title, f.body, ...Object.values(f.data).map(String), ...Object.values(f.i18n).flatMap((x) => [x.title ?? '', x.body ?? ''])].some((s) => PRICE_IN_TEXT.test(s));
+  const reset = () => { setEdit(null); setOrig({}); setF(empty()); setLang(null); };
+  const priceWarn = [f.title, f.body, ...Object.entries(f.data).filter(([k]) => !pdfKeys.some((p) => k === p || k === `${p}_name`)).map(([, v]) => String(v)), ...Object.values(f.i18n).flatMap((x) => [x.title ?? '', x.body ?? ''])].some((s) => PRICE_IN_TEXT.test(s));
   const save = async (e: FormEvent) => {
     e.preventDefault();
     if (def.campus === 'required' && !f.campus) return setMsg({ ok: false, text: '캠퍼스를 고르세요.' });
-    const missing = def.fields.filter((x) => x.required && !f.data[x.key]).map((x) => x.label);
-    if (missing.length) return setMsg({ ok: false, text: `필수 칸: ${missing.join(', ')}` });
+    const missing = def.fields.filter((x) => x.required && !f.data[x.key]).map((x) => x.label);    if (missing.length) return setMsg({ ok: false, text: `필수 칸: ${missing.join(', ')}` });
     if (priceWarn && !window.confirm('글에 가격 숫자가 있는 것 같습니다. 글에는 금액을 넣지 않고 \'학비표 보기\'로 안내합니다(CL-055). 그래도 저장할까요?')) return;
     const row = { ...f, kind, title: f.title.trim(), next_update: f.next_update || null, updated_on: f.updated_on || null, sort: Number(f.sort) || 0 };
     const { error: e2 } = edit ? await db().from('partner_content_items').update(row).eq('id', edit) : await db().from('partner_content_items').insert(row);
     setMsg(e2 ? { ok: false, text: errText(e2) } : { ok: true, text: `'${row.title}'을(를) ${edit ? '고쳤습니다' : '저장했습니다'}(${STATUS_LABEL[row.status]}).` });
-    if (!e2) { reset(); reload(); }
+    if (!e2) {
+      // 바꾸거나 뺀 PDF의 옛 파일은 저장한 뒤 지운다
+      const old = pdfKeys.map((k) => orig[k]).filter((p): p is string => typeof p === 'string' && !!p && !pdfKeys.some((k) => f.data[k] === p));
+      if (old.length) await db().storage.from(MEDIA_BUCKET).remove(old);
+      reset();
+      reload();
+    }
   };
   const remove = async (it: ContentItem) => {
     if (!window.confirm(`'${it.title}'을(를) 지울까요? 되돌릴 수 없습니다. 내리기만 하려면 상태를 '숨김'으로 바꾸세요.`)) return;
     const { error: e } = await db().from('partner_content_items').delete().eq('id', it.id);
+    const files = pdfKeys.map((k) => it.data?.[k]).filter((p): p is string => typeof p === 'string' && !!p);
+    if (!e && files.length) await db().storage.from(MEDIA_BUCKET).remove(files);
     setMsg(e ? { ok: false, text: errText(e) } : { ok: true, text: `'${it.title}'을(를) 지웠습니다.` });
     reload();
   };
@@ -88,6 +98,14 @@ export default function ContentItems({ kind }: { kind: ContentKind }) {
                         <option value="">-</option>
                         {(x.options ?? []).map((o) => <option key={o}>{o}</option>)}
                       </select>
+                    ) : x.type === 'pdf' ? (
+                      <PdfField
+                        path={typeof f.data[x.key] === 'string' ? (f.data[x.key] as string) : ''}
+                        name={typeof f.data[`${x.key}_name`] === 'string' ? (f.data[`${x.key}_name`] as string) : ''}
+                        folder={kind}
+                        onChange={(path, name) => setF({ ...f, data: { ...f.data, [x.key]: path, [`${x.key}_name`]: name } })}
+                        onError={(text) => setMsg({ ok: false, text })}
+                      />
                     ) : x.type === 'check' ? (
                       <label><input id={`ci-${x.key}`} type="checkbox" checked={f.data[x.key] === true} onChange={(e) => setData(x.key, e.target.checked)} /> 예</label>
                     ) : (
@@ -176,5 +194,42 @@ export default function ContentItems({ kind }: { kind: ContentKind }) {
         </div>
       </Panel>
     </>
+  );
+}
+
+/** PDF 칸(캠프 브로슈어, CL-053): 비공개 저장소 partner-media 에 올리고 경로를 칸에 담는다. 옛 파일은 저장한 뒤 지운다 */
+function PdfField({ path, name, folder, onChange, onError }: { path: string; name: string; folder: string; onChange: (path: string, name: string) => void; onError: (text: string) => void }) {
+  const ref = useRef<HTMLInputElement>(null);
+  const [busy, setBusy] = useState(false);
+  const upload = async (file?: File) => {
+    if (!file) return;
+    if (file.type && file.type !== 'application/pdf') return onError('PDF 파일만 올릴 수 있습니다.');
+    if (file.size > 10 * 1024 * 1024) return onError('10MB보다 큰 파일은 올릴 수 없습니다.');
+    setBusy(true);
+    const p = `${folder}s/${new Date().toISOString().slice(0, 7)}/${crypto.randomUUID()}.pdf`;
+    const { error } = await db().storage.from(MEDIA_BUCKET).upload(p, file, { contentType: 'application/pdf', upsert: false });
+    setBusy(false);
+    if (error) return onError(errText(error));
+    onChange(p, file.name);
+  };
+  const open = async () => {
+    const { data, error } = await db().storage.from(MEDIA_BUCKET).createSignedUrl(path, 300);
+    if (error || !data) return onError(errText(error));
+    window.open(data.signedUrl, '_blank', 'noopener');
+  };
+  return (
+    <span style={{ display: 'inline-flex', flexWrap: 'wrap', gap: 6, alignItems: 'center' }}>
+      {path ? (
+        <>
+          <strong>{name || 'PDF'}</strong>
+          <button type="button" className="btn btn-xs" onClick={open}>보기</button>
+          <button type="button" className="btn btn-xs" onClick={() => ref.current?.click()} disabled={busy}>바꾸기</button>
+          <button type="button" className="btn btn-xs text-red" onClick={() => onChange('', '')}>빼기</button>
+        </>
+      ) : (
+        <button type="button" className="btn btn-xs" onClick={() => ref.current?.click()} disabled={busy}>{busy ? '올리는 중…' : 'PDF 올리기'}</button>
+      )}
+      <input ref={ref} type="file" accept="application/pdf" hidden onChange={(e) => { upload(e.target.files?.[0]); e.target.value = ''; }} />
+    </span>
   );
 }

@@ -1,4 +1,4 @@
-import { ContentPage, campusName, str, textOf, useCampusFilter, useItems } from '../../content';
+import { ContentPage, PhotoGrid, campusName, str, textOf, useCampusFilter, useItems, usePhotos } from '../../content';
 import { CAMPUS_LABEL } from '../../contentKinds';
 import { t, type MsgKey } from '../../i18n';
 import { Box } from '../../ui';
@@ -8,8 +8,11 @@ import { toneOf } from '../../tone';
 export function AboutSection({ section, titleKey }: { section: string; titleKey: MsgKey }) {
   const { data, error } = useItems('about');
   const items = data ? data.filter((it) => str(it, 'section') === section) : null;
+  // 사진 보관함의 '바기오'·'왜 JIC' 사진(CL-047)
+  const photos = usePhotos([section === '왜 JIC' ? 'why_jic' : 'baguio']);
   return (
     <ContentPage title={t(titleKey)} items={items} error={error}>
+      <PhotoGrid photos={photos} max={6} className="wide" />
       {(items ?? []).map((it) => {
         const { title, body } = textOf(it);
         return (

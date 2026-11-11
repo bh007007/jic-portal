@@ -6,9 +6,10 @@
  */
 export type ContentKind =
   | 'about' | 'teacher' | 'day' | 'activity' | 'camp'
-  | 'playbook' | 'evidence' | 'event' | 'campus_status' | 'school_stat' | 'contact' | 'newsletter' | 'video';
+  | 'playbook' | 'evidence' | 'event' | 'campus_status' | 'school_stat' | 'contact' | 'newsletter' | 'video' | 'photo';
 
-export type FieldType = 'text' | 'textarea' | 'date' | 'url' | 'select' | 'check';
+/** pdf: 비공개 저장소 partner-media 에 올리고 경로를 칸에 담는다(캠프 브로슈어, 20261111180000) */
+export type FieldType = 'text' | 'textarea' | 'date' | 'url' | 'select' | 'check' | 'pdf';
 export interface KindField { key: string; label: string; type: FieldType; options?: string[]; required?: boolean; hint?: string }
 export interface KindDef {
   kind: ContentKind;
@@ -62,7 +63,8 @@ export const KINDS: Record<ContentKind, KindDef> = {
       { key: 'summary', label: '한 줄 소개', type: 'text' },
       { key: 'points', label: '핵심 3가지', type: 'textarea', hint: '한 줄에 하나씩' },
       { key: 'state', label: '상태', type: 'select', options: ['모집 중', '마감', '지난 시즌'], required: true },
-      { key: 'brochure_url', label: '브로슈어 PDF 주소', type: 'url', hint: '가격은 브로슈어 안에만(CL-053). PDF 올리기는 사진·영상 단계에서' },
+      { key: 'brochure_path', label: '브로슈어 PDF', type: 'pdf', hint: '가격은 브로슈어 안에만(CL-053). 올린 PDF가 있으면 아래 주소보다 먼저 씁니다' },
+      { key: 'brochure_url', label: '브로슈어 주소(드라이브 등)', type: 'url', hint: 'PDF를 올리지 않을 때만' },
       { key: 'version', label: '버전', type: 'text', required: true, hint: '노션 최종 파일과 대조용' },
     ],
   },
@@ -125,7 +127,41 @@ export const KINDS: Record<ContentKind, KindDef> = {
       { key: 'consult', label: '상담 ③에 나옴', type: 'check' },
     ],
   },
+  photo: {
+    kind: 'photo', label: '사진', title: '설명', campus: 'optional', campuses: ['premium', 'challenger', 'new', 'mco'], where: '화면 위치에 따라(사진 보관함, CL-047)',
+    fields: [
+      { key: 'placement', label: '화면 위치', type: 'select', required: true },
+      { key: 'course', label: '코스', type: 'text' },
+    ],
+  },
 };
+
+/**
+ * 사진 화면 위치(명세 4.4, CL-047). 시제품 '00_파일_안내.xlsx'의 분류(캠퍼스 대표·가이드·아카데믹·지도·바기오·액티비티·상담 ③ 등)를
+ * 지금 에이전시 포털 화면에 맞춘 초안이다. 목록은 Leo가 확정한다(docs/leo-todo.md). 키는 DB data.placement 에 들어가니 바꾸지 말고 더하기만 한다.
+ */
+export const PLACEMENTS: { key: string; label: string; where: string }[] = [
+  { key: 'campus_card', label: '캠퍼스 카드', where: '홈·캠퍼스 목록의 캠퍼스 카드(첫 장)' },
+  { key: 'campus_hero', label: '캠퍼스 대표', where: '캠퍼스 화면 맨 위' },
+  { key: 'campus_gallery', label: '캠퍼스 시설', where: '캠퍼스 화면 사진' },
+  { key: 'academic', label: '아카데믹(수업·교실)', where: '캠퍼스 화면 사진' },
+  { key: 'dorm', label: '기숙사', where: '캠퍼스 화면 사진, 상담 ③' },
+  { key: 'meals', label: '식사', where: '캠퍼스 화면 사진, 상담 ③' },
+  { key: 'map', label: '지도', where: '캠퍼스 화면 사진' },
+  { key: 'baguio', label: '바기오', where: '소개 › 왜 바기오·주변' },
+  { key: 'why_jic', label: '왜 JIC', where: '소개 › 왜 JIC' },
+  { key: 'day', label: '학생의 하루', where: '코스·생활 › 학생의 하루' },
+  { key: 'activity', label: '액티비티', where: '학생 생활 › 액티비티, 상담 ③' },
+  { key: 'event', label: '행사', where: '학생 생활 › 활동 달력' },
+  { key: 'camp', label: '캠프', where: '코스·생활 › 캠프' },
+  { key: 'consult', label: '상담 ③', where: '상담 ③ 생활 맨 위' },
+];
+export const placementLabel = (key: string) => PLACEMENTS.find((p) => p.key === key)?.label ?? key;
+
+/** 사진 보관함 저장소(비공개). 에이전시는 게시된 사진·캠프가 가리키는 파일만 서명 주소로 연다 */
+export const MEDIA_BUCKET = 'partner-media';
+/** 올릴 때 가로를 이 폭까지 줄인다(명세 4.4) */
+export const PHOTO_MAX_WIDTH = 1600;
 
 /** 언어별 문구(P7): 한국어가 기본이고 번역이 없으면 한국어로 보인다 */
 export const I18N_LANGS: [string, string][] = [['en', 'English'], ['ja', '日本語'], ['zh-TW', '繁體中文'], ['zh-CN', '简体中文'], ['vi', 'Tiếng Việt']];
@@ -139,7 +175,7 @@ export interface ContentItem {
   campus: string;
   title: string;
   body: string;
-  data: Record<string, string | boolean | undefined>;
+  data: Record<string, string | boolean | number | number[] | undefined>;
   i18n: Record<string, { title?: string; body?: string }>;
   countries: string[];
   country_order: Record<string, number>;

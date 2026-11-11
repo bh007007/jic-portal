@@ -299,6 +299,19 @@ select { height: 40px; border: 1px solid var(--line); border-radius: 10px; backg
 .act-list li { padding: 8px 0; border-bottom: 1px solid var(--line-2); }
 .act-list li:last-child { border-bottom: 0; }
 
+/* 사진 보관함 사진(CL-047): 중심점(object-position)에 맞춰 잘라 보이고 누르면 크게 */
+.photo-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(180px, 100%), 1fr)); gap: 10px; }
+.photo-grid.wide { grid-template-columns: repeat(auto-fill, minmax(min(240px, 100%), 1fr)); }
+.photo-grid .photo { display: block; padding: 0; border: 0; border-radius: var(--r-sm); overflow: hidden; background: var(--surface-2); cursor: zoom-in; }
+.photo-grid .photo img { width: 100%; height: 100%; object-fit: cover; display: block; transition: transform 0.2s; }
+.photo-grid .photo:hover img { transform: scale(1.03); }
+.photo-grid.hero-photos { grid-template-columns: 1fr; }
+.photo-grid.hero-photos .photo { border-radius: var(--r-lg); }
+.card.has-cover { padding-top: 0; overflow: hidden; }
+.cover-photo { display: block; margin: 0 -22px 4px; background: var(--surface-2); }
+.cover-photo img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.card[data-tone].has-cover .cover-photo { margin-top: 0; }
+
 @media print {
   @page { size: A4; margin: 14mm; }
   body { background: #fff; }

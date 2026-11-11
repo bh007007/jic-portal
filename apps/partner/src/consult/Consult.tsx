@@ -10,7 +10,7 @@ import { Box, Loading, Msg, OutLink, Text } from '../ui';
 import { answerLabel, estimateLevel, isScoreModel, recommend, type Answers } from './engine';
 import { quotePageFor, quoteParams, quoteUrl } from './quoteLink';
 import { CourseSheet, Sheet } from './Sheet';
-import { DayTimeline, VideoCard, YouTube, byTime, dayMatches, loadItems, str, textOf } from '../content';
+import { DayTimeline, PhotoGrid, VideoCard, YouTube, byTime, dayMatches, loadItems, str, textOf, usePhotos } from '../content';
 import type { ContentItem } from '../contentKinds';
 import StudyPlan from './StudyPlan';
 
@@ -59,6 +59,8 @@ export default function Consult() {
   const course: Course | null = rec ? (chosen && rec.alt?.id === chosen ? rec.alt : rec.first) : null;
   // 추천 캠퍼스가 정해지면 그 캠퍼스 색(디자인 원칙 D2)
   useCampusTone(step > 0 ? course?.campus_id : null);
+  // ③ 생활 사진(사진 보관함 '상담 ③'·'기숙사'·'식사', 추천 캠퍼스 + 공통, CL-047)
+  const lifePhotos = usePhotos(['consult', 'dorm', 'meals'], course?.campus_id ?? null);
 
   if (!data) return <Loading error={error} />;
   const { courses, contents, campuses, settings, tuition, life } = data;
@@ -305,7 +307,8 @@ export default function Consult() {
                   const acts = life.filter((it) => it.kind === 'activity' && (!it.campus || it.campus === cid));
                   return (
                     <>
-                      <Msg kind="info">추천된 {campus?.name} · {courseLabel(course)}에 맞춘 생활 자료입니다. 기숙사 사진은 <span className="chip">{t('common.preparing')}</span></Msg>
+                      <Msg kind="info">추천된 {campus?.name} · {courseLabel(course)}에 맞춘 생활 자료입니다.</Msg>
+                      {lifePhotos.length > 0 && <PhotoGrid photos={[...lifePhotos].sort((a, b) => ['consult', 'dorm', 'meals'].indexOf(str(a.it, 'placement')) - ['consult', 'dorm', 'meals'].indexOf(str(b.it, 'placement')))} max={9} />}
                       {dayForCourse.length > 0 && (
                         <div>
                           <h3 style={{ margin: '0 0 6px' }}>학생의 하루 <span className="chip">예시 학생</span></h3>
