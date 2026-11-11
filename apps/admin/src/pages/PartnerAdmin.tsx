@@ -2,7 +2,8 @@ import { Navigate, useLocation, useParams, useSearchParams } from 'react-router-
 import type { ContentKind } from '../../../partner/src/contentKinds';
 import { supabase } from '../supabase';
 import { PageTitle, Panel } from '../components/ui';
-import { Members, Requests, Stats, Visits } from './AgencyPortal';
+import { Members, Requests, Stats } from './AgencyPortal';
+import Visits from './agency/Visits';
 import Rules from './agency/Rules';
 import Content from './agency/Content';
 import Resources from './agency/Resources';

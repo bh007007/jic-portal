@@ -3,7 +3,7 @@ import { supabase } from '../supabase';
 import { Loading, Panel } from '../components/ui';
 
 /**
- * 파트너 포털 관리의 지점 계정(가입 승인·지점 계정)·방문 신청·사용 통계 화면(CL-045 메뉴 7개는 PartnerAdmin.tsx가 묶는다).
+ * 파트너 포털 관리의 지점 계정(가입 승인·지점 계정)·사용 통계 화면(방문 신청은 agency/Visits.tsx, CL-046)(CL-045 메뉴 7개는 PartnerAdmin.tsx가 묶는다).
  * 표는 파트너 포털 표 그대로(agency_requests·agency_members·visit_requests·plan_downloads, 20261107010000_partner_portal.sql), 권한은 직원(is_staff, RLS).
  */
 
@@ -181,66 +181,6 @@ export function Members() {
         </table>
       </div>
       <p className="muted" style={{ margin: '8px 0 0', fontSize: 12 }}>업체 담당자 번호는 '담당자 계정'의 담당자번호입니다. 2차 My Students에서 지점 학생을 연결할 때 씁니다. 직원 아이디는 지점 대표가 등록·정지하고(JIC 승인 없음), 대표를 정지하면 그 지점 직원도 같이 막힙니다.</p>
-    </Panel>
-  );
-}
-
-// ── 방문 신청(12.6). '안내' 칸은 에이전시 포털 내 신청 내역에 보인다
-interface Visit {
-  id: number;
-  member_id: string;
-  visit_date: string;
-  people: number;
-  purpose: string;
-  status: string;
-  staff_note: string | null;
-}
-type VisitMember = { user_id: string; agency_name: string; branch: string | null; contact_name: string | null; phone: string | null; email: string };
-const VISIT_STATUS: Record<string, string> = { received: '접수', confirmed: '확정', done: '방문 완료', cancelled: '취소' };
-
-export function Visits() {
-  // 신청과 지점 계정을 따로 읽어 화면에서 잇는다(표를 묶어 읽는 조회에 기대지 않음)
-  const { rows, error, reload } = useRows<Visit[]>(() => supabase!.from('visit_requests').select('id, member_id, visit_date, people, purpose, status, staff_note').order('visit_date', { ascending: true }));
-  const mem = useRows<VisitMember[]>(() => supabase!.from('agency_members').select('user_id, agency_name, branch, contact_name, phone, email'));
-  const [notes, setNotes] = useState<Record<number, string>>({});
-  const [msg, setMsg] = useState<{ ok: boolean; text: string } | null>(null);
-  if (!rows || !mem.rows) return <Loading error={error || mem.error} />;
-  const who = new Map(mem.rows.map((x) => [x.user_id, x]));
-  const update = async (v: Visit, status: string) => {
-    const { error: e } = await supabase!.from('visit_requests').update({ status, staff_note: notes[v.id] ?? v.staff_note }).eq('id', v.id);
-    setMsg(e ? { ok: false, text: `저장 실패: ${e.message}` } : { ok: true, text: `${who.get(v.member_id)?.agency_name ?? ''} ${v.visit_date} — ${VISIT_STATUS[status]}` });
-    reload();
-  };
-  return (
-    <Panel title={<>방문 신청 <small>({rows.length}건)</small></>}>
-      <Status msg={msg} />
-      <div className="grid-box">
-        <table className="tbl center" style={{ minWidth: 980 }}>
-          <thead><tr><th>희망 날짜</th><th className="left">에이전시 · 지점</th><th className="left">담당자</th><th>인원</th><th className="left">목적</th><th>상태</th><th className="left">안내 (에이전시에 보임)</th><th>처리</th></tr></thead>
-          <tbody>
-            {rows.length === 0 && <tr className="empty"><td colSpan={8}>방문 신청이 없습니다.</td></tr>}
-            {rows.map((v) => {
-              const a = who.get(v.member_id);
-              return (
-              <tr key={v.id}>
-                <td className="strong nowrap">{v.visit_date}</td>
-                <td className="left">{a?.agency_name} {a?.branch}</td>
-                <td className="left">{a?.contact_name}<div className="muted" style={{ fontSize: 12 }}>{a?.phone || a?.email}</div></td>
-                <td>{v.people}</td>
-                <td className="left memo-text" style={{ maxWidth: 260 }}>{v.purpose}</td>
-                <td>{VISIT_STATUS[v.status] ?? v.status}</td>
-                <td className="left"><input aria-label="안내" defaultValue={v.staff_note ?? ''} onChange={(e) => setNotes({ ...notes, [v.id]: e.target.value })} style={{ height: 26, minWidth: 160 }} /></td>
-                <td className="nowrap">
-                  {(['confirmed', 'done', 'cancelled'] as const).map((s) => (
-                    <button key={s} type="button" className={'btn btn-xs' + (v.status === s ? ' btn-primary' : '')} style={{ marginRight: 4 }} onClick={() => update(v, s)}>{VISIT_STATUS[s]}</button>
-                  ))}
-                </td>
-              </tr>
-              );
-            })}
-          </tbody>
-        </table>
-      </div>
     </Panel>
   );
 }
