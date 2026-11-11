@@ -3,8 +3,9 @@ import type { MsgKey } from './i18n';
 /**
  * 에이전시 포털 메뉴(CL-037, 11/10 결정). 에이전시가 하는 일(상담 → 입학 진행 → 소통) 순서.
  * ready: 화면이 있음. 없으면 '준비 중' 화면(원칙 C8: 운영 전 기능은 준비 중으로 표시). phase2: 2차(학생 데이터가 걸리는 화면).
- * 내용이 비어 있는 새 화면(JIC Play·근거 자료·플레이북·FAQ·JIC 소개·학생의 하루·주니어·가족 캠프·학생 생활·학비표·담당자 연락처)은
- * 시제품 V74를 받아 옮긴다(CL-030·039). 학비표는 관리자 포털 가격표에서 읽는다(CL-038).
+ * 11/11: JIC Play·근거 자료·플레이북·JIC 소개·학생의 하루·캠프·학생 생활·담당자 연락처는 화면이 있고(ready), 내용은 관리자 포털
+ * '파트너 포털 관리'에서 넣는다(partner_content_items, CL-045). 게시 전이면 화면 안에 '준비 중'. FAQ는 입력 화면이 정해지지 않아 준비 중.
+ * 학비표는 관리자 포털 가격표에서 읽는다(CL-038).
  */
 export interface MenuItem {
   to: string;
@@ -27,13 +28,13 @@ export const MENU: MenuGroup[] = [
     key: 'menu.consult',
     items: [
       { to: '/consult', key: 'menu.consultStart', ready: true },
-      { to: '/play', key: 'menu.play' },
+      { to: '/play', key: 'menu.play', ready: true },
       {
         key: 'menu.consultMaterials',
         sub: [
           { to: '/resources', key: 'menu.downloads', ready: true },
-          { to: '/evidence', key: 'menu.evidence' },
-          { to: '/playbook', key: 'menu.playbook' },
+          { to: '/evidence', key: 'menu.evidence', ready: true },
+          { to: '/playbook', key: 'menu.playbook', ready: true },
           { to: '/faq', key: 'menu.faq' },
         ],
       },
@@ -46,10 +47,10 @@ export const MENU: MenuGroup[] = [
       {
         key: 'menu.aboutJic',
         sub: [
-          { to: '/about/baguio', key: 'menu.baguio' },
-          { to: '/about/why-jic', key: 'menu.whyJic' },
-          { to: '/about/teachers', key: 'menu.teachers' },
-          { to: '/about/school', key: 'menu.school' },
+          { to: '/about/baguio', key: 'menu.baguio', ready: true },
+          { to: '/about/why-jic', key: 'menu.whyJic', ready: true },
+          { to: '/about/teachers', key: 'menu.teachers', ready: true },
+          { to: '/about/school', key: 'menu.school', ready: true },
         ],
       },
     ],
@@ -58,13 +59,13 @@ export const MENU: MenuGroup[] = [
     key: 'menu.coursesLife',
     items: [
       { to: '/courses', key: 'menu.courses', ready: true },
-      { to: '/day', key: 'menu.day' },
-      { to: '/camps', key: 'menu.camps' },
+      { to: '/day', key: 'menu.day', ready: true },
+      { to: '/camps', key: 'menu.camps', ready: true },
       {
         key: 'menu.studentLife',
         sub: [
-          { to: '/life/calendar', key: 'menu.calendar' },
-          { to: '/life/activities', key: 'menu.activities' },
+          { to: '/life/calendar', key: 'menu.calendar', ready: true },
+          { to: '/life/activities', key: 'menu.activities', ready: true },
         ],
       },
     ],
@@ -85,7 +86,7 @@ export const MENU: MenuGroup[] = [
       { to: '/notices', key: 'menu.notices', ready: true },
       { to: '/newsletter', key: 'menu.newsletter', ready: true },
       { to: '/visit', key: 'menu.visit', ready: true },
-      { to: '/contacts', key: 'menu.contacts' },
+      { to: '/contacts', key: 'menu.contacts', ready: true },
     ],
   },
   { key: 'menu.students', to: '/students', phase2: true },

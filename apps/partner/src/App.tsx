@@ -26,6 +26,13 @@ import AdminMoved from './pages/admin/AdminMoved';
 import CoursesIndex from './pages/CoursesIndex';
 import Newsletter from './pages/Newsletter';
 import Tuition from './pages/Tuition';
+import Play from './pages/content/Play';
+import Evidence from './pages/content/Evidence';
+import Playbook from './pages/content/Playbook';
+import { AboutSection, SchoolStats, Teachers } from './pages/content/About';
+import { Activities, Calendar, Day } from './pages/content/Life';
+import Camps from './pages/content/Camps';
+import Contacts from './pages/content/Contacts';
 import { PENDING_ROUTES, staffCanSee } from './menu';
 import { t } from './i18n';
 
@@ -89,7 +96,20 @@ export default function App() {
         <Route path="/courses/:id" element={<Member><CoursePage /></Member>} />
         <Route path="/newsletter" element={<Member><Newsletter /></Member>} />
         <Route path="/tuition" element={<Member><Tuition /></Member>} />
-        {/* CL-037 메뉴 중 아직 화면이 없는 곳: 준비 중(시제품 V74를 받아 옮김, CL-030·039) 또는 2차 */}
+        {/* 화면 콘텐츠(관리자 포털 '파트너 포털 관리', CL-045). 게시 전이면 각 화면이 '준비 중' */}
+        <Route path="/play" element={<Member><Play /></Member>} />
+        <Route path="/evidence" element={<Member><Evidence /></Member>} />
+        <Route path="/playbook" element={<Member><Playbook /></Member>} />
+        <Route path="/about/baguio" element={<Member><AboutSection section="왜 바기오·주변" titleKey="menu.baguio" /></Member>} />
+        <Route path="/about/why-jic" element={<Member><AboutSection section="왜 JIC" titleKey="menu.whyJic" /></Member>} />
+        <Route path="/about/teachers" element={<Member><Teachers /></Member>} />
+        <Route path="/about/school" element={<Member><SchoolStats /></Member>} />
+        <Route path="/day" element={<Member><Day /></Member>} />
+        <Route path="/camps" element={<Member><Camps /></Member>} />
+        <Route path="/life/calendar" element={<Member><Calendar /></Member>} />
+        <Route path="/life/activities" element={<Member><Activities /></Member>} />
+        <Route path="/contacts" element={<Member><Contacts /></Member>} />
+        {/* CL-037 메뉴 중 아직 화면이 없는 곳(FAQ·인보이스): 준비 중 또는 2차 */}
         {PENDING_ROUTES.map((it) => (
           <Route key={it.to} path={it.to} element={<Member><Preparing title={t(it.key)} /></Member>} />
         ))}

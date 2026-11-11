@@ -254,6 +254,51 @@ select { height: 40px; border: 1px solid var(--line); border-radius: 10px; backg
 .plan h1 { font-size: 22px; }
 .plan h2 { font-size: 14px; margin: 18px 0 6px; padding-bottom: 4px; border-bottom: 1px solid #262A31; }
 .plan .plan-head { display: flex; justify-content: space-between; align-items: baseline; border-bottom: 2px solid #4C5260; padding-bottom: 10px; }
+/* 화면 콘텐츠(CL-045): JIC Play·근거 자료·플레이북·소개·생활·캠프·연락처 */
+.update-line { font-size: 12.5px; color: var(--muted); white-space: nowrap; }
+.filter-box { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; }
+.filter-row { display: flex; flex-wrap: wrap; gap: 6px; }
+.page-intro { margin: 0 2px 4px; font-size: 14px; line-height: 1.7; color: var(--ink-2); }
+.staff-only { padding: 10px 16px; border-radius: var(--r-md, 8px); background: var(--warn-bg); color: var(--warn-ink); font-weight: 600; font-size: 14px; position: sticky; top: 0; z-index: 5; }
+.video-card { text-align: left; font: inherit; color: inherit; cursor: pointer; padding: 0 0 16px; overflow: hidden; }
+.video-card > *:not(.video-thumb) { padding: 0 16px; }
+.video-card:hover { border-color: var(--accent); }
+.video-thumb { position: relative; display: block; aspect-ratio: 16 / 9; background: var(--surface-2); }
+.video-thumb img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.video-thumb .play { position: absolute; inset: 0; display: grid; place-items: center; font-size: 28px; color: #fff; text-shadow: 0 1px 6px rgba(0, 0, 0, 0.5); }
+.video-frame { position: relative; aspect-ratio: 16 / 9; background: #000; border-radius: 8px; overflow: hidden; }
+.video-frame iframe { position: absolute; inset: 0; width: 100%; height: 100%; border: 0; }
+.clamp-2 { display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+.evidence-thumb { display: block; padding: 0; border: 0; background: var(--surface-2); border-radius: 8px; overflow: hidden; cursor: zoom-in; aspect-ratio: 4 / 3; }
+.evidence-thumb img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.playbook { display: flex; flex-direction: column; gap: 12px; }
+.playbook-card .q { margin: 4px 0 10px; font-size: 17px; }
+.playbook-card dl { margin: 0; display: grid; grid-template-columns: 110px 1fr; gap: 8px 14px; font-size: 14px; }
+.playbook-card dt { color: var(--ink-2); font-weight: 500; }
+.playbook-card dt.avoid { color: var(--cha); }
+.playbook-card dd { margin: 0; }
+@media (max-width: 600px) { .playbook-card dl { grid-template-columns: 1fr; } .playbook-card dd { margin-bottom: 6px; } }
+.tone-title[data-tone='pre'] { border-left: 4px solid var(--pre); padding-left: 10px; }
+.tone-title[data-tone='cha'] { border-left: 4px solid var(--cha); padding-left: 10px; }
+.tone-title[data-tone='new'] { border-left: 4px solid var(--new); padding-left: 10px; }
+.tone-title[data-tone='mco'] { border-left: 4px solid var(--mco); padding-left: 10px; }
+.day-list { list-style: none; margin: 0; padding: 0; }
+.day-list li { display: grid; grid-template-columns: 64px 1fr; gap: 14px; padding: 10px 0; border-bottom: 1px solid var(--line-2); }
+.day-list li:last-child { border-bottom: 0; }
+.day-list .time { font-variant-numeric: tabular-nums; color: var(--accent-ink); font-weight: 600; }
+.event-list li { align-items: flex-start; }
+.event-list .title { white-space: normal; }
+.event-list .date-l { flex: 0 0 92px; font-size: 13px; font-variant-numeric: tabular-nums; color: var(--ink-2); }
+.kv.compact th { width: 96px; padding: 7px 10px; font-size: 13px; }
+.kv.compact td { padding: 7px 10px; font-size: 13.5px; }
+.points { margin: 0; padding-left: 18px; font-size: 14px; line-height: 1.7; }
+.camp-foot { margin-top: auto; display: flex; flex-direction: column; gap: 8px; padding-top: 6px; }
+.pdf-frame { width: 100%; height: 70vh; border: 1px solid var(--line); border-radius: 8px; background: var(--surface-2); }
+.campus-status { font-size: 13px; padding: 8px 10px; border-radius: 8px; background: var(--surface-2); color: var(--ink); }
+.act-list { list-style: none; margin: 0; padding: 0; }
+.act-list li { padding: 8px 0; border-bottom: 1px solid var(--line-2); }
+.act-list li:last-child { border-bottom: 0; }
+
 @media print {
   @page { size: A4; margin: 14mm; }
   body { background: #fff; }

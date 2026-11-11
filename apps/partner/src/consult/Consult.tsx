@@ -9,7 +9,9 @@ import { CUR_LABEL, curOf, TuitionTables, type Cur, type TuitionRow } from '../t
 import { Box, Loading, Msg, OutLink, Text } from '../ui';
 import { answerLabel, estimateLevel, isScoreModel, recommend, type Answers } from './engine';
 import { quotePageFor, quoteParams, quoteUrl } from './quoteLink';
-import { CourseSheet } from './Sheet';
+import { CourseSheet, Sheet } from './Sheet';
+import { DayTimeline, VideoCard, YouTube, byTime, dayMatches, loadItems, str, textOf } from '../content';
+import type { ContentItem } from '../contentKinds';
 import StudyPlan from './StudyPlan';
 
 // 상담 모드 ①~⑥(CL-049, 화면 명세 2장)
@@ -26,12 +28,14 @@ export default function Consult() {
   const { member, agencyStaff } = useAuth();
   const navigate = useNavigate();
   const { data, error } = useLoad(async () => {
-    const [set, courses, contents, campuses, settings, tuition] = await Promise.all([
+    const [set, courses, contents, campuses, settings, tuition, life] = await Promise.all([
       loadRuleSet(), loadCourses(), loadContents(), loadCampuses(), loadSettings(),
       // 학비표(CL-038). 대표 아이디·JIC 직원만 줄이 온다(직원 아이디·샘플 가격표면 0줄)
       supabase.rpc('partner_tuition').then((r) => (r.error ? [] : ((r.data ?? []) as TuitionRow[]))),
+      // ③ 생활 자료(학생의 하루·액티비티·JIC Play, CL-045). 못 읽어도 상담은 계속한다
+      loadItems(['day', 'activity', 'video']).catch(() => [] as ContentItem[]),
     ]);
-    return { set, courses, contents, campuses, settings, tuition };
+    return { set, courses, contents, campuses, settings, tuition, life };
   });
   const [step, setStep] = useState(0);
   const [q, setQ] = useState(0);
@@ -43,6 +47,7 @@ export default function Consult() {
   const [cur, setCur] = useState<Cur>(curOf(member?.country));
   const [sheet, setSheet] = useState<string | null>(null); // 크게 여는 코스 상세
   const [planDone, setPlanDone] = useState(false);
+  const [video, setVideo] = useState<ContentItem | null>(null); // ③에서 같은 화면 위로 재생하는 영상
 
   const set = data?.set ?? null;
   const model = set && isScoreModel(set.rules) ? set.rules : null;
@@ -56,7 +61,7 @@ export default function Consult() {
   useCampusTone(step > 0 ? course?.campus_id : null);
 
   if (!data) return <Loading error={error} />;
-  const { courses, contents, campuses, settings, tuition } = data;
+  const { courses, contents, campuses, settings, tuition, life } = data;
   if (!set) return <Loading error="추천 조건표가 아직 등록되지 않았습니다. JIC 관리자에게 문의하세요." />;
 
   const campus = campuses.find((c) => c.id === course?.campus_id);
@@ -81,7 +86,7 @@ export default function Consult() {
     lc && qid === lc.question && unknownLevel ? `잘 모름 → 추정 ${estimated ? answerLabel(set, qid, estimated) : '(확인 중)'}` : answerLabel(set, qid, answers[qid]);
 
   const reset = () => {
-    setStep(0); setQ(0); setAnswers({}); setChecks([]); setChosen(null); setLevel(null); setSheet(null); setPlanDone(false);
+    setStep(0); setQ(0); setAnswers({}); setChecks([]); setChosen(null); setLevel(null); setSheet(null); setVideo(null); setPlanDone(false);
     setQuote({ currency: member?.currency ?? 'KRW', amount: '', memo: '' });
   };
   const canGo = (n: number) => n === 0 || (!!rec && !!course && (n !== 3 || hasLevels));
@@ -286,19 +291,60 @@ export default function Consult() {
             </div>
           )}
 
-          {/* ③ 생활: 추천된 캠퍼스·코스의 생활 자료가 자동으로(사진·영상·학생의 하루는 관리 화면이 생기면 채움) */}
+          {/* ③ 생활(명세 2장): 추천된 캠퍼스·코스의 학생의 하루·JIC Play(상담 ③ 표시한 영상)·액티비티가 자동으로. 영상은 같은 화면 위에서 재생 */}
           {step === 2 && (
             <Box title={`생활 · ${campus?.name ?? ''}`} className="grow-3" foot={nav(1, 3)}>
-              <div className="box-body" style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
-                <Msg kind="info">추천된 {campus?.name} · {courseLabel(course)}에 맞춘 생활 자료입니다. 학생의 하루·JIC Play 영상·액티비티·기숙사 사진은 <span className="chip">{t('common.preparing')}</span></Msg>
-                {[['시설 · 기숙사 · 식사', campus?.facilities], ['부가 수업 · 활동', campus?.activities], ['바기오 생활', campus?.life]].map(([label, text]) => (
-                  <div key={label as string}>
-                    <h3 style={{ margin: '0 0 6px' }}>{label}</h3>
-                    <Text value={text as string | null | undefined} />
-                  </div>
-                ))}
+              <div className="box-body" style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
+                {(() => {
+                  const cid = course?.campus_id ?? '';
+                  const names = course ? [course.name, course.display_name ?? '', course.id] : [];
+                  const day = life.filter((it) => it.kind === 'day' && it.campus === cid && dayMatches(it, names)).sort(byTime);
+                  // 코스 이름이 맞는 하루가 있으면 그것만, 없으면 캠퍼스 공통(코스 칸 빈 것)
+                  const dayForCourse = day.some((it) => str(it, 'course')) ? day.filter((it) => str(it, 'course')) : day;
+                  const videos = life.filter((it) => it.kind === 'video' && it.data?.consult === true && (!it.campus || it.campus === cid));
+                  const acts = life.filter((it) => it.kind === 'activity' && (!it.campus || it.campus === cid));
+                  return (
+                    <>
+                      <Msg kind="info">추천된 {campus?.name} · {courseLabel(course)}에 맞춘 생활 자료입니다. 기숙사 사진은 <span className="chip">{t('common.preparing')}</span></Msg>
+                      {dayForCourse.length > 0 && (
+                        <div>
+                          <h3 style={{ margin: '0 0 6px' }}>학생의 하루 <span className="chip">예시 학생</span></h3>
+                          <DayTimeline items={dayForCourse} />
+                        </div>
+                      )}
+                      {videos.length > 0 && (
+                        <div>
+                          <h3 style={{ margin: '0 0 10px' }}>JIC Play</h3>
+                          <div className="cards">{videos.map((v) => <VideoCard key={v.id} it={v} onOpen={() => setVideo(v)} />)}</div>
+                        </div>
+                      )}
+                      {acts.length > 0 && (
+                        <div>
+                          <h3 style={{ margin: '0 0 6px' }}>액티비티</h3>
+                          <ul className="act-list">
+                            {acts.map((a) => (
+                              <li key={a.id}><strong>{textOf(a).title}</strong>{str(a, 'schedule') && <span className="muted"> · {str(a, 'schedule')}</span>}{textOf(a).body && <div className="pre" style={{ fontSize: 13.5, color: 'var(--ink-2)' }}>{textOf(a).body}</div>}</li>
+                            ))}
+                          </ul>
+                        </div>
+                      )}
+                      {[['시설 · 기숙사 · 식사', campus?.facilities], ['부가 수업 · 활동', campus?.activities], ['바기오 생활', campus?.life]].map(([label, text]) => (
+                        <div key={label as string}>
+                          <h3 style={{ margin: '0 0 6px' }}>{label}</h3>
+                          <Text value={text as string | null | undefined} />
+                        </div>
+                      ))}
+                    </>
+                  );
+                })()}
               </div>
             </Box>
+          )}
+          {video && (
+            <Sheet title={textOf(video).title} onClose={() => setVideo(null)}>
+              <YouTube url={str(video, 'youtube')} title={textOf(video).title} />
+              {textOf(video).body && <p className="pre" style={{ margin: '12px 0 0' }}>{textOf(video).body}</p>}
+            </Sheet>
           )}
 
           {/* ④ 단계 + CL-044 단계마다 '이 단계로 견적 보기' */}
