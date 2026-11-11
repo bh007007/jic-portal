@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { ContentPage, DayTimeline, campusName, str, textOf, useCampusFilter, useItems } from '../../content';
+import { ContentPage, DayTimeline, PhotoGrid, campusName, str, textOf, useCampusFilter, useItems, usePhotos } from '../../content';
 import type { ContentItem } from '../../contentKinds';
 import { today } from '../../data';
 import { t } from '../../i18n';
@@ -12,7 +12,8 @@ import { toneOf } from '../../tone';
  */
 export function Day() {
   const { data, error } = useItems('day');
-  const { bar, match } = useCampusFilter(data);
+  const { campus, bar, match } = useCampusFilter(data);
+  const photos = usePhotos(['day'], campus);
   const list = (data ?? []).filter(match);
   // 캠퍼스 × 코스 묶음. 코스 칸이 비면 그 캠퍼스 공통
   const groups: { key: string; campus: string; course: string; items: ContentItem[] }[] = [];
@@ -25,6 +26,7 @@ export function Day() {
   return (
     <ContentPage title={t('menu.day')} items={data} error={error}>
       {bar && <div className="box box-body filter-box">{bar}</div>}
+      <PhotoGrid photos={photos} max={6} className="wide" />
       {groups.map((g) => (
         <Box key={g.key} className="tone-box" title={<span data-tone={toneOf(g.campus)} className="tone-title">{[campusName(g.campus), g.course].filter(Boolean).join(' · ')} <span className="chip">예시 학생</span></span>}>
           <div className="box-body"><DayTimeline items={g.items} /></div>
@@ -37,10 +39,12 @@ export function Day() {
 /** 코스·생활 › 학생 생활 › 액티비티 */
 export function Activities() {
   const { data, error } = useItems('activity');
-  const { bar, match } = useCampusFilter(data);
+  const { campus, bar, match } = useCampusFilter(data);
+  const photos = usePhotos(['activity'], campus);
   return (
     <ContentPage title={t('menu.activities')} items={data} error={error}>
       {bar && <div className="box box-body filter-box">{bar}</div>}
+      <PhotoGrid photos={photos} max={8} className="wide" />
       <div className="cards">
         {(data ?? []).filter(match).map((it) => (
           <div key={it.id} className="card" data-tone={toneOf(it.campus)}>
@@ -64,7 +68,8 @@ const TYPE_TONE: Record<string, string> = { 입학: 'var(--accent)', 픽업: 'va
 /** 코스·생활 › 학생 생활 › 활동 달력(명세 4.5 '행사 일정'): 달마다 묶은 목록. 기본은 이번 달부터, '지난 일정'으로 앞 달도 */
 export function Calendar() {
   const { data, error } = useItems('event');
-  const { bar, match } = useCampusFilter(data);
+  const { campus, bar, match } = useCampusFilter(data);
+  const photos = usePhotos(['event'], campus);
   const [type, setType] = useState('');
   const [past, setPast] = useState(false);
   const month = today().slice(0, 7);
@@ -88,6 +93,7 @@ export function Calendar() {
           <input type="checkbox" checked={past} onChange={(e) => setPast(e.target.checked)} /> 지난 일정도 보기
         </label>
       </div>
+      <PhotoGrid photos={photos} max={6} className="wide" />
       {months.length === 0 && <div className="state">앞으로 예정된 일정이 없습니다.</div>}
       {months.map((m) => (
         <Box key={m} title={`${m.slice(0, 4)}년 ${Number(m.slice(5))}월`}>

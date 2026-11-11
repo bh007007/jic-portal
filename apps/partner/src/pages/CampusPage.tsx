@@ -3,6 +3,11 @@ import { courseLabel, loadCampuses, loadContents, loadCourses, useLoad } from '.
 import { t } from '../i18n';
 import { Box, Loading, PageHead, Text } from '../ui';
 import { useCampusTone } from '../tone';
+import { PhotoGrid, str, usePhotos } from '../content';
+import { placementLabel } from '../contentKinds';
+
+// 캠퍼스 화면의 사진 묶음(사진 보관함 화면 위치, CL-047)
+const GALLERY = ['campus_gallery', 'academic', 'dorm', 'meals', 'map'];
 
 const SECTIONS: [keyof import('../data').Campus, string][] = [
   ['direction', '교육 방향'],
@@ -17,6 +22,10 @@ export default function CampusPage() {
   const { id = '' } = useParams();
   useCampusTone(id);
   const { data, error } = useLoad(async () => ({ campuses: await loadCampuses(), courses: await loadCourses(), contents: await loadContents() }), [id]);
+  const photos = usePhotos(['campus_hero', ...GALLERY], id);
+  // 캠퍼스 화면은 그 캠퍼스 사진만(공통 사진은 빼고)
+  const mine = photos.filter((p) => p.it.campus === id);
+  const hero = mine.filter((p) => str(p.it, 'placement') === 'campus_hero');
   if (!data) return <Loading error={error} />;
   const campus = data.campuses.find((c) => c.id === id);
   if (!campus) return <Loading error="캠퍼스를 찾을 수 없습니다." />;
@@ -34,6 +43,7 @@ export default function CampusPage() {
           </nav>
         }
       />
+      {hero.length > 0 && <PhotoGrid photos={hero} max={3} ratio="16 / 7" className="hero-photos" />}
       {campus.status === 'preparing' ? (
         <div className="state">{t('common.preparing')}입니다. 내용이 확정되면 입력합니다. 추천과 견적에는 쓰지 않습니다.</div>
       ) : (
@@ -54,6 +64,21 @@ export default function CampusPage() {
               </div>
             </div>
           </Box>
+          {GALLERY.some((g) => mine.some((p) => str(p.it, 'placement') === g)) && (
+            <Box title="사진">
+              <div className="box-body" style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+                {GALLERY.map((g) => {
+                  const ps = mine.filter((p) => str(p.it, 'placement') === g);
+                  return ps.length ? (
+                    <div key={g}>
+                      <h3 style={{ margin: '0 0 8px', fontSize: 15 }}>{placementLabel(g)}</h3>
+                      <PhotoGrid photos={ps} max={8} />
+                    </div>
+                  ) : null;
+                })}
+              </div>
+            </Box>
+          )}
           <Box title="캠퍼스 소개">
             <div className="box-body">
               <table className="kv">

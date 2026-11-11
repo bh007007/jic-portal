@@ -43,3 +43,4 @@ jobs:
       - run: node supabase/tests/partner_tuition_rls.mjs
       - run: node supabase/tests/partner_staff_rls.mjs
       - run: node supabase/tests/partner_content_rls.mjs
+      - run: node supabase/tests/partner_media_rls.mjs

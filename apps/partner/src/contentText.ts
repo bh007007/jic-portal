@@ -48,3 +48,11 @@ export function dayMatches(it: ContentItem, courseNames: string[]) {
 
 /** 시간 순서(07:30 < 13:00). 시간이 없으면 뒤로 */
 export const byTime = (a: ContentItem, b: ContentItem) => (str(a, 'time') || '99').localeCompare(str(b, 'time') || '99') || a.sort - b.sort;
+
+/** 사진 중심점(data.focus = [x, y], 0~1) → CSS object-position. 없으면 가운데 */
+export function focusPos(it: Pick<ContentItem, 'data'>): string {
+  const f = it.data?.focus;
+  const ok = (v: unknown) => typeof v === 'number' && Number.isFinite(v) && v >= 0 && v <= 1;
+  if (!Array.isArray(f) || f.length !== 2 || !ok(f[0]) || !ok(f[1])) return '50% 50%';
+  return `${Math.round(f[0] * 100)}% ${Math.round(f[1] * 100)}%`;
+}

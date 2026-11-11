@@ -1,11 +1,12 @@
-import { useState, type ReactNode } from 'react';
+import { useEffect, useState, type ReactNode } from 'react';
 import { useAuth } from './auth';
 import { byCountryOrder, useLoad } from './data';
 import { must, supabase } from './supabase';
-import { CAMPUS_LABEL, type ContentItem, type ContentKind } from './contentKinds';
-import { byTime, listUpdate, str, textOf, youtubeId } from './contentText';
+import { CAMPUS_LABEL, MEDIA_BUCKET, type ContentItem, type ContentKind } from './contentKinds';
+import { Sheet } from './consult/Sheet';
+import { byTime, focusPos, listUpdate, str, textOf, youtubeId } from './contentText';
 
-export { byTime, dayMatches, listUpdate, str, textOf, youtubeId } from './contentText';
+export { byTime, dayMatches, focusPos, listUpdate, str, textOf, youtubeId } from './contentText';
 import { t } from './i18n';
 import { Loading, PageHead } from './ui';
 
@@ -118,3 +119,88 @@ export function DayTimeline({ items }: { items: ContentItem[] }) {
     </ol>
   );
 }
+
+/** 비공개 저장소(partner-media) 파일의 서명 주소. 에이전시는 게시된 사진·캠프가 가리키는 파일만 열린다(저장소 정책) */
+export async function signMedia(paths: string[], seconds = 3600): Promise<Record<string, string>> {
+  const list = [...new Set(paths.filter(Boolean))];
+  if (!list.length) return {};
+  const { data } = await supabase.storage.from(MEDIA_BUCKET).createSignedUrls(list, seconds);
+  const out: Record<string, string> = {};
+  for (const x of data ?? []) if (x.signedUrl && x.path) out[x.path] = x.signedUrl;
+  return out;
+}
+
+export interface Photo { it: ContentItem; url: string }
+
+/** 사진 보관함(CL-047)에서 화면 위치에 맞는 게시된 사진. campus 를 주면 그 캠퍼스 + 공통 사진 */
+export async function loadPhotos(placements: string[], campus?: string | null): Promise<Photo[]> {
+  const items = (await loadItems(['photo'])).filter(
+    (it) => placements.includes(str(it, 'placement')) && (!campus || !it.campus || it.campus === campus) && str(it, 'path'),
+  );
+  const urls = await signMedia(items.map((it) => str(it, 'path')));
+  return items.filter((it) => urls[str(it, 'path')]).map((it) => ({ it, url: urls[str(it, 'path')] }));
+}
+
+/** 화면에서 쓰는 사진 묶음. 못 읽어도 화면은 그대로(사진만 안 나옴) */
+export function usePhotos(placements: string[], campus?: string | null) {
+  const { member } = useAuth();
+  const [photos, setPhotos] = useState<Photo[]>([]);
+  const key = placements.join(',') + '|' + (campus ?? '');
+  useEffect(() => {
+    let alive = true;
+    loadPhotos(placements, campus)
+      .then((p) => alive && setPhotos(p))
+      .catch(() => alive && setPhotos([]));
+    return () => {
+      alive = false;
+    };
+  }, [key]); // eslint-disable-line react-hooks/exhaustive-deps
+  // 국가별 순서(CL-036)
+  const ordered = byCountryOrder(photos.map((p) => ({ ...p, country_order: p.it.country_order })), member?.country);
+  return ordered.map(({ it, url }) => ({ it, url }));
+}
+
+/** 사진 모음: 중심점(focus)에 맞춰 잘라 보이고, 누르면 같은 화면 위에 크게(설명 포함) */
+export function PhotoGrid({ photos, max, ratio = '4 / 3', className }: { photos: Photo[]; max?: number; ratio?: string; className?: string }) {
+  const [open, setOpen] = useState<number | null>(null);
+  if (!photos.length) return null;
+  const shown = max ? photos.slice(0, max) : photos;
+  const cur = open === null ? null : photos[open];
+  return (
+    <>
+      <div className={'photo-grid ' + (className ?? '')}>
+        {shown.map((p, i) => (
+          <button key={p.it.id} type="button" className="photo" style={{ aspectRatio: ratio }} onClick={() => setOpen(i)} aria-label={textOf(p.it).title || '사진 크게 보기'}>
+            <img src={p.url} alt={textOf(p.it).title} loading="lazy" style={{ objectPosition: focusPos(p.it) }} />
+          </button>
+        ))}
+      </div>
+      {cur && (
+        <Sheet title={textOf(cur.it).title || campusName(cur.it.campus) || '사진'} onClose={() => setOpen(null)}>
+          <img src={cur.url} alt={textOf(cur.it).title} style={{ width: '100%', height: 'auto', borderRadius: 8, display: 'block' }} />
+          {photos.length > 1 && (
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: 10 }}>
+              <button type="button" className="btn btn-sm" onClick={() => setOpen(((open ?? 0) - 1 + photos.length) % photos.length)}>‹ 이전</button>
+              <span className="muted" style={{ fontSize: 13 }}>{(open ?? 0) + 1} / {photos.length}</span>
+              <button type="button" className="btn btn-sm" onClick={() => setOpen(((open ?? 0) + 1) % photos.length)}>다음 ›</button>
+            </div>
+          )}
+        </Sheet>
+      )}
+    </>
+  );
+}
+
+/** 카드 맨 위 사진 한 장(캠퍼스 카드 등) */
+export function CoverPhoto({ photo, ratio = '16 / 9' }: { photo?: Photo; ratio?: string }) {
+  if (!photo) return null;
+  return (
+    <span className="cover-photo" style={{ aspectRatio: ratio }}>
+      <img src={photo.url} alt={textOf(photo.it).title} loading="lazy" style={{ objectPosition: focusPos(photo.it) }} />
+    </span>
+  );
+}
+
+/** 캠퍼스 카드 사진: '캠퍼스 카드' 위치가 먼저, 없으면 '캠퍼스 대표'(준비 중 캠퍼스의 미리보기 사진 등) */
+export const campusCover = (photos: Photo[], campusId: string) =>
+  photos.find((p) => p.it.campus === campusId && str(p.it, 'placement') === 'campus_card') ?? photos.find((p) => p.it.campus === campusId && str(p.it, 'placement') === 'campus_hero');

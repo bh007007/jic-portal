@@ -81,6 +81,7 @@ export async function startPgSupabase({ port = 0 } = {}) {
       await db.query('update auth.users set email_confirmed_at = now() where id = $1', [x.id]);
     });
   const resentAt = new Map();
+  const signed = new Map(); // 저장소 서명 주소 토큰 → { bucket, name, exp }
   /** SQL 을 역할로 실행(role: 'authenticated' + sub 면 그 사용자, 없으면 관리자) */
   const sql = (q, params = [], { role, sub } = {}) =>
     serial(async () => {
@@ -301,11 +302,58 @@ export async function startPgSupabase({ port = 0 } = {}) {
         await serial(() => db.query('delete from auth.users where id = $1', [am[1]])); // 연결 표(on delete cascade)도 같이 지워진다
         return send(res, 200, {});
       }
+      // ── Storage 서명 주소(createSignedUrl·createSignedUrls): 만들 때 그 사용자 권한(RLS)으로 파일이 보이는지 보고, 주소로는 토큰만 확인한다
+      const signM = p.match(/^\/storage\/v1\/object\/sign\/([^/]+)(?:\/(.+))?$/);
+      if (signM && req.method === 'POST') {
+        const bucket = decodeURIComponent(signM[1]);
+        const one = signM[2] ? signM[2].split('/').map(decodeURIComponent).join('/') : null;
+        const jb = buf.length ? JSON.parse(buf.toString('utf8')) : {};
+        const paths = one ? [one] : jb.paths ?? [];
+        const secs = Number(jb.expiresIn) || 60;
+        const visible = await serial(() =>
+          asRole(req, async () => new Set((await db.query('select name from storage.objects where bucket_id = $1 and name = any($2::text[])', [bucket, paths])).rows.map((r) => r.name))),
+        );
+        const sign = (name) => {
+          if (!visible.has(name)) return null;
+          const token = crypto.randomUUID();
+          signed.set(token, { bucket, name, exp: Date.now() + secs * 1000 });
+          return `/object/sign/${encodeURIComponent(bucket)}/${name.split('/').map(encodeURIComponent).join('/')}?token=${token}`;
+        };
+        if (one) {
+          const url = sign(one);
+          return url ? send(res, 200, { signedURL: url }) : send(res, 400, { statusCode: '404', error: 'not_found', message: 'Object not found' });
+        }
+        return send(res, 200, paths.map((name) => {
+          const url = sign(name);
+          return { path: name, signedURL: url, error: url ? null : 'Either the object does not exist or you do not have access to it' };
+        }));
+      }
+      if (signM && req.method === 'GET') {
+        const t = signed.get(u.searchParams.get('token') ?? '');
+        const name = (signM[2] ?? '').split('/').map(decodeURIComponent).join('/');
+        if (!t || t.exp < Date.now() || t.bucket !== decodeURIComponent(signM[1]) || t.name !== name) return send(res, 400, { statusCode: '400', error: 'InvalidJWT', message: 'invalid signature' });
+        const o = await serial(async () => (await db.query('select data, metadata from storage.objects where bucket_id = $1 and name = $2', [t.bucket, t.name])).rows[0]);
+        if (!o) return send(res, 400, { statusCode: '404', error: 'not_found' });
+        const headers = { 'Content-Type': o.metadata?.mimetype ?? 'application/octet-stream', 'Access-Control-Allow-Origin': '*' };
+        if (u.searchParams.has('download')) headers['Content-Disposition'] = `attachment; filename="${encodeURIComponent(u.searchParams.get('download') || t.name.split('/').pop())}"`;
+        res.writeHead(200, headers);
+        return res.end(Buffer.from(o.data));
+      }
+      // 여러 파일 지우기(remove): DELETE /object/<bucket> { prefixes }. 권한은 RLS 그대로(못 지우는 파일은 빠진다)
+      const delM = p.match(/^\/storage\/v1\/object\/([^/]+)$/);
+      if (delM && req.method === 'DELETE') {
+        const bucket = decodeURIComponent(delM[1]);
+        const rows = await serial(() =>
+          asRole(req, async () => (await db.query('delete from storage.objects where bucket_id = $1 and name = any($2::text[]) returning name', [bucket, (buf.length ? JSON.parse(buf.toString('utf8')) : {}).prefixes ?? []])).rows),
+        );
+        return send(res, 200, rows.map((r) => ({ name: r.name, bucket_id: bucket })));
+      }
       // ── Storage: 파일 올리기(POST/PUT, x-upsert)·내려받기(GET). 권한은 storage.objects RLS 그대로
       const sm = p.match(/^\/storage\/v1\/object\/(?:authenticated\/)?([^/]+)\/(.+)$/);
       if (sm) {
         const bucket = decodeURIComponent(sm[1]);
         const name = sm[2].split('/').map(decodeURIComponent).join('/');
+        const rawBuf = buf;
         const out = await serial(() =>
           asRole(req, async () => {
             const b = (await db.query('select * from storage.buckets where id = $1', [bucket])).rows[0];
@@ -314,7 +362,27 @@ export async function startPgSupabase({ port = 0 } = {}) {
               const o = (await db.query('select data, metadata from storage.objects where bucket_id = $1 and name = $2', [bucket, name])).rows[0];
               return o ? { status: 200, bin: Buffer.from(o.data), type: o.metadata?.mimetype ?? 'application/octet-stream' } : { status: 400, body: { statusCode: '404', error: 'not_found', message: 'Object not found' } };
             }
-            const type = String(req.headers['content-type'] || '').split(';')[0];
+            let type = String(req.headers['content-type'] || '').split(';')[0];
+            let buf = rawBuf;
+            // supabase-js 는 Blob·File 을 multipart/form-data 로 보낸다: 파일 칸(이름 '')의 내용과 형식을 꺼낸다(실제 Supabase 와 같게)
+            if (type === 'multipart/form-data') {
+              const boundary = String(req.headers['content-type']).match(/boundary=("?)([^";]+)\1/)?.[2];
+              const sep = Buffer.from(`--${boundary}`);
+              let at = buf.indexOf(sep);
+              while (at >= 0) {
+                const next = buf.indexOf(sep, at + sep.length);
+                if (next < 0) break;
+                const part = buf.subarray(at + sep.length + 2, next - 2); // 앞 CRLF, 뒤 CRLF 빼기
+                const headEnd = part.indexOf('\r\n\r\n');
+                const head = part.subarray(0, headEnd).toString('utf8');
+                if (/name=""/.test(head) || /filename=/.test(head)) {
+                  type = (head.match(/content-type:\s*([^\r\n;]+)/i)?.[1] ?? 'application/octet-stream').trim();
+                  buf = part.subarray(headEnd + 4);
+                  break;
+                }
+                at = next;
+              }
+            }
             if (b.file_size_limit && buf.length > Number(b.file_size_limit)) return { status: 413, body: { statusCode: '413', error: 'Payload too large' } };
             if (b.allowed_mime_types && !b.allowed_mime_types.includes(type)) return { status: 415, body: { statusCode: '415', error: 'invalid_mime_type' } };
             const meta = JSON.stringify({ mimetype: type, size: buf.length });
