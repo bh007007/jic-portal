@@ -13,6 +13,8 @@ import { CourseSheet, Sheet } from './Sheet';
 import { DayTimeline, PhotoGrid, VideoCard, YouTube, byTime, dayMatches, loadItems, str, textOf, usePhotos } from '../content';
 import type { ContentItem } from '../contentKinds';
 import StudyPlan from './StudyPlan';
+import EvidenceSheet from './Evidence';
+import { pickReasons, type CourseReason, type PickedReason } from './reasons';
 
 // 상담 모드 ①~⑥(CL-049, 화면 명세 2장)
 const STEPS = ['질문', '추천', '생활', '단계', '비용', '마무리'];
@@ -28,14 +30,17 @@ export default function Consult() {
   const { member, agencyStaff } = useAuth();
   const navigate = useNavigate();
   const { data, error } = useLoad(async () => {
-    const [set, courses, contents, campuses, settings, tuition, life] = await Promise.all([
+    const [set, courses, contents, campuses, settings, tuition, life, reasons] = await Promise.all([
       loadRuleSet(), loadCourses(), loadContents(), loadCampuses(), loadSettings(),
       // 학비표(CL-038). 대표 아이디·JIC 직원만 줄이 온다(직원 아이디·샘플 가격표면 0줄)
       supabase.rpc('partner_tuition').then((r) => (r.error ? [] : ((r.data ?? []) as TuitionRow[]))),
       // ③ 생활 자료(학생의 하루·액티비티·JIC Play, CL-045). 못 읽어도 상담은 계속한다
-      loadItems(['day', 'activity', 'video']).catch(() => [] as ContentItem[]),
+      // ② 추천 이유의 증거(사진·근거 자료)도 같이
+      loadItems(['day', 'activity', 'video', 'photo', 'evidence']).catch(() => [] as ContentItem[]),
+      // ② 추천 이유 3칸(CL-050). 게시된 것만(정책도 같음), 못 읽으면 예전 코스별 글
+      supabase.from('course_reasons').select('*').eq('status', 'published').then((r) => (r.error ? [] : ((r.data ?? []) as CourseReason[]))),
     ]);
-    return { set, courses, contents, campuses, settings, tuition, life };
+    return { set, courses, contents, campuses, settings, tuition, life, reasons };
   });
   const [step, setStep] = useState(0);
   const [q, setQ] = useState(0);
@@ -48,6 +53,7 @@ export default function Consult() {
   const [sheet, setSheet] = useState<string | null>(null); // 크게 여는 코스 상세
   const [planDone, setPlanDone] = useState(false);
   const [video, setVideo] = useState<ContentItem | null>(null); // ③에서 같은 화면 위로 재생하는 영상
+  const [proof, setProof] = useState<PickedReason | null>(null); // ② 추천 이유의 '증거 보기'
 
   const set = data?.set ?? null;
   const model = set && isScoreModel(set.rules) ? set.rules : null;
@@ -63,7 +69,7 @@ export default function Consult() {
   const lifePhotos = usePhotos(['consult', 'dorm', 'meals'], course?.campus_id ?? null);
 
   if (!data) return <Loading error={error} />;
-  const { courses, contents, campuses, settings, tuition, life } = data;
+  const { courses, contents, campuses, settings, tuition, life, reasons } = data;
   if (!set) return <Loading error="추천 조건표가 아직 등록되지 않았습니다. JIC 관리자에게 문의하세요." />;
 
   const campus = campuses.find((c) => c.id === course?.campus_id);
@@ -88,7 +94,7 @@ export default function Consult() {
     lc && qid === lc.question && unknownLevel ? `잘 모름 → 추정 ${estimated ? answerLabel(set, qid, estimated) : '(확인 중)'}` : answerLabel(set, qid, answers[qid]);
 
   const reset = () => {
-    setStep(0); setQ(0); setAnswers({}); setChecks([]); setChosen(null); setLevel(null); setSheet(null); setVideo(null); setPlanDone(false);
+    setStep(0); setQ(0); setAnswers({}); setChecks([]); setChosen(null); setLevel(null); setSheet(null); setVideo(null); setProof(null); setPlanDone(false);
     setQuote({ currency: member?.currency ?? 'KRW', amount: '', memo: '' });
   };
   const canGo = (n: number) => n === 0 || (!!rec && !!course && (n !== 3 || hasLevels));
@@ -229,7 +235,7 @@ export default function Consult() {
             </dl>
           </Box>
 
-          {/* ② 추천: 1순위·대안 + 추천 이유(지금은 코스별 글 3칸, CL-050 구조는 다음 단계) */}
+          {/* ② 추천: 1순위·대안 + 추천 이유 3칸(CL-050: 학습 목적·중요하게 생각하는 것·성장 근거, 증거는 같은 화면 위에) */}
           {step === 1 && (
             <div className="col grow-3">
               <Box title="추천" foot={nav(0, 2)}>
@@ -278,13 +284,22 @@ export default function Consult() {
                   <div>
                     <h3 style={{ margin: '0 0 10px' }}>추천 이유 · {courseLabel(course)}</h3>
                     <div className="reasons">
-                      {[['LEARNING', '수업 방식', content?.reason_learning], ['GROWTH', '성장 확인', content?.reason_growth], ['ENVIRONMENT', '학습 환경', content?.reason_environment]].map(([key, label, text]) => (
-                        <div key={key as string} className="reason">
-                          <span className="key">{key}</span>
-                          <strong>{label}</strong>
-                          <Text value={text as string | null | undefined} />
-                        </div>
-                      ))}
+                      {pickReasons(reasons, course.id, answers, [set.questions[0]?.id, set.questions[1]?.id], content).map((p) => {
+                        // 이 에이전시가 볼 수 있는 증거만(게시·노출 국가는 DB 정책이 거름)
+                        const ev = p.evidence.map((id) => life.find((it) => it.id === id)).filter(Boolean) as ContentItem[];
+                        return (
+                          <div key={p.slot} className="reason">
+                            <span className="key">이유 {p.slot} · {p.label}</span>
+                            {p.source === 'none' ? <span className="muted">{t('common.preparing')}</span> : (
+                              <>
+                                <strong>{p.title}</strong>
+                                {p.body && <span className={p.source === 'legacy' ? 'pre' : 'clamp-2'}>{p.body}</span>}
+                                {ev.length > 0 && <div><button type="button" className="btn btn-sm" onClick={() => setProof(p)}>증거 보기 ({ev.length})</button></div>}
+                              </>
+                            )}
+                          </div>
+                        );
+                      })}
                     </div>
                   </div>
                   <p className="muted" style={{ margin: 0, fontSize: 13 }}>최종 반 배정은 입학 테스트와 운영 조건에 따릅니다.</p>
@@ -342,6 +357,9 @@ export default function Consult() {
                 })()}
               </div>
             </Box>
+          )}
+          {proof && (
+            <EvidenceSheet title={proof.title} items={proof.evidence.map((id) => life.find((it) => it.id === id)).filter(Boolean) as ContentItem[]} onClose={() => setProof(null)} />
           )}
           {video && (
             <Sheet title={textOf(video).title} onClose={() => setVideo(null)}>

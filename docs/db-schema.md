@@ -4,7 +4,7 @@
 
 - **원본 관계**: 공동 작업 방식(11/10 안)에서 공용 DB 설계의 원본은 이 저장소다. 기획의 '공용 DB 설계표'(엑셀)와 다른 곳은 차이 목록으로 맞추고, 테이블 변경은 DB 관리자(지정 필요)가 승인한다(`docs/collab.md`).
 - **정규화 표 계획**은 `docs/schema.md`, 권한(역할)은 `docs/roles.md`, 업체 원본 열 뜻은 `docs/data-dictionary*.md`.
-- 마이그레이션 57개, 표 79개, 뷰 1개. 모든 표에 RLS 가 켜져 있는지는 CI 시험 `supabase/tests/security_lint.mjs`가 본다.
+- 마이그레이션 58개, 표 80개, 뷰 1개. 모든 표에 RLS 가 켜져 있는지는 CI 시험 `supabase/tests/security_lint.mjs`가 본다.
 
 ## 표 목록
 
@@ -88,6 +88,7 @@
 | 정규화 표(학원 계정에서 적용) | `point_ledger` | 10 | 켜짐 | 1 | 20261110130000_core_schema_accounting |
 | 정규화 표(학원 계정에서 적용) | `students` | 15 | 켜짐 | 1 | 20261110110000_core_schema |
 | 정규화 표(학원 계정에서 적용) | `vendor_balances` | 6 | 켜짐 | 1 | 20261110130000_core_schema_accounting |
+| 기타 | `course_reasons` | 13 | 켜짐 | 2 | 20261112010000_course_reasons |
 | 기타 | `visit_request_events` | 8 | 켜짐 | 2 | 20261111220000_visit_requests_v2 |
 
 뷰: `enrollment_periods`
@@ -1356,6 +1357,26 @@
 정책: `vendor_balances_staff_read`(SELECT, authenticated)
 
 ## 기타
+
+### `course_reasons`
+
+| 열 | 형식 | 비움 | 기본값 |
+| --- | --- | --- | --- |
+| `id` | uuid |  | `gen_random_uuid()` |
+| `course_id` | text |  |  |
+| `slot` | smallint |  |  |
+| `answer` | text |  | `''::text` |
+| `title` | text |  |  |
+| `body` | text |  | `''::text` |
+| `evidence` | ARRAY |  | `'{}'::uuid[]` |
+| `i18n` | jsonb |  | `'{}'::jsonb` |
+| `status` | text |  | `'draft'::text` |
+| `updated_on` | date | 가능 |  |
+| `created_at` | timestamp with time zone |  | `now()` |
+| `updated_at` | timestamp with time zone |  | `now()` |
+| `updated_by` | uuid | 가능 | `auth.uid()` |
+
+정책: `course_reasons_partner_read`(SELECT, authenticated), `course_reasons_staff_all`(ALL, authenticated)
 
 ### `visit_request_events`
 

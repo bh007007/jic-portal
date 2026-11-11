@@ -18,9 +18,9 @@ const COURSE_FIELDS: [keyof CourseContent, string, string?][] = [
   ['structure', '수업 구성 · 시간표 · 교재'],
   ['outcomes', '학습 결과물 · 실제 사례', '확인된 학생 사례만'],
   ['media_links', '사진 · 영상 링크', '한 줄에 하나 (유튜브 일부 공개, 드라이브)'],
-  ['reason_learning', '추천 이유: Learning (수업 방식)'],
-  ['reason_growth', '추천 이유: Growth (성장 확인)', '리포트 샘플과 확인된 사례만'],
-  ['reason_environment', '추천 이유: Environment (학습 환경)'],
+  ['reason_learning', '예전 추천 이유: 수업 방식', "새 추천 이유(상담 설정 › 추천 이유, CL-050)의 이유 1 기본이 없을 때만 보임"],
+  ['reason_growth', '예전 추천 이유: 성장 확인', '이유 3(성장 근거) 기본이 없을 때만 보임. 리포트 샘플과 확인된 사례만'],
+  ['reason_environment', '예전 추천 이유: 학습 환경', '이유 2 기본이 없을 때만 보임'],
 ];
 // 단계·옵션(조건표 v2.1 '단계 구분'): 가격은 견적 사이트 값이라 넣지 않는다(CL-020). '기본'은 단계 선택 화면에서 먼저 골라 둘 옵션(Challenger 옵션만, CL-007)
 const LEVEL_FIELDS: ['lessons' | 'intensity' | 'includes', string][] = [['lessons', '수업량'], ['intensity', '수업 강도'], ['includes', '포함 내용']];
