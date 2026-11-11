@@ -78,7 +78,7 @@ export default function Layout({ children }: { children: ReactNode }) {
         </nav>
         <div className="side-foot">
           {/* 관리 화면은 관리자 포털 '파트너 포털 관리' 메뉴(11/10 이전, CL-025) */}
-          {staff && <a href={adminUrl('agency-portal')}>{t('nav.admin')} ↗</a>}
+          {staff && <a href={adminUrl()}>{t('nav.admin')} ↗</a>}
           <span>{t('footer.org')}</span>
         </div>
       </aside>

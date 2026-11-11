@@ -4,7 +4,7 @@
 
 - **원본 관계**: 공동 작업 방식(11/10 안)에서 공용 DB 설계의 원본은 이 저장소다. 기획의 '공용 DB 설계표'(엑셀)와 다른 곳은 차이 목록으로 맞추고, 테이블 변경은 DB 관리자(지정 필요)가 승인한다(`docs/collab.md`).
 - **정규화 표 계획**은 `docs/schema.md`, 권한(역할)은 `docs/roles.md`, 업체 원본 열 뜻은 `docs/data-dictionary*.md`.
-- 마이그레이션 54개, 표 77개, 뷰 1개. 모든 표에 RLS 가 켜져 있는지는 CI 시험 `supabase/tests/security_lint.mjs`가 본다.
+- 마이그레이션 55개, 표 78개, 뷰 1개. 모든 표에 RLS 가 켜져 있는지는 CI 시험 `supabase/tests/security_lint.mjs`가 본다.
 
 ## 표 목록
 
@@ -37,6 +37,7 @@
 | 에이전시(파트너) 포털 | `campuses` | 11 | 켜짐 | 2 | 20261107010000_partner_portal |
 | 에이전시(파트너) 포털 | `course_contents` | 11 | 켜짐 | 2 | 20261107010000_partner_portal |
 | 에이전시(파트너) 포털 | `courses` | 8 | 켜짐 | 2 | 20261107010000_partner_portal |
+| 에이전시(파트너) 포털 | `partner_content_items` | 16 | 켜짐 | 2 | 20261111140000_partner_content_items |
 | 에이전시(파트너) 포털 | `partner_notices` | 14 | 켜짐 | 2 | 20261107010000_partner_portal |
 | 에이전시(파트너) 포털 | `partner_resources` | 13 | 켜짐 | 2 | 20261107010000_partner_portal |
 | 에이전시(파트너) 포털 | `partner_settings` | 4 | 켜짐 | 2 | 20261107010000_partner_portal |
@@ -436,6 +437,29 @@
 | `display_name` | text | 가능 |  |
 
 정책: `courses_partner_read`(SELECT, authenticated), `courses_staff_all`(ALL, authenticated)
+
+### `partner_content_items`
+
+| 열 | 형식 | 비움 | 기본값 |
+| --- | --- | --- | --- |
+| `id` | uuid |  | `gen_random_uuid()` |
+| `kind` | text |  |  |
+| `campus` | text |  | `''::text` |
+| `title` | text |  | `''::text` |
+| `body` | text |  | `''::text` |
+| `data` | jsonb |  | `'{}'::jsonb` |
+| `i18n` | jsonb |  | `'{}'::jsonb` |
+| `countries` | ARRAY |  | `'{}'::text[]` |
+| `country_order` | jsonb |  | `'{}'::jsonb` |
+| `status` | text |  | `'draft'::text` |
+| `sort` | integer |  | `0` |
+| `updated_on` | date | 가능 |  |
+| `next_update` | text | 가능 |  |
+| `created_at` | timestamp with time zone |  | `now()` |
+| `updated_at` | timestamp with time zone |  | `now()` |
+| `updated_by` | uuid | 가능 | `auth.uid()` |
+
+정책: `partner_content_items_partner_read`(SELECT, authenticated), `partner_content_items_staff_all`(ALL, authenticated)
 
 ### `partner_notices`
 
