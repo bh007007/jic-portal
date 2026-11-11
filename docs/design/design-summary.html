@@ -1,0 +1,82 @@
+<!doctype html>
+<html lang="ko"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>JIC 포털 디자인 원칙 v1 요약</title>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+KR:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#F7F8FA;--surface:#fff;--line:#E5E7EB;--ink:#262A31;--ink2:#4B5260;--muted:#6B7280;--side:#24272C;color-scheme:light}
+@media (prefers-color-scheme:dark){:root{--bg:#1A1C21;--surface:#22252B;--line:#33373F;--ink:#E8EAEE;--ink2:#C2C7D0;--muted:#9CA3AF;--side:#16181C;color-scheme:dark}}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:"IBM Plex Sans KR","Noto Sans KR","Apple SD Gothic Neo","Malgun Gothic",sans-serif;font-size:14px;line-height:1.55;word-break:keep-all}
+.wrap{max-width:1240px;margin:0 auto;padding:28px 32px 40px}
+h1{font-size:26px;font-weight:600;margin:0 0 2px;letter-spacing:-.02em}
+h2{font-size:15px;font-weight:600;margin:0 0 12px}
+.sub{color:var(--ink2);margin:0 0 22px}
+.grid{display:grid;gap:16px}
+.g2{grid-template-columns:repeat(auto-fit,minmax(360px,1fr))}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:18px;padding:20px 22px}
+.pr{display:grid;grid-template-columns:38px 1fr;gap:4px 10px;margin:0 0 8px}
+.pr b{font-weight:600}.pr span{color:var(--ink2);font-size:13px}
+.n{font-size:12px;font-weight:600;color:var(--muted);padding-top:2px}
+.sw{display:grid;grid-template-columns:repeat(5,1fr);gap:8px}
+.chip{border-radius:12px;overflow:hidden;border:1px solid var(--line);font-size:12px}
+.chip .c{height:44px}.chip .t{height:18px}.chip p{margin:0;padding:6px 8px;background:var(--surface)}
+.chip p b{display:block;font-size:12.5px}
+.row{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-top:10px}
+.btn{height:40px;padding:0 16px;border-radius:11px;border:1px solid var(--line);background:var(--surface);color:var(--ink);font:inherit;font-weight:500}
+.btn.p{background:#E2ECE1;color:#214632;border-color:transparent}
+.btn.c{background:#F7E0E2;color:#7A1E2A;border-color:transparent}
+.badge{font-size:12px;padding:2px 9px;border-radius:999px;background:#FBF4E4;color:#8A6A22;font-weight:500}
+table{border-collapse:collapse;width:100%;font-size:13px}
+td{padding:6px 0;border-bottom:1px solid var(--line);vertical-align:top}td:first-child{color:var(--muted);width:92px}
+tr:last-child td{border-bottom:0}
+.lay{display:grid;grid-template-columns:70px 1fr;height:120px;border:1px solid var(--line);border-radius:12px;overflow:hidden}
+.lay .s{background:var(--side)}.lay .m{padding:12px;display:flex;flex-direction:column;gap:8px}
+.lay i{display:block;height:10px;border-radius:4px;background:var(--line)}
+.foot{color:var(--muted);font-size:12px;margin-top:18px}
+</style></head><body><div class="wrap">
+<h1>JIC 포털 디자인 원칙 v1</h1>
+<p class="sub">2026-11-11 · CL-041 · 원본: 파트너 시제품 V74 · 11/07 디자인 대체 · 전체 문서 <code>docs/design/design-principles.md</code></p>
+<div class="grid g2">
+ <div class="card"><h2>원칙</h2>
+  <div class="pr"><span class="n">D1</span><div><b>디자인 기준은 하나</b><br><span>파트너·통합 관리 앱·학생 앱 공통. 다른 것은 강조색과 밀도뿐</span></div></div>
+  <div class="pr"><span class="n">D2</span><div><b>캠퍼스 색은 정보</b><br><span>구분할 때만, 항상 이름과 함께</span></div></div>
+  <div class="pr"><span class="n">D3</span><div><b>파트너는 콘텐츠가 주인공</b><br><span>사진·영상 크게, 비어 있으면 '준비 중'</span></div></div>
+  <div class="pr"><span class="n">D4</span><div><b>관리 화면은 일 처리 먼저</b><br><span>표·검색·필터 반복, 그래파이트</span></div></div>
+  <div class="pr"><span class="n">D5</span><div><b>모든 기기, PC부터</b><br><span>모든 사이트 PC 먼저 → 태블릿·모바일 추가. 폭 고정 없음, 다크 모드</span></div></div>
+  <div class="pr"><span class="n">D6</span><div><b>캠퍼스 브랜드 톤</b><br><span>Premium 따뜻·사람 중심 / Challenger 목표·집중</span></div></div>
+  <div class="pr"><span class="n">D7</span><div><b>누구나 읽을 수 있게</b><br><span>글자 13px↑, 버튼 40px, 포커스 표시</span></div></div>
+  <div class="pr"><span class="n">D8</span><div><b>6개 언어 전제</b><br><span>문구 분리, 길어져도 깨지지 않게</span></div></div>
+  <div class="pr" style="margin:0"><span class="n">D9</span><div><b>디자인 변경은 모양만</b><br><span>메뉴·순서·버튼·기능은 CL을 따름</span></div></div>
+ </div>
+ <div class="grid">
+  <div class="card"><h2>캠퍼스 색</h2>
+   <div class="sw">
+    <div class="chip"><div class="c" style="background:#4C5260"></div><div class="t" style="background:#E4E6EA"></div><p><b>전체</b>#4C5260</p></div>
+    <div class="chip"><div class="c" style="background:#5B8A6E"></div><div class="t" style="background:#E2ECE1"></div><p><b>Premium</b>#5B8A6E</p></div>
+    <div class="chip"><div class="c" style="background:#C23B4A"></div><div class="t" style="background:#F7E0E2"></div><p><b>Challenger</b>#C23B4A</p></div>
+    <div class="chip"><div class="c" style="background:#6E8FCB"></div><div class="t" style="background:#D9E3F5"></div><p><b>New</b>#6E8FCB</p></div>
+    <div class="chip"><div class="c" style="background:#C9962E"></div><div class="t" style="background:#F3E6D2"></div><p><b>주니어</b>#C9962E</p></div>
+   </div>
+   <p style="margin:10px 0 0;font-size:12.5px;color:var(--ink2)">로고 레드 <b style="color:#D52B1E">#D52B1E</b>는 로고에만</p>
+  </div>
+  <div class="card"><h2>글꼴과 모양</h2>
+   <table>
+    <tr><td>글꼴</td><td>IBM Plex Sans KR → Noto Sans KR·JP·SC·TC</td></tr>
+    <tr><td>크기</td><td>제목 26 · 소제목 17/15 · 본문 15 · 작은 글 13 · 표 머리 12.5</td></tr>
+    <tr><td>모서리</td><td>카드 18 · 중간 12 · 작은 요소 8</td></tr>
+    <tr><td>배치</td><td>사이드바 232 + 본문 최대 1240, 여백 28/32</td></tr>
+   </table>
+   <div class="row"><button class="btn">기본 버튼</button><button class="btn p">Premium 주 버튼</button><button class="btn c">Challenger 주 버튼</button><span class="badge">준비 중</span></div>
+  </div>
+  <div class="card"><h2>적용 순서</h2>
+   <table>
+    <tr><td>파트너 포털</td><td><b>지금</b> · 시제품 화면·사진 채우기, 기능은 CL 유지</td></tr>
+    <tr><td>통합 관리 앱</td><td>목요일 메뉴 확정 뒤 한 번에</td></tr>
+    <tr><td>학생 앱</td><td>메뉴 확정 뒤</td></tr>
+   </table>
+  </div>
+ </div>
+</div>
+<p class="foot">값은 시제품 V74 코드 그대로입니다. 다크 모드 값과 부품 상세는 전체 문서를 봐 주세요.</p>
+</div></body></html>
