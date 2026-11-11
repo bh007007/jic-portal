@@ -4,6 +4,7 @@ import { useAuth } from '../auth';
 import { t } from '../i18n';
 import { must, supabase } from '../supabase';
 import { Box, OutLink, TAG_COLOR } from '../ui';
+import { toneOf } from '../tone';
 
 // 1.2 로그인 후 홈(CL-040, 11/10): 상담 시작(가장 크게) → 바로가기 4개(견적·공실·자료실·방문 신청) → 캠퍼스 상태
 // → 공지·프로모션(국가별 순서, CL-036) → 새 영상(JIC Play, 준비 중) → 뉴스레터 최신호.
@@ -51,13 +52,13 @@ export default function Home() {
             {(data?.campuses ?? []).map((c) => {
               const cs = (data?.courses ?? []).filter((x) => x.campus_id === c.id);
               return c.status === 'open' ? (
-                <Link key={c.id} className="card" to={`/campuses/${c.id}`}>
+                <Link key={c.id} className="card" data-tone={toneOf(c.id)} to={`/campuses/${c.id}`}>
                   <div className="card-title"><strong>{c.name}</strong><span className="muted" style={{ fontSize: 12 }}>코스 {cs.length}</span></div>
                   <span style={{ fontSize: 13, color: 'var(--ink-2)' }}>{c.tagline}</span>
                   <span style={{ fontSize: 13, lineHeight: 1.7 }}>{cs.map(courseLabel).join(' · ')}</span>
                 </Link>
               ) : (
-                <div key={c.id} className="card off">
+                <div key={c.id} className="card off" data-tone={toneOf(c.id)}>
                   <div className="card-title"><strong>{c.name}</strong><span className="chip">{t('common.preparing')}</span></div>
                 </div>
               );

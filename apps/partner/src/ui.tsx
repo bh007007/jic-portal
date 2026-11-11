@@ -64,4 +64,4 @@ export function Preparing({ title }: { title: string }) {
   );
 }
 
-export const TAG_COLOR: Record<string, string> = { 중요: 'var(--red)', 변경: 'var(--amber)', 안내: 'var(--ink-2)' };
+export const TAG_COLOR: Record<string, string> = { 중요: 'var(--cha)', 변경: 'var(--warn-ink)', 안내: 'var(--ink-2)' };

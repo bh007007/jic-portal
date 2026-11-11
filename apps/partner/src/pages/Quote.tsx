@@ -25,7 +25,7 @@ export default function Quote() {
             <thead><tr><th>경로</th><th>통화</th><th>견적 사이트</th></tr></thead>
             <tbody>
               {ROUTES.map(([key, label, cur]) => (
-                <tr key={key} style={cur === preferred ? { background: 'var(--primary-soft)' } : undefined}>
+                <tr key={key} style={cur === preferred ? { background: 'var(--accent-tint)' } : undefined}>
                   <td className="strong">{label}</td>
                   <td>{cur}{cur === preferred ? <span className="muted"> (기본)</span> : ''}</td>
                   <td><OutLink href={data[key]} className="btn btn-sm">열기</OutLink></td>
