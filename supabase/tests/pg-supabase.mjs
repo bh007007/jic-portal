@@ -106,6 +106,14 @@ export async function startPgSupabase({ port = 0 } = {}) {
         out.push(`${ident(k)} is ${isM[1] ? 'not ' : ''}${isM[2]}`);
         continue;
       }
+      // in.(a,b,c) — 여러 값 중 하나(예: 화면 콘텐츠 kind=in.(video,newsletter)). 따옴표·쉼표가 든 값은 쓰지 않는다
+      const inM = v.match(/^in\.\((.*)\)$/s);
+      if (inM) {
+        const list = inM[1].split(',').map((x) => x.trim().replace(/^"(.*)"$/, '$1'));
+        values.push(list);
+        out.push(`${ident(k)}::text = any($${values.length}::text[])`);
+        continue;
+      }
       // eq 외에 기간 조회용 비교(gte·lte 등). 같은 열에 두 번 걸어도 된다(day=gte.…&day=lte.…)
       const m = v.match(/^(eq|neq|gt|gte|lt|lte)\.(.*)$/s);
       if (!m) throw Object.assign(new Error(`unsupported filter ${k}`), { http: 400 });

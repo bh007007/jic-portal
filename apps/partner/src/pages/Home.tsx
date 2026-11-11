@@ -1,4 +1,6 @@
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
+import { loadItems, str, textOf, VideoCard } from '../content';
+import { updateText } from '../contentKinds';
 import { byCountryOrder, courseLabel, isActivePromotion, loadCampuses, loadCourses, loadSettings, useLoad, type Notice } from '../data';
 import { useAuth } from '../auth';
 import { t } from '../i18n';
@@ -7,25 +9,35 @@ import { Box, OutLink, TAG_COLOR } from '../ui';
 import { toneOf } from '../tone';
 
 // 1.2 로그인 후 홈(CL-040, 11/10): 상담 시작(가장 크게) → 바로가기 4개(견적·공실·자료실·방문 신청) → 캠퍼스 상태
-// → 공지·프로모션(국가별 순서, CL-036) → 새 영상(JIC Play, 준비 중) → 뉴스레터 최신호.
+// → 공지·프로모션(국가별 순서, CL-036) → 새 영상(JIC Play) → 뉴스레터 최신호.
+// 캠퍼스 상태 한 줄·새 영상·뉴스레터 호는 관리자 포털 '파트너 포털 관리'의 화면 콘텐츠(partner_content_items, CL-045)에서 읽는다.
 // 2차에는 대표 홈에 처리할 인보이스·내 학생 요약을 더한다.
 // 지점 직원 아이디(CL-032)는 상담·자료·공지만: 바로가기는 자료실만 보이고 캠퍼스 상자는 대표만 본다.
 export default function Home() {
   const { member, agencyStaff } = useAuth();
+  const navigate = useNavigate();
   const { data } = useLoad(async () => {
-    const [campuses, courses, settings, notices] = await Promise.all([
+    const [campuses, courses, settings, notices, items] = await Promise.all([
       loadCampuses(),
       loadCourses(),
       loadSettings(),
       must<Notice[]>(supabase.from('partner_notices').select('*').order('pinned', { ascending: false }).order('created_at', { ascending: false }).limit(30)),
+      // 화면 콘텐츠는 못 읽어도 홈은 보인다(그 상자만 '준비 중')
+      loadItems(['campus_status', 'video', 'newsletter']).catch(() => []),
     ]);
-    return { campuses, courses, settings, notices };
+    return { campuses, courses, settings, notices, items };
   });
   // 국가별 우선 순서(CL-036): 고정·최신 순서를 내 나라 순서로 다시 줄 세운다(노출 국가는 DB 정책이 거름)
   const ordered = byCountryOrder(data?.notices ?? [], member?.country);
   const notices = ordered.filter((n) => n.kind === 'notice').slice(0, 5);
   const promos = ordered.filter((n) => n.kind === 'promotion' && isActivePromotion(n)).slice(0, 3);
   const s = data?.settings ?? {};
+  const items = byCountryOrder(data?.items ?? [], member?.country);
+  // 캠퍼스 상태(명세 4.5): 캠퍼스마다 첫 줄, 갱신일 = 최종 업데이트일
+  const statusOf = (campusId: string) => items.find((it) => it.kind === 'campus_status' && it.campus === campusId);
+  // 새 영상: 최근에 넣은 영상 3개
+  const videos = items.filter((it) => it.kind === 'video').sort((a, b) => b.updated_at.localeCompare(a.updated_at)).slice(0, 3);
+  const latestIssue = items.filter((it) => it.kind === 'newsletter').sort((a, b) => str(b, 'issued_on').localeCompare(str(a, 'issued_on')))[0];
 
   return (
     <>
@@ -56,6 +68,12 @@ export default function Home() {
                   <div className="card-title"><strong>{c.name}</strong><span className="muted" style={{ fontSize: 12 }}>코스 {cs.length}</span></div>
                   <span style={{ fontSize: 13, color: 'var(--ink-2)' }}>{c.tagline}</span>
                   <span style={{ fontSize: 13, lineHeight: 1.7 }}>{cs.map(courseLabel).join(' · ')}</span>
+                  {statusOf(c.id) && (
+                    <span className="campus-status">
+                      {textOf(statusOf(c.id)!).title}
+                      {statusOf(c.id)!.updated_on && <span className="muted"> · {updateText({ updated_on: statusOf(c.id)!.updated_on, next_update: null })}</span>}
+                    </span>
+                  )}
                 </Link>
               ) : (
                 <div key={c.id} className="card off" data-tone={toneOf(c.id)}>
@@ -102,15 +120,32 @@ export default function Home() {
         </div>
       </div>
 
-      <Box title={<>새 영상 (JIC Play) <span className="chip">{t('common.preparing')}</span></>} extra={<Link className="more" to="/play">JIC Play ›</Link>}>
-        <p className="empty">영상 목록은 준비 중입니다.</p>
+      <Box title="새 영상 (JIC Play)" extra={<Link className="more" to="/play">JIC Play ›</Link>}>
+        {videos.length === 0 ? (
+          <p className="empty">{t('common.preparing')}입니다.</p>
+        ) : (
+          <div className="box-body">
+            <div className="cards">
+              {videos.map((v) => <VideoCard key={v.id} it={v} onOpen={() => navigate(`/play?v=${v.id}`)} />)}
+            </div>
+          </div>
+        )}
       </Box>
 
       <Box title="뉴스레터 최신호" extra={<Link className="more" to="/newsletter">뉴스레터 ›</Link>}>
-        <div className="box-body" style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
-          <OutLink href={s.newsletter_latest}>최신호 보기</OutLink>
-          <OutLink href={s.newsletter_archive}>지난 호</OutLink>
-        </div>
+        {latestIssue ? (
+          <ul className="list">
+            <li>
+              <a className="title" href={str(latestIssue, 'url')} target="_blank" rel="noreferrer">{textOf(latestIssue).title} ↗</a>
+              <span className="date">{str(latestIssue, 'issued_on')}</span>
+            </li>
+          </ul>
+        ) : (
+          <div className="box-body" style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+            <OutLink href={s.newsletter_latest}>최신호 보기</OutLink>
+            <OutLink href={s.newsletter_archive}>지난 호</OutLink>
+          </div>
+        )}
       </Box>
 
     </>
