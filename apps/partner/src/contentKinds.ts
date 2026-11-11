@@ -138,7 +138,7 @@ export const KINDS: Record<ContentKind, KindDef> = {
 
 /**
  * 사진 화면 위치(명세 4.4, CL-047). 시제품 '00_파일_안내.xlsx'의 분류(캠퍼스 대표·가이드·아카데믹·지도·바기오·액티비티·상담 ③ 등)를
- * 지금 에이전시 포털 화면에 맞춘 초안이다. 목록은 Leo가 확정한다(docs/leo-todo.md). 키는 DB data.placement 에 들어가니 바꾸지 말고 더하기만 한다.
+ * 지금 에이전시 포털 화면에 맞춘 14개로, 11/12 레오님이 그대로 확정했다. 키는 DB data.placement 에 들어가니 바꾸지 말고 더하기만 한다.
  */
 export const PLACEMENTS: { key: string; label: string; where: string }[] = [
   { key: 'campus_card', label: '캠퍼스 카드', where: '홈·캠퍼스 목록의 캠퍼스 카드(첫 장)' },
