@@ -4,7 +4,7 @@ import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import type { Course, Question, RuleSet, ScoreModel } from '../data';
 import { estimateLevel, rank, recommend } from './engine';
-import { quoteCourse, quoteParams, quoteUrl } from './quoteLink';
+import { quoteCourse, quotePageFor, quoteParams, quoteUrl } from './quoteLink';
 
 // npm 워크스페이스 스크립트는 apps/partner 에서 돈다(번들 뒤에는 import.meta.url 이 캐시 폴더라 쓰지 않는다)
 // 체크아웃 줄바꿈(CRLF)과 상관없이 LF 로 맞춘다
@@ -119,6 +119,13 @@ ok('견적: 모르는 캠퍼스·기간은 넣지 않음', quoteParams({ campusI
 ok('견적: 주소에 붙이기', quoteUrl('https://quote.baguiojic.workers.dev/kr', qp) === 'https://quote.baguiojic.workers.dev/kr?campus=premium&course=ESL+TEP+9&weeks=12&agency=%EC%83%98%ED%94%8C%EC%9C%A0%ED%95%99+%EC%84%9C%EC%9A%B8');
 ok('견적: 빈 주소·http 아님은 null', quoteUrl('', qp) === null && quoteUrl(null, qp) === null && quoteUrl('javascript:alert(1)', qp) === null);
 ok('견적: 설정 주소에 이미 있는 값은 그대로', quoteUrl('https://x.test/kr?campus=challenger', qp)!.includes('campus=challenger') && !quoteUrl('https://x.test/kr?campus=challenger', qp)!.includes('campus=premium'));
+
+// 견적 화면 고르기(CL-044 '이 단계로 견적 보기'): 지점 국가 → KR·JP·USD·USD-New
+ok('견적 화면: 한국 KR', quotePageFor('한국') === 'quote_kr');
+ok('견적 화면: 일본 JP', quotePageFor('일본') === 'quote_jp');
+ok('견적 화면: 대만 USD', quotePageFor('대만') === 'quote_usd');
+ok('견적 화면: 베트남 USD-New', quotePageFor('베트남') === 'quote_usd_new');
+ok('견적 화면: 모름 USD', quotePageFor(null) === 'quote_usd');
 
 console.log(`상담 추천 계산 시험: 통과 ${pass}, 실패 ${fails.length}`);
 for (const f of fails) console.log('  실패:', f);

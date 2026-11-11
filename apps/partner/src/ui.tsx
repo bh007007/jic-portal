@@ -30,7 +30,7 @@ export function Loading({ error }: { error?: string | null }) {
   return <div className="state">{error ? `불러오지 못했습니다: ${error}` : t('common.loading')}</div>;
 }
 
-export function Msg({ kind, children }: { kind: 'ok' | 'err' | 'warn'; children: ReactNode }) {
+export function Msg({ kind, children }: { kind: 'ok' | 'err' | 'warn' | 'info'; children: ReactNode }) {
   return (
     <div className={'msg ' + kind} role={kind === 'err' ? 'alert' : 'status'}>
       {children}

@@ -30,6 +30,9 @@ export default function Layout({ children }: { children: ReactNode }) {
     ? `${member.agency_name}${member.branch ? ' ' + member.branch : ''}${member.role === 'staff' ? ` · ${member.contact_name || '직원'}(직원)` : ''}`
     : staff ? 'JIC 관리자' : session?.user.email;
 
+  // 상담 모드(CL-049): 사이드바·위 막대 없이 상담 화면만(학생이 봐도 되는 것만). 단계 막대와 '상담 끝내기'는 상담 화면이 그린다
+  if (pathname === '/consult' && allowed) return <div className="consult-mode">{children}</div>;
+
   const logout = async () => {
     await supabase.auth.signOut();
     navigate('/');

@@ -231,6 +231,24 @@ select { height: 40px; border: 1px solid var(--line); border-radius: 10px; backg
 .reason { border: 1px solid var(--line); border-radius: var(--r-md); padding: 18px 20px; display: flex; flex-direction: column; gap: 8px; background: var(--surface); }
 .reason .key { font-size: 12px; font-weight: 600; letter-spacing: 0.4px; color: var(--accent-ink); }
 
+/* ── 상담 모드(CL-049): 사이드바 없이 위에 단계 막대·상담 중·상담 끝내기 */
+.consult-mode { max-width: 1240px; margin: 0 auto; padding: 0 32px 64px; display: flex; flex-direction: column; gap: 20px; }
+.consult-head { position: sticky; top: 0; z-index: 20; margin: 0 -32px; padding: 12px 32px 14px; background: color-mix(in srgb, var(--bg) 92%, transparent); backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px); border-bottom: 1px solid var(--line); display: flex; flex-direction: column; gap: 10px; }
+.consult-bar { display: flex; flex-wrap: wrap; align-items: center; gap: 10px 14px; }
+.consult-brand { display: inline-flex; align-items: center; gap: 8px; font-weight: 600; }
+.consult-brand .logo { width: 30px; height: 30px; border-radius: 8px; background: var(--side); color: var(--logo); display: grid; place-items: center; font-size: 11px; font-weight: 800; font-style: italic; }
+.badge.live { background: var(--accent-tint); color: var(--accent-ink); }
+.consult-head .steps { padding: 8px 14px; box-shadow: none; }
+.steps .step-btn { display: inline-flex; align-items: center; gap: 10px; border: 0; background: none; padding: 4px 0; cursor: pointer; color: inherit; }
+.steps .step-btn:disabled { cursor: default; }
+.steps li.off .label { color: var(--muted); }
+@media (max-width: 900px) { .consult-mode { padding: 0 16px 56px; } .consult-head { margin: 0 -16px; padding: 10px 16px 12px; } }
+/* 같은 화면 위에 크게 여는 창(코스 상세·증거) */
+.sheet-back { position: fixed; inset: 0; z-index: 60; background: rgba(20, 22, 28, 0.45); display: grid; place-items: center; padding: 24px; }
+.sheet { width: min(960px, 100%); max-height: 88vh; overflow-y: auto; background: var(--surface); color: var(--ink); border-radius: var(--r-lg); box-shadow: 0 20px 60px rgba(0, 0, 0, 0.25); outline: none; }
+.sheet-head { position: sticky; top: 0; display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 18px 22px; background: var(--surface); border-bottom: 1px solid var(--line-2); }
+.sheet-body { padding: 18px 22px 24px; }
+
 /* ── 학습계획서(A4 인쇄): 늘 흰 종이 */
 .plan { background: #fff; color: #262A31; border: 1px solid var(--line); border-radius: var(--r-md); max-width: 794px; margin: 0 auto; width: 100%; padding: 40px 48px; font-size: 13px; line-height: 1.7; }
 .plan h1 { font-size: 22px; }
@@ -239,7 +257,8 @@ select { height: 40px; border: 1px solid var(--line); border-radius: 10px; backg
 @media print {
   @page { size: A4; margin: 14mm; }
   body { background: #fff; }
-  .sidebar, .top, .scrim, .no-print, .steps { display: none !important; }
+  .sidebar, .top, .scrim, .no-print, .steps, .consult-head { display: none !important; }
+  .consult-mode { padding: 0; max-width: none; }
   .app { display: block; }
   .content { padding: 0; max-width: none; }
   .plan { border: 0; padding: 0; max-width: none; }
