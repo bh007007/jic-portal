@@ -131,7 +131,7 @@ export default function Consult() {
               ))}
             </div>
             {lc && cur.id === lc.question && unknownLevel && (
-              <div style={{ marginTop: 18, paddingTop: 14, borderTop: '1px solid var(--line-3)' }}>
+              <div style={{ marginTop: 18, paddingTop: 14, borderTop: '1px solid var(--line-2)' }}>
                 <strong style={{ fontSize: 14 }}>레벨 간단 확인</strong>
                 {lc.items.map((it, i) => (
                   <div key={it.label} style={{ marginTop: 12 }}>
@@ -173,8 +173,8 @@ export default function Consult() {
           <Box title="학생 답변" extra={<button type="button" className="btn btn-sm" onClick={() => go(0)}>답 수정</button>} className="grow-1">
             <dl style={{ margin: 0, padding: '6px 20px 14px' }}>
               {set.questions.map((qq, i) => (
-                <div key={qq.id} style={{ display: 'flex', gap: 12, padding: '12px 0', borderBottom: '1px solid var(--line-3)' }}>
-                  <dt style={{ flex: '0 0 96px', fontSize: 13, color: 'var(--ink-3)' }}>Q{i + 1} {qq.short ?? qq.label}</dt>
+                <div key={qq.id} style={{ display: 'flex', gap: 12, padding: '12px 0', borderBottom: '1px solid var(--line-2)' }}>
+                  <dt style={{ flex: '0 0 96px', fontSize: 13, color: 'var(--muted)' }}>Q{i + 1} {qq.short ?? qq.label}</dt>
                   <dd style={{ margin: 0, fontSize: 15, fontWeight: 500 }}>{levelAnswer(qq.id)}</dd>
                 </div>
               ))}
@@ -286,7 +286,7 @@ export default function Consult() {
                   <thead><tr><th>선택</th><th>단계·옵션</th><th>수업량</th><th>수업 강도</th><th className="left">포함 내용</th><th>가격</th></tr></thead>
                   <tbody>
                     {levels.map((l) => (
-                      <tr key={l.name} style={pickedLevel === l.name ? { background: 'var(--primary-soft)' } : undefined}>
+                      <tr key={l.name} style={pickedLevel === l.name ? { background: 'var(--accent-tint)' } : undefined}>
                         <td><input type="radio" name="level" aria-label={l.name} checked={pickedLevel === l.name} onChange={() => setLevel(l.name)} /></td>
                         <td className="strong">{l.name}{l.default ? <span className="muted" style={{ fontWeight: 400 }}> (기본)</span> : null}</td>
                         <td><Text value={l.lessons} /></td>

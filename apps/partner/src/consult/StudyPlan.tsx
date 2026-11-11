@@ -53,7 +53,7 @@ export default function StudyPlan({ set, answerText, wished, course, campusName,
       <article className="plan" aria-label="학습계획서 미리보기">
         <div className="plan-head">
           <h1>학습계획서</h1>
-          <span><strong style={{ color: 'var(--brand)', fontStyle: 'italic', fontWeight: 900 }}>JIC</strong> · {date}</span>
+          <span><strong style={{ color: '#D52B1E', fontStyle: 'italic', fontWeight: 900 }}>JIC</strong> · {date}</span>
         </div>
 
         <h2>학생 상담 결과</h2>

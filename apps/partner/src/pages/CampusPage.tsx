@@ -2,6 +2,7 @@ import { Link, useParams } from 'react-router-dom';
 import { courseLabel, loadCampuses, loadContents, loadCourses, useLoad } from '../data';
 import { t } from '../i18n';
 import { Box, Loading, PageHead, Text } from '../ui';
+import { useCampusTone } from '../tone';
 
 const SECTIONS: [keyof import('../data').Campus, string][] = [
   ['direction', '교육 방향'],
@@ -14,6 +15,7 @@ const SECTIONS: [keyof import('../data').Campus, string][] = [
 // 3.2 / 3.5 / 3.7 캠퍼스 소개 + 3.3 / 3.6 코스 목록
 export default function CampusPage() {
   const { id = '' } = useParams();
+  useCampusTone(id);
   const { data, error } = useLoad(async () => ({ campuses: await loadCampuses(), courses: await loadCourses(), contents: await loadContents() }), [id]);
   if (!data) return <Loading error={error} />;
   const campus = data.campuses.find((c) => c.id === id);

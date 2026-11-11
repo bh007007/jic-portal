@@ -16,7 +16,7 @@ export default function PublicHome() {
         </div>
         <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
           <Link className="cta" to="/login">로그인</Link>
-          <Link className="cta" to="/signup" style={{ background: 'transparent', color: '#fff', border: '1px solid #c9d3e6' }}>등록 신청</Link>
+          <Link className="cta cta-ghost" to="/signup">등록 신청</Link>
         </div>
       </section>
 

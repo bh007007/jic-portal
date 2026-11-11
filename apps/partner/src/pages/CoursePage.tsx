@@ -1,11 +1,13 @@
 import { Link, useParams } from 'react-router-dom';
 import { courseLabel, loadCampuses, loadContents, loadCourses, useLoad } from '../data';
 import { Box, Loading, PageHead, Text } from '../ui';
+import { useCampusTone } from '../tone';
 
 // 3.8 코스 상세 (공통 템플릿): 소개·추천 대상 → 단계 비교 → 수업 구성 → 결과물·사례 → 사진·영상 → 견적
 export default function CoursePage() {
   const { id = '' } = useParams();
   const { data, error } = useLoad(async () => ({ campuses: await loadCampuses(), courses: await loadCourses(), contents: await loadContents() }), [id]);
+  useCampusTone(data?.courses.find((c) => c.id === id)?.campus_id);
   if (!data) return <Loading error={error} />;
   const course = data.courses.find((c) => c.id === id);
   if (!course) return <Loading error="코스를 찾을 수 없습니다." />;
