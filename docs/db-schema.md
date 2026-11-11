@@ -4,7 +4,7 @@
 
 - **원본 관계**: 공동 작업 방식(11/10 안)에서 공용 DB 설계의 원본은 이 저장소다. 기획의 '공용 DB 설계표'(엑셀)와 다른 곳은 차이 목록으로 맞추고, 테이블 변경은 DB 관리자(지정 필요)가 승인한다(`docs/collab.md`).
 - **정규화 표 계획**은 `docs/schema.md`, 권한(역할)은 `docs/roles.md`, 업체 원본 열 뜻은 `docs/data-dictionary*.md`.
-- 마이그레이션 56개, 표 78개, 뷰 1개. 모든 표에 RLS 가 켜져 있는지는 CI 시험 `supabase/tests/security_lint.mjs`가 본다.
+- 마이그레이션 57개, 표 79개, 뷰 1개. 모든 표에 RLS 가 켜져 있는지는 CI 시험 `supabase/tests/security_lint.mjs`가 본다.
 
 ## 표 목록
 
@@ -43,7 +43,7 @@
 | 에이전시(파트너) 포털 | `partner_settings` | 4 | 켜짐 | 2 | 20261107010000_partner_portal |
 | 에이전시(파트너) 포털 | `plan_downloads` | 4 | 켜짐 | 2 | 20261107010000_partner_portal |
 | 에이전시(파트너) 포털 | `recommendation_rules` | 9 | 켜짐 | 2 | 20261107010000_partner_portal |
-| 에이전시(파트너) 포털 | `visit_requests` | 8 | 켜짐 | 3 | 20261107010000_partner_portal |
+| 에이전시(파트너) 포털 | `visit_requests` | 17 | 켜짐 | 3 | 20261107010000_partner_portal |
 | 강사 포털·공통 권한 | `attendance` | 11 | 켜짐 | 4 | 20261109000000_attendance |
 | 강사 포털·공통 권한 | `attendance_closings` | 5 | 켜짐 | 3 | 20261109000000_attendance |
 | 강사 포털·공통 권한 | `cefr_mappings` | 4 | 켜짐 | 2 | 20261108200000_teacher_portal |
@@ -88,6 +88,7 @@
 | 정규화 표(학원 계정에서 적용) | `point_ledger` | 10 | 켜짐 | 1 | 20261110130000_core_schema_accounting |
 | 정규화 표(학원 계정에서 적용) | `students` | 15 | 켜짐 | 1 | 20261110110000_core_schema |
 | 정규화 표(학원 계정에서 적용) | `vendor_balances` | 6 | 켜짐 | 1 | 20261110130000_core_schema_accounting |
+| 기타 | `visit_request_events` | 8 | 켜짐 | 2 | 20261111220000_visit_requests_v2 |
 
 뷰: `enrollment_periods`
 
@@ -548,10 +549,19 @@
 | `member_id` | uuid |  | `auth.uid()` |
 | `visit_date` | date |  |  |
 | `people` | integer |  |  |
-| `purpose` | text |  |  |
+| `purpose` | text | 가능 |  |
 | `status` | text |  | `'received'::text` |
 | `staff_note` | text | 가능 |  |
 | `created_at` | timestamp with time zone |  | `now()` |
+| `campus` | text | 가능 |  |
+| `visit_date2` | date | 가능 |  |
+| `visit_time` | text | 가능 |  |
+| `purposes` | ARRAY |  | `'{}'::text[]` |
+| `pickup` | text |  | `'none'::text` |
+| `schedule_date` | date | 가능 |  |
+| `schedule_time` | text | 가능 |  |
+| `decision_reason` | text | 가능 |  |
+| `updated_at` | timestamp with time zone |  | `now()` |
 
 정책: `visit_requests_staff_all`(ALL, authenticated), `visits_partner_insert`(INSERT, authenticated), `visits_partner_read`(SELECT, authenticated)
 
@@ -1344,3 +1354,20 @@
 | `updated_at` | timestamp with time zone |  | `now()` |
 
 정책: `vendor_balances_staff_read`(SELECT, authenticated)
+
+## 기타
+
+### `visit_request_events`
+
+| 열 | 형식 | 비움 | 기본값 |
+| --- | --- | --- | --- |
+| `id` | bigint |  |  |
+| `request_id` | bigint |  |  |
+| `kind` | text |  |  |
+| `from_status` | text | 가능 |  |
+| `to_status` | text | 가능 |  |
+| `note` | text | 가능 |  |
+| `actor` | uuid | 가능 | `auth.uid()` |
+| `created_at` | timestamp with time zone |  | `now()` |
+
+정책: `visit_events_staff_memo`(INSERT, authenticated), `visit_events_staff_read`(SELECT, authenticated)

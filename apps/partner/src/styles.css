@@ -312,6 +312,12 @@ select { height: 40px; border: 1px solid var(--line); border-radius: 10px; backg
 .cover-photo img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; display: block; }
 .card[data-tone].has-cover .cover-photo { margin-top: 0; }
 
+/* 방문 신청(CL-046): 여러 개 고르기·하나 고르기 */
+.choice-set { border: 0; margin: 0; padding: 0; display: flex; flex-wrap: wrap; align-items: center; gap: 8px 18px; }
+.choice-set legend { width: 100%; padding: 0; margin-bottom: 6px; font-size: 13px; font-weight: 500; color: var(--ink-2); }
+.form label.choice { flex-direction: row; align-items: center; gap: 6px; font-weight: 400; color: var(--ink); font-size: 14px; }
+.choice-set .hint { width: 100%; }
+
 @media print {
   @page { size: A4; margin: 14mm; }
   body { background: #fff; }

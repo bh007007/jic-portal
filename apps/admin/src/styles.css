@@ -256,3 +256,8 @@ a.hub-name:hover { color: var(--primary); }
 .focus-preview { display: flex; gap: 8px; margin-top: 8px; align-items: flex-start; }
 .focus-preview > div { flex: 1; background: #f3f4f6; overflow: hidden; border-radius: 3px; }
 .focus-preview img { width: 100%; height: 100%; object-fit: cover; display: block; }
+
+/* 파트너 포털 관리 › 방문 신청 이력(CL-046) */
+.visit-log { list-style: none; margin: 0; padding: 0; font-size: 12px; }
+.visit-log li { display: grid; grid-template-columns: 120px 140px 1fr; gap: 8px; padding: 4px 0; border-bottom: 1px solid var(--line); }
+.tbl tr.on td { background: #eef3fb; }
