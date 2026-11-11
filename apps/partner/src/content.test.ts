@@ -83,6 +83,9 @@ for (const [n, placement, campus, sort] of want) {
   ok(`자동 분류 ${n}`, !r.skip && r.placement === placement && r.campus === campus && (sort === undefined || r.sort === sort), JSON.stringify(r));
 }
 ok('줌바 설명', g('act_줌바_o0_f68f56.jpg').caption === '줌바');
+const travel = g('pk021_TRAVEL_Mines_View_Park.jpg');
+ok('여행지 → 바기오·설명·순서', travel.placement === 'baguio' && travel.caption === 'Mines View Park' && travel.sort === 21 && !travel.skip, JSON.stringify(travel));
+ok('여행지 이름의 점', g('pk030_TRAVEL_Mt._Pulag_National_Park.jpg').caption === 'Mt. Pulag National Park');
 for (const n of ['pk040_FEE_IMG_pre_t.jpg', 'pk020_-_unused.jpg', 'pk122_REPORT_ASSET_read.jpg', 'pk045_FEE_PDF_pre_t.bin', 'JICPlay_a8_표지.jpg', 'JICPlay_a8_할로윈_포토존.mp4'])
   ok(`건너뜀 ${n}`, !!g(n).skip, JSON.stringify(g(n)));
 const keys = new Set(PLACEMENTS.map((p) => p.key));

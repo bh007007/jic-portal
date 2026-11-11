@@ -70,6 +70,8 @@ export function guessFromName(fileName: string): PhotoGuess {
     if ((k = rest.match(/^CAMPUS_PHOTO_CLEAN_(pre|cha)$/))) return { placement: 'campus_hero', campus: CAMPUS[k[1]], sort, caption: '' };
     if ((k = rest.match(/^CAMPUS_PHOTO_(pre|cha)$/))) return { placement: 'campus_card', campus: CAMPUS[k[1]], sort, caption: '' };
     if ((k = rest.match(/^MAP_IMG_(pre|cha)$/))) return { placement: 'map', campus: CAMPUS[k[1]], sort, caption: '' };
+    // 바기오 주변 여행지(pk020~039). 안내 시트에는 '서약서'로 적혀 있지만 실제 파일은 여행지 사진이다(11/11 넣을 때 확인)
+    if ((k = rest.match(/^TRAVEL_(.+)$/))) return { placement: 'baguio', campus: '', sort, caption: k[1].replace(/_/g, ' ') };
     if ((k = rest.match(/^PHOTO_(.+)$/))) return { ...byKey(k[1]), sort, caption: '' };
     return { placement: '', campus: '', sort, caption: '' };
   }
