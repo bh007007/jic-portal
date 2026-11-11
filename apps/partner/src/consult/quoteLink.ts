@@ -68,3 +68,12 @@ export function quoteUrl(base: string | null | undefined, params: URLSearchParam
     return null;
   }
 }
+
+/** 지점 국가로 고르는 견적 화면(docs/quote-prefill.md 표): 한국 KR, 일본 JP, 대만·중국·사우디 USD, 베트남·태국 USD-New(프로모션). 그 밖은 USD */
+export type QuotePage = 'quote_kr' | 'quote_jp' | 'quote_usd' | 'quote_usd_new';
+export function quotePageFor(country?: string | null): QuotePage {
+  if (country === '한국') return 'quote_kr';
+  if (country === '일본') return 'quote_jp';
+  if (country === '베트남' || country === '태국') return 'quote_usd_new';
+  return 'quote_usd';
+}
