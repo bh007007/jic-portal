@@ -17,6 +17,7 @@ portal/
 ├─ apps/student/          학생 앱 (모바일, 로컬 전용)
 ├─ apps/intranet/         인트라넷 (가드 태블릿·통금·패널티, 로컬 전용)
 ├─ apps/teacher/          강사 포털 LMS (휴대폰 기준, 한국어·영어, Supabase) · docs/teacher-portal.md
+├─ packages/quote/        견적 계산 모듈 (화면·DB 없는 TypeScript) · docs/quote-integration.md
 ├─ functions/api/         배포용 /api 서버 (Cloudflare Pages Function → Supabase)
 ├─ supabase/migrations/   Supabase 테이블·권한 SQL
 ├─ .github/workflows/     빌드 확인, DB 반영
@@ -81,6 +82,8 @@ npm run teacher
 ```
 
 http://127.0.0.1:5178. 가짜 Supabase로 보려면 `node supabase/tests/pg-supabase.mjs 54321` 뒤에 `VITE_SUPABASE_URL=http://127.0.0.1:54321`, `VITE_SUPABASE_ANON_KEY=anon-key`로 실행한다. 자세한 내용은 [docs/teacher-portal.md](docs/teacher-portal.md).
+
+`packages/quote`는 견적 계산 모듈이다(R-014). 가격·프로모션·현지비용(₱)·입력 검사를 계산하고, 에이전시 포털 견적·학비표·상담 ④⑤와 2차 등록·인보이스가 같이 쓴다. 운영 가격은 관리자 포털 '가격표 › 견적 가격'의 승인 버전(`price_books`)이다. 시험은 `npm run quote:test`(검증 예시 11건 금액 일치, CI). 자세한 내용은 [docs/quote-integration.md](docs/quote-integration.md).
 
 ## 데이터 다시 추출하기
 
