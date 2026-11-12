@@ -1,7 +1,10 @@
+import { useState } from 'react';
 import { fmt, useApi, type PriceList, type PriceRow, type PriceTab } from '../api';
 import { saveCsv, type Column } from '../csv';
 import { DownloadButton, Loading, PageTitle } from '../components/ui';
 import { useSearchForm } from '../useSearchForm';
+import { supabase } from '../supabase';
+import QuotePrices from './QuotePrices';
 
 const KEYS = ['campus', 'kind', 'q'] as const;
 
@@ -54,7 +57,25 @@ const PRICE_HEADS = (
   </>
 );
 
+/**
+ * 가격표: 견적 가격(포털 기준, 에이전시 견적이 쓰는 승인 버전, T-21) / 업체 가격표(참고, 업체 포털 추출본).
+ * 11/12부터 가격 기준은 기획 정정본에서 시작한 견적 가격(CL-057·065). 업체 가격표는 대조용으로 남긴다.
+ */
 export default function Prices() {
+  const [mode, setMode] = useState<'quote' | 'legacy'>(supabase ? 'quote' : 'legacy');
+  return (
+    <>
+      <PageTitle title="가격표" path="홈 > 기초관리 > 가격표" />
+      <div role="tablist" aria-label="가격표 종류" className="filter-tabs" style={{ display: 'flex', gap: 6, marginBottom: 10 }}>
+        <button type="button" role="tab" aria-selected={mode === 'quote'} className={'btn' + (mode === 'quote' ? ' btn-primary' : '')} onClick={() => setMode('quote')}>견적 가격 (포털 기준)</button>
+        <button type="button" role="tab" aria-selected={mode === 'legacy'} className={'btn' + (mode === 'legacy' ? ' btn-primary' : '')} onClick={() => setMode('legacy')}>업체 가격표 (참고)</button>
+      </div>
+      {mode === 'quote' ? <QuotePrices /> : <LegacyPrices />}
+    </>
+  );
+}
+
+function LegacyPrices() {
   const { params, setParams, query, form, set, apply, submit } = useSearchForm(KEYS);
   const tab = (TABS.find(([k]) => k === params.get('tab')) ?? TABS[0])[0];
   const current = params.get('current') !== '0';
@@ -69,8 +90,6 @@ export default function Prices() {
 
   return (
     <>
-      <PageTitle title="가격표" path="홈 > 기초관리 > 가격표" />
-
       <div role="tablist" aria-label="가격표 구분" className="tabs">
         {TABS.map(([key, label]) => (
           <button key={key} type="button" role="tab" aria-selected={tab === key} onClick={() => setParams(key === 'course' ? (current ? {} : { current: '0' }) : { tab: key, ...(current ? {} : { current: '0' }) })}>

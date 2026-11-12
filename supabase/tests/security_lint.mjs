@@ -31,7 +31,7 @@ const UNGUARDED = new Map([
   ['enrollment_of_student', '연수·학생번호가 맞는지(참·거짓). 학생 신청 정책이 써서 권한을 거둘 수 없음. 실제 데이터 전 확인 넣을지 결정(docs/setup-cloud.md)'],
 ]);
 // 역할 확인으로 보는 것
-const GUARD = /(is_staff|is_admin|is_lms|is_guard|is_student|is_partner|is_intranet_manager|has_role|can_schedule|can_mark|teaches_session|current_student_no|current_guard_campus|staff_has_campus|counseling_campus_ok|intranet_manager_campus_ok|auth\.uid\(\)|not_allowed)/i;
+const GUARD = /(can_view|can_input|can_approve|is_staff|is_admin|is_lms|is_guard|is_student|is_partner|is_intranet_manager|has_role|can_schedule|can_mark|teaches_session|current_student_no|current_guard_campus|staff_has_campus|counseling_campus_ok|intranet_manager_campus_ok|auth\.uid\(\)|not_allowed)/i;
 
 const db = new PGlite();
 let pass = 0;

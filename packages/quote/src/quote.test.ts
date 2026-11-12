@@ -2,7 +2,7 @@
  * 견적 계산 시험(R-014). 기준: 기획 '견적 정정 목록 1112' 3장 검증 예시 11건(CL-068) — 포털 견적은 이 금액과 같아야 한다.
  * 실행: npm run quote:test (CI에서도 돈다)
  */
-import { LOCAL_FEE_NOTICE, PRICE_BOOK_2026 as B, quote, systemForCountry, validate, type QuoteInput, type QuoteOk } from './index';
+import { LOCAL_FEE_NOTICE, PRICE_BOOK_2026 as B, diffBooks, quote, systemForCountry, validate, validateBook, type QuoteInput, type QuoteOk } from './index';
 
 let pass = 0;
 const fails: string[] = [];
@@ -114,6 +114,22 @@ ok('현지비용 고정 문구 3개 언어', LOCAL_FEE_NOTICE.kr.includes('필�
 ok('대만 Fair promotion은 자동 적용 안 함', q({ system: 'usd', start: '2026-09-13', courses: [C('ESL Core', 4)], dorms: [C('Room for 4 (loft)', 4)] }).discounts.every((l) => l.key !== 'fair_tw'));
 const fair = q({ system: 'usd', start: '2026-09-13', courses: [C('ESL Core', 4)], dorms: [C('Room for 4 (loft)', 4)], confirmed: [{ id: 'fair_tw', amount: 100, by: '담당자', on: '2026-11-12' }] });
 ok('Fair promotion은 확인한 금액만(2차)', line(fair, 'fair_tw') === 100, fair.discounts);
+
+// 8) 가격 버전 검사·비교(T-21)
+ok('정정본 가격 버전은 문제 없음', validateBook(B).length === 0, validateBook(B));
+const broken = JSON.parse(JSON.stringify(B));
+broken.courses[0].price.USD = 0;
+broken.dorms.push({ ...broken.dorms[0] });
+broken.promotions[0].periods = [['2026-08-22', '2026-06-28']];
+const be = validateBook(broken);
+ok('빈 가격·겹치는 이름·뒤집힌 기간을 잡음', be.some((m) => m.includes('USD 4주 가격')) && be.some((m) => m.includes('겹칩니다')) && be.some((m) => m.includes('기간')), be);
+const next = JSON.parse(JSON.stringify(B));
+next.registration.KRW = 120000;
+next.courses.find((c: { id: string }) => c.id === 'ESL Core').price.KRW = 1150000;
+next.pickups = next.pickups.filter((p: { id: string }) => p.id !== 'clark_solo');
+const dif = diffBooks(B, next);
+ok('달라진 칸만: 등록금·코스 1칸·픽업 삭제', dif.length === 3 && dif.some((d) => d.key === 'registration.KRW' && d.before === '100000' && d.after === '120000') && dif.some((d) => d.key === 'course' ? false : d.key.includes('ESL Core:KRW')) && dif.some((d) => d.label.startsWith('공항 픽업 삭제')), dif);
+ok('같은 버전은 바뀐 칸 없음', diffBooks(B, JSON.parse(JSON.stringify(B))).length === 0);
 
 console.log(`견적 계산 시험: 통과 ${pass}, 실패 ${fails.length}`);
 for (const f of fails) console.log('  실패:', f);

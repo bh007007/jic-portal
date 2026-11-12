@@ -276,3 +276,9 @@ a.hub-name:hover { color: var(--primary); }
 .perm-table select { height: 24px; font-size: 12px; width: 100px; }
 .perm-table td.perm-V { background: #f4f6fa; }
 .perm-table td.perm-I { background: #e8eef8; }
+
+/* 가격표 › 견적 가격(T-21) */
+.qp-h { margin: 16px 0 6px; font-size: 13px; font-weight: 700; color: var(--primary); }
+.tbl.qp td { padding: 4px 6px; }
+.num-in { width: 100px; height: 26px; text-align: right; font-size: 12px; padding: 0 6px; }
+.tbl td.chg, .tbl .chg-row td { background: #fff6cc; }
