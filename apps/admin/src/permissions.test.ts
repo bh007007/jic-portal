@@ -1,5 +1,5 @@
 /** 권한표 화면 규칙 시험(src/permissions.ts). 실행: npm --workspace apps/admin run test (빌드할 때도 함께 돈다) */
-import { approvalCell, canManageGrant, grantCampuses, grantKinds, menuCell, menuRow, MENU_CELLS, type Me } from './permissions';
+import { approvalCell, canManageGrant, canManageRole, grantCampuses, grantKinds, menuCell, menuRow, MENU_CELLS, type Me } from './permissions';
 
 let pass = 0;
 const fails: string[] = [];
@@ -29,6 +29,17 @@ expect('센터장: 모든 캠퍼스 줄 불가', !canManageGrant(g('x', 'nonacad
 expect('센터장: 자기 줄 불가', !canManageGrant(g('d', 'nonacademic', 'Premium'), dir));
 expect('센터장: 역할 주기 불가', !canManageGrant(g('x', 'grant_roles', 'Premium'), dir));
 expect('오피스: 불가', !canManageGrant(g('x', 'nonacademic', 'Premium'), office));
+
+// 강사 포털 역할(user_roles): 센터장은 자기 캠퍼스 강사·체커·스케줄러·매니저를 남에게만
+const r = (user_id: string, role: string, campus: string) => ({ user_id, role, campus });
+expect('관리자: 강사 포털 역할 모두', canManageRole(r('x', 'manager', ''), admin));
+expect('관리자: 이 탭에서 오피스 역할은 아님', !canManageRole(r('x', 'office', 'Premium'), admin));
+expect('센터장: Premium 체커', canManageRole(r('x', 'checker', 'premium'), dir));
+expect('센터장: 다른 캠퍼스 불가', !canManageRole(r('x', 'teacher', 'Challenger'), dir));
+expect('센터장: 모든 캠퍼스 역할 불가', !canManageRole(r('x', 'teacher', ''), dir));
+expect('센터장: 자기 역할 불가', !canManageRole(r('d', 'teacher', 'Premium'), dir));
+expect('센터장: 오피스 역할 불가', !canManageRole(r('x', 'office', 'Premium'), dir));
+expect('오피스: 역할 불가', !canManageRole(r('x', 'teacher', 'Premium'), office));
 
 if (fails.length) {
   for (const f of fails) console.log('✗', f);

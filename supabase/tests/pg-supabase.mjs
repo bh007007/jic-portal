@@ -172,6 +172,11 @@ export async function startPgSupabase({ port = 0 } = {}) {
     }
     if (req.method === 'DELETE') {
       const values = [];
+      // delete().select() 처럼 return=representation 이면 지운 행을 돌려준다(PostgREST 와 같게, RLS 로 막힌 행은 빠진다)
+      if (prefer.includes('return=representation')) {
+        const rows = (await db.query(`with d as (delete from ${table}${where(params, values)} returning *) select coalesce(json_agg(d), '[]'::json) as j from d`, values)).rows[0].j;
+        return { status: 200, body: rows };
+      }
       await db.query(`delete from ${table}${where(params, values)}`, values);
       return { status: 204, body: undefined };
     }

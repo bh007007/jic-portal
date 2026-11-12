@@ -3,8 +3,8 @@ import { useSearchParams } from 'react-router-dom';
 import { supabase } from '../supabase';
 import { Loading, PageTitle, Panel } from '../components/ui';
 import {
-  APPROVAL_CELLS, approvalCell, campusLabel, canManageGrant, grantCampuses, grantKinds, LOCKED_APPROVAL, LOCKED_MENU, MENU_CELLS, menuCell, menuRow,
-  PERM_ROLES, ROLE_LABEL, type ApprovalCell, type ApprovalDefault, type ApprovalGrant, type Me, type MenuCell, type RolePermission,
+  APPROVAL_CELLS, approvalCell, CAMPUSES, campusLabel, canManageGrant, canManageRole, grantCampuses, grantKinds, LMS_ROLE_KEYS, LOCKED_APPROVAL, LOCKED_MENU, MENU_CELLS,
+  menuCell, menuRow, PERM_ROLES, ROLE_LABEL, type ApprovalCell, type ApprovalDefault, type ApprovalGrant, type Me, type MenuCell, type RolePermission, type RoleRow,
 } from '../permissions';
 
 interface MenuGroup { key: string; label: string; sort: number }
@@ -17,12 +17,14 @@ interface Data {
   defaults: ApprovalDefault[];
   grants: ApprovalGrant[];
   people: Person[];
+  roles: RoleRow[];
 }
 
 const TABS = [
   ['menu', '메뉴 권한'],
   ['approval', '승인 기본값'],
   ['grants', '사람별 승인'],
+  ['roles', '강사 포털 역할'],
 ] as const;
 type Tab = (typeof TABS)[number][0];
 const day = (s?: string | null) => (s ? s.slice(0, 10) : '');
@@ -38,8 +40,8 @@ async function loadMe(): Promise<Me> {
   return { id, admin: a.data === true, directorCampuses: ((r.data as { campus: string }[]) ?? []).map((x) => x.campus.toLowerCase()).filter(Boolean) };
 }
 
-/** 사람 목록: 직원(staff_directory) + 강사 포털 역할이 있는 사람(이름은 강사 목록). 역할을 같이 적는다 */
-async function loadPeople(): Promise<Person[]> {
+/** 사람 목록: 직원(staff_directory) + 강사 목록에 계정이 연결된 사람 + 역할이 있는 사람. 역할을 같이 적는다 */
+async function loadPeople(): Promise<{ people: Person[]; roles: RoleRow[] }> {
   const [d, t, r] = await Promise.all([
     supabase!.rpc('staff_directory'),
     supabase!.from('staff').select('user_id, name').not('user_id', 'is', null),
@@ -53,13 +55,14 @@ async function loadPeople(): Promise<Person[]> {
     roles.set(x.user_id, [...(roles.get(x.user_id) ?? []), `${ROLE_LABEL[x.role] ?? x.role}${x.campus ? ` ${x.campus}` : ''}`]);
   }
   const staff = new Set(((d.data as { user_id: string }[]) ?? []).map((x) => x.user_id));
-  const ids = new Set([...staff, ...roles.keys()]);
-  return [...ids]
+  const ids = new Set([...staff, ...name.keys(), ...roles.keys()]);
+  const people = [...ids]
     .map((id) => {
-      const rs = roles.get(id) ?? (staff.has(id) ? ['관리자'] : []);
+      const rs = roles.get(id) ?? (staff.has(id) ? ['관리자'] : ['역할 없음']);
       return { user_id: id, label: `${name.get(id) ?? id.slice(0, 8)} (${rs.join(', ')})` };
     })
     .sort((a, b) => a.label.localeCompare(b.label, 'ko'));
+  return { people, roles: (r.data as RoleRow[]) ?? [] };
 }
 
 /**
@@ -78,7 +81,7 @@ export default function Permissions() {
 
   const load = useCallback(async () => {
     if (!supabase) return;
-    const [g, p, k, d, gr, people] = await Promise.all([
+    const [g, p, k, d, gr, dir] = await Promise.all([
       supabase.from('menu_groups').select('key, label, sort').order('sort'),
       supabase.from('role_permissions').select('menu_group, role, can_view, can_input, campus_scoped, updated_at, updated_by'),
       supabase.from('approval_kinds').select('kind, label, sort').order('sort'),
@@ -94,7 +97,8 @@ export default function Permissions() {
       kinds: ((k.data as ApprovalKind[]) ?? []).sort((a, b) => a.sort - b.sort),
       defaults: (d.data as ApprovalDefault[]) ?? [],
       grants: ((gr.data as ApprovalGrant[]) ?? []).sort((a, b) => b.created_at.localeCompare(a.created_at)),
-      people,
+      people: dir.people,
+      roles: dir.roles,
     });
   }, []);
   useEffect(() => {
@@ -227,8 +231,10 @@ export default function Permissions() {
             '모두'는 모든 캠퍼스, '캠퍼스'는 그 역할에 정한 캠퍼스만(역할의 캠퍼스가 빈칸이면 모든 캠퍼스). 방문 신청 확정·반려는 3단계 전까지 '사용자·권한 › 방문 신청 처리자' 지정을 따릅니다.
           </p>
         </div>
-      ) : (
+      ) : tab === 'grants' ? (
         <Grants data={data} me={me} busy={busy} run={run} nameOf={nameOf} />
+      ) : (
+        <LmsRoles data={data} me={me} busy={busy} run={run} nameOf={nameOf} />
       )}
     </>
   );
@@ -301,6 +307,96 @@ function Grants({ data, me, busy, run, nameOf }: {
                 <td>{nameOf(g.granted_by)}</td>
                 <td className="nowrap">{day(g.created_at)}</td>
                 <td>{canManageGrant(g, me) && <button type="button" className="btn btn-xs" disabled={busy} onClick={() => remove(g)} aria-label={`${nameOf(g.user_id)} ${kindLabel(g.kind)} 회수`}>회수</button>}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    </>
+  );
+}
+
+/**
+ * 강사 포털 역할(11/12 결정 ②): 센터장은 자기 캠퍼스의 강사·체커·스케줄러·매니저 역할을 다른 사람에게 주고 회수한다.
+ * 관리자는 모두(오피스·센터장·관리자 역할은 '사용자·권한'에서). DB 정책 user_roles_write·delete(20261112110000)가 막는다.
+ */
+function LmsRoles({ data, me, busy, run, nameOf }: {
+  data: Data;
+  me: Me;
+  busy: boolean;
+  run: (label: string, fn: () => PromiseLike<{ error: { message: string } | null }>) => void;
+  nameOf: (id?: string | null) => string;
+}) {
+  const campuses = grantCampuses(me);
+  const people = me.admin ? data.people : data.people.filter((p) => p.user_id !== me.id);
+  const [form, setForm] = useState({ user_id: '', role: 'teacher', campus: campuses[0] ?? '' });
+  const [filter, setFilter] = useState(me.admin ? '*' : campuses[0] ?? '*');
+  const canGrant = campuses.length > 0;
+  const rows = data.roles
+    .filter((r) => LMS_ROLE_KEYS.includes(r.role) && (filter === '*' || r.campus.toLowerCase() === filter.toLowerCase()))
+    .sort((a, b) => a.campus.localeCompare(b.campus) || nameOf(a.user_id).localeCompare(nameOf(b.user_id), 'ko') || LMS_ROLE_KEYS.indexOf(a.role) - LMS_ROLE_KEYS.indexOf(b.role));
+  const roleText = (r: RoleRow) => `${ROLE_LABEL[r.role] ?? r.role}(${campusLabel(r.campus)})`;
+
+  const add = () => {
+    if (!form.user_id) return;
+    const row = { user_id: form.user_id, role: form.role, campus: form.campus };
+    run(`${nameOf(form.user_id)} ${roleText(row)} 주기`, () => supabase!.from('user_roles').insert(row));
+    setForm({ ...form, user_id: '' });
+  };
+  const remove = (r: RoleRow) => {
+    if (!window.confirm(`${nameOf(r.user_id)}의 '${roleText(r)}' 역할을 회수할까요?`)) return;
+    // 권한 밖 줄은 RLS 가 조용히 0줄로 막으므로 지운 줄 수로 확인한다
+    run(`${nameOf(r.user_id)} ${roleText(r)} 회수`, async () => {
+      const res = await supabase!.from('user_roles').delete().eq('user_id', r.user_id).eq('role', r.role).eq('campus', r.campus).select('user_id');
+      return res.error ? res : { error: (res.data ?? []).length ? null : { message: 'row-level security' } };
+    });
+  };
+
+  return (
+    <>
+      {canGrant && (
+        <Panel title="강사 포털 역할 주기">
+          <div className="nowrap" style={{ display: 'flex', gap: 6, flexWrap: 'wrap', alignItems: 'center' }}>
+            <select aria-label="사람" value={form.user_id} onChange={(e) => setForm({ ...form, user_id: e.target.value })} style={{ height: 28, maxWidth: 320 }}>
+              <option value="">사람 고르기</option>
+              {people.map((p) => <option key={p.user_id} value={p.user_id}>{p.label}</option>)}
+            </select>
+            <select aria-label="역할" value={form.role} onChange={(e) => setForm({ ...form, role: e.target.value })} style={{ height: 28 }}>
+              {LMS_ROLE_KEYS.map((k) => <option key={k} value={k}>{ROLE_LABEL[k]}</option>)}
+            </select>
+            <select aria-label="캠퍼스" value={form.campus} onChange={(e) => setForm({ ...form, campus: e.target.value })} style={{ height: 28 }}>
+              {campuses.map((c) => <option key={c} value={c}>{campusLabel(c)}</option>)}
+            </select>
+            <button type="button" className="btn btn-xs" disabled={busy || !form.user_id} onClick={add}>주기</button>
+          </div>
+          <p className="muted" style={{ fontSize: 12, margin: '6px 0 0' }}>
+            {me.admin ? "관리자는 모든 캠퍼스로 줍니다. 오피스·센터장·관리자 역할은 '사용자·권한'에서 줍니다." : `센터장은 자기 캠퍼스(${campuses.join(', ')})로, 다른 사람에게만 줍니다.`}
+            {" 목록에 없는 새 강사 계정은 관리자가 '사용자·권한'에서 강사 목록에 연결하거나 역할을 먼저 줍니다."}
+          </p>
+        </Panel>
+      )}
+      <div className="toolbar">
+        <span>역할 <strong style={{ color: 'var(--primary)' }}>{rows.length}</strong>줄</span>
+        <span className="toolbar-right">
+          <select aria-label="캠퍼스 거르기" value={filter} onChange={(e) => setFilter(e.target.value)} style={{ height: 28 }}>
+            <option value="*">전체</option>
+            {CAMPUSES.map((c) => <option key={c} value={c}>{campusLabel(c)}</option>)}
+          </select>
+        </span>
+      </div>
+      <div className="grid-box">
+        <table className="tbl center">
+          <thead>
+            <tr><th className="left">사람</th><th>역할</th><th>캠퍼스</th><th>회수</th></tr>
+          </thead>
+          <tbody>
+            {rows.length === 0 && <tr className="empty"><td colSpan={4}>이 캠퍼스에 강사 포털 역할이 없습니다.</td></tr>}
+            {rows.map((r) => (
+              <tr key={`${r.user_id}:${r.role}:${r.campus}`}>
+                <td className="left">{nameOf(r.user_id)}</td>
+                <td>{ROLE_LABEL[r.role] ?? r.role}</td>
+                <td>{campusLabel(r.campus)}</td>
+                <td>{canManageRole(r, me) && <button type="button" className="btn btn-xs" disabled={busy} onClick={() => remove(r)} aria-label={`${nameOf(r.user_id)} ${roleText(r)} 회수`}>회수</button>}</td>
               </tr>
             ))}
           </tbody>
