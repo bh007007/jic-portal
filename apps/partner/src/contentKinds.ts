@@ -26,7 +26,8 @@ export interface KindDef {
   where: string;
 }
 
-export const CAMPUS_LABEL: Record<string, string> = { '': '공통', premium: 'Premium', challenger: 'Challenger', new: 'New Campus', mco: 'MCO(한국 주니어캠프)' };
+/** 캠퍼스 표시 이름. New Campus 는 11/12 삭제(CL-077)라 고를 수 없고, 예전에 넣은 줄의 표시에만 남긴다 */
+export const CAMPUS_LABEL: Record<string, string> = { '': '공통', premium: 'Premium', challenger: 'Challenger', new: 'New Campus(삭제)', mco: 'MCO(한국 주니어캠프)' };
 export const STATUS_LABEL: Record<string, string> = { draft: '초안', published: '게시', hidden: '숨김' };
 
 export const KINDS: Record<ContentKind, KindDef> = {
@@ -53,9 +54,9 @@ export const KINDS: Record<ContentKind, KindDef> = {
     fields: [{ key: 'schedule', label: '요일·주기', type: 'text', hint: '예: 매주 수요일' }],
   },
   camp: {
-    kind: 'camp', label: '캠프', title: '캠프 이름', campus: 'required', campuses: ['premium', 'mco'], where: '코스·생활 › 캠프 (CL-053, 상담 추천에는 안 나옴)',
+    kind: 'camp', label: '캠프', title: '캠프 이름', campus: 'required', campuses: ['premium', 'mco'], where: '캠퍼스 › 캠프 카드 (CL-077, 상담 추천에는 안 나옴)',
     fields: [
-      { key: 'type', label: '캠프 종류', type: 'select', options: ['패밀리캠프·가족연수', '주니어캠프(Premium)', '한국 주니어캠프(MCO)'], required: true },
+      { key: 'type', label: '캠프 종류', type: 'select', options: ['패밀리캠프(Premium)', '가족연수', '주니어캠프(MCO)', '주니어캠프(Premium)'], required: true, hint: '노출 국가로 나라별 캠프를 고릅니다(CL-077: 한국은 패밀리캠프(Premium)·가족연수·주니어캠프(MCO), 그 밖은 가족연수·주니어캠프(MCO)·주니어캠프(Premium))' },
       { key: 'season', label: '시즌', type: 'text', required: true, hint: '예: 2027 겨울' },
       { key: 'period', label: '기간', type: 'text', required: true, hint: '예: 2027-01-03 ~ 2027-02-13 (2·4·6주)' },
       { key: 'start_dates', label: '입학 가능일', type: 'text' },
@@ -85,14 +86,14 @@ export const KINDS: Record<ContentKind, KindDef> = {
     ],
   },
   event: {
-    kind: 'event', label: '행사 일정', title: '행사 이름', body: '설명', campus: 'optional', campuses: ['premium', 'challenger', 'new'], where: '코스·생활 › 학생 생활 › 활동 달력',
+    kind: 'event', label: '행사 일정', title: '행사 이름', body: '설명', campus: 'optional', campuses: ['premium', 'challenger'], where: '학생 생활 › 활동 달력',
     fields: [
       { key: 'date', label: '날짜', type: 'date', required: true },
       { key: 'type', label: '종류', type: 'select', options: ['입학', '픽업', '시험', '휴일', '이벤트'], required: true },
     ],
   },
   campus_status: {
-    kind: 'campus_status', label: '캠퍼스 상태', title: '한 줄 안내', campus: 'required', campuses: ['premium', 'challenger', 'new'], where: '홈 › 캠퍼스 상태 (갱신일 = 최종 업데이트일)',
+    kind: 'campus_status', label: '캠퍼스 상태', title: '한 줄 안내', campus: 'required', campuses: ['premium', 'challenger'], where: '홈 › 캠퍼스 상태 (갱신일 = 최종 업데이트일)',
     fields: [],
   },
   school_stat: {
@@ -135,7 +136,7 @@ export const KINDS: Record<ContentKind, KindDef> = {
     ],
   },
   photo: {
-    kind: 'photo', label: '사진', title: '설명', campus: 'optional', campuses: ['premium', 'challenger', 'new', 'mco'], where: '화면 위치에 따라(사진 보관함, CL-047)',
+    kind: 'photo', label: '사진', title: '설명', campus: 'optional', campuses: ['premium', 'challenger', 'mco'], where: '화면 위치에 따라(사진 보관함, CL-047)',
     fields: [
       { key: 'placement', label: '화면 위치', type: 'select', required: true },
       { key: 'course', label: '코스', type: 'text' },

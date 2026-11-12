@@ -5,6 +5,7 @@ import { Box, Loading, PageHead, Text } from '../ui';
 import { useCampusTone } from '../tone';
 import { PhotoGrid, str, usePhotos } from '../content';
 import { placementLabel } from '../contentKinds';
+import { CAMP_PATH } from '../campusCards';
 
 // 캠퍼스 화면의 사진 묶음(사진 보관함 화면 위치, CL-047)
 const GALLERY = ['campus_gallery', 'academic', 'dorm', 'meals', 'map'];
@@ -27,7 +28,9 @@ export default function CampusPage() {
   const mine = photos.filter((p) => p.it.campus === id);
   const hero = mine.filter((p) => str(p.it, 'placement') === 'campus_hero');
   if (!data) return <Loading error={error} />;
-  const campus = data.campuses.find((c) => c.id === id);
+  // New Campus 는 캠퍼스 목록에서 빠졌다(CL-077): 운영 중 캠퍼스만 연다
+  const open = data.campuses.filter((c) => c.status === 'open');
+  const campus = open.find((c) => c.id === id);
   if (!campus) return <Loading error="캠퍼스를 찾을 수 없습니다." />;
   const courses = data.courses.filter((c) => c.campus_id === id);
 
@@ -37,9 +40,10 @@ export default function CampusPage() {
         title={campus.name}
         side={
           <nav aria-label="캠퍼스 전환" style={{ display: 'flex', gap: 6 }}>
-            {data.campuses.map((c) => (
+            {open.map((c) => (
               <Link key={c.id} className={'btn btn-sm' + (c.id === id ? ' btn-primary' : '')} to={`/campuses/${c.id}`}>{c.name}</Link>
             ))}
+            <Link className="btn btn-sm" to={CAMP_PATH}>캠프</Link>
           </nav>
         }
       />
