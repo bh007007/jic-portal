@@ -2,14 +2,7 @@ import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { ContentPage, str, textOf, useItems } from '../../content';
 import { t } from '../../i18n';
-import { MENU } from '../../menu';
-
-// 포털 안 주소 → 메뉴 이름(예: /about/baguio → 왜 바기오·주변). 메뉴에 없으면 주소 그대로
-function screenName(path: string) {
-  const items = MENU.flatMap((g) => [...(g.to ? [{ to: g.to, key: g.key }] : []), ...(g.items ?? []).flatMap((it) => ('sub' in it ? it.sub : [it]))]);
-  const hit = items.find((it) => it.to === path.split(/[?#]/)[0]);
-  return hit ? t(hit.key) : path;
-}
+import { screenTitle } from '../../menu';
 
 /**
  * 상담 › 상담 자료 › 플레이북(CL-052, 명세 5장). 에이전트 모드에만 있고 상담 모드에는 없다.
@@ -68,7 +61,7 @@ export default function Playbook() {
                       <>
                         <dt>보여 줄 화면</dt>
                         {/* 포털 안 주소(/로 시작)면 그 화면으로, 아니면 글 그대로 */}
-                        <dd>{show.startsWith('/') ? <Link to={show}>{screenName(show)} ›</Link> : <span className="pre">{show}</span>}</dd>
+                        <dd>{show.startsWith('/') ? <Link to={show}>{screenTitle(show)} ›</Link> : <span className="pre">{show}</span>}</dd>
                       </>
                     )}
                     {str(it, 'avoid') && (

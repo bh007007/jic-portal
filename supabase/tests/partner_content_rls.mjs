@@ -35,6 +35,8 @@ for (const f of ['20261107000000_legacy_tables.sql', '20261107010000_partner_por
 }
 await db.exec(mig('20261111140000_partner_content_items.sql'));
 await db.exec(mig('20261111140000_partner_content_items.sql')); // 두 번째 실행
+await db.exec(mig('20261112150000_partner_faq.sql'));
+await db.exec(mig('20261112150000_partner_faq.sql')); // FAQ 종류(11/12), 두 번째 실행
 ok('마이그레이션 2회 실행', true);
 
 const U = {
@@ -108,6 +110,15 @@ await as(U.jp, async () => ok('일본 대표: 게시 + 모든 나라 + 일본', 
 await as(U.krStaff, async () => ok('한국 지점 직원 아이디: 지점 국가 기준', (await titles()) === '11월 입학,Teacher A', await titles()));
 await as(U.none, async () => ok('역할 없는 사용자: 0건', (await q(`select * from public.partner_content_items`)).length === 0));
 await as(null, async () => fail('익명: 못 읽음', () => q(`select * from public.partner_content_items`), /permission denied/));
+
+// 2-1) FAQ(11/12 결정, 20261112150000): 다른 종류와 같은 규칙. 게시된 것 중 자기 나라 것만, 지점 직원 아이디도 본다
+await as(U.jic, () => q(`insert into public.partner_content_items (kind, title, body, status, countries, data) values
+  ('faq', '비자 연장은?', '학교가 대행합니다', 'published', '{한국}', '{"category":"입학·비자"}'),
+  ('faq', '초안 질문', '', 'draft', '{}', '{}')`));
+const faqs = async () => (await q(`select title from public.partner_content_items where kind = 'faq'`)).map((r) => r.title).join(',');
+await as(U.kr, async () => ok('FAQ: 한국 대표는 게시된 한국 FAQ만', (await faqs()) === '비자 연장은?', await faqs()));
+await as(U.jp, async () => ok('FAQ: 일본 대표는 0건', (await faqs()) === '', await faqs()));
+await as(U.krStaff, async () => ok('FAQ: 한국 지점 직원 아이디도 봄', (await faqs()) === '비자 연장은?', await faqs()));
 
 // 3) 정지된 지점은 못 본다
 await as(U.jic, () => q(`update public.agency_members set status = 'suspended' where user_id = '${U.kr}'`));

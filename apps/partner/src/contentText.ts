@@ -56,3 +56,16 @@ export function focusPos(it: Pick<ContentItem, 'data'>): string {
   if (!Array.isArray(f) || f.length !== 2 || !ok(f[0]) || !ok(f[1])) return '50% 50%';
   return `${Math.round(f[0] * 100)}% ${Math.round(f[1] * 100)}%`;
 }
+
+/** FAQ(11/12): 분야 목록(처음 나온 순서, 빈칸 제외) */
+export function faqCategories(items: ContentItem[]): string[] {
+  return [...new Set(items.map((it) => str(it, 'category')).filter(Boolean))];
+}
+/** FAQ 거르기: 고른 분야(빈칸 = 모두)와 검색어(질문·답변·분야) */
+export function faqMatch(it: ContentItem, category: string, kw: string): boolean {
+  if (category && str(it, 'category') !== category) return false;
+  const k = kw.trim().toLowerCase();
+  if (!k) return true;
+  const { title, body } = textOf(it);
+  return [title, body, str(it, 'category')].join(' ').toLowerCase().includes(k);
+}

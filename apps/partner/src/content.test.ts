@@ -1,6 +1,6 @@
 // 화면 콘텐츠 표시 시험(CL-045·054): 유튜브 주소, 언어별 문구, 기준일 줄, 학생의 하루 코스 맞추기. npm run test 에서 돈다.
 import type { ContentItem } from './contentKinds';
-import { byTime, dayMatches, focusPos, listUpdate, textOf, youtubeId } from './contentText';
+import { byTime, dayMatches, faqCategories, faqMatch, focusPos, listUpdate, textOf, youtubeId } from './contentText';
 import { guessFromName } from './photoGuess';
 import { PLACEMENTS } from './contentKinds';
 
@@ -90,6 +90,19 @@ for (const n of ['pk040_FEE_IMG_pre_t.jpg', 'pk020_-_unused.jpg', 'pk122_REPORT_
   ok(`건너뜀 ${n}`, !!g(n).skip, JSON.stringify(g(n)));
 const keys = new Set(PLACEMENTS.map((p) => p.key));
 ok('자동 분류 화면 위치는 모두 목록에 있음', want.every(([, p]) => !p || keys.has(p)));
+
+// FAQ(11/12): 분야는 처음 나온 순서, 거르기는 분야 + 검색어(질문·답변·분야)
+const faq = [
+  item({ kind: 'faq', title: '비자 연장은?', body: '학교가 대행합니다', data: { category: '입학·비자' } }),
+  item({ kind: 'faq', title: '세탁은?', body: '주 2회', data: { category: '생활' } }),
+  item({ kind: 'faq', title: '입학일은?', body: '매주 월요일', data: { category: '입학·비자' } }),
+  item({ kind: 'faq', title: '분야 없는 질문', body: '', data: {} }),
+];
+ok('FAQ 분야 순서·중복 없음·빈칸 제외', faqCategories(faq).join() === '입학·비자,생활', faqCategories(faq).join());
+ok('FAQ 분야로 거르기', faq.filter((it) => faqMatch(it, '입학·비자', '')).length === 2);
+ok('FAQ 답변으로 검색', faq.filter((it) => faqMatch(it, '', '대행')).map((it) => it.title).join() === '비자 연장은?');
+ok('FAQ 분야 + 검색', faq.filter((it) => faqMatch(it, '생활', '월요일')).length === 0);
+ok('FAQ 분야 이름으로 검색', faq.filter((it) => faqMatch(it, '', '생활')).length === 1);
 
 console.log(`화면 콘텐츠 표시 시험: 통과 ${pass}, 실패 ${fails.length}`);
 for (const f of fails) console.log('  실패:', f);

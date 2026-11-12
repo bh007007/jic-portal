@@ -1,10 +1,10 @@
-import type { MsgKey } from './i18n';
+import { t, type MsgKey } from './i18n';
 
 /**
  * 에이전시 포털 메뉴(CL-037, 11/10 결정). 에이전시가 하는 일(상담 → 입학 진행 → 소통) 순서.
  * ready: 화면이 있음. 없으면 '준비 중' 화면(원칙 C8: 운영 전 기능은 준비 중으로 표시). phase2: 2차(학생 데이터가 걸리는 화면).
  * 11/11: JIC Play·근거 자료·플레이북·JIC 소개·학생의 하루·캠프·학생 생활·담당자 연락처는 화면이 있고(ready), 내용은 관리자 포털
- * '파트너 포털 관리'에서 넣는다(partner_content_items, CL-045). 게시 전이면 화면 안에 '준비 중'. FAQ는 입력 화면이 정해지지 않아 준비 중.
+ * '파트너 포털 관리'에서 넣는다(partner_content_items, CL-045). 게시 전이면 화면 안에 '준비 중'. FAQ는 11/12 결정으로 '화면 콘텐츠 › FAQ'에서 넣는다.
  * 학비표는 관리자 포털 가격표에서 읽는다(CL-038).
  */
 export interface MenuItem {
@@ -35,7 +35,7 @@ export const MENU: MenuGroup[] = [
           { to: '/resources', key: 'menu.downloads', ready: true },
           { to: '/evidence', key: 'menu.evidence', ready: true },
           { to: '/playbook', key: 'menu.playbook', ready: true },
-          { to: '/faq', key: 'menu.faq' },
+          { to: '/faq', key: 'menu.faq', ready: true },
         ],
       },
     ],
@@ -120,4 +120,11 @@ export function menuFor(agencyStaff: boolean): MenuGroup[] {
     });
     return items.length ? [{ ...g, items }] : [];
   });
+}
+
+/** 포털 안 주소 → 메뉴 이름(예: /about/baguio → 왜 바기오·주변). 메뉴에 없으면 주소 그대로(플레이북 '보여 줄 화면', FAQ '관련 화면') */
+export function screenTitle(path: string): string {
+  const items = MENU.flatMap((g) => [...(g.to ? [{ to: g.to, key: g.key }] : []), ...(g.items ?? []).flatMap((it) => ('sub' in it ? it.sub : [it]))]);
+  const hit = items.find((it) => it.to === path.split(/[?#]/)[0]);
+  return hit ? t(hit.key) : path;
 }

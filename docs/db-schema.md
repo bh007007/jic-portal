@@ -4,7 +4,7 @@
 
 - **원본 관계**: 공동 작업 방식(11/10 안)에서 공용 DB 설계의 원본은 이 저장소다. 기획의 '공용 DB 설계표'(엑셀)와 다른 곳은 차이 목록으로 맞추고, 테이블 변경은 DB 관리자(지정 필요)가 승인한다(`docs/collab.md`).
 - **정규화 표 계획**은 `docs/schema.md`, 권한(역할)은 `docs/roles.md`, 업체 원본 열 뜻은 `docs/data-dictionary*.md`.
-- 마이그레이션 60개, 표 86개, 뷰 1개. 모든 표에 RLS 가 켜져 있는지는 CI 시험 `supabase/tests/security_lint.mjs`가 본다.
+- 마이그레이션 61개, 표 86개, 뷰 1개. 모든 표에 RLS 가 켜져 있는지는 CI 시험 `supabase/tests/security_lint.mjs`가 본다.
 
 ## 표 목록
 

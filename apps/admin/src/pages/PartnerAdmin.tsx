@@ -40,6 +40,8 @@ export const PARTNER_MENUS: { key: string; label: string; screens: Screen[] }[] 
     { key: 'day', label: '학생의 하루', render: items('day') },
     { key: 'activities', label: '액티비티', render: items('activity') },
     { key: 'camps', label: '캠프', render: items('camp') },
+    // FAQ(11/12 레오님 결정: 입력은 화면 콘텐츠, 에이전시 포털 '상담 자료 › FAQ')
+    { key: 'faq', label: 'FAQ', render: items('faq') },
   ] },
   { key: 'media', label: '사진·영상', screens: [
     { key: 'photos', label: '사진 보관함', render: () => <Photos /> },
