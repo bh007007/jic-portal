@@ -4,7 +4,8 @@ import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import type { Course, Question, RuleSet, ScoreModel } from '../data';
 import { estimateLevel, rank, recommend } from './engine';
-import { quoteCourse, quotePageFor, quoteParams, quoteUrl } from './quoteLink';
+import { portalQuoteUrl, quoteCourse, quoteParams } from './quoteLink';
+import { COURSES_2026 } from '../../../../packages/quote/src';
 
 // npm 워크스페이스 스크립트는 apps/partner 에서 돈다(번들 뒤에는 import.meta.url 이 캐시 폴더라 쓰지 않는다)
 // 체크아웃 줄바꿈(CRLF)과 상관없이 LF 로 맞춘다
@@ -98,11 +99,10 @@ const tr = rank(tiny, { q1: 'x', q2: 'y' }, 'q1');
 ok('동점이면 Q1 ◎ 먼저', tr[0].id === 'b' && tr[1].id === 'a', JSON.stringify(tr));
 ok('운영 전·숨김 코스 제외', tr.find((x) => x.id === 'c')?.excluded === true);
 
-// ── 견적 프로그램 주소(quoteLink.ts, docs/quote-prefill.md)
-// 견적 프로그램(quote.baguiojic.workers.dev/kr) 캠퍼스별 코스 목록, 11/10 화면에서 확인
+// ── 포털 견적 주소(quoteLink.ts, T-20 11/12). 코스 이름은 견적 계산 모듈의 가격표(PRICE_BOOK_2026)와 같아야 한다
 const QUOTE_OPTIONS: Record<string, string[]> = {
-  challenger: ['ESL Flex', 'ESL Lite', 'ESL Core', 'ESL Standard', 'IELTS Lite', 'IELTS Core', 'IELTS Standard', 'IELTS Guarantee'],
-  premium: ['Speaking Starter', 'Speaking Pro', 'Speaking Master', 'ESL TEP 8', 'ESL TEP 9', 'ESL TEP 10', 'Active Senior 5', 'Active Senior 6', 'Working Holiday 8', 'TOEIC', 'Business Master 8'],
+  challenger: COURSES_2026.filter((c) => c.campus === 'challenger').map((c) => c.id),
+  premium: COURSES_2026.filter((c) => c.campus === 'premium').map((c) => c.id),
 };
 const UNMAPPED = new Set(['p-esl', 'c-esl', 'c-ielts']); // 11/10 결정: 코스를 비운다
 const combos: [Course, string | null][] = courses.flatMap((c): [Course, string | null][] => (c.levels.length ? c.levels.map((l) => [c, l.name]) : [[c, null]]));
@@ -116,16 +116,8 @@ const qp = quoteParams({ campusId: 'premium', courseId: 'p-tep', level: 'TEP 9',
 ok('견적: 값 담기(캠퍼스·코스·기간·에이전시)', qp.toString() === new URLSearchParams({ campus: 'premium', course: 'ESL TEP 9', weeks: '12', agency: '샘플유학 서울' }).toString(), qp.toString());
 ok('견적: 짝 없는 코스는 코스를 비움', !quoteParams({ campusId: 'challenger', courseId: 'c-esl', level: '스파르타', weeks: '8' }).has('course'));
 ok('견적: 모르는 캠퍼스·기간은 넣지 않음', quoteParams({ campusId: 'mco', courseId: 'p-toeic', level: null, weeks: '99' }).toString() === '');
-ok('견적: 주소에 붙이기', quoteUrl('https://quote.baguiojic.workers.dev/kr', qp) === 'https://quote.baguiojic.workers.dev/kr?campus=premium&course=ESL+TEP+9&weeks=12&agency=%EC%83%98%ED%94%8C%EC%9C%A0%ED%95%99+%EC%84%9C%EC%9A%B8');
-ok('견적: 빈 주소·http 아님은 null', quoteUrl('', qp) === null && quoteUrl(null, qp) === null && quoteUrl('javascript:alert(1)', qp) === null);
-ok('견적: 설정 주소에 이미 있는 값은 그대로', quoteUrl('https://x.test/kr?campus=challenger', qp)!.includes('campus=challenger') && !quoteUrl('https://x.test/kr?campus=challenger', qp)!.includes('campus=premium'));
-
-// 견적 화면 고르기(CL-044 '이 단계로 견적 보기'): 지점 국가 → KR·JP·USD·USD-New
-ok('견적 화면: 한국 KR', quotePageFor('한국') === 'quote_kr');
-ok('견적 화면: 일본 JP', quotePageFor('일본') === 'quote_jp');
-ok('견적 화면: 대만 USD', quotePageFor('대만') === 'quote_usd');
-ok('견적 화면: 베트남 USD-New', quotePageFor('베트남') === 'quote_usd_new');
-ok('견적 화면: 모름 USD', quotePageFor(null) === 'quote_usd');
+ok('견적: 포털 견적 주소', portalQuoteUrl(qp) === '/quote?campus=premium&course=ESL+TEP+9&weeks=12&agency=%EC%83%98%ED%94%8C%EC%9C%A0%ED%95%99+%EC%84%9C%EC%9A%B8', portalQuoteUrl(qp));
+ok('견적: 값이 없으면 /quote 만', portalQuoteUrl(new URLSearchParams()) === '/quote');
 
 console.log(`상담 추천 계산 시험: 통과 ${pass}, 실패 ${fails.length}`);
 for (const f of fails) console.log('  실패:', f);

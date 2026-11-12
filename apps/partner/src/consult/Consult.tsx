@@ -1,14 +1,14 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../auth';
-import { courseLabel, loadCampuses, loadContents, loadCourses, loadRuleSet, loadSettings, useLoad, type Course } from '../data';
+import { courseLabel, loadCampuses, loadContents, loadCourses, loadRuleSet, useLoad, type Course } from '../data';
 import { CURRENCIES, t } from '../i18n';
 import { supabase } from '../supabase';
 import { useCampusTone } from '../tone';
 import { CUR_LABEL, curOf, TuitionTables, type Cur, type TuitionRow } from '../tuition';
 import { Box, Loading, Msg, OutLink, Text } from '../ui';
 import { answerLabel, estimateLevel, isScoreModel, recommend, type Answers } from './engine';
-import { quotePageFor, quoteParams, quoteUrl } from './quoteLink';
+import { portalQuoteUrl, quoteParams } from './quoteLink';
 import { CourseSheet, Sheet } from './Sheet';
 import { DayTimeline, PhotoGrid, VideoCard, YouTube, byTime, dayMatches, loadItems, str, textOf, usePhotos } from '../content';
 import type { ContentItem } from '../contentKinds';
@@ -30,8 +30,8 @@ export default function Consult() {
   const { member, agencyStaff } = useAuth();
   const navigate = useNavigate();
   const { data, error } = useLoad(async () => {
-    const [set, courses, contents, campuses, settings, tuition, life, reasons] = await Promise.all([
-      loadRuleSet(), loadCourses(), loadContents(), loadCampuses(), loadSettings(),
+    const [set, courses, contents, campuses, tuition, life, reasons] = await Promise.all([
+      loadRuleSet(), loadCourses(), loadContents(), loadCampuses(),
       // 학비표(CL-038). 대표 아이디·JIC 직원만 줄이 온다(직원 아이디·샘플 가격표면 0줄). 직원 아이디는 계속 대표만(CL-043, 11/12 레오님 결정)
       supabase.rpc('partner_tuition').then((r) => (r.error ? [] : ((r.data ?? []) as TuitionRow[]))),
       // ③ 생활 자료(학생의 하루·액티비티·JIC Play, CL-045). 못 읽어도 상담은 계속한다
@@ -40,7 +40,7 @@ export default function Consult() {
       // ② 추천 이유 3칸(CL-050). 게시된 것만(정책도 같음), 못 읽으면 예전 코스별 글
       supabase.from('course_reasons').select('*').eq('status', 'published').then((r) => (r.error ? [] : ((r.data ?? []) as CourseReason[]))),
     ]);
-    return { set, courses, contents, campuses, settings, tuition, life, reasons };
+    return { set, courses, contents, campuses, tuition, life, reasons };
   });
   const [step, setStep] = useState(0);
   const [q, setQ] = useState(0);
@@ -69,7 +69,7 @@ export default function Consult() {
   const lifePhotos = usePhotos(['consult', 'dorm', 'meals'], course?.campus_id ?? null);
 
   if (!data) return <Loading error={error} />;
-  const { courses, contents, campuses, settings, tuition, life, reasons } = data;
+  const { courses, contents, campuses, tuition, life, reasons } = data;
   if (!set) return <Loading error="추천 조건표가 아직 등록되지 않았습니다. JIC 관리자에게 문의하세요." />;
 
   const campus = campuses.find((c) => c.id === course?.campus_id);
@@ -85,11 +85,10 @@ export default function Consult() {
   // 견적에 넣을 코스·단계: 단계 이름에 코스명이 이미 있으면(TEP 8, Senior 4) 겹치지 않게
   const quoteCourse = course ? (pickedLevel && levels.length ? (pickedLevel.startsWith(course.name) ? pickedLevel : `${course.name} ${pickedLevel}`) : course.name) : '';
   const agency = member ? [member.agency_name, member.branch].filter(Boolean).join(' ') : null;
-  // 견적 사이트에 넘길 값(docs/quote-prefill.md): 캠퍼스·코스(견적 프로그램 이름)·희망 기간·에이전시. 학생 정보는 넘기지 않는다(P3).
+  // 포털 견적에 넘길 값: 캠퍼스·코스(견적 이름)·희망 기간·에이전시. 학생 정보는 넘기지 않는다(P3).
   const quoteQuery = quoteParams({ campusId: course?.campus_id, courseId: course?.id, level: pickedLevel, weeks: answers.weeks, agency });
-  // CL-044: 단계마다 '이 단계로 견적 보기' — 지점 국가의 견적 화면(KR·JP·USD·USD-New)
-  const myQuotePage = settings[quotePageFor(member?.country)];
-  const levelQuote = (name: string) => quoteUrl(myQuotePage, quoteParams({ campusId: course?.campus_id, courseId: course?.id, level: name, weeks: answers.weeks, agency }));
+  // CL-044: 단계마다 '이 단계로 견적 보기' — 포털 견적(T-20, 가격 체계는 지점 국가로 자동 CL-063). 견적은 지점 대표만(CL-032)
+  const levelQuote = (name: string) => (agencyStaff ? null : portalQuoteUrl(quoteParams({ campusId: course?.campus_id, courseId: course?.id, level: name, weeks: answers.weeks, agency })));
   const levelAnswer = (qid: string) =>
     lc && qid === lc.question && unknownLevel ? `잘 모름 → 추정 ${estimated ? answerLabel(set, qid, estimated) : '(확인 중)'}` : answerLabel(set, qid, answers[qid]);
 
@@ -394,7 +393,7 @@ export default function Consult() {
                         <td><Text value={l.lessons} /></td>
                         <td><Text value={l.intensity} /></td>
                         <td className="left"><Text value={l.includes} /></td>
-                        <td><OutLink className="btn btn-sm" href={levelQuote(l.name)}>이 단계로 견적 보기</OutLink></td>
+                        <td>{agencyStaff ? <span className="muted" style={{ fontSize: 12 }}>대표 아이디</span> : <OutLink className="btn btn-sm" href={levelQuote(l.name)}>이 단계로 견적 보기</OutLink>}</td>
                       </tr>
                     ))}
                   </tbody>
@@ -407,7 +406,7 @@ export default function Consult() {
                     {courseLabel(compare)} {compare.levels.map((l) => `${l.name} ${l.lessons ?? ''}`.trim()).join(', ')}
                   </p>
                 )}
-                <p className="muted" style={{ fontSize: 13, margin: '8px 0 0' }}>단계마다 수업 수와 가격이 다릅니다. '이 단계로 견적 보기'를 누르면 코스·단계·기간을 채운 견적 사이트가 열립니다(CL-044).</p>
+                <p className="muted" style={{ fontSize: 13, margin: '8px 0 0' }}>단계마다 수업 수와 가격이 다릅니다. '이 단계로 견적 보기'를 누르면 코스·단계·기간을 채운 포털 견적이 새 탭에서 열립니다(CL-044). 견적 사이트가 열립니다(CL-044).</p>
               </div>
             </Box>
           )}
@@ -443,13 +442,16 @@ export default function Consult() {
                       <tr><th>견적에 넣을 값</th><td>{campus?.name} · {quoteCourse} · 희망 {weeksLabel(answers.weeks)}{rec.weeks && String(rec.weeks) !== answers.weeks ? ` (권장 ${rec.weeks}주)` : ''}</td></tr>
                     </tbody>
                   </table>
-                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
-                    <OutLink href={quoteUrl(settings.quote_kr, quoteQuery)}>견적 사이트 KR</OutLink>
-                    <OutLink href={quoteUrl(settings.quote_jp, quoteQuery)}>JP</OutLink>
-                    <OutLink href={quoteUrl(settings.quote_usd, quoteQuery)}>USD</OutLink>
-                    <OutLink href={quoteUrl(settings.quote_usd_new, quoteQuery)}>USD-New</OutLink>
-                  </div>
-                  <p className="hint" style={{ margin: 0 }}>견적 사이트를 열 때 캠퍼스·코스·희망 기간을 함께 넘깁니다. 채워지지 않은 값(시작일, 기숙사, 챌린저 ESL·IELTS의 수업 강도)은 위 값을 보고 직접 고르세요.</p>
+                  {agencyStaff ? (
+                    <p className="hint" style={{ margin: 0 }}>견적은 지점 대표 아이디로 봅니다(CL-032).</p>
+                  ) : (
+                    <>
+                      <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
+                        <OutLink href={portalQuoteUrl(quoteQuery)}>견적 계산 열기</OutLink>
+                      </div>
+                      <p className="hint" style={{ margin: 0 }}>새 탭에서 포털 견적이 캠퍼스·코스·희망 기간을 채워 열립니다(가격 체계는 지점 국가로). 시작일·숙소·챌린저 ESL·IELTS의 소항목은 견적 화면에서 고르세요.</p>
+                    </>
+                  )}
                   <div className="form-grid">
                     <label>
                       통화
