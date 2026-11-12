@@ -1,11 +1,13 @@
 import { useMemo, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { useAuth } from '../auth';
+import { useLoad } from '../data';
+import { supabase } from '../supabase';
 import { t } from '../i18n';
-import { Box, PageHead } from '../ui';
+import { Box, Loading, PageHead } from '../ui';
 import {
-  LOCAL_FEE_NOTICE, PRICE_BOOK_2026 as BOOK, SYSTEM_CURRENCY, quote, systemForCountry,
-  type Campus, type Currency, type PriceSystem,
+  LOCAL_FEE_NOTICE, PRICE_BOOK_2026, SYSTEM_CURRENCY, quote, systemForCountry,
+  type Campus, type Currency, type PriceBook, type PriceSystem,
 } from '../../../../packages/quote/src';
 
 /**
@@ -15,7 +17,8 @@ import {
  * - 캠퍼스 탭: Challenger / Premium / 혼합(앞뒤로 이어 붙임, CL-062). 어기는 입력은 이유를 보이고 계산하지 않는다
  * - IELTS Guarantee는 8주 고정·마지막(CL-060), 공항 픽업 4가지(CL-064), 현지비용은 페소만 + 고정 문구(CL-059)
  * - 학생 정보는 저장하지 않고 화면·인쇄에만(원칙 P3). 견적서는 가견적: 유효기간·계좌·커미션 없음(CL-067)
- * - 가격은 지금 기획 정정본(코드 자료). 관리자 포털 가격표(T-21)가 생기면 그쪽을 읽는다
+ * - 가격은 관리자 포털 '가격표 › 견적 가격'의 승인 버전 중 적용 시작일이 지난 가장 최근 것(price_books, T-21·CL-066).
+ *   못 읽으면(마이그레이션 전 등) 모듈의 기획 정정본 PRICE_BOOK_2026 으로 계산한다
  */
 
 type Tab = Campus | 'mixed';
@@ -33,8 +36,16 @@ const SYSTEMS: [PriceSystem, string][] = [
 const TABS: [Tab, string][] = [['challenger', 'Challenger'], ['premium', 'Premium'], ['mixed', '혼합 (Challenger + Premium)']];
 const WEEKS = Array.from({ length: 52 }, (_, i) => i + 1);
 const tag = (campus: Campus) => (campus === 'challenger' ? '[CC] ' : '[PC] ');
-const courseDef = (id: string) => BOOK.courses.find((c) => c.id === id);
-const dormDef = (id: string) => BOOK.dorms.find((d) => d.id === id);
+/** 필리핀 날짜(가격 적용 시작일 비교용) */
+const manilaToday = () => new Date(Date.now() + 8 * 3600e3).toISOString().slice(0, 10);
+
+/** 지금 적용 중인 승인 가격 버전(없으면 null → 기본값) */
+async function loadActiveBook(): Promise<{ version: number; label: string; effective_from: string; data: PriceBook } | null> {
+  const { data, error } = await supabase.from('price_books').select('version, label, effective_from, data').eq('status', 'approved').lte('effective_from', manilaToday()).order('effective_from', { ascending: false }).limit(1);
+  if (error || !data?.length) return null;
+  const row = data[0] as { version: number; label: string; effective_from: string; data: PriceBook };
+  return { ...row, effective_from: String(row.effective_from).slice(0, 10) };
+}
 
 /** 오늘 기준 가장 가까운 일요일(오늘이 일요일이면 오늘) */
 function nearestSunday(): string {
@@ -45,7 +56,7 @@ function nearestSunday(): string {
 }
 
 /** 탭의 기본 줄(코스 하나 + 숙소 하나, 같은 주수) */
-function defaults(tab: Tab, weeks: number, courseId?: string | null) {
+function defaults(BOOK: PriceBook, tab: Tab, weeks: number, courseId?: string | null) {
   const campus: Campus = tab === 'mixed' ? 'challenger' : tab;
   const course = BOOK.courses.find((c) => c.id === courseId && (tab === 'mixed' || c.campus === tab)) ?? BOOK.courses.find((c) => c.campus === campus)!;
   const w = course.guarantee ? 8 : weeks;
@@ -55,6 +66,16 @@ function defaults(tab: Tab, weeks: number, courseId?: string | null) {
 
 export default function Quote() {
   const { member } = useAuth();
+  // 가격 버전을 읽은 뒤에 입력 칸을 만든다(읽는 동안 기본값으로 그렸다가 바뀌지 않게)
+  const { data: loaded, loading } = useLoad(() => loadActiveBook().catch(() => null));
+  if (loading) return <Loading />;
+  return <QuoteForm active={loaded} member={member} />;
+}
+
+function QuoteForm({ active, member }: { active: Awaited<ReturnType<typeof loadActiveBook>>; member: ReturnType<typeof useAuth>['member'] }) {
+  const BOOK = active?.data ?? PRICE_BOOK_2026;
+  const courseDef = (id: string) => BOOK.courses.find((c) => c.id === id);
+  const dormDef = (id: string) => BOOK.dorms.find((d) => d.id === id);
   const [params] = useSearchParams();
   const fixed = member ? systemForCountry(member.country) : null;
   const [picked, setPicked] = useState<PriceSystem>('kr');
@@ -65,7 +86,7 @@ export default function Quote() {
   const pTab: Tab = params.get('campus') === 'premium' ? 'premium' : 'challenger';
   const pWeeks = Math.min(52, Math.max(1, Number(params.get('weeks')) || 12));
   const [tab, setTab] = useState<Tab>(pTab);
-  const [rows, setRows] = useState(() => defaults(pTab, pWeeks, params.get('course')));
+  const [rows, setRows] = useState(() => defaults(BOOK, pTab, pWeeks, params.get('course')));
   const [start, setStart] = useState(nearestSunday);
   const [pickup, setPickup] = useState('');
   const [student, setStudent] = useState({
@@ -108,12 +129,12 @@ export default function Quote() {
       const cd = BOOK.dorms.find((x) => x.campus === 'challenger')!;
       const pd = BOOK.dorms.find((x) => x.campus === 'premium')!;
       setRows({ courses: [{ id: c.id, weeks: 8 }, { id: p.id, weeks: 4 }], dorms: [{ id: cd.id, weeks: 8 }, { id: pd.id, weeks: 4 }] });
-    } else setRows(defaults(next, Math.max(1, totalWeeks)));
+    } else setRows(defaults(BOOK, next, Math.max(1, totalWeeks)));
   };
 
   const result = useMemo(
     () => quote({ system, start, courses: rows.courses, dorms: rows.dorms, pickup: pickup || null }, BOOK),
-    [system, start, rows, pickup],
+    [system, start, rows, pickup, BOOK],
   );
   const pickupLabel = BOOK.pickups.find((p) => p.id === pickup)?.label;
   const label = (campus: Campus, id: string) => (tab === 'mixed' ? tag(campus) : '') + id;
@@ -142,7 +163,7 @@ export default function Quote() {
 
   return (
     <>
-      <PageHead title={t('menu.quote')} side={<span className="muted" style={{ fontSize: 13 }}>가격 기준: {BOOK.version}</span>} />
+      <PageHead title={t('menu.quote')} side={<span className="muted" style={{ fontSize: 13 }}>가격 기준: {active ? `v${active.version} · ${active.label} (${active.effective_from}부터)` : `${BOOK.version} (기본값)`}</span>} />
       <div className="quote-grid">
         <div className="quote-form">
           <Box title="가격 체계">

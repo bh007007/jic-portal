@@ -4,7 +4,7 @@
 
 - **원본 관계**: 공동 작업 방식(11/10 안)에서 공용 DB 설계의 원본은 이 저장소다. 기획의 '공용 DB 설계표'(엑셀)와 다른 곳은 차이 목록으로 맞추고, 테이블 변경은 DB 관리자(지정 필요)가 승인한다(`docs/collab.md`).
 - **정규화 표 계획**은 `docs/schema.md`, 권한(역할)은 `docs/roles.md`, 업체 원본 열 뜻은 `docs/data-dictionary*.md`.
-- 마이그레이션 61개, 표 86개, 뷰 1개. 모든 표에 RLS 가 켜져 있는지는 CI 시험 `supabase/tests/security_lint.mjs`가 본다.
+- 마이그레이션 62개, 표 87개, 뷰 1개. 모든 표에 RLS 가 켜져 있는지는 CI 시험 `supabase/tests/security_lint.mjs`가 본다.
 
 ## 표 목록
 
@@ -93,6 +93,7 @@
 | 기타 | `approval_kinds` | 3 | 켜짐 | 2 | 20261112110000_permissions_foundation |
 | 기타 | `course_reasons` | 13 | 켜짐 | 2 | 20261112010000_course_reasons |
 | 기타 | `menu_groups` | 3 | 켜짐 | 2 | 20261112110000_permissions_foundation |
+| 기타 | `price_books` | 16 | 켜짐 | 4 | 20261112170000_price_books |
 | 기타 | `role_permissions` | 7 | 켜짐 | 2 | 20261112110000_permissions_foundation |
 | 기타 | `visit_handlers` | 7 | 켜짐 | 3 | 20261112090000_visit_handlers |
 | 기타 | `visit_request_events` | 8 | 켜짐 | 2 | 20261111220000_visit_requests_v2 |
@@ -1427,6 +1428,29 @@
 | `sort` | integer |  | `0` |
 
 정책: `menu_groups_admin`(ALL, authenticated), `menu_groups_read`(SELECT, authenticated)
+
+### `price_books`
+
+| 열 | 형식 | 비움 | 기본값 |
+| --- | --- | --- | --- |
+| `id` | uuid |  | `gen_random_uuid()` |
+| `version` | integer |  |  |
+| `label` | text |  | `''::text` |
+| `effective_from` | date |  |  |
+| `status` | text |  | `'draft'::text` |
+| `data` | jsonb |  |  |
+| `note` | text |  | `''::text` |
+| `based_on` | uuid | 가능 |  |
+| `created_by` | uuid | 가능 | `auth.uid()` |
+| `created_at` | timestamp with time zone |  | `now()` |
+| `updated_at` | timestamp with time zone |  | `now()` |
+| `submitted_by` | uuid | 가능 |  |
+| `submitted_at` | timestamp with time zone | 가능 |  |
+| `decided_by` | uuid | 가능 |  |
+| `decided_at` | timestamp with time zone | 가능 |  |
+| `decision_note` | text |  | `''::text` |
+
+정책: `price_books_delete`(DELETE, authenticated), `price_books_insert`(INSERT, authenticated), `price_books_read`(SELECT, authenticated), `price_books_update`(UPDATE, authenticated)
 
 ### `role_permissions`
 
