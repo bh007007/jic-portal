@@ -30,7 +30,7 @@ const MENU: { group?: string; items: { to: string; label: string }[] }[] = [
     { to: '/partner/accounts', label: '지점 계정' }, { to: '/partner/consult', label: '상담 설정' }, { to: '/partner/content', label: '화면 콘텐츠' },
     { to: '/partner/media', label: '사진·영상' }, { to: '/partner/notices', label: '공지·일정' }, { to: '/partner/visits', label: '방문 신청' }, { to: '/partner/stats', label: '통계·설정' },
   ] },
-  { group: '기초관리', items: [{ to: '/codes', label: '코스·기숙사' }, { to: '/prices', label: '가격표' }, { to: '/batches', label: '캠퍼스·배치' }, { to: '/holidays', label: '휴일' }, { to: '/users', label: '사용자·권한' }] },
+  { group: '기초관리', items: [{ to: '/codes', label: '코스·기숙사' }, { to: '/prices', label: '가격표' }, { to: '/batches', label: '캠퍼스·배치' }, { to: '/holidays', label: '휴일' }, { to: '/users', label: '사용자·권한' }, { to: '/permissions', label: '권한표' }] },
 ];
 // 관리자만 보는 메뉴(docs/roles.md: 사용자·권한은 오피스가 열 수 없다)
 const ADMIN_ONLY = new Set(['/users']);

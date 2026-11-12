@@ -270,3 +270,9 @@ a.hub-name:hover { color: var(--primary); }
 .ev-item.on { border-color: var(--primary); background: #eef3fb; }
 .ev-item img { width: 44px; height: 33px; object-fit: cover; border-radius: 2px; flex: 0 0 auto; }
 .ev-kind { width: 44px; flex: 0 0 auto; text-align: center; font-size: 11px; color: var(--ink-3); }
+
+/* 권한표(기초관리 › 권한표) */
+.perm-table td:not(:first-child) { white-space: nowrap; width: 108px; }
+.perm-table select { height: 24px; font-size: 12px; width: 100px; }
+.perm-table td.perm-V { background: #f4f6fa; }
+.perm-table td.perm-I { background: #e8eef8; }
