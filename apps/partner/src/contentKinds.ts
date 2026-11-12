@@ -6,7 +6,7 @@
  */
 export type ContentKind =
   | 'about' | 'teacher' | 'day' | 'activity' | 'camp'
-  | 'playbook' | 'evidence' | 'event' | 'campus_status' | 'school_stat' | 'contact' | 'newsletter' | 'video' | 'photo';
+  | 'playbook' | 'evidence' | 'event' | 'campus_status' | 'school_stat' | 'contact' | 'newsletter' | 'video' | 'photo' | 'faq';
 
 /** pdf: 비공개 저장소 partner-media 에 올리고 경로를 칸에 담는다(캠프 브로슈어, 20261111180000) */
 export type FieldType = 'text' | 'textarea' | 'date' | 'url' | 'select' | 'check' | 'pdf';
@@ -125,6 +125,13 @@ export const KINDS: Record<ContentKind, KindDef> = {
       { key: 'length', label: '길이', type: 'text', hint: '예: 1:05' },
       { key: 'type', label: '유형', type: 'select', options: ['행사', '수업', '생활', '시설', '인터뷰'] },
       { key: 'consult', label: '상담 ③에 나옴', type: 'check' },
+    ],
+  },
+  faq: {
+    kind: 'faq', label: 'FAQ', title: '질문', body: '답변', campus: 'optional', campuses: ['premium', 'challenger'], where: '상담 › 상담 자료 › FAQ (지점 직원 아이디도 봄, 11/12 결정 20261112150000)',
+    fields: [
+      { key: 'category', label: '분야', type: 'text', hint: '예: 입학·비자, 생활, 비용·결제. 같은 분야끼리 묶어 보입니다' },
+      { key: 'link', label: '관련 화면', type: 'text', hint: '포털 안 주소(/로 시작, 예: /tuition) 또는 짧은 안내' },
     ],
   },
   photo: {

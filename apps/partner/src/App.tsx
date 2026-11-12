@@ -29,6 +29,7 @@ import Tuition from './pages/Tuition';
 import Play from './pages/content/Play';
 import Evidence from './pages/content/Evidence';
 import Playbook from './pages/content/Playbook';
+import Faq from './pages/content/Faq';
 import { AboutSection, SchoolStats, Teachers } from './pages/content/About';
 import { Activities, Calendar, Day } from './pages/content/Life';
 import Camps from './pages/content/Camps';
@@ -101,6 +102,7 @@ export default function App() {
         <Route path="/play" element={<Member><Play /></Member>} />
         <Route path="/evidence" element={<Member><Evidence /></Member>} />
         <Route path="/playbook" element={<Member><Playbook /></Member>} />
+        <Route path="/faq" element={<Member><Faq /></Member>} />
         <Route path="/about/baguio" element={<Member><AboutSection section="왜 바기오·주변" titleKey="menu.baguio" /></Member>} />
         <Route path="/about/why-jic" element={<Member><AboutSection section="왜 JIC" titleKey="menu.whyJic" /></Member>} />
         <Route path="/about/teachers" element={<Member><Teachers /></Member>} />
@@ -110,7 +112,7 @@ export default function App() {
         <Route path="/life/calendar" element={<Member><Calendar /></Member>} />
         <Route path="/life/activities" element={<Member><Activities /></Member>} />
         <Route path="/contacts" element={<Member><Contacts /></Member>} />
-        {/* CL-037 메뉴 중 아직 화면이 없는 곳(FAQ·인보이스): 준비 중 또는 2차 */}
+        {/* CL-037 메뉴 중 아직 화면이 없는 곳(인보이스 등): 준비 중 또는 2차 */}
         {PENDING_ROUTES.map((it) => (
           <Route key={it.to} path={it.to} element={<Member><Preparing title={t(it.key)} /></Member>} />
         ))}
