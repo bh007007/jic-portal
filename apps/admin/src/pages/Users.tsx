@@ -2,6 +2,7 @@ import { useCallback, useEffect, useState } from 'react';
 import { supabase, useIsAdmin } from '../supabase';
 import { Loading, PageTitle, Panel } from '../components/ui';
 import VisitHandlers from './agency/VisitHandlers';
+import { CAMPUSES } from '../permissions';
 
 // 원칙 C5의 역할(docs/roles.md, 11/9 승인). 학생·에이전시·가드는 각자 계정 표가 따로 있다(docs/architecture.md).
 // 직원 역할: 관리자 포털 직원(staff_users)에게만 뜻이 있다. 역할이 없으면 관리자다.
@@ -18,7 +19,6 @@ const LMS_ROLES: [string, string, string][] = [
   ['manager', '매니저', '강사 포털 관리(시험 종류·강사 목록·출석 마감·사유 인정), 남의 기록 수정'],
 ];
 const ALL_ROLES = [...STAFF_ROLES, ...LMS_ROLES];
-const CAMPUSES = ['', 'Challenger', 'Premium', 'MCO'];
 const NAME_ERRORS: Record<string, string> = {
   bad_name: '이름은 1~40자로 넣어 주세요',
   not_staff: '관리자 포털 직원(staff_users)이 아닌 계정입니다',
