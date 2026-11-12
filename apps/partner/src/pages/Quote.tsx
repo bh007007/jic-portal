@@ -1,41 +1,237 @@
+import { useMemo, useState } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { useAuth } from '../auth';
-import { loadSettings, useLoad } from '../data';
 import { t } from '../i18n';
-import { Box, Loading, OutLink, PageHead } from '../ui';
+import { Box, PageHead } from '../ui';
+import {
+  LOCAL_FEE_NOTICE, PRICE_BOOK_2026 as BOOK, SYSTEM_CURRENCY, quote, systemForCountry,
+  type Campus, type Currency, type PriceSystem,
+} from '../../../../packages/quote/src';
 
-const ROUTES: [string, string, string][] = [
-  ['quote_kr', 'KR', 'KRW'],
-  ['quote_jp', 'JP', 'JPY'],
-  ['quote_usd', 'USD', 'USD'],
-  ['quote_usd_new', 'USD-New', 'USD'],
+/**
+ * 견적(T-20, R-013 2단계, 11/12). 견적 사이트 대신 포털에서 계산한다(CL-065: 견적 사이트는 쓰지 않음).
+ * 계산은 견적 계산 모듈(packages/quote, R-014) 하나 — 2차 학생등록·인보이스와 같은 금액(CL-076).
+ * - 가격 체계는 지점 국가로 자동(CL-063). JIC 직원은 고를 수 있다
+ * - 캠퍼스 탭: Challenger / Premium / 혼합(앞뒤로 이어 붙임, CL-062). 어기는 입력은 이유를 보이고 계산하지 않는다
+ * - IELTS Guarantee는 8주 고정·마지막(CL-060), 공항 픽업 4가지(CL-064), 현지비용은 페소만 + 고정 문구(CL-059)
+ * - 학생 정보는 저장하지 않고 화면·인쇄에만(원칙 P3). 견적서는 가견적: 유효기간·계좌·커미션 없음(CL-067)
+ * - 가격은 지금 기획 정정본(코드 자료). 관리자 포털 가격표(T-21)가 생기면 그쪽을 읽는다
+ */
+
+type Tab = Campus | 'mixed';
+interface Row { id: string; weeks: number }
+
+const SYMBOL: Record<Currency, string> = { KRW: '₩', USD: '$', JPY: '¥' };
+const money = (cur: Currency, n: number) => `${SYMBOL[cur]}${n.toLocaleString()}`;
+const peso = (n: number) => `₱${n.toLocaleString()}`;
+const SYSTEMS: [PriceSystem, string][] = [
+  ['kr', '/kr · 원(KRW) · 한국'],
+  ['jp', '/jp · 엔(JPY) · 일본'],
+  ['usd', '/usd · 달러 · 대만·중국·사우디'],
+  ['usd-new', '/usd-new · 달러 · 그 밖의 국가(Global Scholar)'],
 ];
+const TABS: [Tab, string][] = [['challenger', 'Challenger'], ['premium', 'Premium'], ['mixed', '혼합 (Challenger + Premium)']];
+const WEEKS = Array.from({ length: 52 }, (_, i) => i + 1);
+const tag = (campus: Campus) => (campus === 'challenger' ? '[CC] ' : '[PC] ');
+const courseDef = (id: string) => BOOK.courses.find((c) => c.id === id);
+const dormDef = (id: string) => BOOK.dorms.find((d) => d.id === id);
 
-// 5.1 견적: 기존 견적 사이트로 연결만 한다. 포털에서 가격을 입력하지 않는다(원칙 Q1).
+/** 오늘 기준 가장 가까운 일요일(오늘이 일요일이면 오늘) */
+function nearestSunday(): string {
+  const now = new Date();
+  const d = new Date(Date.UTC(now.getFullYear(), now.getMonth(), now.getDate()));
+  d.setUTCDate(d.getUTCDate() + ((7 - d.getUTCDay()) % 7));
+  return d.toISOString().slice(0, 10);
+}
+
+/** 탭의 기본 줄(코스 하나 + 숙소 하나, 같은 주수) */
+function defaults(tab: Tab, weeks: number, courseId?: string | null) {
+  const campus: Campus = tab === 'mixed' ? 'challenger' : tab;
+  const course = BOOK.courses.find((c) => c.id === courseId && (tab === 'mixed' || c.campus === tab)) ?? BOOK.courses.find((c) => c.campus === campus)!;
+  const w = course.guarantee ? 8 : weeks;
+  const dorm = BOOK.dorms.find((d) => d.campus === course.campus)!;
+  return { courses: [{ id: course.id, weeks: w }], dorms: [{ id: dorm.id, weeks: w }] };
+}
+
 export default function Quote() {
   const { member } = useAuth();
-  const { data, error } = useLoad(loadSettings);
-  if (!data) return <Loading error={error} />;
-  const preferred = member?.currency ?? 'KRW';
+  const [params] = useSearchParams();
+  const fixed = member ? systemForCountry(member.country) : null;
+  const [picked, setPicked] = useState<PriceSystem>('kr');
+  const system = fixed ?? picked;
+  const cur = SYSTEM_CURRENCY[system];
+
+  // 상담 ④ '이 단계로 견적 보기'에서 넘긴 값(campus·course·weeks·agency, 학생 정보는 넘기지 않음)
+  const pTab: Tab = params.get('campus') === 'premium' ? 'premium' : 'challenger';
+  const pWeeks = Math.min(52, Math.max(1, Number(params.get('weeks')) || 12));
+  const [tab, setTab] = useState<Tab>(pTab);
+  const [rows, setRows] = useState(() => defaults(pTab, pWeeks, params.get('course')));
+  const [start, setStart] = useState(nearestSunday);
+  const [pickup, setPickup] = useState('');
+  const [student, setStudent] = useState({
+    name: '', gender: '', birth: '',
+    agency: member ? [member.agency_name, member.branch].filter(Boolean).join(' ') : (params.get('agency') ?? ''),
+  });
+
+  const courseOptions = BOOK.courses.filter((c) => tab === 'mixed' || c.campus === tab);
+  const dormOptions = BOOK.dorms.filter((d) => tab === 'mixed' || d.campus === tab);
+  const totalWeeks = rows.courses.reduce((a, r) => a + r.weeks, 0);
+  const lastIsGuarantee = !!courseDef(rows.courses[rows.courses.length - 1]?.id)?.guarantee;
+
+  // 숙소가 한 줄이면 코스 주수 합을 따라간다(같은 캠퍼스 탭)
+  const withSync = (next: { courses: Row[]; dorms: Row[] }) =>
+    next.dorms.length === 1 && tab !== 'mixed' ? { ...next, dorms: [{ ...next.dorms[0], weeks: next.courses.reduce((a, r) => a + r.weeks, 0) }] } : next;
+  const setCourse = (i: number, patch: Partial<Row>) => {
+    const courses = rows.courses.map((r, j) => (j === i ? { ...r, ...patch } : r));
+    // IELTS Guarantee는 8주 고정(CL-060)
+    if (courseDef(courses[i].id)?.guarantee) courses[i] = { ...courses[i], weeks: 8 };
+    setRows(withSync({ ...rows, courses }));
+  };
+  const setDorm = (i: number, patch: Partial<Row>) => setRows({ ...rows, dorms: rows.dorms.map((r, j) => (j === i ? { ...r, ...patch } : r)) });
+  const addCourse = () => {
+    const last = courseDef(rows.courses[rows.courses.length - 1].id)!;
+    const next = tab === 'mixed' ? BOOK.courses.find((c) => c.campus !== last.campus && !c.guarantee)! : courseOptions.find((c) => !c.guarantee && c.id !== last.id) ?? courseOptions[0];
+    setRows(withSync({ ...rows, courses: [...rows.courses, { id: next.id, weeks: 4 }] }));
+  };
+  const addDorm = () => {
+    const last = dormDef(rows.dorms[rows.dorms.length - 1].id)!;
+    const next = tab === 'mixed' ? BOOK.dorms.find((d) => d.campus !== last.campus)! : dormOptions[0];
+    setRows({ ...rows, dorms: [...rows.dorms, { id: next.id, weeks: 4 }] });
+  };
+  const removeCourse = (i: number) => setRows(withSync({ ...rows, courses: rows.courses.filter((_, j) => j !== i) }));
+  const removeDorm = (i: number) => setRows({ ...rows, dorms: rows.dorms.filter((_, j) => j !== i) });
+  const changeTab = (next: Tab) => {
+    setTab(next);
+    if (next === 'mixed') {
+      const c = BOOK.courses.find((x) => x.campus === 'challenger' && !x.guarantee)!;
+      const p = BOOK.courses.find((x) => x.campus === 'premium')!;
+      const cd = BOOK.dorms.find((x) => x.campus === 'challenger')!;
+      const pd = BOOK.dorms.find((x) => x.campus === 'premium')!;
+      setRows({ courses: [{ id: c.id, weeks: 8 }, { id: p.id, weeks: 4 }], dorms: [{ id: cd.id, weeks: 8 }, { id: pd.id, weeks: 4 }] });
+    } else setRows(defaults(next, Math.max(1, totalWeeks)));
+  };
+
+  const result = useMemo(
+    () => quote({ system, start, courses: rows.courses, dorms: rows.dorms, pickup: pickup || null }, BOOK),
+    [system, start, rows, pickup],
+  );
+  const pickupLabel = BOOK.pickups.find((p) => p.id === pickup)?.label;
+  const label = (campus: Campus, id: string) => (tab === 'mixed' ? tag(campus) : '') + id;
+
+  const rowEditor = (kind: 'course' | 'dorm') => {
+    const list = kind === 'course' ? rows.courses : rows.dorms;
+    return list.map((r, i) => {
+      const def = kind === 'course' ? courseDef(r.id) : dormDef(r.id);
+      const guarantee = kind === 'course' && !!courseDef(r.id)?.guarantee;
+      const options = kind === 'course' ? courseOptions : dormOptions;
+      return (
+        <div key={`${kind}-${i}`} className="quote-row">
+          <select aria-label={kind === 'course' ? `코스 ${i + 1}` : `숙소 ${i + 1}`} value={r.id} onChange={(e) => (kind === 'course' ? setCourse(i, { id: e.target.value }) : setDorm(i, { id: e.target.value }))}>
+            {options.map((o) => <option key={o.id} value={o.id}>{label(o.campus, o.id)}</option>)}
+          </select>
+          <select aria-label={`${kind === 'course' ? '코스' : '숙소'} ${i + 1} 주수`} value={r.weeks} disabled={guarantee} onChange={(e) => (kind === 'course' ? setCourse(i, { weeks: +e.target.value }) : setDorm(i, { weeks: +e.target.value }))}>
+            {WEEKS.map((w) => <option key={w} value={w}>{w}주</option>)}
+          </select>
+          {list.length > 1 && <button type="button" className="btn btn-sm" aria-label="이 줄 빼기" onClick={() => (kind === 'course' ? removeCourse(i) : removeDorm(i))}>×</button>}
+          {guarantee && <span className="muted" style={{ fontSize: 12 }}>8주 고정 · 마지막 · 스파르타</span>}
+          {!def && <span className="err">없는 항목</span>}
+        </div>
+      );
+    });
+  };
+
   return (
     <>
-      <PageHead title={t('nav.quote')} />
-      <Box>
-        <div className="box-body">
-          <table className="tbl center">
-            <thead><tr><th>경로</th><th>통화</th><th>견적 사이트</th></tr></thead>
-            <tbody>
-              {ROUTES.map(([key, label, cur]) => (
-                <tr key={key} style={cur === preferred ? { background: 'var(--accent-tint)' } : undefined}>
-                  <td className="strong">{label}</td>
-                  <td>{cur}{cur === preferred ? <span className="muted"> (기본)</span> : ''}</td>
-                  <td><OutLink href={data[key]} className="btn btn-sm">열기</OutLink></td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-          <p className="muted" style={{ fontSize: 12, margin: '10px 0 0' }}>기본 통화는 '내 계정'에서 바꿀 수 있습니다. 가격은 견적 사이트가 기준입니다.</p>
+      <PageHead title={t('menu.quote')} side={<span className="muted" style={{ fontSize: 13 }}>가격 기준: {BOOK.version}</span>} />
+      <div className="quote-grid">
+        <div className="quote-form">
+          <Box title="가격 체계">
+            <div className="box-body form">
+              {fixed ? (
+                <p style={{ margin: 0 }}><strong>{SYSTEMS.find(([s]) => s === system)?.[1]}</strong> <span className="muted">· 지점 국가({member?.country ?? '미정'})로 정해집니다(CL-063)</span></p>
+              ) : (
+                <label className="quote-label">
+                  JIC 직원은 가격 체계를 고릅니다
+                  <select value={picked} onChange={(e) => setPicked(e.target.value as PriceSystem)}>
+                    {SYSTEMS.map(([s, l]) => <option key={s} value={s}>{l}</option>)}
+                  </select>
+                </label>
+              )}
+            </div>
+          </Box>
+          <Box title="학생 · 기간">
+            <div className="box-body form form-grid">
+              <label>학생 이름<input value={student.name} onChange={(e) => setStudent({ ...student, name: e.target.value })} maxLength={60} /></label>
+              <label>성별<select value={student.gender} onChange={(e) => setStudent({ ...student, gender: e.target.value })}><option value="">선택 안 함</option><option>남</option><option>여</option></select></label>
+              <label>생년월일<input type="date" value={student.birth} onChange={(e) => setStudent({ ...student, birth: e.target.value })} /></label>
+              <label>유학원 · 담당자<input value={student.agency} onChange={(e) => setStudent({ ...student, agency: e.target.value })} maxLength={80} /></label>
+              <label>연수 시작일(일요일)<input type="date" value={start} onChange={(e) => setStart(e.target.value)} /></label>
+              <label>공항 픽업<select value={pickup} onChange={(e) => setPickup(e.target.value)}><option value="">신청 안 함</option>{BOOK.pickups.map((p) => <option key={p.id} value={p.id}>{p.label} ({peso(p.php)})</option>)}</select></label>
+              <p className="hint" style={{ gridColumn: '1 / -1', margin: 0 }}>{t('common.notSaved')}. 이름·성별·생년월일·유학원은 인쇄할 때만 씁니다.</p>
+            </div>
+          </Box>
+          <Box title="코스 · 숙소">
+            <div className="box-body">
+              <div role="tablist" aria-label="캠퍼스" className="filter-row" style={{ marginBottom: 12 }}>
+                {TABS.map(([k, l]) => <button key={k} type="button" role="tab" aria-selected={tab === k} className={'btn btn-sm' + (tab === k ? ' btn-primary' : '')} onClick={() => changeTab(k)}>{l}</button>)}
+              </div>
+              <h3 className="quote-h">코스 <span className="muted">· 넣은 순서가 기간 순서, 합계 {totalWeeks}주</span></h3>
+              {rowEditor('course')}
+              <button type="button" className="btn btn-sm" onClick={addCourse} disabled={lastIsGuarantee} title={lastIsGuarantee ? 'IELTS Guarantee 뒤에는 코스를 넣을 수 없습니다' : undefined}>+ 코스</button>
+              <h3 className="quote-h">숙소 <span className="muted">· 합계 {rows.dorms.reduce((a, r) => a + r.weeks, 0)}주</span></h3>
+              {rowEditor('dorm')}
+              <button type="button" className="btn btn-sm" onClick={addDorm}>+ 숙소</button>
+              {tab === 'mixed' && <p className="hint" style={{ margin: '10px 0 0' }}>혼합은 캠퍼스 기간마다 코스와 숙소가 같은 캠퍼스, 캠퍼스마다 최소 4주, 앞뒤로 이어 붙입니다(CL-062).</p>}
+            </div>
+          </Box>
         </div>
-      </Box>
+
+        <div className="quote-result">
+          <Box title="견적" extra={result.ok && <button type="button" className="btn btn-sm no-print" onClick={() => window.print()}>인쇄·PDF</button>}>
+            <div className="box-body">
+              {/* 인쇄용 요약(화면에서는 숨김) */}
+              <div className="quote-print">
+                <h2>JIC English Academy · 견적{tab === 'mixed' ? ' (Challenger + Premium)' : ` (${TABS.find(([k]) => k === tab)?.[1]})`}</h2>
+                <table className="kv compact">
+                  <tbody>
+                    {[
+                      ['견적일', new Date().toISOString().slice(0, 10)], ['유학원', student.agency], ['학생', student.name], ['성별', student.gender], ['생년월일', student.birth],
+                      ['기간', result.ok ? `${result.start} ~ ${result.end} (${result.weeks}주)` : ''], ['픽업', pickupLabel ?? '신청 안 함'],
+                    ].filter(([, v]) => v).map(([k, v]) => <tr key={k}><th>{k}</th><td>{v}</td></tr>)}
+                  </tbody>
+                </table>
+              </div>
+              {!result.ok ? (
+                <div className="msg err" role="alert">
+                  <strong>이대로는 등록할 수 없는 조합입니다.</strong>
+                  <ul>{result.errors.map((e) => <li key={e}>{e}</li>)}</ul>
+                </div>
+              ) : (
+                <>
+                  <p className="muted" style={{ margin: '0 0 8px', fontSize: 13 }}>{result.start} ~ {result.end} · {result.weeks}주</p>
+                  <table className="quote-lines">
+                    <tbody>
+                      {result.charges.map((l) => <tr key={l.key}><td>{l.label}</td><td>{money(cur, l.amount)}</td></tr>)}
+                      {result.discounts.map((l) => <tr key={l.key} className="disc"><td>{l.label}{l.detail && <span className="muted"> · {l.detail}</span>}</td><td>−{money(cur, l.amount)}</td></tr>)}
+                      <tr className="total"><td>총 학비</td><td>{money(cur, result.total)}</td></tr>
+                    </tbody>
+                  </table>
+                  {result.pending.length > 0 && <div className="msg warn" role="note">{result.pending.map((p) => <div key={p}>확인 필요 · {p}</div>)}</div>}
+                  <h3 className="quote-h">현지비용 (페소, 현지 납부)</h3>
+                  <table className="quote-lines">
+                    <tbody>
+                      {result.local.map((l) => <tr key={l.key}><td>{l.label}</td><td>{peso(l.amount)}</td></tr>)}
+                      <tr className="total"><td>현지비용 합계</td><td>{peso(result.localTotal)}</td></tr>
+                    </tbody>
+                  </table>
+                  <p className="notice-line">{LOCAL_FEE_NOTICE[system]}</p>
+                  <p className="muted" style={{ fontSize: 12, margin: '8px 0 0' }}>가견적입니다. 정식 견적서와 재발행은 학생 등록 때 만듭니다(유효기간·계좌 없음, CL-067).</p>
+                </>
+              )}
+            </div>
+          </Box>
+        </div>
+      </div>
     </>
   );
 }

@@ -52,7 +52,7 @@ export default function Home() {
       </section>
 
       <nav className="links" aria-label="바로가기">
-        {!agencyStaff && <Link to="/quote"><strong>견적</strong><span>KR · JP · USD · USD-New</span></Link>}
+        {!agencyStaff && <Link to="/quote"><strong>견적</strong><span>코스·숙소·기간으로 바로 계산</span></Link>}
         {!agencyStaff && <Link to="/vacancy"><strong>공실 확인</strong><span>최종 확정은 JIC 담당자 확인</span></Link>}
         <Link to="/resources"><strong>자료실</strong><span>가격표 · 브로슈어 · 사진 · 규정</span></Link>
         {!agencyStaff && <Link to="/visit"><strong>방문 신청</strong><span>학교 방문 · 내 방문 내역</span></Link>}

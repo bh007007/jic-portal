@@ -50,7 +50,6 @@ Claude가 대신할 수 없는 일(키·비밀번호 입력, 계정 만들기, �
 | 8 | 인보이스 항목 가짜 샘플 올리기 | PowerShell에서 `$env:SUPABASE_URL`·`$env:SUPABASE_SERVICE_ROLE_KEY`를 넣고 `node scripts/upload-to-supabase.mjs`(가짜 샘플만) | 배포 학생 상세에 '인보이스 항목' 표 |
 | 9 | 학생 포털 로그인 시험 | https://jic-student.bh007007.workers.dev 에서 샘플 학생번호 + 생년월일 8자리(`data-sample/tables/students.ndjson`, 가짜). 1번 뒤 | 첫 로그인 → 비밀번호 변경 → 홈 |
 | 10 | 업체 포털 출석 추출 | 업체 포털에 관리자로 로그인한 브라우저 Console에 `scripts/extract/portal-extract-attendance.js`(지난 90일, 읽기 전용). 받은 파일은 `data/raw/` | 강사 포털 출석을 업체 기록으로 이어 가려면 |
-| 11 | **견적 프로그램 미리 채우기 코드** | baguiojic Cloudflare 계정의 견적 프로그램에 `docs/quote-prefill.md`의 코드를 넣는다(이 저장소에서는 못 고침) | 넣기 전에는 견적 화면이 열리기만 하고 값은 직접 고른다 |
 | 12 | **학원 공식 계정으로 옮기기**(11/9 결정) | `docs/accounts.md` 5장: 어학원 공용 이메일 → GitHub 조직 이전 → Supabase 이전 + 개발용 프로젝트 → Cloudflare 새로 연결 → 썸머 매니저 초대 | 서비스가 어학원에 남고 개인 계정은 운영 키·실제 데이터에 손대지 않는다 |
 | 13 | 저장소 관리 | GitHub Settings → Collaborators에 기획·LMS·노션 담당자 읽기 초대, Branches에 main 보호 규칙(PR 승인 필수), DB 관리자 지정(결정) | 공동 작업 방식(11/10) |
 | 14 | 강사 시험 계정(필요할 때) | `docs/teacher-portal.md` '강사 계정 만들기' | 직원 계정은 역할 없이도 들어가진다 |

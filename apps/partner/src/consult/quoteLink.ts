@@ -1,6 +1,6 @@
 /**
- * 상담 결과 → 견적 프로그램(quote.baguiojic.workers.dev) 주소. 주소에 캠퍼스·코스·기간을 담아 견적 화면을 미리 채운다.
- * 주소 형식과 견적 프로그램에 넣을 코드는 docs/quote-prefill.md. 견적 프로그램이 이 값을 읽기 전에는 그냥 빈 견적 화면이 열린다.
+ * 상담 결과 → 포털 견적(/quote, T-20 11/12) 주소. 주소에 캠퍼스·코스·기간을 담아 견적 화면을 미리 채운다.
+ * 견적 사이트(quote.baguiojic)는 11/12부터 쓰지 않는다(CL-065). 코스 이름은 견적 이름(견적 계산 모듈 PRICE_BOOK_2026)과 같다.
  * 학생 정보(이름·생년월일)는 담지 않는다(원칙 P3).
  *
  * 코스 짝(11/10 레오님 결정): 견적 프로그램의 코스 이름과 다른 것은 아래처럼 바꾸고, 짝이 없는 것은 코스를 비운다.
@@ -57,23 +57,5 @@ export function quoteParams({ campusId, courseId, level, weeks, agency }: QuoteI
   return p;
 }
 
-/** 견적 사이트 주소(설정값)에 값을 붙인다. 주소가 비었거나 http(s)가 아니면 null. 주소에 이미 있는 값은 그대로 둔다. */
-export function quoteUrl(base: string | null | undefined, params: URLSearchParams): string | null {
-  if (!base || !/^https?:\/\//i.test(base.trim())) return null;
-  try {
-    const u = new URL(base.trim());
-    for (const [k, v] of params) if (!u.searchParams.has(k)) u.searchParams.set(k, v);
-    return u.toString();
-  } catch {
-    return null;
-  }
-}
-
-/** 지점 국가로 고르는 견적 화면(docs/quote-prefill.md 표): 한국 KR, 일본 JP, 대만·중국·사우디 USD, 베트남·태국 USD-New(프로모션). 그 밖은 USD */
-export type QuotePage = 'quote_kr' | 'quote_jp' | 'quote_usd' | 'quote_usd_new';
-export function quotePageFor(country?: string | null): QuotePage {
-  if (country === '한국') return 'quote_kr';
-  if (country === '일본') return 'quote_jp';
-  if (country === '베트남' || country === '태국') return 'quote_usd_new';
-  return 'quote_usd';
-}
+/** 포털 견적 주소(같은 포털 안, 새 탭으로 열어 상담 화면을 그대로 둔다). 가격 체계는 견적 화면이 지점 국가로 정한다(CL-063) */
+export const portalQuoteUrl = (params: URLSearchParams) => `/quote${params.toString() ? `?${params}` : ''}`;

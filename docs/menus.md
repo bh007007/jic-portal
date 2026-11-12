@@ -116,7 +116,7 @@
 | JIC 소개 | `/about/baguio`, `/about/why-jic`, `/about/teachers`, `/about/school` | 왜 바기오·주변, 왜 JIC, 선생님(캠퍼스별), 학교 현황(항목별 기준일) |
 | 활동 달력 · 액티비티 | `/life/calendar`, `/life/activities` | 달마다 행사(이번 달부터, 지난 일정 선택), 액티비티 카드 |
 | 뉴스레터 · 담당자 연락처 | `/newsletter`, `/contacts` | 호 목록(없으면 링크 설정), 담당자 카드 |
-| 견적 | `/quote` | 견적 프로그램 링크 4개(미리 채우기 `docs/quote-prefill.md`) |
+| 견적 | `/quote` | 포털 견적(T-20, 11/12): 견적 계산 모듈(`packages/quote`)로 계산. 가격 체계는 지점 국가로 자동(CL-063, JIC 직원은 고름), 캠퍼스 탭 Challenger·Premium·혼합(CL-062 검사), IELTS Guarantee 8주 고정·마지막, 픽업 4가지, 현지비용 페소만 + 고정 문구, 인쇄·PDF(학생 정보 저장 안 함, 유효기간·계좌 없음). 상담 ④ '이 단계로 견적 보기'·⑤ '견적 계산 열기'가 캠퍼스·코스·기간을 채워 새 탭으로 연다. 지점 대표만(CL-032) |
 | 공실 | `/vacancy` | 링크 |
 | 등록 안내 | `/register` | 안내 문구·링크 |
 | 자료실 | `/resources` | 에이전시용 자료 |
