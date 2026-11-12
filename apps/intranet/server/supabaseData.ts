@@ -31,11 +31,12 @@ async function firstRow<T>(conf: SupabaseConf, token: string, path: string, fetc
 }
 
 /**
- * 직원 역할(docs/roles.md): DB 의 is_admin() 과 같게, admin 역할이 있거나 office 역할이 없으면 관리자다(역할을 주기 전에는 모든 직원이 관리자).
- * 오피스의 캠퍼스는 office 역할 행의 캠퍼스(빈칸이 있으면 모든 캠퍼스). user_roles 는 본인 행을 읽을 수 있다(20261108200000_teacher_portal.sql).
+ * 직원 역할(docs/roles.md): DB 의 is_admin() 과 같게, admin 역할이 있거나 office·director 역할이 없으면 관리자다(역할을 주기 전에는 모든 직원이 관리자).
+ * 센터장(director, 20261112110000_permissions_foundation.sql)은 오피스와 같이 본다(보통 오피스 역할과 함께 받는다).
+ * 오피스의 캠퍼스는 office·director 역할 행의 캠퍼스(빈칸이 있으면 모든 캠퍼스). user_roles 는 본인 행을 읽을 수 있다(20261108200000_teacher_portal.sql).
  */
 export function staffRoleFrom(rows: { role: string; campus: string | null }[]): { staffRole: StaffRole; campuses: string[] | null } {
-  const office = rows.filter((r) => r.role === 'office');
+  const office = rows.filter((r) => r.role === 'office' || r.role === 'director');
   if (rows.some((r) => r.role === 'admin') || !office.length) return { staffRole: 'admin', campuses: null };
   return { staffRole: 'office', campuses: office.some((r) => !r.campus) ? null : [...new Set(office.map((r) => r.campus!))].sort() };
 }

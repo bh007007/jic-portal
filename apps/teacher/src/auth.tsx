@@ -51,7 +51,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       const roles = (r.data as string[]) ?? [];
       const s = await supabase.from('staff').select('name').eq('user_id', session.user.id).maybeSingle();
       const name = (s.data?.name as string | undefined) || session.user.email || '';
-      const isAdmin = roles.includes('staff') && (roles.includes('admin') || !roles.includes('office'));
+      // DB is_admin() 과 같게: 센터장(director)도 오피스처럼 관리자가 아니다(20261112110000)
+      const isAdmin = roles.includes('staff') && (roles.includes('admin') || !(roles.includes('office') || roles.includes('director')));
       const isManager = roles.includes('manager') || isAdmin;
       const canWrite = isManager || roles.includes('teacher');
       const canSchedule = isManager || roles.includes('scheduler');

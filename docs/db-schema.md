@@ -4,7 +4,7 @@
 
 - **원본 관계**: 공동 작업 방식(11/10 안)에서 공용 DB 설계의 원본은 이 저장소다. 기획의 '공용 DB 설계표'(엑셀)와 다른 곳은 차이 목록으로 맞추고, 테이블 변경은 DB 관리자(지정 필요)가 승인한다(`docs/collab.md`).
 - **정규화 표 계획**은 `docs/schema.md`, 권한(역할)은 `docs/roles.md`, 업체 원본 열 뜻은 `docs/data-dictionary*.md`.
-- 마이그레이션 59개, 표 81개, 뷰 1개. 모든 표에 RLS 가 켜져 있는지는 CI 시험 `supabase/tests/security_lint.mjs`가 본다.
+- 마이그레이션 60개, 표 86개, 뷰 1개. 모든 표에 RLS 가 켜져 있는지는 CI 시험 `supabase/tests/security_lint.mjs`가 본다.
 
 ## 표 목록
 
@@ -88,7 +88,12 @@
 | 정규화 표(학원 계정에서 적용) | `point_ledger` | 10 | 켜짐 | 1 | 20261110130000_core_schema_accounting |
 | 정규화 표(학원 계정에서 적용) | `students` | 15 | 켜짐 | 1 | 20261110110000_core_schema |
 | 정규화 표(학원 계정에서 적용) | `vendor_balances` | 6 | 켜짐 | 1 | 20261110130000_core_schema_accounting |
+| 기타 | `approval_defaults` | 3 | 켜짐 | 2 | 20261112110000_permissions_foundation |
+| 기타 | `approval_grants` | 7 | 켜짐 | 3 | 20261112110000_permissions_foundation |
+| 기타 | `approval_kinds` | 3 | 켜짐 | 2 | 20261112110000_permissions_foundation |
 | 기타 | `course_reasons` | 13 | 켜짐 | 2 | 20261112010000_course_reasons |
+| 기타 | `menu_groups` | 3 | 켜짐 | 2 | 20261112110000_permissions_foundation |
+| 기타 | `role_permissions` | 7 | 켜짐 | 2 | 20261112110000_permissions_foundation |
 | 기타 | `visit_handlers` | 7 | 켜짐 | 3 | 20261112090000_visit_handlers |
 | 기타 | `visit_request_events` | 8 | 켜짐 | 2 | 20261111220000_visit_requests_v2 |
 
@@ -1359,6 +1364,40 @@
 
 ## 기타
 
+### `approval_defaults`
+
+| 열 | 형식 | 비움 | 기본값 |
+| --- | --- | --- | --- |
+| `kind` | text |  |  |
+| `role` | text |  |  |
+| `campus_scoped` | boolean |  | `false` |
+
+정책: `approval_defaults_admin`(ALL, authenticated), `approval_defaults_read`(SELECT, authenticated)
+
+### `approval_grants`
+
+| 열 | 형식 | 비움 | 기본값 |
+| --- | --- | --- | --- |
+| `id` | uuid |  | `gen_random_uuid()` |
+| `user_id` | uuid |  |  |
+| `kind` | text |  |  |
+| `campus` | text |  | `''::text` |
+| `allow` | boolean |  |  |
+| `created_at` | timestamp with time zone |  | `now()` |
+| `granted_by` | uuid | 가능 | `auth.uid()` |
+
+정책: `approval_grants_delete`(DELETE, authenticated), `approval_grants_insert`(INSERT, authenticated), `approval_grants_read`(SELECT, authenticated)
+
+### `approval_kinds`
+
+| 열 | 형식 | 비움 | 기본값 |
+| --- | --- | --- | --- |
+| `kind` | text |  |  |
+| `label` | text |  |  |
+| `sort` | integer |  | `0` |
+
+정책: `approval_kinds_admin`(ALL, authenticated), `approval_kinds_read`(SELECT, authenticated)
+
 ### `course_reasons`
 
 | 열 | 형식 | 비움 | 기본값 |
@@ -1378,6 +1417,30 @@
 | `updated_by` | uuid | 가능 | `auth.uid()` |
 
 정책: `course_reasons_partner_read`(SELECT, authenticated), `course_reasons_staff_all`(ALL, authenticated)
+
+### `menu_groups`
+
+| 열 | 형식 | 비움 | 기본값 |
+| --- | --- | --- | --- |
+| `key` | text |  |  |
+| `label` | text |  |  |
+| `sort` | integer |  | `0` |
+
+정책: `menu_groups_admin`(ALL, authenticated), `menu_groups_read`(SELECT, authenticated)
+
+### `role_permissions`
+
+| 열 | 형식 | 비움 | 기본값 |
+| --- | --- | --- | --- |
+| `menu_group` | text |  |  |
+| `role` | text |  |  |
+| `can_view` | boolean |  | `false` |
+| `can_input` | boolean |  | `false` |
+| `campus_scoped` | boolean |  | `false` |
+| `updated_at` | timestamp with time zone |  | `now()` |
+| `updated_by` | uuid | 가능 | `auth.uid()` |
+
+정책: `role_permissions_admin`(ALL, authenticated), `role_permissions_read`(SELECT, authenticated)
 
 ### `visit_handlers`
 

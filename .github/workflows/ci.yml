@@ -47,3 +47,4 @@ jobs:
       - run: node supabase/tests/partner_visits_rls.mjs
       - run: node supabase/tests/visit_handlers_rls.mjs
       - run: node supabase/tests/course_reasons_rls.mjs
+      - run: node supabase/tests/permissions_rls.mjs
