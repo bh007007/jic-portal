@@ -5,7 +5,8 @@ import { courseLabel, loadCampuses, loadContents, loadCourses, loadRuleSet, useL
 import { CURRENCIES, t } from '../i18n';
 import { supabase } from '../supabase';
 import { useCampusTone } from '../tone';
-import { CUR_LABEL, curOf, TuitionTables, type Cur, type TuitionRow } from '../tuition';
+import { CurrencyPick, loadActiveBook, TuitionTables } from '../tuition';
+import { basisLabel, bookOf, currencyOf, levelPrice, money } from '../priceBook';
 import { Box, Loading, Msg, OutLink, Text } from '../ui';
 import { answerLabel, estimateLevel, isScoreModel, recommend, type Answers } from './engine';
 import { portalQuoteUrl, quoteParams } from './quoteLink';
@@ -30,17 +31,17 @@ export default function Consult() {
   const { member, agencyStaff } = useAuth();
   const navigate = useNavigate();
   const { data, error } = useLoad(async () => {
-    const [set, courses, contents, campuses, tuition, life, reasons] = await Promise.all([
+    const [set, courses, contents, campuses, active, life, reasons] = await Promise.all([
       loadRuleSet(), loadCourses(), loadContents(), loadCampuses(),
-      // 학비표(CL-038). 대표 아이디·JIC 직원만 줄이 온다(직원 아이디·샘플 가격표면 0줄). 직원 아이디는 계속 대표만(CL-043, 11/12 레오님 결정)
-      supabase.rpc('partner_tuition').then((r) => (r.error ? [] : ((r.data ?? []) as TuitionRow[]))),
+      // 학비표·④ 단계 가격(CL-038·044·057): 견적과 같은 승인 가격 버전. 지점 직원 아이디는 정책상 0줄(계속 대표만, CL-043 11/12 레오님 결정)
+      loadActiveBook().catch(() => null),
       // ③ 생활 자료(학생의 하루·액티비티·JIC Play, CL-045). 못 읽어도 상담은 계속한다
       // ② 추천 이유의 증거(사진·근거 자료)도 같이
       loadItems(['day', 'activity', 'video', 'photo', 'evidence']).catch(() => [] as ContentItem[]),
       // ② 추천 이유 3칸(CL-050). 게시된 것만(정책도 같음), 못 읽으면 예전 코스별 글
       supabase.from('course_reasons').select('*').eq('status', 'published').then((r) => (r.error ? [] : ((r.data ?? []) as CourseReason[]))),
     ]);
-    return { set, courses, contents, campuses, tuition, life, reasons };
+    return { set, courses, contents, campuses, active, life, reasons };
   });
   const [step, setStep] = useState(0);
   const [q, setQ] = useState(0);
@@ -49,7 +50,7 @@ export default function Consult() {
   const [chosen, setChosen] = useState<string | null>(null); // 1순위 대신 대안을 고르면 대안 코스 id
   const [level, setLevel] = useState<string | null>(null);
   const [quote, setQuote] = useState({ currency: member?.currency ?? 'KRW', amount: '', memo: '' });
-  const [cur, setCur] = useState<Cur>(curOf(member?.country));
+  const [cur, setCur] = useState(currencyOf(member?.country)); // 지점 국가의 가격 체계 통화(CL-063), JIC 직원만 바꿔 봄
   const [sheet, setSheet] = useState<string | null>(null); // 크게 여는 코스 상세
   const [planDone, setPlanDone] = useState(false);
   const [video, setVideo] = useState<ContentItem | null>(null); // ③에서 같은 화면 위로 재생하는 영상
@@ -69,7 +70,9 @@ export default function Consult() {
   const lifePhotos = usePhotos(['consult', 'dorm', 'meals'], course?.campus_id ?? null);
 
   if (!data) return <Loading error={error} />;
-  const { courses, contents, campuses, tuition, life, reasons } = data;
+  const { courses, contents, campuses, active, life, reasons } = data;
+  // 지점 직원 아이디는 가격을 보지 않는다(CL-043). 대표·JIC 직원은 승인 버전, 못 읽으면 견적과 같이 기획 정정본
+  const book = agencyStaff ? null : bookOf(active ?? null);
   if (!set) return <Loading error="추천 조건표가 아직 등록되지 않았습니다. JIC 관리자에게 문의하세요." />;
 
   const campus = campuses.find((c) => c.id === course?.campus_id);
@@ -125,7 +128,9 @@ export default function Consult() {
   };
   const cur0 = set.questions[q];
   const sheetCourse = sheet ? courses.find((c) => c.id === sheet) : undefined;
-  const tuitionHere = campus ? tuition.filter((r) => r.section === 'etc' || r.campus.toLowerCase() === campus.name.toLowerCase()) : [];
+  const priceCampus = course?.campus_id === 'premium' || course?.campus_id === 'challenger' ? course.campus_id : undefined;
+  // ④ 단계 줄의 4주 코스 가격(CL-044 2단계). 견적 코스 짝이 없는 단계는 null
+  const priceOf = (name: string) => (book ? levelPrice(book, course?.id, name, cur) : null);
   const nav = (back: number | null, next: number | null, nextLabel?: string) => (
     <>
       {back != null ? <button type="button" className="btn btn-lg" onClick={() => go(back)}>‹ {MARK[back]} {STEPS[back]}</button> : <span />}
@@ -367,7 +372,7 @@ export default function Consult() {
             </Sheet>
           )}
 
-          {/* ④ 단계 + CL-044 단계마다 '이 단계로 견적 보기' */}
+          {/* ④ 단계 + CL-044 단계마다 4주 가격과 '정확한 견적 만들기' */}
           {step === 3 && hasLevels && (
             <Box
               title={`단계 · ${courseLabel(course)}`}
@@ -393,7 +398,20 @@ export default function Consult() {
                         <td><Text value={l.lessons} /></td>
                         <td><Text value={l.intensity} /></td>
                         <td className="left"><Text value={l.includes} /></td>
-                        <td>{agencyStaff ? <span className="muted" style={{ fontSize: 12 }}>대표 아이디</span> : <OutLink className="btn btn-sm" href={levelQuote(l.name)}>이 단계로 견적 보기</OutLink>}</td>
+                        <td>
+                          {agencyStaff ? (
+                            <span className="muted" style={{ fontSize: 12 }}>대표 아이디</span>
+                          ) : (
+                            <span style={{ display: 'inline-flex', alignItems: 'center', gap: 8, flexWrap: 'wrap', justifyContent: 'center' }}>
+                              {priceOf(l.name) ? (
+                                <span className="strong">{money(cur, priceOf(l.name)!.price)}<span className="muted" style={{ fontWeight: 400, fontSize: 12 }}> / 4주</span></span>
+                              ) : (
+                                <span className="muted" style={{ fontSize: 12 }}>견적에서 선택</span>
+                              )}
+                              <OutLink className="btn btn-sm" href={levelQuote(l.name)}>정확한 견적 만들기</OutLink>
+                            </span>
+                          )}
+                        </td>
                       </tr>
                     ))}
                   </tbody>
@@ -406,33 +424,28 @@ export default function Consult() {
                     {courseLabel(compare)} {compare.levels.map((l) => `${l.name} ${l.lessons ?? ''}`.trim()).join(', ')}
                   </p>
                 )}
-                <p className="muted" style={{ fontSize: 13, margin: '8px 0 0' }}>단계마다 수업 수와 가격이 다릅니다. '이 단계로 견적 보기'를 누르면 코스·단계·기간을 채운 포털 견적이 새 탭에서 열립니다(CL-044). 견적 사이트가 열립니다(CL-044).</p>
+                <p className="muted" style={{ fontSize: 13, margin: '8px 0 0' }}>단계마다 수업 수와 가격이 다릅니다. 가격은 4주 기준 코스 금액이고 숙소·등록금·현지 비용은 따로입니다. '정확한 견적 만들기'를 누르면 코스·단계·기간을 채운 포털 견적이 새 탭에서 열립니다(CL-044).</p>
               </div>
             </Box>
           )}
 
-          {/* ⑤ 비용: 학비표(가격표 원본, CL-038) + 견적(견적 기능 포털 통합 R-013 전까지 견적 사이트) */}
+          {/* ⑤ 비용: 학비표(승인 가격 버전, CL-038·057) + 포털 견적(T-20) */}
           {step === 4 && (
             <div className="col grow-3">
-              {tuitionHere.length > 0 ? (
+              {book ? (
                 <>
                   <div className="page-head">
                     <h2>학비표 · {campus?.name}</h2>
-                    <label style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 13 }}>
-                      통화
-                      <select value={cur} onChange={(e) => setCur(e.target.value as Cur)}>
-                        {(Object.keys(CUR_LABEL) as Cur[]).map((c) => <option key={c} value={c}>{CUR_LABEL[c]}</option>)}
-                      </select>
-                    </label>
+                    <span style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                      <span className="muted" style={{ fontSize: 12 }}>가격 기준: {basisLabel(active ?? null)}</span>
+                      {!member && <CurrencyPick cur={cur} onChange={setCur} />}
+                    </span>
                   </div>
-                  {tuitionHere.some((r) => r.sample) && <Msg kind="warn">샘플 가격입니다(실제 가격이 아닙니다). JIC 직원 화면에만 보입니다.</Msg>}
-                  <TuitionTables rows={tuitionHere} cur={cur} campus={campus?.name} />
+                  <TuitionTables book={book} cur={cur} campus={priceCampus} />
+                  <p className="muted" style={{ fontSize: 12, margin: 0 }}>4주 기준 금액입니다. 기간별 금액·할인·프로모션은 견적에서 계산합니다.</p>
                 </>
               ) : (
-                <div className="state">
-                  학비표 <span className="chip">{t('common.preparing')}</span>
-                  {agencyStaff ? ' · 학비표는 지점 대표 아이디로 볼 수 있습니다.' : ' · 실제 가격표를 올린 뒤 보입니다. 지금은 견적에서 금액을 확인하세요.'}
-                </div>
+                <div className="state">학비표는 지점 대표 아이디로 볼 수 있습니다.</div>
               )}
               <Box title="견적" foot={nav(hasLevels ? 3 : 2, 5)}>
                 <div className="box-body form">
@@ -459,7 +472,7 @@ export default function Consult() {
                         {CURRENCIES.map((c) => <option key={c}>{c}</option>)}
                       </select>
                     </label>
-                    <label>견적 금액<input inputMode="decimal" value={quote.amount} onChange={(e) => setQuote({ ...quote, amount: e.target.value })} placeholder="견적 사이트 결과" /></label>
+                    <label>견적 금액<input inputMode="decimal" value={quote.amount} onChange={(e) => setQuote({ ...quote, amount: e.target.value })} placeholder="포털 견적 결과" /></label>
                   </div>
                   <label>견적 메모<textarea value={quote.memo} onChange={(e) => setQuote({ ...quote, memo: e.target.value })} placeholder="포함·제외 항목 등" /></label>
                 </div>

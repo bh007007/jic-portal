@@ -1,50 +1,40 @@
 import { useState } from 'react';
+import { Link } from 'react-router-dom';
 import { useAuth } from '../auth';
 import { useLoad } from '../data';
 import { t } from '../i18n';
-import { must, supabase } from '../supabase';
-import { CUR_LABEL, curOf, TuitionTables, type Cur, type TuitionRow } from '../tuition';
-import { Box, Loading, Msg, PageHead } from '../ui';
+import { basisLabel, bookOf, currencyOf } from '../priceBook';
+import { CurrencyPick, loadActiveBook, TuitionTables } from '../tuition';
+import { Box, Loading, PageHead } from '../ui';
 
 /**
- * 비용·등록 > 학비표·환불(CL-037·CL-038). 관리자 포털 가격표(공용 DB)가 원본이고 여기서는 읽기만 한다(포털에서 가격 입력 안 함).
- * 지금 적용 중인 코스·기숙사·기타 비용만 보인다(partner_tuition()). 기간별 금액·할인은 견적에서 계산한다.
- * 가격표가 아직 가짜 샘플이면 지점에게는 보이지 않고(원칙 C8), 직원에게만 '샘플' 표시와 함께 보인다.
+ * 비용·등록 > 학비표·환불(CL-037·CL-038·CL-057). 가격은 관리자 포털 '가격표 › 견적 가격'의 승인 버전(price_books)이고
+ * 여기서는 읽기만 한다(포털에서 가격 입력 안 함). 견적(/quote)과 같은 버전·같은 통화(지점 국가, CL-063)다.
+ * 4주 단가와 현지 비용만 보이고, 기간별 금액·할인·프로모션은 견적에서 계산한다. 지점 대표 아이디만(CL-032·043).
  */
 export default function Tuition() {
-  const { member, staff } = useAuth();
-  const { data, error } = useLoad(() => must<TuitionRow[]>(supabase.rpc('partner_tuition')));
-  const [cur, setCur] = useState<Cur>(curOf(member?.country));
-  if (!data) return <Loading error={error} />;
-  const sample = data.some((r) => r.sample);
+  const { member } = useAuth();
+  const { data: active, loading } = useLoad(() => loadActiveBook().catch(() => null));
+  const [cur, setCur] = useState(currencyOf(member?.country));
+  if (loading) return <Loading />;
+  const book = bookOf(active ?? null);
 
   return (
     <>
       <PageHead
         title={t('menu.tuition')}
         side={
-          data.length > 0 ? (
-            <label style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-              통화
-              <select value={cur} onChange={(e) => setCur(e.target.value as Cur)}>
-                {(Object.keys(CUR_LABEL) as Cur[]).map((c) => <option key={c} value={c}>{CUR_LABEL[c]}</option>)}
-              </select>
-            </label>
-          ) : undefined
+          <span style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+            <span className="muted" style={{ fontSize: 13 }}>가격 기준: {basisLabel(active ?? null)}</span>
+            {!member && <CurrencyPick cur={cur} onChange={setCur} />}
+          </span>
         }
       />
-      {sample && <Msg kind="warn">샘플 가격입니다(실제 가격이 아닙니다). 실제 가격표를 올리기 전이라 에이전시에게는 보이지 않고 직원에게만 보입니다.</Msg>}
-      {data.length === 0 ? (
-        <div className="state">학비표를 준비하고 있습니다. 실제 가격표를 올린 뒤 보입니다. 지금은 견적에서 금액을 확인하세요.</div>
-      ) : (
-        <>
-          <TuitionTables rows={data} cur={cur} />
-          <p className="muted" style={{ fontSize: 12 }}>
-            가격은 JIC 관리자 포털 가격표에서 읽습니다(CL-038). 업체 가격표의 기준 주 수(대부분 4주) 금액이고, 기간별 금액·할인·프로모션은 견적에서 계산합니다.
-            {staff && !member ? ' 직원 화면: 커미션은 이 화면에 나오지 않습니다.' : ''}
-          </p>
-        </>
-      )}
+      <TuitionTables book={book} cur={cur} />
+      <p className="muted" style={{ fontSize: 12 }}>
+        모두 4주 기준 금액입니다. 기간별 금액·할인·프로모션은 <Link to="/quote">견적</Link>에서 계산합니다. 가격은 JIC 관리자 포털 가격표에서 읽습니다(CL-038).
+        {!member ? ' 직원 화면: 지점은 지점 국가의 통화로만 봅니다. 커미션은 이 화면에 나오지 않습니다.' : ''}
+      </p>
       <Box title="환불 규정">
         <p className="empty">{t('common.preparing')}</p>
       </Box>
