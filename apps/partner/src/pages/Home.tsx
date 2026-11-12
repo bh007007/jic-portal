@@ -1,32 +1,32 @@
 import { Link, useNavigate } from 'react-router-dom';
-import { campusCover, CoverPhoto, loadItems, str, textOf, usePhotos, VideoCard } from '../content';
+import { loadItems, str, textOf, usePhotos, VideoCard } from '../content';
 import { updateText } from '../contentKinds';
-import { byCountryOrder, courseLabel, isActivePromotion, loadCampuses, loadCourses, loadSettings, useLoad, type Notice } from '../data';
+import { byCountryOrder, isActivePromotion, loadCampuses, loadSettings, useLoad, type Notice } from '../data';
+import { CampusCards } from '../campusCards';
 import { useAuth } from '../auth';
 import { t } from '../i18n';
 import { must, supabase } from '../supabase';
 import { Box, OutLink, TAG_COLOR } from '../ui';
-import { toneOf } from '../tone';
 
 // 1.2 로그인 후 홈(CL-040, 11/10): 상담 시작(가장 크게) → 바로가기 4개(견적·공실·자료실·방문 신청) → 캠퍼스 상태
+// 캠퍼스 카드는 Premium · Challenger · 캠프(CL-077·080, 11/12, campusCards.tsx)
 // → 공지·프로모션(국가별 순서, CL-036) → 새 영상(JIC Play) → 뉴스레터 최신호.
 // 캠퍼스 상태 한 줄·새 영상·뉴스레터 호는 관리자 포털 '파트너 포털 관리'의 화면 콘텐츠(partner_content_items, CL-045)에서 읽는다.
 // 2차에는 대표 홈에 처리할 인보이스·내 학생 요약을 더한다.
 // 지점 직원 아이디(CL-032)는 상담·자료·공지만: 바로가기는 자료실만 보이고 캠퍼스 상자는 대표만 본다.
 export default function Home() {
-  const { member, agencyStaff } = useAuth();
+  const { member, agencyStaff, staff } = useAuth();
   const navigate = useNavigate();
-  const cardPhotos = usePhotos(['campus_card', 'campus_hero']); // 사진 보관함 '캠퍼스 카드'(CL-047)
+  const cardPhotos = usePhotos(['campus_card', 'campus_hero', 'camp']); // 사진 보관함 '캠퍼스 카드'(CL-047)
   const { data } = useLoad(async () => {
-    const [campuses, courses, settings, notices, items] = await Promise.all([
+    const [campuses, settings, notices, items] = await Promise.all([
       loadCampuses(),
-      loadCourses(),
       loadSettings(),
       must<Notice[]>(supabase.from('partner_notices').select('*').order('pinned', { ascending: false }).order('created_at', { ascending: false }).limit(30)),
       // 화면 콘텐츠는 못 읽어도 홈은 보인다(그 상자만 '준비 중')
       loadItems(['campus_status', 'video', 'newsletter']).catch(() => []),
     ]);
-    return { campuses, courses, settings, notices, items };
+    return { campuses, settings, notices, items };
   });
   // 국가별 우선 순서(CL-036): 고정·최신 순서를 내 나라 순서로 다시 줄 세운다(노출 국가는 DB 정책이 거름)
   const ordered = byCountryOrder(data?.notices ?? [], member?.country);
@@ -59,32 +59,23 @@ export default function Home() {
       </nav>
 
       {!agencyStaff && (
-      <Box title="캠퍼스" extra={<Link className="more" to="/campuses">캠퍼스·코스 ›</Link>}>
+      <Box title="캠퍼스" extra={<Link className="more" to="/campuses">캠퍼스 ›</Link>}>
         <div className="box-body">
-          <div className="cards">
-            {(data?.campuses ?? []).map((c) => {
-              const cs = (data?.courses ?? []).filter((x) => x.campus_id === c.id);
-              return c.status === 'open' ? (
-                <Link key={c.id} className="card has-cover" data-tone={toneOf(c.id)} to={`/campuses/${c.id}`}>
-                  <CoverPhoto photo={campusCover(cardPhotos, c.id)} />
-                  <div className="card-title"><strong>{c.name}</strong><span className="muted" style={{ fontSize: 12 }}>코스 {cs.length}</span></div>
-                  <span style={{ fontSize: 13, color: 'var(--ink-2)' }}>{c.tagline}</span>
-                  <span style={{ fontSize: 13, lineHeight: 1.7 }}>{cs.map(courseLabel).join(' · ')}</span>
-                  {statusOf(c.id) && (
-                    <span className="campus-status">
-                      {textOf(statusOf(c.id)!).title}
-                      {statusOf(c.id)!.updated_on && <span className="muted"> · {updateText({ updated_on: statusOf(c.id)!.updated_on, next_update: null })}</span>}
-                    </span>
-                  )}
-                </Link>
-              ) : (
-                <div key={c.id} className="card off has-cover" data-tone={toneOf(c.id)}>
-                  <CoverPhoto photo={campusCover(cardPhotos, c.id)} />
-                  <div className="card-title"><strong>{c.name}</strong><span className="chip">{t('common.preparing')}</span></div>
-                </div>
-              );
-            })}
-          </div>
+          <CampusCards
+            campuses={data?.campuses ?? []}
+            photos={cardPhotos}
+            country={member?.country}
+            staffView={!!staff && !member}
+            extra={(id) => {
+              const st = statusOf(id);
+              return st ? (
+                <span className="campus-status">
+                  {textOf(st).title}
+                  {st.updated_on && <span className="muted"> · {updateText({ updated_on: st.updated_on, next_update: null })}</span>}
+                </span>
+              ) : null;
+            }}
+          />
         </div>
       </Box>
       )}

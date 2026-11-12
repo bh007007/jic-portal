@@ -33,6 +33,7 @@ import Faq from './pages/content/Faq';
 import { AboutSection, SchoolStats, Teachers } from './pages/content/About';
 import { Activities, Calendar, Day } from './pages/content/Life';
 import Camps from './pages/content/Camps';
+import CampusCompare from './pages/CampusCompare';
 import Contacts from './pages/content/Contacts';
 import { Arrivals, StudentDetail, StudentList } from './pages/students/MyStudents';
 import { PENDING_ROUTES, staffCanSee } from './menu';
@@ -93,6 +94,9 @@ export default function App() {
         <Route path="/account" element={<Member><Account /></Member>} />
         <Route path="/consult" element={<Member><Consult /></Member>} />
         <Route path="/campuses" element={<Member><Campuses /></Member>} />
+        {/* CL-077·079(11/12): 캠퍼스 › 캠퍼스 한눈에 보기, 캠프는 캠퍼스 목록 안 */}
+        <Route path="/campuses/compare" element={<Member><CampusCompare /></Member>} />
+        <Route path="/campuses/camp" element={<Member><Camps /></Member>} />
         <Route path="/campuses/:id" element={<Member><CampusPage /></Member>} />
         <Route path="/courses" element={<Member><CoursesIndex /></Member>} />
         <Route path="/courses/:id" element={<Member><CoursePage /></Member>} />
@@ -108,7 +112,8 @@ export default function App() {
         <Route path="/about/teachers" element={<Member><Teachers /></Member>} />
         <Route path="/about/school" element={<Member><SchoolStats /></Member>} />
         <Route path="/day" element={<Member><Day /></Member>} />
-        <Route path="/camps" element={<Member><Camps /></Member>} />
+        {/* 예전 주소(코스·생활 › 캠프, CL-077 삭제) */}
+        <Route path="/camps" element={<Navigate to="/campuses/camp" replace />} />
         <Route path="/life/calendar" element={<Member><Calendar /></Member>} />
         <Route path="/life/activities" element={<Member><Activities /></Member>} />
         <Route path="/contacts" element={<Member><Contacts /></Member>} />

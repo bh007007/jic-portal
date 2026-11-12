@@ -18,8 +18,8 @@ import { Loading, PageHead } from './ui';
  */
 export async function loadItems(kinds: ContentKind[]): Promise<ContentItem[]> {
   const rows = await must<ContentItem[]>(supabase.from('partner_content_items').select('*').in('kind', kinds).eq('status', 'published'));
-  // 순서 칸(작은 수 먼저) → 최근에 고친 것 먼저
-  return rows.sort((a, b) => a.sort - b.sort || b.updated_at.localeCompare(a.updated_at));
+  // 순서 칸(작은 수 먼저) → 최근에 고친 것 먼저. New Campus 로 넣은 줄은 보이지 않는다(11/12 삭제, CL-077)
+  return rows.filter((r) => r.campus !== 'new').sort((a, b) => a.sort - b.sort || b.updated_at.localeCompare(a.updated_at));
 }
 
 export function useItems(...kinds: ContentKind[]) {
@@ -48,13 +48,17 @@ export function ContentPage({ title, items, error, children, intro }: { title: s
 }
 
 /** 캠퍼스 고르기(전체 + 목록에 있는 캠퍼스) */
+/** 캠퍼스 거르기 이름과 순서(CL-078: 전체 · Premium · Challenger · 캠프) */
+const FILTER_ORDER = ['premium', 'challenger', 'mco'];
+const FILTER_LABEL: Record<string, string> = { premium: 'Premium', challenger: 'Challenger', mco: '캠프' };
+
 export function useCampusFilter(items: ContentItem[] | null) {
   const [campus, setCampus] = useState('');
-  const ids = [...new Set((items ?? []).map((i) => i.campus).filter(Boolean))];
+  const ids = FILTER_ORDER.filter((c) => (items ?? []).some((i) => i.campus === c));
   const bar = ids.length > 1 ? (
     <div className="filter-row" role="group" aria-label="캠퍼스">
       {['', ...ids].map((c) => (
-        <button key={c || 'all'} type="button" className={'btn btn-sm' + (campus === c ? ' btn-primary' : '')} onClick={() => setCampus(c)}>{c ? campusName(c) : '전체'}</button>
+        <button key={c || 'all'} type="button" className={'btn btn-sm' + (campus === c ? ' btn-primary' : '')} onClick={() => setCampus(c)}>{c ? FILTER_LABEL[c] ?? campusName(c) : '전체'}</button>
       ))}
     </div>
   ) : null;

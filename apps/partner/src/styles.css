@@ -69,9 +69,8 @@ h3 { font-size: 15px; font-weight: 600; }
 .brand small { display: block; color: var(--side-muted); font-size: 12px; }
 .snav { overflow-y: auto; padding: 6px 12px 20px; flex: 1; }
 .snav-group { font-size: 12px; color: var(--side-muted); padding: 18px 12px 6px; }
-.snav-sub-title { display: block; font-size: 12px; color: var(--side-muted); padding: 8px 12px 2px 24px; }
+.snav-gap { height: 14px; }
 .snav a { position: relative; display: flex; align-items: center; gap: 10px; min-height: 40px; padding: 9px 12px; border-radius: 10px; color: var(--side-ink); font-size: 14px; text-decoration: none; }
-.snav .snav-sub a { padding-left: 24px; }
 .snav a:hover { background: var(--side-2); color: #fff; }
 .snav a.active { background: var(--side-2); color: #fff; font-weight: 600; }
 .snav a.active::before { content: ''; position: absolute; left: 0; top: 9px; bottom: 9px; width: 3px; border-radius: 3px; background: var(--accent-bar); }
@@ -346,3 +345,19 @@ select { height: 40px; border: 1px solid var(--line); border-radius: 10px; backg
 .faq-cat { font-size: 12px; color: var(--muted); }
 .faq-a { padding: 12px 18px 16px 40px; font-size: 14px; color: var(--ink-2); }
 .faq-a p { margin: 0 0 8px; }
+
+/* 페이지 안 탭(CL-078, 시제품 V74 방식): 사이드바 1단계 아래 화면들 */
+.page-tabs { display: flex; flex-wrap: wrap; gap: 2px; border-bottom: 1px solid var(--line); margin: 0 0 18px; }
+.page-tabs a { display: inline-flex; align-items: center; gap: 6px; padding: 10px 14px; margin-bottom: -1px; border-bottom: 2px solid transparent; color: var(--ink-2); font-size: 14px; text-decoration: none; }
+.page-tabs a:hover { color: var(--ink); }
+.page-tabs a.on { color: var(--ink); font-weight: 600; border-bottom-color: var(--accent); }
+.page-tabs .tag { font-size: 11px; color: var(--muted); }
+
+/* 캠퍼스 한눈에 보기(CL-079): 우열 없이 나란히 */
+.compare-wrap { overflow-x: auto; background: var(--surface); border: 1px solid var(--line); border-radius: var(--r-md); }
+.compare { width: 100%; border-collapse: collapse; font-size: 14px; }
+.compare th, .compare td { padding: 14px 16px; border-bottom: 1px solid var(--line-2); text-align: left; vertical-align: top; line-height: 1.7; }
+.compare tr:last-child th, .compare tr:last-child td { border-bottom: 0; }
+.compare thead th { background: var(--surface-2); }
+.compare tbody th { width: 120px; color: var(--ink-2); font-weight: 500; white-space: nowrap; }
+ul.plain { margin: 0; padding: 0; list-style: none; }

@@ -6,6 +6,8 @@ import type { ContentItem } from '../../contentKinds';
 import { Sheet } from '../../consult/Sheet';
 import { t } from '../../i18n';
 import { toneOf } from '../../tone';
+import { useAuth } from '../../auth';
+import { campItemsFor } from '../../campusCards';
 
 // 구글 드라이브 '보기' 주소는 화면 안에 넣을 수 없어 미리보기 주소로 바꾼다
 const frameUrl = (url: string) => url.replace(/^(https:\/\/drive\.google\.com\/file\/d\/[\w-]+)\/(view|edit)\b.*$/, '$1/preview');
@@ -19,13 +21,16 @@ const STATE_STYLE: Record<string, CSSProperties> = {
 };
 
 /**
- * 코스·생활 › 주니어·가족 캠프(CL-053, 명세 4.3 '캠프'). 상담 추천에는 나오지 않는다.
+ * 캠퍼스 › 캠프(CL-077 11/12: '코스·생활 › 캠프' 메뉴는 삭제, 캠퍼스 목록의 '캠프' 카드로 들어온다. CL-053의 카드·브로슈어·추천 제외는 그대로).
+ * 캠프 순서는 지점 국가별(한국: 패밀리캠프(Premium)·가족연수·주니어캠프(MCO) / 그 밖: 가족연수·주니어캠프(MCO)·주니어캠프(Premium)), 그다음 모집 상태.
  * 캠프 카드 + 브로슈어 PDF 화면 안에서 보기·내려받기·링크 복사. 가격은 브로슈어 안에만 있고 화면 글에는 쓰지 않는다.
  * 대상 국가는 공통 칸 '노출 국가'(DB 정책이 거름). 업로드 일자는 최종 업데이트일(없으면 처음 넣은 날).
  * 브로슈어는 관리자 포털에서 올린 PDF(비공개 저장소, 서명 주소)가 먼저, 없으면 브로슈어 주소(드라이브 등). 위에는 사진 보관함의 '캠프' 사진.
  */
 export default function Camps() {
   const { data, error } = useItems('camp');
+  const { member } = useAuth();
+  const typeOrder = campItemsFor(member?.country);
   const [pdf, setPdf] = useState<{ it: ContentItem; url: string } | null>(null);
   const [copied, setCopied] = useState('');
   const [err, setErr] = useState('');
@@ -52,7 +57,11 @@ export default function Camps() {
     const i = STATE_ORDER.indexOf(str(it, 'state'));
     return i < 0 ? STATE_ORDER.length : i;
   };
-  const list = [...(data ?? [])].sort((a, b) => rank(a) - rank(b));
+  const typeRank = (it: ContentItem) => {
+    const i = typeOrder.indexOf(str(it, 'type'));
+    return i < 0 ? typeOrder.length : i;
+  };
+  const list = [...(data ?? [])].sort((a, b) => typeRank(a) - typeRank(b) || rank(a) - rank(b));
   const copy = async (it: ContentItem) => {
     const url = await urlOf(it, 7 * 24 * 3600);
     if (!url) return setErr('링크를 만들지 못했습니다.');

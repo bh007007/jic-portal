@@ -4,11 +4,11 @@ import { useAuth } from './auth';
 import { LANGS, t } from './i18n';
 import { supabase } from './supabase';
 import { adminUrl } from './adminPortal';
-import { menuFor, type MenuItem } from './menu';
+import { entryOf, menuFor, type MenuEntry, type MenuItem } from './menu';
 
 /**
  * 에이전트 모드 배치(CL-041 디자인 원칙 2.6, CL-049): 왼쪽 사이드바 232px(차콜) + 본문 위 고정 막대.
- * 메뉴 구조·순서·이름은 CL-037 그대로(D9). 사이드바 묶음은 펼친 채로 보인다.
+ * 메뉴 내용은 CL-037, 보여 주는 방식은 CL-078(11/12): 사이드바는 1단계만, 2단계는 본문 위 탭(시제품 V74 방식).
  * 900px 아래에서는 사이드바가 옆으로 숨고 '메뉴' 단추로 연다(태블릿·모바일 세부 배치는 메뉴 확정 뒤, CL-042).
  */
 export default function Layout({ children }: { children: ReactNode }) {
@@ -20,11 +20,14 @@ export default function Layout({ children }: { children: ReactNode }) {
   useEffect(() => document.body.classList.remove('nav-open'), [pathname]);
   // 로그인 전에는 메뉴를 눌러도 로그인으로 보낸다(대시보드만 공개, 원칙 P2)
   const go = (to: string) => (allowed || to === '/' ? to : `/login?next=${encodeURIComponent(to)}`);
-  const item = (it: MenuItem) => (
-    <NavLink key={it.to} to={go(it.to)} className={({ isActive }) => (isActive && allowed ? 'active' : '')}>
-      {t(it.key)}
-      {!it.ready && <span className="tag">{t(it.phase2 ? 'common.phase2' : 'common.preparing')}</span>}
-    </NavLink>
+  // 지금 화면이 속한 사이드바 메뉴(탭·상세 화면 포함)
+  const current = entryOf(pathname, menu);
+  const tag = (it: MenuItem) => !it.ready && <span className="tag">{t(it.phase2 ? 'common.phase2' : 'common.preparing')}</span>;
+  const item = (e: MenuEntry) => (
+    <Link key={e.to} to={go(e.to)} className={current?.key === e.key && allowed ? 'active' : ''} aria-current={current?.key === e.key && allowed ? 'page' : undefined}>
+      {t(e.key)}
+      {tag(e)}
+    </Link>
   );
   const who = member
     ? `${member.agency_name}${member.branch ? ' ' + member.branch : ''}${member.role === 'staff' ? ` · ${member.contact_name || '직원'}(직원)` : ''}`
@@ -48,33 +51,14 @@ export default function Layout({ children }: { children: ReactNode }) {
             <small>JIC English Academy</small>
           </span>
         </Link>
-        {/* CL-037 메뉴 구조 */}
+        {/* CL-078: 사이드바는 1단계만 */}
         <nav className="snav" aria-label="주 메뉴">
-          {menu.map((g) => {
-            if (g.to) {
-              return (
-                <NavLink key={g.key} to={go(g.to)} end={g.to === '/'} className={({ isActive }) => (isActive && allowed ? 'active' : '')}>
-                  {t(g.key)}
-                  {g.phase2 && <span className="tag">{t('common.phase2')}</span>}
-                </NavLink>
-              );
-            }
-            return (
-              <div key={g.key}>
-                <div className="snav-group">{t(g.key)}</div>
-                {(g.items ?? []).map((it) =>
-                  'sub' in it ? (
-                    <div key={it.key} className="snav-sub">
-                      <span className="snav-sub-title">{t(it.key)}</span>
-                      {it.sub.map(item)}
-                    </div>
-                  ) : (
-                    item(it)
-                  ),
-                )}
-              </div>
-            );
-          })}
+          {menu.map((g, i) => (
+            <div key={g.key ?? `gap-${i}`}>
+              {g.key ? <div className="snav-group">{t(g.key)}</div> : i > 0 && <div className="snav-gap" />}
+              {g.items.map(item)}
+            </div>
+          ))}
         </nav>
         <div className="side-foot">
           {/* 관리 화면은 관리자 포털 '파트너 포털 관리' 메뉴(11/10 이전, CL-025) */}
@@ -113,7 +97,20 @@ export default function Layout({ children }: { children: ReactNode }) {
             </div>
           </div>
         </header>
-        <main className="content">{children}</main>
+        <main className="content">
+          {/* CL-078: 2단계는 페이지 안 탭 */}
+          {allowed && current?.tabs && current.tabs.length > 1 && (
+            <nav className="page-tabs" aria-label={t(current.key)}>
+              {current.tabs.map((x) => (
+                <NavLink key={x.to} to={x.to} end className={({ isActive }) => (isActive ? 'on' : '')}>
+                  {t(x.key)}
+                  {tag(x)}
+                </NavLink>
+              ))}
+            </nav>
+          )}
+          {children}
+        </main>
       </div>
     </div>
   );
