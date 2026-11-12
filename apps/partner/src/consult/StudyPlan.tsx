@@ -83,7 +83,7 @@ export default function StudyPlan({ set, answerText, wished, course, campusName,
 
         <h2>견적</h2>
         <p style={{ margin: 0 }}>
-          {quote.amount ? <strong>{quote.currency} {quote.amount}</strong> : '견적 사이트에서 확인'}
+          {quote.amount ? <strong>{quote.currency} {quote.amount}</strong> : '포털 견적에서 확인'}
           {quote.memo && <span className="pre"> · {quote.memo}</span>}
         </p>
 
