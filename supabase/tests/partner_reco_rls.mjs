@@ -156,6 +156,23 @@ await as(U.partner, async () => {
 await as(U.staff, async () => ok('직원: 지점 정지', (await db.query(`update public.agency_members set status = 'suspended' where user_id = '${U.partner}'`)).affectedRows === 1));
 ok('고친 시각을 트리거가 넣음', (await q(`select updated_at from public.agency_members where user_id = '${U.partner}'`))[0]?.updated_at != null);
 
+// Speaking 단계 수업 구성(CL-070, 20261112190000_speaking_lessons.sql): 관리자 입력은 그대로, v2.1 값만 바꿈, 2회 실행
+await db.exec(mig('20261112190000_speaking_lessons.sql'));
+ok('CL-070: 관리자가 넣은 단계는 그대로', (await q(`select levels from public.courses where id = 'p-speaking'`))[0].levels[0].lessons === '관리자 입력');
+const v21 = mig('20261109153000_partner_reco_v21.sql').split('\r\n').join('\n').match(/set levels = \$lv\$(\[.*?\])\$lv\$::jsonb, updated_at = now\(\)\n {2}where id = 'p-speaking'/)[1];
+await db.exec(`update public.courses set levels = $lv$${v21.replace('"MASTER","lessons":"1:1 6개"', '"MASTER","lessons":"관리자 MASTER"')}$lv$::jsonb where id = 'p-speaking'`);
+await db.exec(mig('20261112190000_speaking_lessons.sql'));
+await db.exec(mig('20261112190000_speaking_lessons.sql')); // 두 번째 실행
+const sp = (await q(`select levels from public.courses where id = 'p-speaking'`))[0].levels;
+ok('CL-070: STARTER 7타임', sp[0].name === 'STARTER' && sp[0].lessons === '7타임 (1:1 4 + 그룹 1 + 옵션 2)', JSON.stringify(sp[0]));
+ok('CL-070: PRO 8타임', sp[1].name === 'PRO' && sp[1].lessons === '8타임 (1:1 5 + 그룹 1 + 옵션 2)', JSON.stringify(sp[1]));
+ok('CL-070: 관리자가 고친 MASTER 는 그대로', sp[2].name === 'MASTER' && sp[2].lessons === '관리자 MASTER', JSON.stringify(sp[2]));
+ok('CL-070: 강도·포함 내용·순서 그대로', sp.map((l) => l.intensity).join() === '집중,집중,고강도' && sp[1].includes === 'STARTER + Speaking Clinic');
+await db.exec(`update public.courses set levels = $lv$${v21}$lv$::jsonb where id = 'p-speaking'`);
+await db.exec(mig('20261112190000_speaking_lessons.sql'));
+ok('CL-070: MASTER 8타임', (await q(`select levels from public.courses where id = 'p-speaking'`))[0].levels[2].lessons === '8타임 (1:1 6 + 옵션 2)');
+ok('CL-070: 다른 코스는 그대로', (await q(`select levels from public.courses where id = 'p-senior'`))[0].levels[0].lessons === '5교시 (1:1 정규 3 + 옵션 2)');
+
 console.log(`파트너 추천 조건표 v2.1 시험: 통과 ${pass}, 실패 ${fails.length}`);
 for (const f of fails) console.log('  실패:', f);
 process.exit(fails.length ? 1 : 0);
