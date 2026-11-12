@@ -1,6 +1,7 @@
 // 학비표(CL-038) 함수 partner_tuition()(20261110173500_partner_tuition.sql)의 권한·내용 시험. 데이터는 전부 가짜 샘플이다.
 // - 지점(승인)·직원만 읽고, 가격표가 샘플이면 지점에게는 0행(원칙 C8), 직원은 sample 표시와 함께 본다.
 // - 지금 적용 중인 코스·기숙사·기타 비용만, 커미션·프로모션·환율은 내보내지 않는다.
+// - 11/12부터 학비표는 승인 가격 버전(price_books)을 읽어 이 함수를 지운다(20261112200000). 끝에서 지운 뒤를 본다.
 //
 // 실행(저장소 루트, 의존성에 추가하지 않고 임시로 설치):
 //   npm i --no-save @electric-sql/pglite@0.3
@@ -98,6 +99,14 @@ await as(U.pending, async () => ok('승인 전 계정: 실제 가격표도 0행'
 // 정지된 지점은 못 본다
 await as(U.staff, () => db.exec(`update public.agency_members set status = 'suspended' where user_id = '${U.partner}'`)); // 정지는 직원만(트리거)
 await as(U.partner, async () => ok('정지된 지점: 0행', (await tuition()).length === 0));
+
+// 3) 11/12 정리(20261112200000_drop_partner_tuition.sql): 학비표는 price_books 를 읽으므로 함수를 지운다. 업체 가격표는 그대로 직원만
+await as(U.staff, () => db.exec(`update public.agency_members set status = 'active' where user_id = '${U.partner}'`));
+await db.exec(mig('20261112200000_drop_partner_tuition.sql'));
+await db.exec(mig('20261112200000_drop_partner_tuition.sql')); // 두 번째 실행
+ok('정리: 함수 없음', (await q(`select to_regprocedure('public.partner_tuition()') is null as gone`))[0].gone === true);
+await as(U.partner, async () => ok('정리 뒤 지점: 업체 가격표 직접 읽기 0행', (await q(`select 1 from public.legacy_prices`)).length === 0));
+await as(U.staff, async () => ok('정리 뒤 직원: 업체 가격표 그대로 읽음', (await q(`select 1 from public.legacy_prices`)).length === n, String(n)));
 
 console.log(`학비표 시험: 통과 ${pass}, 실패 ${fails.length}`);
 for (const f of fails) console.log('  실패:', f);

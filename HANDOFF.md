@@ -125,7 +125,7 @@ jic-portal/
 | 역할별 권한표 1단계 (`docs/roles.md`, 11/9 승인) | 동작 (11/9): 직원 관리자·오피스 구분(`is_admin()`, 역할 없는 직원은 관리자), 사용자·권한은 관리자만, 강사 포털 쓰기 역할별, 인트라넷 점수표·접근 기록은 관리자만·오피스 Student File 캠퍼스(인트라넷 담당 #59) |
 | 통합 관리 앱 권한 구조 1단계 (CL-025, 11/12 레오님 결정 6가지, `docs/permissions.md`) | 동작 (11/12, #134~#136): 메뉴 권한·승인 기본값·사람별 승인 표와 판단 함수(`can_view`·`can_input`·`can_approve`), 센터장 역할(관리자 아님), 관리자 포털 '기초관리 › 권한표'(탭 4개: 메뉴 권한·승인 기본값은 관리자가 고침, 사람별 승인·강사 포털 역할은 관리자와 센터장(자기 캠퍼스)). 기본값 = 지금 규칙이라 바뀐 사람 없음. 남은 것: 2단계 메뉴 숨기기(메뉴 확정 뒤), 3단계 승인 함수(인트라넷·강사 포털 담당과) |
 | 견적 계산 모듈 `packages/quote`(R-014): 가격·프로모션·현지비용(₱)·입력 검사, 국가 → 가격 체계. 포털 견적과 2차 등록·인보이스가 같이 쓴다(CL-076) | 동작 (11/12, #139): 검증 예시 11건 금액 일치(`npm run quote:test`, CI). 가격은 관리자 '가격표 › 견적 가격'의 승인 버전(`price_books`, #142). 새 버전 승인은 '가격 변경 승인'을 받은 사람(대표님, 레오님이 줌). `docs/quote-integration.md` |
-| Supabase 테이블(`legacy_*` 원본 jsonb, 연장·변경·Check Balance 포함)·직원 로그인·Cloudflare Pages 배포 | 동작 중 (11/7~): https://jic-portal-916.pages.dev , Supabase `jic-portal`(Singapore). 샘플 데이터만. 마이그레이션은 `20261112190000`까지 운영 적용(11/12). 정규화 스키마 3개(`core_schema`·`core_schema_more`·`core_schema_accounting`)는 일부러 빼 두었다(학원 계정 새 프로젝트에서). 계정은 레오에게 요청. 설정 순서 `docs/setup-cloud.md` |
+| Supabase 테이블(`legacy_*` 원본 jsonb, 연장·변경·Check Balance 포함)·직원 로그인·Cloudflare Pages 배포 | 동작 중 (11/7~): https://jic-portal-916.pages.dev , Supabase `jic-portal`(Singapore). 샘플 데이터만. 마이그레이션은 `20261112200000`까지 운영 적용(11/12). 정규화 스키마 3개(`core_schema`·`core_schema_more`·`core_schema_accounting`)는 일부러 빼 두었다(학원 계정 새 프로젝트에서). 계정은 레오에게 요청. 설정 순서 `docs/setup-cloud.md` |
 
 ## 5. 실제 데이터로 실행하기 (권한 있는 사람만)
 
