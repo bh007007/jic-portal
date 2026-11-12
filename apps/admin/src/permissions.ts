@@ -71,3 +71,13 @@ export function canManageGrant(g: Pick<ApprovalGrant, 'user_id' | 'kind' | 'camp
   if (me.admin) return true;
   return g.kind !== 'grant_roles' && g.user_id !== me.id && g.campus !== '' && me.directorCampuses.includes(g.campus.toLowerCase());
 }
+
+/** 강사 포털 역할(센터장이 자기 캠퍼스로 줄 수 있는 역할). 오피스·센터장·관리자 역할은 관리자만 '사용자·권한'에서 */
+export const LMS_ROLE_KEYS = ['teacher', 'checker', 'scheduler', 'manager'];
+export interface RoleRow { user_id: string; role: string; campus: string }
+/** 역할 줄을 이 사용자가 주거나 회수할 수 있는가(DB 정책 user_roles_write·delete 와 같은 규칙, 이 탭은 강사 포털 역할만) */
+export function canManageRole(r: RoleRow, me: Me): boolean {
+  if (!LMS_ROLE_KEYS.includes(r.role)) return false;
+  if (me.admin) return true;
+  return r.user_id !== me.id && r.campus !== '' && me.directorCampuses.includes(r.campus.toLowerCase());
+}
