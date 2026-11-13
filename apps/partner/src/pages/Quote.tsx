@@ -7,10 +7,11 @@ import { Box, Loading, PageHead } from '../ui';
 import { basisLabel, type ActiveBook } from '../priceBook';
 import { loadActiveBook } from '../tuition';
 import {
-  PRICE_BOOK_2026, presentQuote, quote, systemForCountry,
+  PRICE_BOOK_2026, pickupAllowed, pickupText, presentQuote, quote, systemForCountry,
   type Campus, type PriceBook, type PriceSystem,
 } from '../../../../packages/quote/src';
 import QuoteResultBlock from '../../../../packages/quote-view/QuoteResultBlock';
+import StartDateCalendar from '../../../../packages/quote-view/StartDateCalendar';
 
 /**
  * 견적(T-20, R-013 2단계, 11/12). 견적 사이트 대신 포털에서 계산한다(CL-065: 견적 사이트는 쓰지 않음).
@@ -23,6 +24,7 @@ import QuoteResultBlock from '../../../../packages/quote-view/QuoteResultBlock';
  *   못 읽으면(마이그레이션 전 등) 모듈의 기획 정정본 PRICE_BOOK_2026 으로 계산한다
  * - 결과는 견적 결과 블록 부품(packages/quote-view, 기획 '견적 수정 목록 1113' 견적-1~4): 2차 학생등록·인보이스도 같은 부품
  * - 캠퍼스 버튼에만 캠퍼스 색(견적-4). 화면 전체 강조색·배경은 바꾸지 않는다(useCampusTone 안 씀)
+ * - 시작일은 직접 만든 달력(일요일만, BESA 픽업일 연한 회색), BESA 단체 픽업은 BESA 날만 고를 수 있다(견적-5)
  */
 
 type Tab = Campus | 'mixed';
@@ -122,11 +124,19 @@ function QuoteForm({ active, member }: { active: ActiveBook | null; member: Retu
     } else setRows(defaults(BOOK, next, Math.max(1, totalWeeks)));
   };
 
+  // 시작일을 BESA 날이 아닌 날로 바꾸면 BESA 단체 픽업은 '신청 안 함'으로 돌아간다(견적-5)
+  const changeStart = (day: string) => {
+    setStart(day);
+    const p = BOOK.pickups.find((x) => x.id === pickup);
+    if (p && !pickupAllowed(p, day)) setPickup('');
+  };
+
   const result = useMemo(
     () => quote({ system, start, courses: rows.courses, dorms: rows.dorms, pickup: pickup || null }, BOOK),
     [system, start, rows, pickup, BOOK],
   );
-  const pickupLabel = BOOK.pickups.find((p) => p.id === pickup)?.label;
+  const pickedPickup = BOOK.pickups.find((p) => p.id === pickup);
+  const pickupLabel = pickedPickup ? pickupText(pickedPickup) : undefined;
   const label = (campus: Campus, id: string) => (tab === 'mixed' ? tag(campus) : '') + id;
 
   const rowEditor = (kind: 'course' | 'dorm') => {
@@ -176,8 +186,18 @@ function QuoteForm({ active, member }: { active: ActiveBook | null; member: Retu
               <label>성별<select value={student.gender} onChange={(e) => setStudent({ ...student, gender: e.target.value })}><option value="">선택 안 함</option><option>남</option><option>여</option></select></label>
               <label>생년월일<input type="date" value={student.birth} onChange={(e) => setStudent({ ...student, birth: e.target.value })} /></label>
               <label>유학원 · 담당자<input value={student.agency} onChange={(e) => setStudent({ ...student, agency: e.target.value })} maxLength={80} /></label>
-              <label>연수 시작일(일요일)<input type="date" value={start} onChange={(e) => setStart(e.target.value)} /></label>
-              <label>공항 픽업<select value={pickup} onChange={(e) => setPickup(e.target.value)}><option value="">신청 안 함</option>{BOOK.pickups.map((p) => <option key={p.id} value={p.id}>{p.label} ({peso(p.php)})</option>)}</select></label>
+              <div className="field">
+                <span id="quote-start-label">연수 시작일(일요일)</span>
+                <StartDateCalendar labelledBy="quote-start-label" value={start} onChange={changeStart} />
+              </div>
+              <label>
+                공항 픽업
+                <select value={pickup} onChange={(e) => setPickup(e.target.value)}>
+                  <option value="">신청 안 함</option>
+                  {/* BESA 단체 픽업은 시작일이 BESA 날일 때만(견적-5). 목록에서 빼지 않고 흐리게 둔다 */}
+                  {BOOK.pickups.map((p) => <option key={p.id} value={p.id} disabled={!pickupAllowed(p, start)}>{pickupText(p)} · {peso(p.php)}</option>)}
+                </select>
+              </label>
               <p className="hint" style={{ gridColumn: '1 / -1', margin: 0 }}>{t('common.notSaved')}. 이름·성별·생년월일·유학원은 인쇄할 때만 씁니다.</p>
             </div>
           </Box>

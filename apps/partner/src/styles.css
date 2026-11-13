@@ -17,6 +17,8 @@
   --logo: #D52B1E; /* 로고에만(D2.3) */
   /* 할인·추가요금(견적-3, 11/13): 금액 숫자와 아이콘에만. 이름은 --ink */
   --discount: #1A3E93; --discount-bg: #E9EFFB; --surcharge: #C2540A; --surcharge-icon: #F06800; --surcharge-bg: #FEF0E7;
+  /* 시작일 달력(견적-5): BESA 픽업일 배경, 고를 수 없는 날 글자 */
+  --besa-bg: #EEF0F3; --cal-off: #C9CDD4; --cal-other: #E5E7EB; --cal-other-sun: #D7DAE0;
   --accent: var(--all); --accent-tint: var(--all-tint); --accent-ink: var(--all-ink); --accent-bar: #E1E4EA;
   --r-lg: 18px; --r-md: 12px; --r-sm: 8px;
   --shadow: 0 1px 2px rgba(40, 46, 60, 0.04), 0 6px 20px rgba(40, 46, 60, 0.05);
@@ -34,6 +36,7 @@
     --mco-tint: #3A3222; --mco-ink: #E6C987;
     --shadow: 0 1px 2px rgba(0, 0, 0, 0.2); --side: #16181C; --side-2: #22252B; --side-line: #2C2F36;
     --discount: #86A4EA; --surcharge: #FA8C42; --surcharge-icon: #FA8C42;
+    --besa-bg: #343842; --cal-off: #4B5260; --cal-other: #33373F; --cal-other-sun: #3D4149;
   }
 }
 body[data-campus='pre'] { --bg: #F8F5EE; --surface-2: #FBF9F4; --line: #E8E2D6; --line-2: #F0EBE1; --accent: var(--pre); --accent-tint: var(--pre-tint); --accent-ink: var(--pre-ink); --accent-bar: #A8CBB2; }
@@ -199,6 +202,8 @@ a.card:hover { border-color: var(--accent); }
 .form-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(240px, 100%), 1fr)); gap: 14px 20px; }
 .form-actions { display: flex; flex-wrap: wrap; gap: 8px; justify-content: flex-end; }
 select { height: 40px; border: 1px solid var(--line); border-radius: 10px; background: var(--surface); padding: 0 10px; }
+/* 고를 수 없는 선택지는 흐리게(견적 BESA 단체 픽업, 견적-5) */
+select option:disabled { color: var(--cal-off); }
 
 /* ── 알림: 주의 배경. 안내는 강조색 연한 배경 */
 .msg { padding: 12px 16px; border-radius: var(--r-md); font-size: 14px; }

@@ -1,5 +1,5 @@
 import {
-  LOCAL_FEE_NOTICE, PRICE_BOOK_2026, SYSTEM_CURRENCY, systemForCountry,
+  LOCAL_FEE_NOTICE, PRICE_BOOK_2026, SYSTEM_CURRENCY, pickupText, systemForCountry,
   type Campus, type Currency, type PriceBook, type PriceSystem,
 } from '../../../packages/quote/src';
 import { quoteCourse } from './consult/quoteLink';
@@ -73,6 +73,6 @@ export function localFeeRows(book: PriceBook, campus?: Campus): FeeRow[] {
   });
   const hasGuarantee = book.courses.some((c) => c.guarantee && (!campus || c.campus === campus));
   if (hasGuarantee) rows.push({ key: 'guarantee', name: 'IELTS Guarantee', basis: 'IELTS Guarantee 등록 때 1회(8주)', php: L.guarantee });
-  for (const p of book.pickups ?? []) rows.push({ key: `pickup:${p.id}`, name: `공항 픽업 · ${p.label}`, basis: '고른 경우 1회', php: p.php });
+  for (const p of book.pickups ?? []) rows.push({ key: `pickup:${p.id}`, name: `공항 픽업 · ${pickupText(p)}`, basis: '고른 경우 1회', php: p.php });
   return rows;
 }

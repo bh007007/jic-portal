@@ -106,10 +106,11 @@ export const PRICE_BOOK_2026: PriceBook = {
   },
   // 공항 픽업(CL-064): 견적 사이트 선택지 4개 그대로, 현지비용에 1회
   pickups: [
-    { id: 'manila_besa', label: 'Manila NAIA 일요일(BESA 단체)', php: 3000 },
-    { id: 'manila_solo', label: 'Manila NAIA 그 밖의 날 1인', php: 13000 },
-    { id: 'clark_besa', label: 'Clark CRK 월요일(BESA 단체)', php: 3000 },
-    { id: 'clark_solo', label: 'Clark CRK 그 밖의 날 1인', php: 8500 },
+    // 표시 글자는 기획 '견적 수정 목록 1113' 5-1장 표기(공항 · 요일 · 단체 여부)
+    { id: 'manila_besa', label: 'Manila NAIA · 일요일 (BESA 단체)', php: 3000, besa: true },
+    { id: 'manila_solo', label: 'Manila NAIA · 그 밖의 날 1인', php: 13000 },
+    { id: 'clark_besa', label: 'Clark CRK · 월요일 (BESA 단체)', php: 3000, besa: true },
+    { id: 'clark_solo', label: 'Clark CRK · 그 밖의 날 1인', php: 8500 },
   ],
   promotions: PROMOTIONS_2026,
 };

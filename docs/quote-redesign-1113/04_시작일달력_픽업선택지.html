@@ -1,0 +1,56 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<!-- JIC 포털 견적 시안 (11/13). 참고용 정적 화면입니다. 기준 문서: JIC_포털_견적_수정목록_1113.md -->
+<meta charset="utf-8">
+<title>시작일 달력과 픽업 선택지</title>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+KR:wght@400;500;600&amp;family=Noto+Sans+KR:wght@400;500;600&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0}
+a{color:#4B5260}a:hover{color:#262A31}
+</style>
+</head>
+<body>
+<div style="width: 920px; height: 640px; box-sizing: border-box; padding: 24px; background: #F7F8FA; font-family: 'IBM Plex Sans KR', 'Noto Sans KR', 'Apple SD Gothic Neo', 'Malgun Gothic', system-ui, sans-serif; line-height: 1.6; word-break: keep-all; color: #262A31; display: flex; gap: 24px; align-items: flex-start">
+
+<section aria-label="연수 시작일 달력" style="flex: 1 1 0; min-width: 0; display: flex; flex-direction: column; gap: 8px">
+<span style="font-size: 13px; color: #4B5260">연수 시작일(일요일)</span>
+<div style="height: 44px; border: 1.5px solid #262A31; border-radius: 11px; padding: 0 12px; display: flex; align-items: center; justify-content: space-between; background: #FFFFFF; font-size: 15px">2026년 12월 13일 (일)
+<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#4B5260" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="4" width="18" height="18" rx="2"></rect><path d="M16 2v4"></path><path d="M8 2v4"></path><path d="M3 10h18"></path></svg></div>
+<div style="background: #FFFFFF; border: 1px solid #E5E7EB; border-radius: 18px; padding: 18px; box-shadow: 0 8px 24px rgba(38,42,49,0.08)">
+<div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px">
+<button type="button" aria-label="이전 달" style="width: 36px; height: 36px; border: 1px solid #E5E7EB; border-radius: 8px; background: #FFFFFF; color: #262A31; font: inherit; cursor: pointer">‹</button>
+<span style="font-size: 16px; font-weight: 600">2026년 12월</span>
+<button type="button" aria-label="다음 달" style="width: 36px; height: 36px; border: 1px solid #E5E7EB; border-radius: 8px; background: #FFFFFF; color: #262A31; font: inherit; cursor: pointer">›</button>
+</div>
+<div style="display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 4px; text-align: center; font-size: 14px; font-variant-numeric: tabular-nums">
+<span style="font-size: 12.5px; color: #4B5260; font-weight: 500; padding: 4px 0">일</span><span style="font-size: 12.5px; color: #6B7280; padding: 4px 0">월</span><span style="font-size: 12.5px; color: #6B7280; padding: 4px 0">화</span><span style="font-size: 12.5px; color: #6B7280; padding: 4px 0">수</span><span style="font-size: 12.5px; color: #6B7280; padding: 4px 0">목</span><span style="font-size: 12.5px; color: #6B7280; padding: 4px 0">금</span><span style="font-size: 12.5px; color: #6B7280; padding: 4px 0">토</span>
+
+<span style="height: 38px; line-height: 38px; color: #D7DAE0">29</span><span style="height: 38px; line-height: 38px; color: #E5E7EB">30</span><span style="height: 38px; line-height: 38px; color: #C9CDD4">1</span><span style="height: 38px; line-height: 38px; color: #C9CDD4">2</span><span style="height: 38px; line-height: 38px; color: #C9CDD4">3</span><span style="height: 38px; line-height: 38px; color: #C9CDD4">4</span><span style="height: 38px; line-height: 38px; color: #C9CDD4">5</span>
+
+<button type="button" style="height: 38px; border: 0; border-radius: 10px; background: transparent; color: #262A31; font: inherit; font-size: 14px; cursor: pointer">6</button><span style="height: 38px; line-height: 38px; color: #C9CDD4">7</span><span style="height: 38px; line-height: 38px; color: #C9CDD4">8</span><span style="height: 38px; line-height: 38px; color: #C9CDD4">9</span><span style="height: 38px; line-height: 38px; color: #C9CDD4">10</span><span style="height: 38px; line-height: 38px; color: #C9CDD4">11</span><span style="height: 38px; line-height: 38px; color: #C9CDD4">12</span>
+
+<button type="button" aria-pressed="true" style="height: 38px; border: 0; border-radius: 10px; background: #262A31; color: #FFFFFF; font: inherit; font-size: 14px; font-weight: 600; cursor: pointer">13</button><span style="height: 38px; line-height: 38px; color: #C9CDD4">14</span><span style="height: 38px; line-height: 38px; color: #C9CDD4">15</span><span style="height: 38px; line-height: 38px; color: #C9CDD4">16</span><span style="height: 38px; line-height: 38px; color: #C9CDD4">17</span><span style="height: 38px; line-height: 38px; color: #C9CDD4">18</span><span style="height: 38px; line-height: 38px; color: #C9CDD4">19</span>
+
+<button type="button" style="height: 38px; border: 0; border-radius: 10px; background: transparent; color: #262A31; font: inherit; font-size: 14px; cursor: pointer">20</button><span style="height: 38px; line-height: 38px; color: #C9CDD4">21</span><span style="height: 38px; line-height: 38px; color: #C9CDD4">22</span><span style="height: 38px; line-height: 38px; color: #C9CDD4">23</span><span style="height: 38px; line-height: 38px; color: #C9CDD4">24</span><span style="height: 38px; line-height: 38px; color: #C9CDD4">25</span><span style="height: 38px; line-height: 38px; color: #C9CDD4">26</span>
+
+<button type="button" style="height: 38px; border: 0; border-radius: 10px; background: #EEF0F3; color: #262A31; font: inherit; font-size: 14px; font-weight: 500; cursor: pointer">27</button><span style="height: 38px; line-height: 38px; color: #C9CDD4">28</span><span style="height: 38px; line-height: 38px; color: #C9CDD4">29</span><span style="height: 38px; line-height: 38px; color: #C9CDD4">30</span><span style="height: 38px; line-height: 38px; color: #C9CDD4">31</span><span style="height: 38px; line-height: 38px; color: #E5E7EB">1</span><span style="height: 38px; line-height: 38px; color: #E5E7EB">2</span>
+</div>
+</div>
+</section>
+
+<section aria-label="공항 픽업 선택지, 시작일이 BESA 날이 아닐 때" style="flex: 1 1 0; min-width: 0; display: flex; flex-direction: column; gap: 8px">
+<span style="font-size: 13px; color: #4B5260">공항 픽업 <span style="color: #6B7280">(시작일 2026-11-22, BESA 날 아님)</span></span>
+<div style="height: 44px; border: 1.5px solid #262A31; border-radius: 11px; padding: 0 12px; display: flex; align-items: center; justify-content: space-between; background: #FFFFFF; font-size: 15px">신청 안 함
+<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#4B5260" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 9 6 6 6-6"></path></svg></div>
+<div role="listbox" aria-label="공항 픽업" style="background: #FFFFFF; border: 1px solid #E5E7EB; border-radius: 14px; padding: 6px; box-shadow: 0 8px 24px rgba(38,42,49,0.08); display: flex; flex-direction: column">
+<div role="option" aria-selected="true" style="padding: 10px 12px; border-radius: 8px; background: #F2F3F5; font-size: 14px; font-weight: 500">신청 안 함</div>
+<div role="option" aria-disabled="true" style="padding: 10px 12px; border-radius: 8px; font-size: 14px; color: #A3A9B3; display: flex; justify-content: space-between; gap: 12px; cursor: not-allowed"><span>Manila NAIA · 일요일 (BESA 단체)</span><span style="font-variant-numeric: tabular-nums">₱3,000</span></div>
+<div role="option" style="padding: 10px 12px; border-radius: 8px; font-size: 14px; display: flex; justify-content: space-between; gap: 12px"><span>Manila NAIA · 그 밖의 날 1인</span><span style="font-variant-numeric: tabular-nums">₱13,000</span></div>
+<div role="option" aria-disabled="true" style="padding: 10px 12px; border-radius: 8px; font-size: 14px; color: #A3A9B3; display: flex; justify-content: space-between; gap: 12px; cursor: not-allowed"><span>Clark CRK · 월요일 (BESA 단체)</span><span style="font-variant-numeric: tabular-nums">₱3,000</span></div>
+<div role="option" style="padding: 10px 12px; border-radius: 8px; font-size: 14px; display: flex; justify-content: space-between; gap: 12px"><span>Clark CRK · 그 밖의 날 1인</span><span style="font-variant-numeric: tabular-nums">₱8,500</span></div>
+</div>
+</section>
+</div>
+</body>
+</html>
