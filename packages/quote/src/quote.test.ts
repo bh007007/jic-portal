@@ -2,7 +2,7 @@
  * 견적 계산 시험(R-014). 기준: 기획 '견적 정정 목록 1112' 3장 검증 예시 11건(CL-068) — 포털 견적은 이 금액과 같아야 한다.
  * 실행: npm run quote:test (CI에서도 돈다)
  */
-import { LOCAL_FEE_NOTICE, PRICE_BOOK_2026 as B, diffBooks, quote, systemForCountry, validate, validateBook, type QuoteInput, type QuoteOk } from './index';
+import { LOCAL_FEE_NOTICE, PRICE_BOOK_2026 as B, diffBooks, presentQuote, quote, systemForCountry, validate, validateBook, withPromoDisplay, type PriceBook, type QuoteInput, type QuoteOk } from './index';
 
 let pass = 0;
 const fails: string[] = [];
@@ -130,6 +130,50 @@ next.pickups = next.pickups.filter((p: { id: string }) => p.id !== 'clark_solo')
 const dif = diffBooks(B, next);
 ok('달라진 칸만: 등록금·코스 1칸·픽업 삭제', dif.length === 3 && dif.some((d) => d.key === 'registration.KRW' && d.before === '100000' && d.after === '120000') && dif.some((d) => d.key === 'course' ? false : d.key.includes('ESL Core:KRW')) && dif.some((d) => d.label.startsWith('공항 픽업 삭제')), dif);
 ok('같은 버전은 바뀐 칸 없음', diffBooks(B, JSON.parse(JSON.stringify(B))).length === 0);
+
+// 9) 결과 블록 내용(기획 '견적 수정 목록 1113' 견적-1·2, 8장 확인 방법)
+const v1 = presentQuote(q({ system: 'kr', start: '2026-12-13', courses: [C('ESL Flex', 12)], dorms: [C('Room for 4 (studio)', 12)] }), B);
+ok('8장 1번: 코스 줄 기간·날짜', v1.courses.length === 1 && v1.courses[0].name === 'ESL Flex' && v1.courses[0].weeks === 12 && v1.courses[0].from === '2026-12-13' && v1.courses[0].to === '2027-03-06' && v1.courses[0].amount === 2400000, v1.courses);
+ok('8장 1번: 숙소 줄·코스+숙소·등록금', v1.dorms[0]?.name === 'Room for 4 (studio)' && v1.dorms[0].amount === 2250000 && v1.itemsTotal === 4650000 && v1.registration === 100000, v1);
+ok('8장 1번: 파란 할인 4줄(이름)', v1.adjustments.map((a) => `${a.kind}:${a.name}`).join('|') === 'discount:린시즌 기숙사 할인|discount:린시즌 기숙사 할인|discount:홀리데이 프로모션|discount:장기등록 할인', v1.adjustments);
+ok('8장 1번: 할인 금액', v1.adjustments.map((a) => a.amount).join() === '150000,50000,200000,300000', v1.adjustments);
+ok('8장 1번: 계산 근거(작은 글씨)', v1.adjustments.map((a) => a.basis).join('|') === "Lean '26 · Room for 4 (studio) · 4주 → 1회 × ₩150,000|Lean '27 · Room for 4 (studio) · 2주 → 0.5회 × ₩100,000|Holiday '26 · 시작 2026-12-13 · 대상 방 12주|12주 이상", v1.adjustments.map((a) => a.basis));
+ok('8장 1번: 총 학비·현지비용', v1.total === 4050000 && v1.localTotal === 45550 && v1.start === '2026-12-13' && v1.end === '2027-03-06' && v1.campuses.join() === 'challenger', v1);
+const v2 = presentQuote(q(cases[2][1]), B);
+ok('8장 2번: 주황 추가요금 1줄, 할인 없음', v2.adjustments.length === 1 && v2.adjustments[0].kind === 'surcharge' && v2.adjustments[0].name === '피크시즌 추가요금' && v2.adjustments[0].amount === 350000, v2.adjustments);
+ok('8장 2번: 계산 근거', v2.adjustments[0]?.basis === "Peak '26 · Room for 4 (loft) · 7주 × ₩50,000", v2.adjustments[0]?.basis);
+ok('8장 2번: 코스+숙소·총 학비·현지비용', v2.itemsTotal === 4020000 && v2.total === 4470000 && v2.localTotal === 34040, v2);
+const v4 = presentQuote(q(cases[3][1]), B);
+ok('8장 4번: 혼합은 줄마다 캠퍼스·기간', v4.mixed && v4.campuses.join() === 'challenger,premium' && v4.courses.map((c) => `${c.campus}:${c.from}~${c.to}`).join('|') === 'challenger:2026-07-05~2026-08-29|premium:2026-08-30~2026-09-26' && v4.dorms.map((d) => d.campus).join() === 'challenger,premium', v4.courses);
+ok('8장 4번: 혼합 줄 이름에 [CC]·[PC] 없음(칩으로 표시)', [...v4.courses, ...v4.dorms].every((x) => !x.name.startsWith('[')), v4.courses);
+ok('성수기 근거는 성수기 주에 든 숙소만(#4는 앞 숙소만)', v4.adjustments.find((a) => a.kind === 'surcharge')?.basis === "Peak '26 · Room for 1 (studio) · 7주 × ₩50,000", v4.adjustments);
+const vTwo = presentQuote(q({ system: 'kr', start: '2026-07-05', courses: [C('ESL Core', 8)], dorms: [C('Room for 4 (loft)', 4), C('Room for 2 (studio)', 4)] }), B);
+ok('성수기가 두 숙소에 걸치면 둘 다', vTwo.adjustments.find((a) => a.kind === 'surcharge')?.basis === "Peak '26 · Room for 4 (loft), Room for 2 (studio) · 7주 × ₩50,000", vTwo.adjustments);
+const vUsd = presentQuote(q(cases[7][1]), B);
+ok('달러 체계는 영어 이름, Global Scholar 근거', vUsd.adjustments.some((a) => a.name === 'Peak Season Surcharge') && vUsd.adjustments.some((a) => a.name === 'Global Scholar Promotion' && a.basis.startsWith("Peak '26 · ")), vUsd.adjustments);
+const vJp = presentQuote(q(cases[9][1]), B);
+ok('일본 체계는 일본어 이름이 없으면 영어', vJp.adjustments.some((a) => a.name === 'Holiday Promotion') && vJp.adjustments.some((a) => a.name === 'Long-term Discount'), vJp.adjustments);
+const vLong = presentQuote(q({ system: 'kr', start: '2026-09-13', courses: [C('ESL Core', 16)], dorms: [C('Room for 4 (loft)', 16)] }), B);
+ok('장기등록 12주 넘으면 총 주수도', vLong.adjustments.find((a) => a.promoId === 'long')?.basis === '12주 이상 · 16주', vLong.adjustments);
+// 11/12 운영 v1(표시 이름 없음)도 같은 이름: 모듈 기본값
+const plain: PriceBook = JSON.parse(JSON.stringify(B));
+for (const p of plain.promotions) { delete p.display; delete p.tag; }
+const vPlain = presentQuote(quote({ system: 'kr', start: '2026-12-13', courses: [C('ESL Flex', 12)], dorms: [C('Room for 4 (studio)', 12)] }, plain) as QuoteOk, plain);
+ok('표시 이름 없는 가격 버전도 기본값으로', JSON.stringify(vPlain.adjustments) === JSON.stringify(v1.adjustments), vPlain.adjustments);
+ok('새 가격 버전에 기본값 채움', withPromoDisplay(plain).promotions.every((p) => !!p.display?.ko && !!p.display?.en) && withPromoDisplay(plain).promotions.find((p) => p.id === 'lean27_quad')?.tag === "Lean '27");
+const renamed: PriceBook = JSON.parse(JSON.stringify(B));
+renamed.promotions.find((p) => p.id === 'long')!.display = { ko: '롱텀 할인', en: 'Long Stay' };
+ok('가격 버전의 표시 이름이 먼저', presentQuote(q({ system: 'kr', start: '2026-12-13', courses: [C('ESL Flex', 12)], dorms: [C('Room for 4 (studio)', 12)] }), renamed).adjustments.some((a) => a.name === '롱텀 할인'));
+ok('표시 이름은 계산에 영향 없음', quote({ system: 'kr', start: '2026-12-13', courses: [C('ESL Flex', 12)], dorms: [C('Room for 4 (studio)', 12)] }, renamed).ok && (quote({ system: 'kr', start: '2026-12-13', courses: [C('ESL Flex', 12)], dorms: [C('Room for 4 (studio)', 12)] }, renamed) as QuoteOk).total === 4050000);
+ok('모든 프로모션에 한국어·영어 표시 이름', B.promotions.every((p) => !!p.display?.ko && !!p.display?.en), B.promotions.filter((p) => !p.display).map((p) => p.id));
+const blank: PriceBook = JSON.parse(JSON.stringify(B));
+blank.promotions[0].display = { ko: ' ', en: 'Peak' };
+ok('빈 표시 이름은 승인 요청 전에 막음', validateBook(blank).some((m) => m.includes('표시 이름')) && validateBook(plain).length === 0, validateBook(blank));
+ok('표시 이름 바꾸면 승인 화면에 그 칸만 보임', diffBooks(B, renamed).length === 1 && diffBooks(B, renamed)[0].key === '프로모션:long:표시 이름' && diffBooks(B, renamed)[0].after === '롱텀 할인 / Long Stay', diffBooks(B, renamed));
+ok('기본값만 채운 새 버전은 바뀐 칸 없음(v1 → v2)', diffBooks(plain, withPromoDisplay(plain)).length === 0, diffBooks(plain, withPromoDisplay(plain)));
+const amt2: PriceBook = JSON.parse(JSON.stringify(B));
+amt2.promotions.find((p) => p.id === 'long')!.amount.KRW = 350000;
+ok('프로모션 금액 바꾸면 내용 칸으로', diffBooks(B, amt2).map((d) => d.key).join() === '프로모션:long:내용', diffBooks(B, amt2));
 
 console.log(`견적 계산 시험: 통과 ${pass}, 실패 ${fails.length}`);
 for (const f of fails) console.log('  실패:', f);

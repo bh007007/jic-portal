@@ -113,9 +113,19 @@ export function quote(input: QuoteInput, book: PriceBook): QuoteResult {
   const mixed = blocks(courses.map((r) => ({ campus: r.def.campus, weeks: r.weeks }))).length > 1;
   const name = (campus: Campus, id: string) => (mixed ? `[${campus === 'challenger' ? 'CC' : 'PC'}] ${id}` : id);
 
-  const charges: Line[] = [{ key: 'registration', label: '등록금', amount: book.registration[cur] }];
-  for (const r of courses) charges.push({ key: `course:${r.id}`, label: `${name(r.def.campus, r.id)} (${r.weeks}주)`, amount: rowPrice(r.def.price[cur], r.weeks) });
-  for (const r of dorms) charges.push({ key: `dorm:${r.id}`, label: `${name(r.def.campus, r.id)} (${r.weeks}주)`, amount: rowPrice(r.def.price[cur], r.weeks) });
+  // 줄마다 기간(넣은 순서 = 기간 순서): 화면 결과 블록이 'n주 · 시작일 ~ 종료일'로 보인다(견적-1)
+  const period = (offset: number, weeks: number) => ({ from: ymd(start + offset * 7 * DAY), to: ymd(start + ((offset + weeks) * 7 - 1) * DAY) });
+  const charges: Line[] = [{ key: 'registration', label: '등록금', amount: book.registration[cur], part: 'registration' }];
+  let co = 0;
+  for (const r of courses) {
+    charges.push({ key: `course:${r.id}`, label: `${name(r.def.campus, r.id)} (${r.weeks}주)`, amount: rowPrice(r.def.price[cur], r.weeks), part: 'course', item: { id: r.id, campus: r.def.campus, weeks: r.weeks, ...period(co, r.weeks) } });
+    co += r.weeks;
+  }
+  let dO = 0;
+  for (const r of dorms) {
+    charges.push({ key: `dorm:${r.id}`, label: `${name(r.def.campus, r.id)} (${r.weeks}주)`, amount: rowPrice(r.def.price[cur], r.weeks), part: 'dorm', item: { id: r.id, campus: r.def.campus, weeks: r.weeks, ...period(dO, r.weeks) } });
+    dO += r.weeks;
+  }
 
   const discounts: Line[] = [];
   const pending: string[] = [];
@@ -129,7 +139,14 @@ export function quote(input: QuoteInput, book: PriceBook): QuoteResult {
     if (a == null) continue;
     if (p.kind === 'surcharge') {
       const n = stayDays.filter((dd) => inPeriods(dd, p.periods)).length;
-      if (n) charges.push({ key: p.id, label: `${p.name} (${n}주)`, amount: n * a });
+      // 계산 근거에 보일 숙소: 성수기 주에 든 숙소 줄(금액은 연수 전체 주로 센다)
+      let off = 0;
+      const rooms: string[] = [];
+      for (const r of dorms) {
+        if (weekDays(start, off, r.weeks).some((dd) => inPeriods(dd, p.periods)) && !rooms.includes(r.id)) rooms.push(r.id);
+        off += r.weeks;
+      }
+      if (n) charges.push({ key: p.id, label: `${p.name} (${n}주)`, amount: n * a, part: 'surcharge', promo: { id: p.id, weeks: n, unit: a, rooms } });
       continue;
     }
     if (W < p.minWeeks) continue;
@@ -139,29 +156,29 @@ export function quote(input: QuoteInput, book: PriceBook): QuoteResult {
         const n = weekDays(start, offset, r.weeks).filter((dd) => inPeriods(dd, p.periods)).length;
         offset += r.weeks;
         const u = units(p, n);
-        if (u > 0 && p.rooms?.includes(r.def.room)) discounts.push({ key: `${p.id}:${r.id}`, label: `${p.name} · ${name(r.def.campus, r.id)}`, amount: u * a, detail: `비수기 ${n}주 → ${u}회 × ${a.toLocaleString()}` });
+        if (u > 0 && p.rooms?.includes(r.def.room)) discounts.push({ key: `${p.id}:${r.id}`, label: `${p.name} · ${name(r.def.campus, r.id)}`, amount: u * a, detail: `비수기 ${n}주 → ${u}회 × ${a.toLocaleString()}`, part: 'discount', promo: { id: p.id, weeks: n, units: u, unit: a, rooms: [r.id] } });
       }
     } else if (p.kind === 'stay_period') {
       const n = stayDays.filter((dd) => inPeriods(dd, p.periods)).length;
       const u = units(p, n);
-      if (u > 0) discounts.push({ key: p.id, label: p.name, amount: u * a, detail: `${n}주 → ${u}회 × ${a.toLocaleString()}` });
+      if (u > 0) discounts.push({ key: p.id, label: p.name, amount: u * a, detail: `${n}주 → ${u}회 × ${a.toLocaleString()}`, part: 'discount', promo: { id: p.id, weeks: n, units: u, unit: a } });
     } else if (p.kind === 'holiday') {
       if (!p.startDates?.includes(input.start)) continue;
       const roomWeeks = (rooms: string[] = []) => sum(dorms.filter((r) => rooms.includes(r.def.room)).map((r) => r.weeks));
       const sure = roomWeeks(p.rooms);
       const maybe = roomWeeks(p.pendingRooms);
       const need = p.minRoomWeeks ?? 0;
-      if (sure >= need) discounts.push({ key: p.id, label: p.name, amount: a, detail: `시작 ${input.start}, 대상 방 ${sure}주` });
+      if (sure >= need) discounts.push({ key: p.id, label: p.name, amount: a, detail: `시작 ${input.start}, 대상 방 ${sure}주`, part: 'discount', promo: { id: p.id, start: input.start, weeks: sure } });
       else if (sure + maybe >= need) pending.push(`${p.name}: ${p.note ?? '대상 방 확인 필요'}`);
     } else if (p.kind === 'long_term') {
       const v = a + Math.floor((W - p.minWeeks) / 2) * (p.step?.[cur] ?? 0);
-      discounts.push({ key: p.id, label: `${p.name} (${W}주)`, amount: v });
+      discounts.push({ key: p.id, label: `${p.name} (${W}주)`, amount: v, part: 'discount', promo: { id: p.id, weeks: W } });
     }
   }
   // 확인 후 적용(2차): 담당자가 확인한 줄만 그대로 넣는다(적용자·날짜·메모)
   for (const c of input.confirmed ?? []) {
     const p = promos.find((x) => x.id === c.id && x.apply === 'confirm');
-    if (p && c.amount > 0) discounts.push({ key: p.id, label: p.name, amount: Math.round(c.amount), detail: `${c.by} · ${c.on}${c.memo ? ` · ${c.memo}` : ''}` });
+    if (p && c.amount > 0) discounts.push({ key: p.id, label: p.name, amount: Math.round(c.amount), detail: `${c.by} · ${c.on}${c.memo ? ` · ${c.memo}` : ''}`, part: 'discount', promo: { id: p.id, by: c.by, on: c.on, memo: c.memo } });
   }
 
   const subtotal = sum(charges.map((l) => l.amount));

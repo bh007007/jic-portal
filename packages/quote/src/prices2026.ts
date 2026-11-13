@@ -1,4 +1,4 @@
-import type { CourseDef, DormDef, PriceBook, PromoRow } from './types';
+import type { CourseDef, DormDef, PriceBook, PromoDisplay, PromoRow } from './types';
 
 /**
  * 2026 가격(기획 '견적사이트 가격데이터 정정본 1112', 기준 순서: 정정 목록 → 정정본 → v88, CL-065).
@@ -57,27 +57,35 @@ const KR_USD: PromoRow['systems'] = ['kr', 'usd'];
  * 프로모션 표(정정본 '프로모션' 시트, CL-061). 견적 계산은 이 표만 보고 적용한다.
  * IELTS Guarantee 공식 시험 50% 지원(2027)은 학비 할인이 아니라 넣지 않는다(공지 콘텐츠, T-34).
  */
+// 화면 표시 이름(견적-2, 기획 '견적 수정 목록 1113' 2장). 관리용 name 과 따로. 일본어는 견적 담당자 확인 뒤(그 전에는 영어)
+const LEAN: PromoDisplay = { ko: '린시즌 기숙사 할인', en: 'Lean Season Dorm Discount' };
+const HOLIDAY: PromoDisplay = { ko: '홀리데이 프로모션', en: 'Holiday Promotion' };
+const LONG: PromoDisplay = { ko: '장기등록 할인', en: 'Long-term Discount' };
+const GS: PromoDisplay = { ko: 'Global Scholar 프로모션', en: 'Global Scholar Promotion' };
+const PEAK: PromoDisplay = { ko: '피크시즌 추가요금', en: 'Peak Season Surcharge' };
+const FAIR: PromoDisplay = { ko: 'Taiwan Fair Promotion', en: 'Taiwan Fair Promotion' };
+
 export const PROMOTIONS_2026: PromoRow[] = [
   // 성수기 추가요금: 프로모션이 아니라 추가요금. 4주 미만도 날짜만 맞으면 적용, /usd-new도 2027은 $60(v88 오류 바로잡음)
-  { id: 'peak26', name: "성수기 추가요금 '26", kind: 'surcharge', systems: ['kr', 'usd', 'usd-new', 'jp'], periods: PEAK26, amount: { KRW: 50000, USD: 40, JPY: 5000 }, minWeeks: 0, apply: 'auto' },
-  { id: 'peak27', name: "성수기 추가요금 '27", kind: 'surcharge', systems: ['kr', 'usd', 'usd-new', 'jp'], periods: PEAK27, amount: { KRW: 80000, USD: 60, JPY: 8000 }, minWeeks: 0, apply: 'auto' },
+  { id: 'peak26', name: "성수기 추가요금 '26", display: PEAK, tag: "Peak '26", kind: 'surcharge', systems: ['kr', 'usd', 'usd-new', 'jp'], periods: PEAK26, amount: { KRW: 50000, USD: 40, JPY: 5000 }, minWeeks: 0, apply: 'auto' },
+  { id: 'peak27', name: "성수기 추가요금 '27", display: PEAK, tag: "Peak '27", kind: 'surcharge', systems: ['kr', 'usd', 'usd-new', 'jp'], periods: PEAK27, amount: { KRW: 80000, USD: 60, JPY: 8000 }, minWeeks: 0, apply: 'auto' },
   // 비수기(숙소 줄마다): 4주 기준 정액, 2주 단위(2주 = 절반). 일본은 비수기 없음
-  { id: 'lean26_quad', name: "비수기 4인실 '26", kind: 'room_lean', systems: KR_USD, periods: LEAN26, rooms: ['quad'], amount: { KRW: 150000, USD: 150 }, unitWeeks: 4, granularity: 2, minWeeks: 4, apply: 'auto' },
-  { id: 'lean26_sd', name: "비수기 1·2인실 '26", kind: 'room_lean', systems: KR_USD, periods: LEAN26, rooms: ['single', 'semi', 'double', 'couple'], amount: { KRW: 50000, USD: 50 }, unitWeeks: 4, granularity: 2, minWeeks: 4, apply: 'auto', note: '2026은 1인실 전체 포함' },
-  { id: 'lean27_quad', name: "비수기 4인실 '27", kind: 'room_lean', systems: KR_USD, periods: LEAN27, rooms: ['quad'], amount: { KRW: 100000, USD: 100 }, unitWeeks: 4, granularity: 2, minWeeks: 4, apply: 'auto' },
-  { id: 'lean27_sd', name: "비수기 2인실·Semi·Couple '27", kind: 'room_lean', systems: KR_USD, periods: LEAN27, rooms: ['semi', 'double', 'couple'], amount: { KRW: 50000, USD: 50 }, unitWeeks: 4, granularity: 2, minWeeks: 4, apply: 'auto', note: '2027은 1인실 모두 제외(2027 포스터)' },
+  { id: 'lean26_quad', name: "비수기 4인실 '26", display: LEAN, tag: "Lean '26", kind: 'room_lean', systems: KR_USD, periods: LEAN26, rooms: ['quad'], amount: { KRW: 150000, USD: 150 }, unitWeeks: 4, granularity: 2, minWeeks: 4, apply: 'auto' },
+  { id: 'lean26_sd', name: "비수기 1·2인실 '26", display: LEAN, tag: "Lean '26", kind: 'room_lean', systems: KR_USD, periods: LEAN26, rooms: ['single', 'semi', 'double', 'couple'], amount: { KRW: 50000, USD: 50 }, unitWeeks: 4, granularity: 2, minWeeks: 4, apply: 'auto', note: '2026은 1인실 전체 포함' },
+  { id: 'lean27_quad', name: "비수기 4인실 '27", display: LEAN, tag: "Lean '27", kind: 'room_lean', systems: KR_USD, periods: LEAN27, rooms: ['quad'], amount: { KRW: 100000, USD: 100 }, unitWeeks: 4, granularity: 2, minWeeks: 4, apply: 'auto' },
+  { id: 'lean27_sd', name: "비수기 2인실·Semi·Couple '27", display: LEAN, tag: "Lean '27", kind: 'room_lean', systems: KR_USD, periods: LEAN27, rooms: ['semi', 'double', 'couple'], amount: { KRW: 50000, USD: 50 }, unitWeeks: 4, granularity: 2, minWeeks: 4, apply: 'auto', note: '2027은 1인실 모두 제외(2027 포스터)' },
   // 홀리데이: 시작일 + 총 4주 이상 + 대상 방 4주 이상, 1회 정액
-  { id: 'holiday26', name: "홀리데이 '26", kind: 'holiday', systems: ['kr', 'usd', 'jp'], startDates: ['2026-11-29', '2026-12-13', '2026-12-27', '2027-01-10'], rooms: ['double', 'quad', 'couple'], amount: { KRW: 200000, USD: 200, JPY: 30000 }, minWeeks: 4, minRoomWeeks: 4, apply: 'auto' },
-  { id: 'holiday27', name: "홀리데이 '27", kind: 'holiday', systems: ['kr', 'usd'], startDates: ['2027-11-28', '2027-12-12', '2027-12-26', '2028-01-09'], rooms: ['double', 'quad'], pendingRooms: ['couple'], amount: { KRW: 150000, USD: 150 }, minWeeks: 4, minRoomWeeks: 4, apply: 'auto', note: '커플룸 포함 여부는 11/13 담당자 미팅에서 확인(정정 목록 6장)' },
+  { id: 'holiday26', name: "홀리데이 '26", display: HOLIDAY, tag: "Holiday '26", kind: 'holiday', systems: ['kr', 'usd', 'jp'], startDates: ['2026-11-29', '2026-12-13', '2026-12-27', '2027-01-10'], rooms: ['double', 'quad', 'couple'], amount: { KRW: 200000, USD: 200, JPY: 30000 }, minWeeks: 4, minRoomWeeks: 4, apply: 'auto' },
+  { id: 'holiday27', name: "홀리데이 '27", display: HOLIDAY, tag: "Holiday '27", kind: 'holiday', systems: ['kr', 'usd'], startDates: ['2027-11-28', '2027-12-12', '2027-12-26', '2028-01-09'], rooms: ['double', 'quad'], pendingRooms: ['couple'], amount: { KRW: 150000, USD: 150 }, minWeeks: 4, minRoomWeeks: 4, apply: 'auto', note: '커플룸 포함 여부는 11/13 담당자 미팅에서 확인(정정 목록 6장)' },
   // 장기등록: 12주부터, 2주마다 증가(24주 이후에도 계속)
-  { id: 'long', name: '장기등록', kind: 'long_term', systems: ['kr', 'usd', 'jp'], amount: { KRW: 300000, USD: 300, JPY: 10000 }, step: { KRW: 50000, USD: 50, JPY: 5000 }, minWeeks: 12, apply: 'auto' },
+  { id: 'long', name: '장기등록', display: LONG, kind: 'long_term', systems: ['kr', 'usd', 'jp'], amount: { KRW: 300000, USD: 300, JPY: 10000 }, step: { KRW: 50000, USD: 50, JPY: 5000 }, minWeeks: 12, apply: 'auto' },
   // Global Scholar(/usd-new만, 장기·비수기·홀리데이 대신): 26년 2주당, 27년 4주당. 26년 비수기 끝은 12/26(비수기 할인의 01/09와 다름, v88)
-  { id: 'gs26_lean', name: "Global Scholar '26 Lean", kind: 'stay_period', systems: ['usd-new'], periods: [['2026-02-22', '2026-06-27'], ['2026-08-23', '2026-12-26']], amount: { USD: 200 }, unitWeeks: 2, granularity: 2, minWeeks: 4, apply: 'auto' },
-  { id: 'gs26_peak', name: "Global Scholar '26 Peak", kind: 'stay_period', systems: ['usd-new'], periods: PEAK26, amount: { USD: 100 }, unitWeeks: 2, granularity: 2, minWeeks: 4, apply: 'auto' },
-  { id: 'gs27_lean', name: "Global Scholar '27 Lean", kind: 'stay_period', systems: ['usd-new'], periods: LEAN27, amount: { USD: 400 }, unitWeeks: 4, granularity: 4, minWeeks: 4, apply: 'auto' },
-  { id: 'gs27_peak', name: "Global Scholar '27 Peak", kind: 'stay_period', systems: ['usd-new'], periods: PEAK27, amount: { USD: 200 }, unitWeeks: 4, granularity: 4, minWeeks: 4, apply: 'auto' },
+  { id: 'gs26_lean', name: "Global Scholar '26 Lean", display: GS, tag: "Lean '26", kind: 'stay_period', systems: ['usd-new'], periods: [['2026-02-22', '2026-06-27'], ['2026-08-23', '2026-12-26']], amount: { USD: 200 }, unitWeeks: 2, granularity: 2, minWeeks: 4, apply: 'auto' },
+  { id: 'gs26_peak', name: "Global Scholar '26 Peak", display: GS, tag: "Peak '26", kind: 'stay_period', systems: ['usd-new'], periods: PEAK26, amount: { USD: 100 }, unitWeeks: 2, granularity: 2, minWeeks: 4, apply: 'auto' },
+  { id: 'gs27_lean', name: "Global Scholar '27 Lean", display: GS, tag: "Lean '27", kind: 'stay_period', systems: ['usd-new'], periods: LEAN27, amount: { USD: 400 }, unitWeeks: 4, granularity: 4, minWeeks: 4, apply: 'auto' },
+  { id: 'gs27_peak', name: "Global Scholar '27 Peak", display: GS, tag: "Peak '27", kind: 'stay_period', systems: ['usd-new'], periods: PEAK27, amount: { USD: 200 }, unitWeeks: 4, granularity: 4, minWeeks: 4, apply: 'auto' },
   // 대만 Fair promotion: 국가 담당자 요청 → 담당자 확인 후 적용(2차 인보이스, CL-076). 금액·중복 규칙은 확인 필요
-  { id: 'fair_tw', name: 'Fair promotion(대만)', kind: 'manual', systems: ['usd'], amount: {}, minWeeks: 0, apply: 'confirm', note: '학생 할인. 적용자·날짜·메모 기록. 다른 프로모션과의 중복은 확인 필요' },
+  { id: 'fair_tw', name: 'Fair promotion(대만)', display: FAIR, kind: 'manual', systems: ['usd'], amount: {}, minWeeks: 0, apply: 'confirm', note: '학생 할인. 적용자·날짜·메모 기록. 다른 프로모션과의 중복은 확인 필요' },
 ];
 
 export const PRICE_BOOK_2026: PriceBook = {

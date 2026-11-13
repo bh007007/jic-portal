@@ -15,6 +15,8 @@
   --new: #6E8FCB; --new-tint: #D9E3F5; --new-ink: #28497F;
   --side: #24272C; --side-2: #2E3238; --side-line: #363A41; --side-ink: #C9CDD4; --side-muted: #8A909B;
   --logo: #D52B1E; /* 로고에만(D2.3) */
+  /* 할인·추가요금(견적-3, 11/13): 금액 숫자와 아이콘에만. 이름은 --ink */
+  --discount: #1A3E93; --discount-bg: #E9EFFB; --surcharge: #C2540A; --surcharge-icon: #F06800; --surcharge-bg: #FEF0E7;
   --accent: var(--all); --accent-tint: var(--all-tint); --accent-ink: var(--all-ink); --accent-bar: #E1E4EA;
   --r-lg: 18px; --r-md: 12px; --r-sm: 8px;
   --shadow: 0 1px 2px rgba(40, 46, 60, 0.04), 0 6px 20px rgba(40, 46, 60, 0.05);
@@ -31,6 +33,7 @@
     --new: #97B1E2; --new-tint: #29344A; --new-ink: #C9D8F4;
     --mco-tint: #3A3222; --mco-ink: #E6C987;
     --shadow: 0 1px 2px rgba(0, 0, 0, 0.2); --side: #16181C; --side-2: #22252B; --side-line: #2C2F36;
+    --discount: #86A4EA; --surcharge: #FA8C42; --surcharge-icon: #FA8C42;
   }
 }
 body[data-campus='pre'] { --bg: #F8F5EE; --surface-2: #FBF9F4; --line: #E8E2D6; --line-2: #F0EBE1; --accent: var(--pre); --accent-tint: var(--pre-tint); --accent-ink: var(--pre-ink); --accent-bar: #A8CBB2; }
@@ -372,6 +375,19 @@ ul.plain { margin: 0; padding: 0; list-style: none; }
 .quote-row select:nth-child(2) { width: 96px; }
 .quote-h { margin: 16px 0 8px; font-size: 14px; font-weight: 600; }
 .quote-label { display: flex; flex-direction: column; gap: 6px; font-size: 13px; color: var(--ink-2); }
+/* 캠퍼스 버튼(견적-4, 11/13): 버튼에만 캠퍼스 색. 견적은 캠퍼스를 오가는 화면이라 화면 전체 강조색·배경은 바꾸지 않는다(원칙 2.1의 예외) */
+.campus-pick { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 12px; }
+.campus-btn { height: 40px; padding: 0 16px; border-radius: 11px; border: 1px solid var(--line); background: var(--surface); color: var(--ink); font: inherit; font-size: 14px; font-weight: 500; display: inline-flex; align-items: center; gap: 8px; cursor: pointer; }
+.campus-btn .dots { display: inline-flex; }
+.campus-btn .dot { width: 9px; height: 9px; border-radius: 50%; }
+.campus-btn .dot + .dot { margin-left: -3px; }
+.campus-btn .dot.challenger { background: var(--cha); }
+.campus-btn .dot.premium { background: var(--pre); }
+.campus-btn[aria-selected='true'] { border-width: 1.5px; font-weight: 600; }
+.campus-btn.challenger[aria-selected='true'] { background: var(--cha-tint); color: var(--cha-ink); border-color: var(--cha); }
+.campus-btn.premium[aria-selected='true'] { background: var(--pre-tint); color: var(--pre-ink); border-color: var(--pre); }
+.campus-btn.mixed[aria-selected='true'] { background: var(--all-tint); color: var(--all-ink); border-color: var(--all); }
+.campus-btn:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
 .quote-lines { width: 100%; border-collapse: collapse; font-size: 14px; }
 .quote-lines td { padding: 7px 0; border-bottom: 1px solid var(--line-2); vertical-align: top; }
 .quote-lines td:last-child { text-align: right; white-space: nowrap; padding-left: 12px; font-variant-numeric: tabular-nums; }

@@ -61,9 +61,16 @@ export interface PriceBook {
  * - manual: 담당자가 확인 후 적용(대만 Fair promotion, 2차). 자동 계산하지 않는다
  */
 export type PromoKind = 'room_lean' | 'stay_period' | 'surcharge' | 'holiday' | 'long_term' | 'manual';
+/** 화면 표시 이름(견적-2, 11/13): 유학원에게 익숙한 이름. 관리용 name 과 따로 둔다. 일본어는 견적 담당자 확인 뒤(그 전에는 영어) */
+export interface PromoDisplay { ko: string; en: string; ja?: string }
 export interface PromoRow {
   id: string;
+  /** 관리용 이름(관리자 프로모션 표). 화면에는 display 를 쓴다 */
   name: string;
+  /** 화면 표시 이름. 없으면(11/12 v1 등) 모듈 기본값(PROMOTIONS_2026)의 같은 id 를 쓴다 */
+  display?: PromoDisplay;
+  /** 계산 근거 앞 구분 글자(예: "Lean '26", "Peak '27"). 비수기가 두 해에 걸치면 이것으로 두 줄을 구분한다 */
+  tag?: string;
   kind: PromoKind;
   systems: PriceSystem[];
   /** 기간(YYYY-MM-DD, 양 끝 포함). 주는 시작일부터 7일마다의 날짜로 판단 */
@@ -95,7 +102,29 @@ export interface QuoteInput {
   confirmed?: { id: string; amount: number; by: string; on: string; memo?: string }[];
 }
 
-export interface Line { key: string; label: string; amount: number; detail?: string }
+/** 결과 줄의 구역(결과 블록 순서, 견적-1) */
+export type LinePart = 'registration' | 'course' | 'dorm' | 'surcharge' | 'discount';
+/** 코스·숙소 줄의 기간(넣은 순서 = 기간 순서). from~to 는 양 끝 포함(토요일에 끝남) */
+export interface LineItem { id: string; campus: Campus; weeks: number; from: string; to: string }
+/** 할인·추가요금 줄의 계산 근거(화면 작은 글씨, 견적-2). 계산에는 쓰지 않는다 */
+export interface LinePromo {
+  id: string;
+  /** 기간에 든 주(비수기·성수기·Global Scholar), 대상 방 주수(홀리데이), 총 주수(장기) */
+  weeks?: number;
+  /** 적용 횟수(2주 = 0.5회)와 1회 금액 */
+  units?: number;
+  unit?: number;
+  /** 대상 숙소 이름(비수기는 그 줄, 성수기는 성수기 주에 든 숙소) */
+  rooms?: string[];
+  /** 홀리데이 시작일 */
+  start?: string;
+  /** 확인 후 적용(2차): 적용자·날짜·메모 */
+  by?: string;
+  on?: string;
+  memo?: string;
+}
+/** 계산 결과 한 줄. part·item·promo 는 화면용(결과 블록)이고 금액에는 영향이 없다 */
+export interface Line { key: string; label: string; amount: number; detail?: string; part?: LinePart; item?: LineItem; promo?: LinePromo }
 export interface QuoteOk {
   ok: true;
   system: PriceSystem;

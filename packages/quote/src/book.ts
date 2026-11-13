@@ -1,4 +1,5 @@
-import type { Currency, PriceBook, PriceSystem, PromoKind, RoomClass } from './types';
+import { promoName, promoTag } from './present';
+import type { Currency, PriceBook, PriceSystem, PromoKind, PromoRow, RoomClass } from './types';
 
 /**
  * 가격 버전 검사·비교(T-21, 관리자 포털 '가격표 › 견적 가격'). 승인 요청 전에 빠진 칸·잘못된 값을 막고,
@@ -55,6 +56,8 @@ export function validateBook(b: PriceBook): string[] {
     if (!Number.isInteger(p.minWeeks) || p.minWeeks < 0) e.push(`프로모션 ${p.id}: 최소 주수를 확인하세요.`);
     if ((p.kind === 'room_lean' || p.kind === 'stay_period' || p.kind === 'surcharge') && !p.periods?.length) e.push(`프로모션 ${p.id}: 기간이 없습니다.`);
     if (p.kind === 'holiday' && !p.startDates?.length) e.push(`프로모션 ${p.id}: 시작일이 없습니다.`);
+    // 표시 이름(견적-2): 넣었으면 한국어·영어 둘 다. 없으면 모듈 기본값으로 보인다
+    if (p.display && (!p.display.ko?.trim() || !p.display.en?.trim())) e.push(`프로모션 ${p.id}: 표시 이름(한국어·영어)을 넣어 주세요.`);
   }
   return [...new Set(e)];
 }
@@ -81,6 +84,16 @@ export function diffBooks(base: PriceBook, next: PriceBook): BookChange[] {
   rows('숙소', base.dorms, next.dorms, [['캠퍼스', (x) => x.campus], ['방 분류', (x) => x.room], ...CURRENCIES.map((c): [string, (x: (typeof next.dorms)[number]) => unknown] => [c, (x) => x.price?.[c]])]);
   for (const k of Object.keys({ ...base.local, ...next.local }) as (keyof PriceBook['local'])[]) push(`local.${k}`, `현지비용 ${k}`, base.local?.[k], next.local?.[k]);
   rows('공항 픽업', base.pickups, next.pickups, [['이름', (x) => x.label], ['금액', (x) => x.php]]);
-  rows('프로모션', base.promotions, next.promotions, [['내용', (x) => x]]);
+  // 프로모션: 계산에 쓰는 내용과 표시 이름을 나눠 본다. 표시 이름은 기본값을 채운 값으로 비교한다
+  // (v1처럼 표시 이름이 없는 버전에서 새 버전을 만들면 기본값이 채워지는데, 그것은 바뀐 칸이 아니다)
+  const content = (x: PromoRow) => {
+    const { display: _d, tag: _t, ...rest } = x;
+    return rest;
+  };
+  rows('프로모션', base.promotions, next.promotions, [
+    ['내용', content],
+    ['표시 이름', (x) => `${promoName(x, x.id, 'ko')} / ${promoName(x, x.id, 'en')}${x.display?.ja ? ` / ${x.display.ja}` : ''}`],
+    ['구분 글자', (x) => promoTag(x, x.id)],
+  ]);
   return out;
 }

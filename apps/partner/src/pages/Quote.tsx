@@ -7,9 +7,10 @@ import { Box, Loading, PageHead } from '../ui';
 import { basisLabel, type ActiveBook } from '../priceBook';
 import { loadActiveBook } from '../tuition';
 import {
-  LOCAL_FEE_NOTICE, PRICE_BOOK_2026, SYSTEM_CURRENCY, quote, systemForCountry,
-  type Campus, type Currency, type PriceBook, type PriceSystem,
+  PRICE_BOOK_2026, presentQuote, quote, systemForCountry,
+  type Campus, type PriceBook, type PriceSystem,
 } from '../../../../packages/quote/src';
+import QuoteResultBlock from '../../../../packages/quote-view/QuoteResultBlock';
 
 /**
  * 견적(T-20, R-013 2단계, 11/12). 견적 사이트 대신 포털에서 계산한다(CL-065: 견적 사이트는 쓰지 않음).
@@ -20,13 +21,13 @@ import {
  * - 학생 정보는 저장하지 않고 화면·인쇄에만(원칙 P3). 견적서는 가견적: 유효기간·계좌·커미션 없음(CL-067)
  * - 가격은 관리자 포털 '가격표 › 견적 가격'의 승인 버전 중 적용 시작일이 지난 가장 최근 것(price_books, T-21·CL-066).
  *   못 읽으면(마이그레이션 전 등) 모듈의 기획 정정본 PRICE_BOOK_2026 으로 계산한다
+ * - 결과는 견적 결과 블록 부품(packages/quote-view, 기획 '견적 수정 목록 1113' 견적-1~4): 2차 학생등록·인보이스도 같은 부품
+ * - 캠퍼스 버튼에만 캠퍼스 색(견적-4). 화면 전체 강조색·배경은 바꾸지 않는다(useCampusTone 안 씀)
  */
 
 type Tab = Campus | 'mixed';
 interface Row { id: string; weeks: number }
 
-const SYMBOL: Record<Currency, string> = { KRW: '₩', USD: '$', JPY: '¥' };
-const money = (cur: Currency, n: number) => `${SYMBOL[cur]}${n.toLocaleString()}`;
 const peso = (n: number) => `₱${n.toLocaleString()}`;
 const SYSTEMS: [PriceSystem, string][] = [
   ['kr', '/kr · 원(KRW) · 한국'],
@@ -70,7 +71,6 @@ function QuoteForm({ active, member }: { active: ActiveBook | null; member: Retu
   const fixed = member ? systemForCountry(member.country) : null;
   const [picked, setPicked] = useState<PriceSystem>('kr');
   const system = fixed ?? picked;
-  const cur = SYSTEM_CURRENCY[system];
 
   // 상담 ④ '이 단계로 견적 보기'에서 넘긴 값(campus·course·weeks·agency, 학생 정보는 넘기지 않음)
   const pTab: Tab = params.get('campus') === 'premium' ? 'premium' : 'challenger';
@@ -183,8 +183,15 @@ function QuoteForm({ active, member }: { active: ActiveBook | null; member: Retu
           </Box>
           <Box title="코스 · 숙소">
             <div className="box-body">
-              <div role="tablist" aria-label="캠퍼스" className="filter-row" style={{ marginBottom: 12 }}>
-                {TABS.map(([k, l]) => <button key={k} type="button" role="tab" aria-selected={tab === k} className={'btn btn-sm' + (tab === k ? ' btn-primary' : '')} onClick={() => changeTab(k)}>{l}</button>)}
+              <div role="tablist" aria-label="캠퍼스" className="campus-pick">
+                {TABS.map(([k, l]) => (
+                  <button key={k} type="button" role="tab" aria-selected={tab === k} className={`campus-btn ${k}`} onClick={() => changeTab(k)}>
+                    <span className="dots" aria-hidden="true">
+                      {(k === 'mixed' ? (['challenger', 'premium'] as const) : [k]).map((c) => <span key={c} className={`dot ${c}`} />)}
+                    </span>
+                    {l}
+                  </button>
+                ))}
               </div>
               <h3 className="quote-h">코스 <span className="muted">· 넣은 순서가 기간 순서, 합계 {totalWeeks}주</span></h3>
               {rowEditor('course')}
@@ -198,49 +205,36 @@ function QuoteForm({ active, member }: { active: ActiveBook | null; member: Retu
         </div>
 
         <div className="quote-result">
-          <Box title="견적" extra={result.ok && <button type="button" className="btn btn-sm no-print" onClick={() => window.print()}>인쇄·PDF</button>}>
-            <div className="box-body">
-              {/* 인쇄용 요약(화면에서는 숨김) */}
-              <div className="quote-print">
-                <h2>JIC English Academy · 견적{tab === 'mixed' ? ' (Challenger + Premium)' : ` (${TABS.find(([k]) => k === tab)?.[1]})`}</h2>
-                <table className="kv compact">
-                  <tbody>
-                    {[
-                      ['견적일', new Date().toISOString().slice(0, 10)], ['유학원', student.agency], ['학생', student.name], ['성별', student.gender], ['생년월일', student.birth],
-                      ['기간', result.ok ? `${result.start} ~ ${result.end} (${result.weeks}주)` : ''], ['픽업', pickupLabel ?? '신청 안 함'],
-                    ].filter(([, v]) => v).map(([k, v]) => <tr key={k}><th>{k}</th><td>{v}</td></tr>)}
-                  </tbody>
-                </table>
-              </div>
-              {!result.ok ? (
+          {result.ok ? (
+            <QuoteResultBlock
+              view={presentQuote(result, BOOK)}
+              actions={<button type="button" className="btn btn-sm no-print" onClick={() => window.print()}>인쇄·PDF</button>}
+              top={
+                // 인쇄용 요약(화면에서는 숨김). 학생 정보는 저장하지 않고 인쇄에만(P3)
+                <div className="quote-print">
+                  <h2>JIC English Academy · 견적{tab === 'mixed' ? ' (Challenger + Premium)' : ` (${TABS.find(([k]) => k === tab)?.[1]})`}</h2>
+                  <table className="kv compact">
+                    <tbody>
+                      {[
+                        ['견적일', new Date().toISOString().slice(0, 10)], ['유학원', student.agency], ['학생', student.name], ['성별', student.gender], ['생년월일', student.birth],
+                        ['픽업', pickupLabel ?? '신청 안 함'],
+                      ].filter(([, v]) => v).map(([k, v]) => <tr key={k}><th>{k}</th><td>{v}</td></tr>)}
+                    </tbody>
+                  </table>
+                </div>
+              }
+              footnote="가견적입니다. 정식 견적서와 재발행은 학생 등록 때 만듭니다(유효기간·계좌 없음, CL-067)."
+            />
+          ) : (
+            <Box title="견적">
+              <div className="box-body">
                 <div className="msg err" role="alert">
                   <strong>이대로는 등록할 수 없는 조합입니다.</strong>
                   <ul>{result.errors.map((e) => <li key={e}>{e}</li>)}</ul>
                 </div>
-              ) : (
-                <>
-                  <p className="muted" style={{ margin: '0 0 8px', fontSize: 13 }}>{result.start} ~ {result.end} · {result.weeks}주</p>
-                  <table className="quote-lines">
-                    <tbody>
-                      {result.charges.map((l) => <tr key={l.key}><td>{l.label}</td><td>{money(cur, l.amount)}</td></tr>)}
-                      {result.discounts.map((l) => <tr key={l.key} className="disc"><td>{l.label}{l.detail && <span className="muted"> · {l.detail}</span>}</td><td>−{money(cur, l.amount)}</td></tr>)}
-                      <tr className="total"><td>총 학비</td><td>{money(cur, result.total)}</td></tr>
-                    </tbody>
-                  </table>
-                  {result.pending.length > 0 && <div className="msg warn" role="note">{result.pending.map((p) => <div key={p}>확인 필요 · {p}</div>)}</div>}
-                  <h3 className="quote-h">현지비용 (페소, 현지 납부)</h3>
-                  <table className="quote-lines">
-                    <tbody>
-                      {result.local.map((l) => <tr key={l.key}><td>{l.label}</td><td>{peso(l.amount)}</td></tr>)}
-                      <tr className="total"><td>현지비용 합계</td><td>{peso(result.localTotal)}</td></tr>
-                    </tbody>
-                  </table>
-                  <p className="notice-line">{LOCAL_FEE_NOTICE[system]}</p>
-                  <p className="muted" style={{ fontSize: 12, margin: '8px 0 0' }}>가견적입니다. 정식 견적서와 재발행은 학생 등록 때 만듭니다(유효기간·계좌 없음, CL-067).</p>
-                </>
-              )}
-            </div>
-          </Box>
+              </div>
+            </Box>
+          )}
         </div>
       </div>
     </>
