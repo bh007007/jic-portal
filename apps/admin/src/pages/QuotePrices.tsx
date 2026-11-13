@@ -1,13 +1,15 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { supabase } from '../supabase';
 import { Loading, Panel } from '../components/ui';
-import { diffBooks, validateBook, type Currency, type PriceBook, type PromoRow } from '../../../../packages/quote/src';
+import { diffBooks, promoName, validateBook, withPromoDisplay, type Currency, type PriceBook, type PromoRow } from '../../../../packages/quote/src';
 
 /**
  * 가격표 › 견적 가격(포털 기준, T-21·CL-066 11/12). 에이전시 포털 견적(/quote)이 쓰는 가격 버전(표 price_books, 20261112170000).
  * - 버전째 관리: 지금 적용 중인 승인 버전을 복사해 새 초안 → 고치기 → 승인 요청 → '가격 변경 승인' 권한자가 승인하면 적용 시작일부터 쓴다
  * - 승인된 버전은 바꾸지 않는다(이력). 입력은 기초관리 입력 권한, 승인은 권한표 '사람별 승인'의 가격 변경 승인(CL-066 대표님)
  * - 승인하는 사람에게 기준 버전과 달라진 칸만 따로 보인다. 막는 것은 DB(단계 검사 트리거·RLS)
+ * - 프로모션 표시 이름(견적-2, 11/13): 화면에 보이는 유학원용 이름(한국어·영어). 관리용 이름은 그대로. 비어 있는 버전(v1)은 모듈 기본값으로 보이고,
+ *   새 버전을 만들 때 기본값을 채운다. 일본어는 견적 담당자 확인 뒤
  */
 
 interface BookRow {
@@ -106,7 +108,7 @@ export default function QuotePrices() {
     if (!active) return;
     setBusy(true);
     const { data, error: err } = await supabase!.from('price_books')
-      .insert({ label: `${active.label} 수정`, effective_from: nextMonth(), data: active.data, based_on: active.id, note: '' })
+      .insert({ label: `${active.label} 수정`, effective_from: nextMonth(), data: withPromoDisplay(active.data), based_on: active.id, note: '' })
       .select('*').single();
     setBusy(false);
     if (err) return setMsg(`새 버전 만들기 실패: ${err.message}`);
@@ -291,11 +293,28 @@ export default function QuotePrices() {
 
           <h3 className="qp-h">프로모션 표</h3>
           <table className="tbl center qp">
-            <thead><tr><th className="left">이름</th><th>가격 체계</th><th className="left">기간·시작일</th>{CUR.map((c) => <th key={c}>{c}</th>)}<th>최소 주수</th><th>적용</th></tr></thead>
+            <thead><tr><th className="left">이름(관리용)</th><th className="left">표시 이름(한국어)</th><th className="left">표시 이름(영어)</th><th>가격 체계</th><th className="left">기간·시작일</th>{CUR.map((c) => <th key={c}>{c}</th>)}<th>최소 주수</th><th>적용</th></tr></thead>
             <tbody>
               {shown.promotions.map((p, i) => (
-                <tr key={p.id} className={changed.has(`프로모션:${p.id}:내용`) ? 'chg-row' : ''}>
-                  <td className="left">{p.name}{p.note && <div className="muted" style={{ fontSize: 11 }}>{p.note}</div>}</td>
+                <tr key={p.id} className={changed.has(`프로모션:${p.id}:내용`) || changed.has(`프로모션:${p.id}:표시 이름`) ? 'chg-row' : ''}>
+                  <td className="left">{p.name}{p.tag && <span className="muted"> · {p.tag}</span>}{p.note && <div className="muted" style={{ fontSize: 11 }}>{p.note}</div>}</td>
+                  {(['ko', 'en'] as const).map((lang) => (
+                    <td key={lang} className="left">
+                      {editable ? (
+                        <input
+                          aria-label={`${p.name} 표시 이름(${lang === 'ko' ? '한국어' : '영어'})`}
+                          value={promoName(p, p.id, lang)}
+                          onChange={(e) => patch((d) => {
+                            const row = d.promotions[i];
+                            row.display = { ko: promoName(row, row.id, 'ko'), en: promoName(row, row.id, 'en'), ...(row.display?.ja ? { ja: row.display.ja } : {}), [lang]: e.target.value };
+                          })}
+                          style={{ width: '100%', minWidth: 150 }}
+                        />
+                      ) : (
+                        <span className={p.display ? '' : 'muted'} title={p.display ? undefined : '이 버전에는 표시 이름이 없어 기본값으로 보입니다'}>{promoName(p, p.id, lang)}</span>
+                      )}
+                    </td>
+                  ))}
                   <td>{p.systems.map((s) => `/${s}`).join(' ')}</td>
                   <td className="left" style={{ fontSize: 12 }}>
                     {editable && !p.startDates?.length && p.periods ? (
@@ -316,7 +335,7 @@ export default function QuotePrices() {
               ))}
             </tbody>
           </table>
-          <p className="muted" style={{ fontSize: 12, margin: '8px 0 0' }}>프로모션 규칙(종류·단위·대상 방)은 정정본 기준이고, 바꾸려면 기획 Change Log가 필요합니다. 여기서는 금액·기간만 고칩니다.</p>
+          <p className="muted" style={{ fontSize: 12, margin: '8px 0 0' }}>프로모션 규칙(종류·단위·대상 방)은 정정본 기준이고, 바꾸려면 기획 Change Log가 필요합니다. 여기서는 금액·기간과 표시 이름만 고칩니다. 표시 이름은 에이전시 견적 결과에 보이는 유학원용 이름이고(한국 지점은 한국어, 그 밖은 영어), 아래 작은 글씨로 계산 근거가 붙습니다. 일본어 이름은 견적 담당자 확인 뒤 넣습니다(그 전에는 영어).</p>
         </Panel>
       )}
     </>

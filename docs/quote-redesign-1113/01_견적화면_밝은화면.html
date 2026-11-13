@@ -1,0 +1,174 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<!-- JIC 포털 견적 시안 (11/13). 참고용 정적 화면입니다. 기준 문서: JIC_포털_견적_수정목록_1113.md -->
+<meta charset="utf-8">
+<title>견적 화면</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+KR:wght@400;500;600&amp;family=Noto+Sans+KR:wght@400;500;600&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0}
+a{color:#4B5260}a:hover{color:#262A31}
+</style>
+</head>
+<body>
+<div style="display: flex; flex-wrap: wrap; min-height: 1620px; background: #F7F8FA; color: #262A31; font-family: 'IBM Plex Sans KR', 'Noto Sans KR', 'Apple SD Gothic Neo', 'Malgun Gothic', system-ui, sans-serif; font-size: 15px; line-height: 1.6; word-break: keep-all">
+
+<nav aria-label="주 메뉴" style="flex: 1 1 232px; max-width: 232px; min-width: 200px; background: #24272C; color: #C9CDD4; padding: 22px 14px; box-sizing: border-box; display: flex; flex-direction: column; gap: 4px">
+<div style="display: flex; align-items: center; gap: 10px; padding: 0 6px 18px">
+<div style="width: 40px; height: 40px; border-radius: 10px; background: #FFFFFF; display: flex; align-items: center; justify-content: center; color: #D52B1E; font-weight: 600; font-style: italic; font-size: 14px">JIC</div>
+<div style="display: flex; flex-direction: column; line-height: 1.3"><span style="color: #FFFFFF; font-weight: 600; font-size: 15px">Partner Portal</span><span style="font-size: 12.5px; color: #9CA3AF">JIC English Academy</span></div>
+</div>
+<a href="#" style="color: #C9CDD4; text-decoration: none; padding: 9px 12px; border-radius: 8px; font-size: 14px">홈</a>
+<span style="font-size: 12px; color: #8A9099; padding: 12px 12px 2px">상담</span>
+<a href="#" style="color: #C9CDD4; text-decoration: none; padding: 9px 12px; border-radius: 8px; font-size: 14px">상담 시작</a>
+<a href="#" style="color: #C9CDD4; text-decoration: none; padding: 9px 12px; border-radius: 8px; font-size: 14px">JIC Play</a>
+<a href="#" style="color: #C9CDD4; text-decoration: none; padding: 9px 12px; border-radius: 8px; font-size: 14px">상담 자료</a>
+<span style="font-size: 12px; color: #8A9099; padding: 12px 12px 2px">소개</span>
+<a href="#" style="color: #C9CDD4; text-decoration: none; padding: 9px 12px; border-radius: 8px; font-size: 14px">캠퍼스</a>
+<a href="#" style="color: #C9CDD4; text-decoration: none; padding: 9px 12px; border-radius: 8px; font-size: 14px">JIC 소개</a>
+<span style="font-size: 12px; color: #8A9099; padding: 12px 12px 2px">코스·생활</span>
+<a href="#" style="color: #C9CDD4; text-decoration: none; padding: 9px 12px; border-radius: 8px; font-size: 14px">코스</a>
+<a href="#" style="color: #C9CDD4; text-decoration: none; padding: 9px 12px; border-radius: 8px; font-size: 14px">학생 생활</a>
+<span style="font-size: 12px; color: #8A9099; padding: 12px 12px 2px">비용·등록</span>
+<a href="#" aria-current="page" style="color: #FFFFFF; text-decoration: none; padding: 9px 12px; border-radius: 8px; font-size: 14px; font-weight: 600; background: #33373F">견적</a>
+<a href="#" style="color: #C9CDD4; text-decoration: none; padding: 9px 12px; border-radius: 8px; font-size: 14px">기숙사 공실</a>
+<a href="#" style="color: #C9CDD4; text-decoration: none; padding: 9px 12px; border-radius: 8px; font-size: 14px">비용·등록</a>
+<div style="height: 12px"></div>
+<a href="#" style="color: #C9CDD4; text-decoration: none; padding: 9px 12px; border-radius: 8px; font-size: 14px">학교와 소통</a>
+<a href="#" style="color: #C9CDD4; text-decoration: none; padding: 9px 12px; border-radius: 8px; font-size: 14px; display: flex; justify-content: space-between">My Students <span style="font-size: 12px; background: #33373F; border-radius: 999px; padding: 0 8px">2차</span></a>
+</nav>
+
+<div style="flex: 999 1 560px; min-width: 0; display: flex; flex-direction: column">
+<header style="display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 12px; padding: 14px 32px; border-bottom: 1px solid #E5E7EB; background: rgba(247,248,250,0.92)">
+<span style="font-weight: 600; font-size: 15px">JIC 관리자</span>
+<label style="display: flex; align-items: center; gap: 8px; font-size: 13px; color: #4B5260">언어
+<select style="height: 36px; border: 1px solid #E5E7EB; border-radius: 8px; padding: 0 10px; font: inherit; color: #262A31; background: #FFFFFF"><option>한국어</option><option>English</option><option>日本語</option></select>
+</label>
+</header>
+
+<main style="width: 100%; max-width: 1240px; box-sizing: border-box; padding: 28px 32px; display: flex; flex-wrap: wrap; gap: 24px; align-items: flex-start">
+
+<div style="flex: 999 1 520px; min-width: 0; display: flex; flex-direction: column; gap: 20px">
+
+<section style="background: #FFFFFF; border: 1px solid #E5E7EB; border-radius: 18px; padding: 22px; display: flex; flex-direction: column; gap: 12px">
+<h2 style="margin: 0; font-size: 17px; font-weight: 600">가격 체계</h2>
+<label style="display: flex; flex-direction: column; gap: 6px; font-size: 13px; color: #4B5260">JIC 직원은 가격 체계를 고릅니다
+<select style="height: 44px; border: 1px solid #E5E7EB; border-radius: 11px; padding: 0 12px; font: inherit; font-size: 15px; color: #262A31; background: #FFFFFF"><option>/kr · 원(KRW) · 한국</option></select>
+</label>
+</section>
+
+<section style="background: #FFFFFF; border: 1px solid #E5E7EB; border-radius: 18px; padding: 22px; display: flex; flex-direction: column; gap: 14px">
+<h2 style="margin: 0; font-size: 17px; font-weight: 600">학생 · 기간</h2>
+<div style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px 16px">
+<label style="display: flex; flex-direction: column; gap: 6px; font-size: 13px; color: #4B5260">학생 이름<input type="text" style="height: 44px; border: 1px solid #E5E7EB; border-radius: 11px; padding: 0 12px; font: inherit; font-size: 15px; box-sizing: border-box"></label>
+<label style="display: flex; flex-direction: column; gap: 6px; font-size: 13px; color: #4B5260">성별<select style="height: 44px; border: 1px solid #E5E7EB; border-radius: 11px; padding: 0 12px; font: inherit; font-size: 15px; color: #262A31; background: #FFFFFF"><option>선택 안 함</option></select></label>
+<label style="display: flex; flex-direction: column; gap: 6px; font-size: 13px; color: #4B5260">생년월일<input type="date" style="height: 44px; border: 1px solid #E5E7EB; border-radius: 11px; padding: 0 12px; font: inherit; font-size: 15px; box-sizing: border-box"></label>
+<label style="display: flex; flex-direction: column; gap: 6px; font-size: 13px; color: #4B5260">유학원 · 담당자<input type="text" style="height: 44px; border: 1px solid #E5E7EB; border-radius: 11px; padding: 0 12px; font: inherit; font-size: 15px; box-sizing: border-box"></label>
+<label style="display: flex; flex-direction: column; gap: 6px; font-size: 13px; color: #4B5260">연수 시작일(일요일)<input type="date" value="2026-12-13" style="height: 44px; border: 1px solid #E5E7EB; border-radius: 11px; padding: 0 12px; font: inherit; font-size: 15px; box-sizing: border-box"></label>
+<label style="display: flex; flex-direction: column; gap: 6px; font-size: 13px; color: #4B5260">공항 픽업<select style="height: 44px; border: 1px solid #E5E7EB; border-radius: 11px; padding: 0 12px; font: inherit; font-size: 15px; color: #262A31; background: #FFFFFF"><option>신청 안 함</option></select></label>
+</div>
+<p style="margin: 0; font-size: 13px; color: #6B7280">학생 정보는 저장되지 않습니다. 이름·성별·생년월일·유학원은 인쇄할 때만 씁니다.</p>
+</section>
+
+<section style="background: #FFFFFF; border: 1px solid #E5E7EB; border-radius: 18px; padding: 22px; display: flex; flex-direction: column; gap: 14px">
+<h2 style="margin: 0; font-size: 17px; font-weight: 600">코스 · 숙소</h2>
+<div role="group" aria-label="캠퍼스" style="display: flex; flex-wrap: wrap; gap: 8px">
+<button type="button" aria-pressed="true" style="height: 40px; padding: 0 16px; border-radius: 11px; border: 1.5px solid #C23B4A; background: #F7E0E2; color: #7A1E2A; font: inherit; font-size: 14px; font-weight: 600; display: flex; align-items: center; gap: 8px; cursor: pointer"><span aria-hidden="true" style="width: 9px; height: 9px; border-radius: 50%; background: #C23B4A"></span>Challenger</button>
+<button type="button" aria-pressed="false" style="height: 40px; padding: 0 16px; border-radius: 11px; border: 1px solid #E5E7EB; background: #FFFFFF; color: #262A31; font: inherit; font-size: 14px; font-weight: 500; display: flex; align-items: center; gap: 8px; cursor: pointer"><span aria-hidden="true" style="width: 9px; height: 9px; border-radius: 50%; background: #5B8A6E"></span>Premium</button>
+<button type="button" aria-pressed="false" style="height: 40px; padding: 0 16px; border-radius: 11px; border: 1px solid #E5E7EB; background: #FFFFFF; color: #262A31; font: inherit; font-size: 14px; font-weight: 500; display: flex; align-items: center; gap: 8px; cursor: pointer"><span aria-hidden="true" style="display: flex"><span style="width: 9px; height: 9px; border-radius: 50%; background: #C23B4A"></span><span style="width: 9px; height: 9px; border-radius: 50%; background: #5B8A6E; margin-left: -3px"></span></span>혼합 (Challenger + Premium)</button>
+</div>
+<p style="margin: 0; font-size: 13px; color: #6B7280">선택한 버튼은 캠퍼스 연한 배경 + 진한 글자. 고르지 않은 버튼도 캠퍼스 점으로 구분합니다. 화면 전체 색은 바뀌지 않습니다.</p>
+<div style="display: flex; flex-direction: column; gap: 8px">
+<span style="font-size: 14px; font-weight: 500">코스 · 넣은 순서가 기간 순서, 합계 12주</span>
+<div style="display: flex; gap: 10px">
+<label style="flex: 1 1 auto; min-width: 0"><span style="position: absolute; width: 1px; height: 1px; overflow: hidden">코스</span><select style="width: 100%; height: 44px; border: 1px solid #E5E7EB; border-radius: 11px; padding: 0 12px; font: inherit; font-size: 15px; color: #262A31; background: #FFFFFF"><option>ESL Flex</option></select></label>
+<label style="flex: 0 0 130px"><span style="position: absolute; width: 1px; height: 1px; overflow: hidden">주수</span><select style="width: 100%; height: 44px; border: 1px solid #E5E7EB; border-radius: 11px; padding: 0 12px; font: inherit; font-size: 15px; color: #262A31; background: #FFFFFF"><option>12주</option></select></label>
+</div>
+<button type="button" style="align-self: flex-start; height: 32px; padding: 0 12px; border-radius: 8px; border: 1px solid #E5E7EB; background: #FFFFFF; font: inherit; font-size: 13px; color: #262A31; cursor: pointer">+ 코스</button>
+</div>
+<div style="display: flex; flex-direction: column; gap: 8px">
+<span style="font-size: 14px; font-weight: 500">숙소 · 합계 12주</span>
+<div style="display: flex; gap: 10px">
+<label style="flex: 1 1 auto; min-width: 0"><span style="position: absolute; width: 1px; height: 1px; overflow: hidden">숙소</span><select style="width: 100%; height: 44px; border: 1px solid #E5E7EB; border-radius: 11px; padding: 0 12px; font: inherit; font-size: 15px; color: #262A31; background: #FFFFFF"><option>Room for 4 (studio)</option></select></label>
+<label style="flex: 0 0 130px"><span style="position: absolute; width: 1px; height: 1px; overflow: hidden">주수</span><select style="width: 100%; height: 44px; border: 1px solid #E5E7EB; border-radius: 11px; padding: 0 12px; font: inherit; font-size: 15px; color: #262A31; background: #FFFFFF"><option>12주</option></select></label>
+</div>
+<button type="button" style="align-self: flex-start; height: 32px; padding: 0 12px; border-radius: 8px; border: 1px solid #E5E7EB; background: #FFFFFF; font: inherit; font-size: 13px; color: #262A31; cursor: pointer">+ 숙소</button>
+</div>
+</section>
+</div>
+
+<aside aria-label="견적 결과" style="flex: 1 1 380px; max-width: 440px; min-width: 0; background: #FFFFFF; border: 1px solid #E5E7EB; border-radius: 18px; padding: 22px; display: flex; flex-direction: column">
+<div style="display: flex; justify-content: space-between; align-items: center; gap: 12px">
+<h2 style="margin: 0; font-size: 17px; font-weight: 600">견적</h2>
+<button type="button" style="height: 32px; padding: 0 12px; border-radius: 8px; border: 1px solid #E5E7EB; background: #FFFFFF; font: inherit; font-size: 13px; color: #262A31; cursor: pointer">인쇄·PDF</button>
+</div>
+<p style="margin: 6px 0 14px; font-size: 13px; color: #6B7280">2026-12-13 ~ 2027-03-06 · 12주 · Challenger</p>
+
+<span style="font-size: 12.5px; font-weight: 500; color: #6B7280; padding: 6px 0 2px">코스</span>
+<div style="display: flex; justify-content: space-between; gap: 12px; padding: 8px 0; border-bottom: 1px solid #EFF1F4">
+<div style="display: flex; flex-direction: column; min-width: 0"><span style="font-size: 14px">ESL Flex</span><span style="font-size: 12.5px; color: #6B7280">12주 · 2026-12-13 ~ 2027-03-06</span></div>
+<span style="font-size: 14px; white-space: nowrap; font-variant-numeric: tabular-nums">₩2,400,000</span>
+</div>
+
+<span style="font-size: 12.5px; font-weight: 500; color: #6B7280; padding: 12px 0 2px">숙소</span>
+<div style="display: flex; justify-content: space-between; gap: 12px; padding: 8px 0; border-bottom: 1px solid #EFF1F4">
+<div style="display: flex; flex-direction: column; min-width: 0"><span style="font-size: 14px">Room for 4 (studio)</span><span style="font-size: 12.5px; color: #6B7280">12주 · 2026-12-13 ~ 2027-03-06</span></div>
+<span style="font-size: 14px; white-space: nowrap; font-variant-numeric: tabular-nums">₩2,250,000</span>
+</div>
+
+<div style="display: flex; justify-content: space-between; gap: 12px; padding: 10px 12px; margin-top: 10px; background: #FAFBFC; border-radius: 8px">
+<span style="font-size: 14px; font-weight: 500">코스+숙소</span>
+<span style="font-size: 14px; font-weight: 500; white-space: nowrap; font-variant-numeric: tabular-nums">₩4,650,000</span>
+</div>
+<div style="display: flex; justify-content: space-between; gap: 12px; padding: 10px 12px; border-bottom: 1px solid #EFF1F4">
+<span style="font-size: 14px">등록금</span>
+<span style="font-size: 14px; white-space: nowrap; font-variant-numeric: tabular-nums">₩100,000</span>
+</div>
+
+<span style="font-size: 12.5px; font-weight: 500; color: #6B7280; padding: 14px 0 2px">할인 · 추가요금</span>
+<div style="display: flex; gap: 10px; padding: 9px 0; border-bottom: 1px solid #EFF1F4; align-items: flex-start">
+<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#1A3E93" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="flex: none; margin-top: 2px"><rect x="3" y="8" width="18" height="4" rx="1"></rect><path d="M12 8v13"></path><path d="M19 12v7a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2v-7"></path><path d="M7.5 8a2.5 2.5 0 0 1 0-5A4.8 8 0 0 1 12 8a4.8 8 0 0 1 4.5-5 2.5 2.5 0 0 1 0 5"></path></svg>
+<div style="flex: 1; min-width: 0; display: flex; flex-direction: column"><span style="font-size: 14px; color: #262A31">린시즌 기숙사 할인</span><span style="font-size: 12.5px; color: #6B7280">Lean '26 · Room for 4 (studio) · 4주 → 1회 × ₩150,000</span></div>
+<span style="font-size: 14px; font-weight: 500; color: #1A3E93; white-space: nowrap; font-variant-numeric: tabular-nums">−₩150,000</span>
+</div>
+<div style="display: flex; gap: 10px; padding: 9px 0; border-bottom: 1px solid #EFF1F4; align-items: flex-start">
+<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#1A3E93" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="flex: none; margin-top: 2px"><rect x="3" y="8" width="18" height="4" rx="1"></rect><path d="M12 8v13"></path><path d="M19 12v7a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2v-7"></path><path d="M7.5 8a2.5 2.5 0 0 1 0-5A4.8 8 0 0 1 12 8a4.8 8 0 0 1 4.5-5 2.5 2.5 0 0 1 0 5"></path></svg>
+<div style="flex: 1; min-width: 0; display: flex; flex-direction: column"><span style="font-size: 14px; color: #262A31">린시즌 기숙사 할인</span><span style="font-size: 12.5px; color: #6B7280">Lean '27 · Room for 4 (studio) · 2주 → 0.5회 × ₩100,000</span></div>
+<span style="font-size: 14px; font-weight: 500; color: #1A3E93; white-space: nowrap; font-variant-numeric: tabular-nums">−₩50,000</span>
+</div>
+<div style="display: flex; gap: 10px; padding: 9px 0; border-bottom: 1px solid #EFF1F4; align-items: flex-start">
+<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#1A3E93" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="flex: none; margin-top: 2px"><rect x="3" y="8" width="18" height="4" rx="1"></rect><path d="M12 8v13"></path><path d="M19 12v7a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2v-7"></path><path d="M7.5 8a2.5 2.5 0 0 1 0-5A4.8 8 0 0 1 12 8a4.8 8 0 0 1 4.5-5 2.5 2.5 0 0 1 0 5"></path></svg>
+<div style="flex: 1; min-width: 0; display: flex; flex-direction: column"><span style="font-size: 14px; color: #262A31">홀리데이 프로모션</span><span style="font-size: 12.5px; color: #6B7280">Holiday '26 · 시작 2026-12-13 · 대상 방 12주</span></div>
+<span style="font-size: 14px; font-weight: 500; color: #1A3E93; white-space: nowrap; font-variant-numeric: tabular-nums">−₩200,000</span>
+</div>
+<div style="display: flex; gap: 10px; padding: 9px 0; border-bottom: 1px solid #EFF1F4; align-items: flex-start">
+<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#1A3E93" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="flex: none; margin-top: 2px"><rect x="3" y="8" width="18" height="4" rx="1"></rect><path d="M12 8v13"></path><path d="M19 12v7a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2v-7"></path><path d="M7.5 8a2.5 2.5 0 0 1 0-5A4.8 8 0 0 1 12 8a4.8 8 0 0 1 4.5-5 2.5 2.5 0 0 1 0 5"></path></svg>
+<div style="flex: 1; min-width: 0; display: flex; flex-direction: column"><span style="font-size: 14px; color: #262A31">장기등록 할인</span><span style="font-size: 12.5px; color: #6B7280">12주 이상</span></div>
+<span style="font-size: 14px; font-weight: 500; color: #1A3E93; white-space: nowrap; font-variant-numeric: tabular-nums">−₩300,000</span>
+</div>
+
+<div style="display: flex; justify-content: space-between; align-items: baseline; gap: 12px; padding: 16px 0 18px; border-bottom: 1px solid #E5E7EB">
+<span style="font-size: 17px; font-weight: 600">총 학비</span>
+<span style="font-size: 22px; font-weight: 600; white-space: nowrap; font-variant-numeric: tabular-nums">₩4,050,000</span>
+</div>
+
+<span style="font-size: 15px; font-weight: 600; padding: 16px 0 6px">현지비용 (페소, 현지 납부)</span>
+<div style="display: flex; justify-content: space-between; padding: 6px 0; font-size: 14px; border-bottom: 1px solid #EFF1F4"><span>SSP</span><span style="font-variant-numeric: tabular-nums">₱7,800</span></div>
+<div style="display: flex; justify-content: space-between; padding: 6px 0; font-size: 14px; border-bottom: 1px solid #EFF1F4"><span>SSP I-Card</span><span style="font-variant-numeric: tabular-nums">₱4,500</span></div>
+<div style="display: flex; justify-content: space-between; padding: 6px 0; font-size: 14px; border-bottom: 1px solid #EFF1F4"><span>학생증</span><span style="font-variant-numeric: tabular-nums">₱200</span></div>
+<div style="display: flex; justify-content: space-between; padding: 6px 0; font-size: 14px; border-bottom: 1px solid #EFF1F4"><span>기숙사 보증금(환불)</span><span style="font-variant-numeric: tabular-nums">₱3,000</span></div>
+<div style="display: flex; justify-content: space-between; padding: 6px 0; font-size: 14px; border-bottom: 1px solid #EFF1F4"><span>전기·수도 (12주 기준)</span><span style="font-variant-numeric: tabular-nums">₱9,000</span></div>
+<div style="display: flex; justify-content: space-between; padding: 6px 0; font-size: 14px; border-bottom: 1px solid #EFF1F4"><span>세탁 (12주 기준)</span><span style="font-variant-numeric: tabular-nums">₱3,600</span></div>
+<div style="display: flex; justify-content: space-between; padding: 6px 0; font-size: 14px; border-bottom: 1px solid #EFF1F4"><span>시설관리비 (12주 기준)</span><span style="font-variant-numeric: tabular-nums">₱3,000</span></div>
+<div style="display: flex; justify-content: space-between; padding: 6px 0; font-size: 14px; border-bottom: 1px solid #EFF1F4"><span>비자 연장 (12주 이상)</span><span style="font-variant-numeric: tabular-nums">₱11,150</span></div>
+<div style="display: flex; justify-content: space-between; padding: 6px 0; font-size: 14px; border-bottom: 1px solid #EFF1F4"><span>교재비 · ESL Flex (12주 기준)</span><span style="font-variant-numeric: tabular-nums">₱3,300</span></div>
+<div style="display: flex; justify-content: space-between; align-items: baseline; padding: 12px 0; font-size: 15px; font-weight: 600"><span>현지비용 합계</span><span style="font-size: 17px; font-variant-numeric: tabular-nums">₱45,550</span></div>
+<p style="margin: 4px 0 0; font-size: 13px; color: #4B5260">※ 상기 현지 비용은 필리핀 이민국의 정책 변경, 인상 및 환율 변동 등에 따라 실제 납부 금액이 달라질 수 있습니다.</p>
+<p style="margin: 8px 0 0; font-size: 12.5px; color: #6B7280">가견적입니다. 정식 견적서와 재발행은 학생 등록 때 만듭니다(유효기간·계좌 없음, CL-067).</p>
+</aside>
+</main>
+</div>
+</div>
+</body>
+</html>

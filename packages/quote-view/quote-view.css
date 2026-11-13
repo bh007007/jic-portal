@@ -1,0 +1,63 @@
+/*
+ * 견적 결과 블록(기획 '견적 수정 목록 1113', 시안 01~03). 값은 시안 HTML, 규칙은 수정 목록 md.
+ * 색은 디자인 원칙 변수를 쓰고, 변수가 없는 앱(관리자 포털)을 위해 밝은 화면 값을 기본값으로 둔다.
+ * 할인·추가요금 색(--discount·--surcharge·--surcharge-icon)은 금액 숫자와 아이콘에만(견적-3).
+ */
+.qv {
+  --qv-discount: var(--discount, #1A3E93);
+  --qv-surcharge: var(--surcharge, #C2540A);
+  --qv-surcharge-icon: var(--surcharge-icon, #F06800);
+  --qv-ink: var(--ink, #262A31);
+  --qv-ink-2: var(--ink-2, #4B5260);
+  --qv-muted: var(--muted, #6B7280);
+  --qv-line: var(--line, #E5E7EB);
+  --qv-line-2: var(--line-2, #EFF1F4);
+  --qv-surface: var(--surface, #FFFFFF);
+  --qv-surface-2: var(--surface-2, #FAFBFC);
+  display: flex;
+  flex-direction: column;
+  background: var(--qv-surface);
+  border: 1px solid var(--qv-line);
+  border-radius: var(--r-lg, 18px);
+  padding: 22px;
+  color: var(--qv-ink);
+  min-width: 0;
+}
+.qv .qv-amt { white-space: nowrap; font-variant-numeric: tabular-nums; }
+.qv-head { display: flex; justify-content: space-between; align-items: center; gap: 12px; }
+.qv-head h2 { margin: 0; font-size: 17px; font-weight: 600; }
+.qv-meta { margin: 6px 0 14px; font-size: 13px; color: var(--qv-muted); }
+.qv-sec { font-size: 12.5px; font-weight: 500; color: var(--qv-muted); padding: 12px 0 2px; }
+.qv-meta + .qv-sec, .qv-meta + * + .qv-sec { padding-top: 6px; }
+.qv-line { display: flex; justify-content: space-between; gap: 12px; padding: 8px 0; border-bottom: 1px solid var(--qv-line-2); font-size: 14px; }
+.qv-name { display: flex; flex-direction: column; min-width: 0; flex: 1 1 auto; }
+.qv-title { font-size: 14px; color: var(--qv-ink); display: flex; flex-wrap: wrap; align-items: center; gap: 6px; }
+.qv-small { font-size: 12.5px; color: var(--qv-muted); }
+.qv-subtotal { display: flex; justify-content: space-between; gap: 12px; padding: 10px 12px; margin-top: 10px; background: var(--qv-surface-2); border-radius: var(--r-sm, 8px); font-size: 14px; font-weight: 500; }
+.qv-reg { display: flex; justify-content: space-between; gap: 12px; padding: 10px 12px; border-bottom: 1px solid var(--qv-line-2); font-size: 14px; }
+.qv-reg + .qv-sec { padding-top: 14px; }
+.qv-adj { display: flex; gap: 10px; align-items: flex-start; padding: 9px 0; border-bottom: 1px solid var(--qv-line-2); }
+.qv-icon { flex: none; margin-top: 2px; }
+.qv-adj .qv-amt { font-size: 14px; font-weight: 500; }
+.qv-adj.discount .qv-icon, .qv-adj.discount .qv-amt { color: var(--qv-discount); }
+.qv-adj.surcharge .qv-icon { color: var(--qv-surcharge-icon); }
+.qv-adj.surcharge .qv-amt { color: var(--qv-surcharge); }
+.qv-pending { margin-top: 10px; padding: 10px 12px; border-radius: var(--r-sm, 8px); background: var(--warn-bg, #FBF4E4); color: var(--warn-ink, #8A6A22); font-size: 13px; }
+.qv-total { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; padding: 16px 0 18px; border-bottom: 1px solid var(--qv-line); font-size: 17px; font-weight: 600; }
+.qv-total .qv-amt { font-size: 22px; font-weight: 600; }
+.qv-local-h { margin: 0; font-size: 15px; font-weight: 600; padding: 16px 0 6px; }
+.qv-local { display: flex; justify-content: space-between; gap: 12px; padding: 6px 0; font-size: 14px; border-bottom: 1px solid var(--qv-line-2); }
+.qv-local-total { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; padding: 12px 0; font-size: 15px; font-weight: 600; }
+.qv-local-total .qv-amt { font-size: 17px; }
+.qv-notice { margin: 4px 0 0; font-size: 13px; color: var(--qv-ink-2); }
+.qv-foot { margin: 8px 0 0; font-size: 12.5px; color: var(--qv-muted); }
+
+/* 캠퍼스 칩(혼합 등록, 견적-4): 캠퍼스 연한 배경 + 진한 글자. 화면 전체 강조색은 바꾸지 않는다 */
+.qv-chip { display: inline-flex; align-items: center; height: 20px; padding: 0 8px; border-radius: 999px; font-size: 11.5px; font-weight: 500; line-height: 1; }
+.qv-chip.challenger { background: var(--cha-tint, #F7E0E2); color: var(--cha-ink, #7A1E2A); }
+.qv-chip.premium { background: var(--pre-tint, #E2ECE1); color: var(--pre-ink, #214632); }
+
+@media print {
+  .qv { border: 0; padding: 0; }
+  .qv-adj.discount .qv-icon, .qv-adj.discount .qv-amt, .qv-adj.surcharge .qv-icon, .qv-adj.surcharge .qv-amt { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+}
