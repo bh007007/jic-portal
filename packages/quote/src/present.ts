@@ -1,3 +1,4 @@
+import { pickupText } from './besa';
 import { LOCAL_FEE_NOTICE } from './engine';
 import { PROMOTIONS_2026 } from './prices2026';
 import type { Campus, Currency, Line, PriceBook, PriceSystem, PromoDisplay, PromoRow, QuoteOk } from './types';
@@ -20,8 +21,8 @@ export const CAMPUS_NAME: Record<Campus, string> = { premium: 'Premium', challen
 
 /** 계산 근거(작은 글씨)의 낱말. 화면 글자는 코드와 따로 둔다(D8·P7). 1차 화면은 한국어 */
 export const BASIS_TEXT = {
-  ko: { weeks: (n: number) => `${n}주`, times: (n: number) => `${n}회`, start: '시작', rooms: '대상 방', over: (n: number) => `${n}주 이상` },
-  en: { weeks: (n: number) => `${n} wk`, times: (n: number) => `${n}×`, start: 'start', rooms: 'eligible room', over: (n: number) => `${n}+ weeks` },
+  ko: { weeks: (n: number) => `${n}주`, times: (n: number) => `${n}회`, start: '시작', rooms: '대상 방', over: (n: number) => `${n}주 이상`, pickup: '공항 픽업' },
+  en: { weeks: (n: number) => `${n} wk`, times: (n: number) => `${n}×`, start: 'start', rooms: 'eligible room', over: (n: number) => `${n}+ weeks`, pickup: 'Airport pickup' },
 } as const;
 export type TextLang = keyof typeof BASIS_TEXT;
 
@@ -49,6 +50,8 @@ export function withPromoDisplay(book: PriceBook): PriceBook {
 }
 
 export interface ViewItem { key: string; name: string; campus: Campus; weeks: number; from: string; to: string; amount: number }
+/** 현지비용 한 줄(₱). sub 는 작은 글씨(공항 픽업의 공항·요일·단체 여부) */
+export interface ViewLocal { key: string; label: string; sub?: string; amount: number }
 export interface ViewAdjust {
   key: string;
   kind: 'discount' | 'surcharge';
@@ -76,7 +79,8 @@ export interface QuoteView {
   /** 할인 먼저, 그다음 추가요금(계산 모듈의 프로모션 표 순서) */
   adjustments: ViewAdjust[];
   total: number;
-  local: Line[];
+  /** 공항 픽업을 신청하면 맨 위 한 줄(견적-5), 나머지는 계산 모듈 순서 그대로 */
+  local: ViewLocal[];
   localTotal: number;
   localNotice: string;
   pending: string[];
@@ -139,6 +143,16 @@ export function presentQuote(r: QuoteOk, book: PriceBook, opts: { nameLang?: Quo
   const campuses: Campus[] = [];
   for (const c of courses) if (campuses[campuses.length - 1] !== c.campus) campuses.push(c.campus);
 
+  // 현지비용: 공항 픽업은 맨 위 한 줄 '공항 픽업' + 작은 글씨(견적-5). 금액·합계는 계산 모듈 그대로
+  const pickupLines: ViewLocal[] = [];
+  const otherLines: ViewLocal[] = [];
+  for (const l of r.local) {
+    if (l.key.startsWith('pickup:')) {
+      const p = book.pickups.find((x) => `pickup:${x.id}` === l.key);
+      pickupLines.push({ key: l.key, label: T.pickup, sub: p ? pickupText(p) : l.label, amount: l.amount });
+    } else otherLines.push({ key: l.key, label: l.label, amount: l.amount });
+  }
+
   return {
     currency: r.currency,
     start: r.start,
@@ -152,7 +166,7 @@ export function presentQuote(r: QuoteOk, book: PriceBook, opts: { nameLang?: Quo
     registration: r.charges.filter((l) => l.part === 'registration').reduce((a, l) => a + l.amount, 0),
     adjustments,
     total: r.total,
-    local: r.local,
+    local: [...pickupLines, ...otherLines],
     localTotal: r.localTotal,
     localNotice: LOCAL_FEE_NOTICE[r.system],
     pending: r.pending,

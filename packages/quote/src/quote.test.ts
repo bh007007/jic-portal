@@ -2,7 +2,10 @@
  * 견적 계산 시험(R-014). 기준: 기획 '견적 정정 목록 1112' 3장 검증 예시 11건(CL-068) — 포털 견적은 이 금액과 같아야 한다.
  * 실행: npm run quote:test (CI에서도 돈다)
  */
-import { LOCAL_FEE_NOTICE, PRICE_BOOK_2026 as B, diffBooks, presentQuote, quote, systemForCountry, validate, validateBook, withPromoDisplay, type PriceBook, type QuoteInput, type QuoteOk } from './index';
+import {
+  BESA_FIRST, LOCAL_FEE_NOTICE, PRICE_BOOK_2026 as B, besaDays, diffBooks, isBesaDay, isBesaPickup, pickupAllowed, pickupText, presentQuote, quote, systemForCountry, validate, validateBook, withPromoDisplay,
+  type PriceBook, type QuoteInput, type QuoteOk,
+} from './index';
 
 let pass = 0;
 const fails: string[] = [];
@@ -174,6 +177,24 @@ ok('기본값만 채운 새 버전은 바뀐 칸 없음(v1 → v2)', diffBooks(p
 const amt2: PriceBook = JSON.parse(JSON.stringify(B));
 amt2.promotions.find((p) => p.id === 'long')!.amount.KRW = 350000;
 ok('프로모션 금액 바꾸면 내용 칸으로', diffBooks(B, amt2).map((d) => d.key).join() === '프로모션:long:내용', diffBooks(B, amt2));
+
+// 10) 시작일 달력의 BESA 픽업일과 공항 픽업(견적-5, 수정 목록 5-1장·8장 5·6번)
+const y26 = besaDays(2026);
+ok('BESA 2026년 26개(1/11 … 12/27)', y26.length === 26 && y26[0] === '2026-01-11' && y26[25] === '2026-12-27', y26);
+ok('8장 5번: 2026년 11월은 1·15·29일', y26.filter((d) => d.startsWith('2026-11')).map((d) => d.slice(8)).join() === '01,15,29');
+ok('8장 5번: 2027년 1월은 10·24일', besaDays(2027).filter((d) => d.startsWith('2027-01')).map((d) => d.slice(8)).join() === '10,24');
+ok('BESA 날 판단', isBesaDay('2026-12-13') && !isBesaDay('2026-11-22') && !isBesaDay('2026-12-14') && !isBesaDay('2025-12-28') && isBesaDay(BESA_FIRST) && !isBesaDay('2026-13-01'));
+const PK = (id: string) => B.pickups.find((p) => p.id === id)!;
+ok('BESA 단체 픽업은 BESA 날만', pickupAllowed(PK('manila_besa'), '2026-12-13') && !pickupAllowed(PK('manila_besa'), '2026-11-22') && !pickupAllowed(PK('clark_besa'), '2026-11-22'));
+ok('1인 픽업은 아무 날이나', pickupAllowed(PK('manila_solo'), '2026-11-22') && pickupAllowed(PK('clark_solo'), '2026-11-22') && !pickupAllowed(undefined, '2026-12-13'));
+const v1p = presentQuote(q({ system: 'kr', start: '2026-12-13', courses: [C('ESL Flex', 12)], dorms: [C('Room for 4 (studio)', 12)], pickup: 'manila_besa' }), B);
+ok('8장 1번(픽업): 현지비용 맨 위 공항 픽업 ₱3,000', v1p.local[0]?.label === '공항 픽업' && v1p.local[0]?.sub === 'Manila NAIA · 일요일 (BESA 단체)' && v1p.local[0]?.amount === 3000, v1p.local[0]);
+ok('8장 1번(픽업): 현지비용 합계 ₱48,550, 학비 그대로', v1p.localTotal === 48550 && v1p.total === 4050000 && v1p.local.filter((l) => l.key.startsWith('pickup:')).length === 1);
+ok('픽업 안 하면 픽업 줄 없음', v1.local.every((l) => !l.key.startsWith('pickup:')) && v1.local[0]?.label === 'SSP');
+// 11/12 운영 v1(픽업 이름 옛 표기, besa 칸 없음)도 같은 표기·판단
+const oldPick: PriceBook = JSON.parse(JSON.stringify(B));
+for (const p of oldPick.pickups) { p.label = p.label.replace(' · ', ' ').replace(' (', '('); delete p.besa; }
+ok('옛 가격 버전도 같은 픽업 표기·BESA 판단', pickupText(oldPick.pickups[0]) === 'Manila NAIA · 일요일 (BESA 단체)' && isBesaPickup(oldPick.pickups[0]) && !isBesaPickup(oldPick.pickups[1]) && presentQuote(quote({ system: 'kr', start: '2026-12-13', courses: [C('ESL Flex', 12)], dorms: [C('Room for 4 (studio)', 12)], pickup: 'clark_besa' }, oldPick) as QuoteOk, oldPick).local[0]?.sub === 'Clark CRK · 월요일 (BESA 단체)');
 
 console.log(`견적 계산 시험: 통과 ${pass}, 실패 ${fails.length}`);
 for (const f of fails) console.log('  실패:', f);

@@ -17,6 +17,16 @@ export const QV_TEXT = {
     weeks: (n: number) => `${n}주`,
     discount: '할인',
     surcharge: '추가요금',
+    // 시작일 달력(견적-5)
+    weekdays: ['일', '월', '화', '수', '목', '금', '토'],
+    month: (y: number, m: number) => `${y}년 ${m}월`,
+    date: (y: number, m: number, d: number) => `${y}년 ${m}월 ${d}일 (일)`,
+    dayLabel: (y: number, m: number, d: number) => `${y}년 ${m}월 ${d}일 일요일`,
+    prevMonth: '이전 달',
+    nextMonth: '다음 달',
+    besaDay: 'BESA 단체 픽업일',
+    calendar: '연수 시작일 달력',
+    pick: '날짜를 고르세요',
   },
 } as const;
 export type QvLang = keyof typeof QV_TEXT;

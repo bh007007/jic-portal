@@ -25,7 +25,8 @@ export interface DormDef {
   room: RoomClass;
   price: Record<Currency, number>; // 4주 단가
 }
-export interface PickupDef { id: string; label: string; php: number }
+/** 공항 픽업(CL-064). besa = BESA 단체 픽업(시작일이 BESA 픽업일일 때만 고를 수 있음, 견적-5) */
+export interface PickupDef { id: string; label: string; php: number; besa?: boolean }
 
 export interface LocalFees {
   ssp: number; // 24주 이하 1회, 25주 이상 2회

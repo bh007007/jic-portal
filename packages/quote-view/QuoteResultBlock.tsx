@@ -115,7 +115,14 @@ export default function QuoteResultBlock({ view, title, actions, top, footnote, 
 
         <h3 className="qv-local-h">{T.local}</h3>
         {view.local.map((l) => (
-          <div key={l.key} className="qv-local"><span>{l.label}</span><span className="qv-amt">{pesoText(l.amount)}</span></div>
+          <div key={l.key} className="qv-local">
+            {l.sub ? (
+              <div className="qv-name"><span>{l.label}</span><span className="qv-small">{l.sub}</span></div>
+            ) : (
+              <span>{l.label}</span>
+            )}
+            <span className="qv-amt">{pesoText(l.amount)}</span>
+          </div>
         ))}
         <div className="qv-local-total"><span>{T.localTotal}</span><span className="qv-amt">{pesoText(view.localTotal)}</span></div>
         <p className="qv-notice">{view.localNotice}</p>
