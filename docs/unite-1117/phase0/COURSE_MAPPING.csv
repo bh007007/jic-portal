@@ -1,0 +1,29 @@
+﻿campus,consult_major,quote_code,brochure,lessons_per_day,portal_course_id,v21_level,rec_rules_v21,quoteLink_now,in_price_book,v74_course_id,note
+Premium,Speaking,Speaking Starter,SPEAKING STARTER,1:1 4 + 그룹 1 + 옵션 2 = 7,p-speaking,STARTER,p-speaking,Speaking Starter,있음,speaking,CL-070·073
+Premium,Speaking,Speaking Pro,(브로슈어에 없음),1:1 5 + 그룹 1 + 옵션 2 = 8,p-speaking,PRO,p-speaking,Speaking Pro,있음,speaking,CL-070
+Premium,Speaking,Speaking Master,SPEAKING MASTER,1:1 6 + 옵션 2 = 8,p-speaking,MASTER,p-speaking,Speaking Master,있음,speaking,CL-070
+Premium,ESL TEP,ESL TEP 8,TEP ESL 8,1:1 3 + 그룹 3 + 옵션 2 = 8,p-tep,TEP 8,p-tep,ESL TEP 8,있음,tep,CL-069
+Premium,ESL TEP,ESL TEP 9,TEP ESL 9,1:1 4 + 그룹 3 + 옵션 2 = 9,p-tep,TEP 9,p-tep,ESL TEP 9,있음,tep,CL-069
+Premium,ESL TEP,ESL TEP 10,TEP ESL 10,1:1 5 + 그룹 3 + 옵션 2 = 10,p-tep,TEP 10,p-tep,ESL TEP 10,있음,tep,CL-069
+Premium,Active Senior,Active Senior 5,ACTIVE SENIOR 5,1:1 3 + 옵션 2 = 5,p-senior,Senior 3,p-senior,Active Senior 5,있음,senior,CL-074 (지금 화면 이름 '1:1 맞춤 과정')
+Premium,Active Senior,Active Senior 6,ACTIVE SENIOR 6,1:1 4 + 옵션 2 = 6,p-senior,Senior 4,p-senior,Active Senior 6,있음,senior,CL-074
+Premium,Working Holiday,Working Holiday 8,WORKING HOLIDAY,1:1 3 + 그룹 3 + 옵션 2 = 8,p-wh,(단계 없음),p-wh,Working Holiday 8,있음,wh,CL-069
+Premium,TOEIC,TOEIC,TOEIC,1:1 3 + 그룹 3 + 옵션 2 = 8,p-toeic,(단계 없음),p-toeic,TOEIC,있음,toeic,CL-069
+Premium,Business Master,Business Master 8,BUSINESS MASTER,1:1 6 + 옵션 2 = 8,p-business,(단계 없음),p-business,Business Master 8,있음,biz,CL-069
+Challenger,ESL,ESL Lite,ESL LITE,총 8,c-esl,세미 스파르타/스파르타,c-esl,(짝 없음 → 견적에서 선택),있음,esl,CL-071·072 (V2.2 뒤 소항목)
+Challenger,ESL,ESL Core,ESL CORE,총 9,c-esl,세미 스파르타/스파르타,c-esl,(짝 없음 → 견적에서 선택),있음,esl,CL-071
+Challenger,ESL,ESL Standard,ESL STANDARD,총 10,c-esl,세미 스파르타/스파르타,c-esl,(짝 없음 → 견적에서 선택),있음,esl,CL-071
+Challenger,ESL Flex,ESL Flex,ESL FLEX,1:1 3 + 특별 수업 2 = 5,(없음),-,(없음),(없음),있음,esl-flex,"CL-071: 대항목 신설은 V2.2(상담에 아직 없음, 견적에는 있음)"
+Challenger,IELTS,IELTS Lite,IELTS LITE,총 8,c-ielts,세미 스파르타/스파르타,c-ielts,(짝 없음 → 견적에서 선택),있음,ielts,CL-071·072
+Challenger,IELTS,IELTS Core,IELTS CORE,총 9,c-ielts,세미 스파르타/스파르타,c-ielts,(짝 없음 → 견적에서 선택),있음,ielts,CL-071
+Challenger,IELTS,IELTS Standard,IELTS STANDARD,총 10,c-ielts,세미 스파르타/스파르타,c-ielts,(짝 없음 → 견적에서 선택),있음,ielts,CL-071
+Challenger,IELTS Guarantee,IELTS Guarantee,IELTS GUARANTEE,"총 10, 저녁 학습·어휘 시험",c-ielts-g,스파르타,c-ielts-g,IELTS Guarantee,있음,ielts-g,CL-060·071 (입학 조건 G-1 결정 대기)
+캠프,캠프,패밀리캠프 (Premium),(캠프 브로슈어),-,camp 콘텐츠,-,(없음),(견적 없음),-(견적 없음),family,CL-077 한국만
+캠프,캠프,가족연수,(캠프 브로슈어),-,camp 콘텐츠,-,(없음),(견적 없음),-(견적 없음),family,CL-077 전체 국가
+캠프,캠프,주니어캠프 (MCO),(캠프 브로슈어),-,camp 콘텐츠,-,(없음),(견적 없음),-(견적 없음),(JR.camp),CL-077
+캠프,캠프,주니어캠프 (Premium),(캠프 브로슈어),-,camp 콘텐츠,-,(없음),(견적 없음),-(견적 없음),(JR.camp),CL-077 한국 제외
+(대응표에 없음),-,(없음),-,4타임,(없음),-,(없음),(없음),없음,upc,V74 UPC(주니어 장기 연수): 대응표·견적·포털에 없음 → OPEN_DECISIONS
+(삭제),-,Premium ESL,-,-,p-esl,ESL,p-esl,(짝 없음),없음,-,CL-073 삭제 → Speaking Starter. 지금 포털 상담에는 남아 있음(V2.2 뒤 삭제)
+(삭제),-,Speaking Course(리뉴얼 명칭),-,-,p-speaking,-,p-speaking,-,없음,speaking,CL-069·070 지금 포털 이름 'Speaking Course'
+(삭제),-,1:1 맞춤 과정,-,-,p-senior,-,p-senior,-,없음,senior,CL-074 지금 포털 화면 이름
+(삭제),-,New Campus,-,-,(campuses.new 남아 있음),-,(없음),-,없음,-,CL-077·096

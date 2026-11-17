@@ -1,0 +1,480 @@
+﻿source_key,v74_screen,title,unit,destination,route,dest_in_code,db_status,db_state,review_flags,phase,note
+AROUND[0]:first,baguio(Around JIC),도착 첫 주 필수,장소 묶음 0곳,partner_content_items about(section=왜 바기오·주변),/about/baguio,있음,existing_same,published,장소·교통 최신성,Phase 1,
+AROUND[1]:cafe,baguio(Around JIC),공부하기 좋은 카페,장소 묶음 0곳,partner_content_items about(section=왜 바기오·주변),/about/baguio,있음,existing_same,published,장소·교통 최신성,Phase 1,
+AROUND[2]:weekend,baguio(Around JIC),주말 반나절 코스,장소 묶음 0곳,partner_content_items about(section=왜 바기오·주변),/about/baguio,있음,existing_same,published,장소·교통 최신성,Phase 1,
+AROUND[3]:care,baguio(Around JIC),아플 때,장소 묶음 0곳,partner_content_items about(section=왜 바기오·주변),/about/baguio,있음,existing_same,published,장소·교통 최신성,Phase 1,
+AROUND[4]:food,baguio(Around JIC),맛집 · 식당,장소 묶음 0곳,partner_content_items about(section=왜 바기오·주변),/about/baguio,있음,existing_same,published,장소·교통 최신성,Phase 1,
+TRAVEL[0],baguio,Camp John Hay Golf Club,여행지 이름 + 사진,photo(baguio) 설명칸,/about/baguio,있음,existing_photo_only,,,Phase 1,"사진(pk:20)은 운영에 있음, 설명(이름)은 비어 있음"
+TRAVEL[1],baguio,Mines View Park,여행지 이름 + 사진,photo(baguio) 설명칸,/about/baguio,있음,existing_photo_only,,,Phase 1,"사진(pk:21)은 운영에 있음, 설명(이름)은 비어 있음"
+TRAVEL[2],baguio,Camp John Hay,여행지 이름 + 사진,photo(baguio) 설명칸,/about/baguio,있음,existing_photo_only,,,Phase 1,"사진(pk:22)은 운영에 있음, 설명(이름)은 비어 있음"
+TRAVEL[3],baguio,Riverview Resort,여행지 이름 + 사진,photo(baguio) 설명칸,/about/baguio,있음,existing_photo_only,,,Phase 1,"사진(pk:23)은 운영에 있음, 설명(이름)은 비어 있음"
+TRAVEL[4],baguio,Kultura Splash Wave,여행지 이름 + 사진,photo(baguio) 설명칸,/about/baguio,있음,existing_photo_only,,,Phase 1,"사진(pk:24)은 운영에 있음, 설명(이름)은 비어 있음"
+TRAVEL[5],baguio,Thunderbird Resort,여행지 이름 + 사진,photo(baguio) 설명칸,/about/baguio,있음,existing_photo_only,,,Phase 1,"사진(pk:25)은 운영에 있음, 설명(이름)은 비어 있음"
+TRAVEL[6],baguio,San Juan Surfing,여행지 이름 + 사진,photo(baguio) 설명칸,/about/baguio,있음,existing_photo_only,,,Phase 1,"사진(pk:26)은 운영에 있음, 설명(이름)은 비어 있음"
+TRAVEL[7],baguio,Asin Hot Springs,여행지 이름 + 사진,photo(baguio) 설명칸,/about/baguio,있음,existing_photo_only,,,Phase 1,"사진(pk:27)은 운영에 있음, 설명(이름)은 비어 있음"
+TRAVEL[8],baguio,Pinewoods Golf Club,여행지 이름 + 사진,photo(baguio) 설명칸,/about/baguio,있음,existing_photo_only,,,Phase 1,"사진(pk:28)은 운영에 있음, 설명(이름)은 비어 있음"
+TRAVEL[9],baguio,SM City Baguio,여행지 이름 + 사진,photo(baguio) 설명칸,/about/baguio,있음,existing_photo_only,,,Phase 1,"사진(pk:29)은 운영에 있음, 설명(이름)은 비어 있음"
+TRAVEL[10],baguio,Mt. Pulag National Park,여행지 이름 + 사진,photo(baguio) 설명칸,/about/baguio,있음,existing_photo_only,,,Phase 1,"사진(pk:30)은 운영에 있음, 설명(이름)은 비어 있음"
+TRAVEL[11],baguio,San Juan La Union,여행지 이름 + 사진,photo(baguio) 설명칸,/about/baguio,있음,existing_photo_only,,,Phase 1,"사진(pk:31)은 운영에 있음, 설명(이름)은 비어 있음"
+TRAVEL[12],baguio,San Fernando La Union,여행지 이름 + 사진,photo(baguio) 설명칸,/about/baguio,있음,existing_photo_only,,,Phase 1,"사진(pk:32)은 운영에 있음, 설명(이름)은 비어 있음"
+TRAVEL[13],baguio,Hundred Islands,여행지 이름 + 사진,photo(baguio) 설명칸,/about/baguio,있음,existing_photo_only,,,Phase 1,"사진(pk:33)은 운영에 있음, 설명(이름)은 비어 있음"
+TRAVEL[14],baguio,Banaue Rice Terraces,여행지 이름 + 사진,photo(baguio) 설명칸,/about/baguio,있음,existing_photo_only,,,Phase 1,"사진(pk:34)은 운영에 있음, 설명(이름)은 비어 있음"
+TRAVEL[15],baguio,Bangui Wind Mills,여행지 이름 + 사진,photo(baguio) 설명칸,/about/baguio,있음,existing_photo_only,,,Phase 1,"사진(pk:35)은 운영에 있음, 설명(이름)은 비어 있음"
+TRAVEL[16],baguio,Mt. Ulap,여행지 이름 + 사진,photo(baguio) 설명칸,/about/baguio,있음,existing_photo_only,,,Phase 1,"사진(pk:36)은 운영에 있음, 설명(이름)은 비어 있음"
+TRAVEL[17],baguio,Vigan,여행지 이름 + 사진,photo(baguio) 설명칸,/about/baguio,있음,existing_photo_only,,,Phase 1,"사진(pk:37)은 운영에 있음, 설명(이름)은 비어 있음"
+TRAVEL[18],baguio,Pagudpud Beach,여행지 이름 + 사진,photo(baguio) 설명칸,/about/baguio,있음,existing_photo_only,,,Phase 1,"사진(pk:38)은 운영에 있음, 설명(이름)은 비어 있음"
+TRAVEL[19],baguio,Sagada Cave,여행지 이름 + 사진,photo(baguio) 설명칸,/about/baguio,있음,existing_photo_only,,,Phase 1,"사진(pk:39)은 운영에 있음, 설명(이름)은 비어 있음"
+BAGUIO_CITY,baguio,바기오 도시 소개 장소 5개,목록 5,about(왜 바기오·주변),/about/baguio,일부,missing,,,Phase 1,TRAVEL과 이름 겹침
+AROUND·baguio 본문(원문 md),baguio,도시·교육 환경·세부/클락 비교 글,화면 글,about(왜 바기오·주변),/about/baguio,있음,missing,,근거·교통·위치·최신성,Phase 1,원문 md B장 [baguio] · 전체
+GUIDE[0],dash(상담 가이드),01 왜 바기오인가,카드,상담모드 바기오 소개·가이드(신규 자리),/consult 첫 화면 또는 /,없음,missing,,,Phase 1,사진 guide_01~04 4장은 운영에 있으나 화면 위치 없음
+GUIDE[1],dash(상담 가이드),02 왜 JIC인가,카드,상담모드 바기오 소개·가이드(신규 자리),/consult 첫 화면 또는 /,없음,missing,,,Phase 1,사진 guide_01~04 4장은 운영에 있으나 화면 위치 없음
+GUIDE[2],dash(상담 가이드),03 캠퍼스 고르기,카드,상담모드 바기오 소개·가이드(신규 자리),/consult 첫 화면 또는 /,없음,missing,,,Phase 1,사진 guide_01~04 4장은 운영에 있으나 화면 위치 없음
+GUIDE[3],dash(상담 가이드),04 캠퍼스 둘러보기,카드,상담모드 바기오 소개·가이드(신규 자리),/consult 첫 화면 또는 /,없음,missing,,,Phase 1,사진 guide_01~04 4장은 운영에 있으나 화면 위치 없음
+GUIDE[4],dash(상담 가이드),05 코스 찾기,카드,상담모드 바기오 소개·가이드(신규 자리),/consult 첫 화면 또는 /,없음,missing,,,Phase 1,사진 guide_01~04 4장은 운영에 있으나 화면 위치 없음
+GUIDE[5],dash(상담 가이드),06 학생의 하루,카드,상담모드 바기오 소개·가이드(신규 자리),/consult 첫 화면 또는 /,없음,missing,,,Phase 1,사진 guide_01~04 4장은 운영에 있으나 화면 위치 없음
+GUIDE[6],dash(상담 가이드),07 학생 생활,카드,상담모드 바기오 소개·가이드(신규 자리),/consult 첫 화면 또는 /,없음,missing,,,Phase 1,사진 guide_01~04 4장은 운영에 있으나 화면 위치 없음
+GUIDE[7],dash(상담 가이드),08 기숙사 · 사진,카드,상담모드 바기오 소개·가이드(신규 자리),/consult 첫 화면 또는 /,없음,missing,,,Phase 1,사진 guide_01~04 4장은 운영에 있으나 화면 위치 없음
+STRENGTHS[0]:support,strengths,학생별 밀착 지원 (Personalized Student Support),강점(요약·메시지·단계·링크·자료),about(section=왜 JIC),/about/why-jic,일부,missing,,과장·정량 근거,Phase 1,about 칸은 제목·본문만 → 요약/단계/링크는 본문에 합치거나 칸 추가 필요
+STRENGTHS[1]:journey,strengths,출국 전부터 이어지는 관리 (Pre · At · After JIC),강점(요약·메시지·단계·링크·자료),about(section=왜 JIC),/about/why-jic,일부,missing,,과장·정량 근거,Phase 1,about 칸은 제목·본문만 → 요약/단계/링크는 본문에 합치거나 칸 추가 필요
+STRENGTHS[2]:program,strengths,"학생에게 맞는 과정 (Right Program, Right Student)",강점(요약·메시지·단계·링크·자료),about(section=왜 JIC),/about/why-jic,일부,missing,,과장·정량 근거,Phase 1,about 칸은 제목·본문만 → 요약/단계/링크는 본문에 합치거나 칸 추가 필요
+STRENGTHS[3]:campus,strengths,목적별 전문 캠퍼스 (Specialized Campus System),강점(요약·메시지·단계·링크·자료),about(section=왜 JIC),/about/why-jic,일부,missing,,과장·정량 근거,Phase 1,about 칸은 제목·본문만 → 요약/단계/링크는 본문에 합치거나 칸 추가 필요
+STRENGTHS[4]:progress,strengths,눈에 보이는 성장 (Visible Learning Progress),강점(요약·메시지·단계·링크·자료),about(section=왜 JIC),/about/why-jic,일부,missing,,과장·정량 근거,Phase 1,about 칸은 제목·본문만 → 요약/단계/링크는 본문에 합치거나 칸 추가 필요
+STRENGTHS[5]:beyond,strengths,설계된 말하기 기회 (Learning Beyond the Classroom),강점(요약·메시지·단계·링크·자료),about(section=왜 JIC),/about/why-jic,일부,missing,,과장·정량 근거,Phase 1,about 칸은 제목·본문만 → 요약/단계/링크는 본문에 합치거나 칸 추가 필요
+PARTNER_MSG,strengths,"JIC는 코스와 캠퍼스를 소개하는 것에서 끝나지 않고, 학생의 학습 목표를 이해하고 그 과정을 지속적으로 관",문장,about(왜 JIC) 머리글,/about/why-jic,일부,missing,,,Phase 1,
+SCENARIOS[0],cards,기초 회화형 (From ESL to Speaking),대표 학생 유형 카드,코스 유형 소개/선택 도우미(신규) 또는 플레이북,(없음),없음,missing,,대표사례 가상 표기 · 레벨·기간 규칙(V2.2),Phase 1,패키지 C10
+SCENARIOS[1],cards,말하기 단기 집중형 (Short Speaking Boost),대표 학생 유형 카드,코스 유형 소개/선택 도우미(신규) 또는 플레이북,(없음),없음,missing,,대표사례 가상 표기 · 레벨·기간 규칙(V2.2),Phase 1,패키지 C10
+SCENARIOS[2],cards,From ESL to IELTS (Build Foundation → Focus on Target),대표 학생 유형 카드,코스 유형 소개/선택 도우미(신규) 또는 플레이북,(없음),없음,missing,,대표사례 가상 표기 · 레벨·기간 규칙(V2.2),Phase 1,패키지 C10
+SCENARIOS[3],cards,시험 집중형 (IELTS Focus),대표 학생 유형 카드,코스 유형 소개/선택 도우미(신규) 또는 플레이북,(없음),없음,missing,,대표사례 가상 표기 · 레벨·기간 규칙(V2.2),Phase 1,패키지 C10
+SCENARIOS[4],cards,커리어 영어형 (Speaking to Business),대표 학생 유형 카드,코스 유형 소개/선택 도우미(신규) 또는 플레이북,(없음),없음,missing,,대표사례 가상 표기 · 레벨·기간 규칙(V2.2),Phase 1,패키지 C10
+SCENARIOS[5],cards,워킹홀리데이 준비형 (Ready for Working Holiday),대표 학생 유형 카드,코스 유형 소개/선택 도우미(신규) 또는 플레이북,(없음),없음,missing,,대표사례 가상 표기 · 레벨·기간 규칙(V2.2),Phase 1,패키지 C10
+SCENARIOS[6],cards,시니어 연수형 (Active Senior),대표 학생 유형 카드,코스 유형 소개/선택 도우미(신규) 또는 플레이북,(없음),없음,missing,,대표사례 가상 표기 · 레벨·기간 규칙(V2.2),Phase 1,패키지 C10
+PERSONAS:lin,story,린 (Lin) · Speaking Starter 8주,시간표 13줄 + 주말 47,partner_content_items day(시간·활동 행),/day,있음,missing,,가상 인물 표기 · 코스 이름(V2.2),Phase 1,캠퍼스 premium
+PERSONAS:jihoon,story,지훈 · Speaking Pro 4주,시간표 12줄 + 주말 42,partner_content_items day(시간·활동 행),/day,있음,missing,,가상 인물 표기 · 코스 이름(V2.2),Phase 1,캠퍼스 premium
+PERSONAS:haruto,story,하루토 (Haruto) · IELTS Standard 12주,시간표 17줄 + 주말 46,partner_content_items day(시간·활동 행),/day,있음,missing,,가상 인물 표기 · 코스 이름(V2.2),Phase 1,캠퍼스 challenger
+PERSONAS:seoyeon,story,서연 · IELTS Core 8주,시간표 16줄 + 주말 37,partner_content_items day(시간·활동 행),/day,있음,missing,,가상 인물 표기 · 코스 이름(V2.2),Phase 1,캠퍼스 challenger
+COURSES:esl,lessons·코스 상세,ESL (Lite · Core · Standard),대상·레벨·기간·반 구성,course_contents(c-esl) summary·target·structure·outcomes,/courses/:id,있음,missing,,"코스 이름·수업량(V2.2·CL-069) · 4주 수업료(복사 금지, price_books만) · 가격 숫자",Phase 1,반 3개(가격 열 포함)
+COURSES:esl-flex,lessons·코스 상세,ESL Flex (40+ 시니어),대상·레벨·기간·반 구성,course_contents((없음: ESL Flex)) summary·target·structure·outcomes,(없음),없음,missing,,"코스 이름·수업량(V2.2·CL-069) · 4주 수업료(복사 금지, price_books만) · 가격 숫자",Phase 1,반 1개(가격 열 포함)
+COURSES:ielts,lessons·코스 상세,IELTS (Lite · Core · Standard),대상·레벨·기간·반 구성,course_contents(c-ielts) summary·target·structure·outcomes,/courses/:id,있음,missing,,"코스 이름·수업량(V2.2·CL-069) · 4주 수업료(복사 금지, price_books만) · 가격 숫자",Phase 1,반 3개(가격 열 포함)
+COURSES:ielts-g,lessons·코스 상세,IELTS Guarantee (8주 집중 · 점수 보장),대상·레벨·기간·반 구성,course_contents(c-ielts-g) summary·target·structure·outcomes,/courses/:id,있음,missing,,"코스 이름·수업량(V2.2·CL-069) · 4주 수업료(복사 금지, price_books만) · 가격 숫자",Phase 1,반 1개(가격 열 포함)
+COURSES:speaking,lessons·코스 상세,Speaking (Starter · Pro · Master),대상·레벨·기간·반 구성,course_contents(p-speaking) summary·target·structure·outcomes,/courses/:id,있음,missing,,"코스 이름·수업량(V2.2·CL-069) · 4주 수업료(복사 금지, price_books만) · 가격 숫자",Phase 1,반 3개(가격 열 포함)
+COURSES:toeic,lessons·코스 상세,TOEIC (TOEIC Strategy),대상·레벨·기간·반 구성,course_contents(p-toeic) summary·target·structure·outcomes,/courses/:id,있음,missing,,"코스 이름·수업량(V2.2·CL-069) · 4주 수업료(복사 금지, price_books만) · 가격 숫자",Phase 1,반 1개(가격 열 포함)
+COURSES:wh,lessons·코스 상세,Working Holiday (WH 8),대상·레벨·기간·반 구성,course_contents(p-wh) summary·target·structure·outcomes,/courses/:id,있음,missing,,"코스 이름·수업량(V2.2·CL-069) · 4주 수업료(복사 금지, price_books만) · 가격 숫자",Phase 1,반 1개(가격 열 포함)
+COURSES:biz,lessons·코스 상세,Business Master (BM 8),대상·레벨·기간·반 구성,course_contents(p-business) summary·target·structure·outcomes,/courses/:id,있음,missing,,"코스 이름·수업량(V2.2·CL-069) · 4주 수업료(복사 금지, price_books만) · 가격 숫자",Phase 1,반 1개(가격 열 포함)
+COURSES:tep,lessons·코스 상세,TEP ESL (Theme English Program · 8 / 9 / 10),대상·레벨·기간·반 구성,course_contents(p-tep) summary·target·structure·outcomes,/courses/:id,있음,missing,,"코스 이름·수업량(V2.2·CL-069) · 4주 수업료(복사 금지, price_books만) · 가격 숫자",Phase 1,반 3개(가격 열 포함)
+COURSES:senior,lessons·코스 상세,Active Senior (AS 5 · AS 6),대상·레벨·기간·반 구성,course_contents(p-senior) summary·target·structure·outcomes,/courses/:id,있음,missing,,"코스 이름·수업량(V2.2·CL-069) · 4주 수업료(복사 금지, price_books만) · 가격 숫자",Phase 1,반 2개(가격 열 포함)
+COURSES:upc,lessons·코스 상세,UPC (University Preparatory Course · 주니어 장기 연수),대상·레벨·기간·반 구성,course_contents((없음: UPC)) summary·target·structure·outcomes,(없음),없음,missing,,"코스 이름·수업량(V2.2·CL-069) · 4주 수업료(복사 금지, price_books만) · 가격 숫자",Phase 1,반 2개(가격 열 포함)
+COURSES:family,lessons·코스 상세,Family (보호자 + 자녀),대상·레벨·기간·반 구성,partner_content_items camp,/courses/:id,있음,missing,,"코스 이름·수업량(V2.2·CL-069) · 4주 수업료(복사 금지, price_books만)",Phase 1,
+SPEAKING_CLASSES:read,코스 상세 speaking,Read to Speak,수업 설명 + Growth Report,course_contents(p-speaking).structure 또는 근거 자료,/courses/p-speaking,일부,missing,,현재 최종 과정 문서 대조,Phase 1,Growth Report 사진 2장(REPORT_ASSET)은 운영에 없음
+SPEAKING_CLASSES:write,코스 상세 speaking,Write to Speak,수업 설명 + Growth Report,course_contents(p-speaking).structure 또는 근거 자료,/courses/p-speaking,일부,missing,,현재 최종 과정 문서 대조,Phase 1,Growth Report 사진 2장(REPORT_ASSET)은 운영에 없음
+SPEAKING_CLASSES:listen,코스 상세 speaking,리스닝 수업,수업 설명 + Growth Report,course_contents(p-speaking).structure 또는 근거 자료,/courses/p-speaking,일부,missing,,현재 최종 과정 문서 대조,Phase 1,Growth Report 사진 2장(REPORT_ASSET)은 운영에 없음
+LIFE.pre.head·layers,life·activities,Speaking Campus by Design,머리글 + 층 3,학생 생활 머리 안내(신규 칸) 또는 campuses.life,/life/activities,일부,missing,,,Phase 1,premium
+LIFE.pre.acts:옵션 수업 · 이브닝 클래스,activities,옵션 수업 · 이브닝 클래스,액티비티,partner_content_items activity,/life/activities,있음,existing_same,published,운영 여부·5구분(T-33),Phase 1,premium
+LIFE.pre.acts:클럽 활동 · Global Social Club,activities,클럽 활동 · Global Social Club,액티비티,partner_content_items activity,/life/activities,있음,existing_same,published,운영 여부·5구분(T-33),Phase 1,premium
+LIFE.pre.acts:월간 이벤트,activities,월간 이벤트,액티비티,partner_content_items activity,/life/activities,있음,existing_same,published,운영 여부·5구분(T-33),Phase 1,premium
+LIFE.pre.acts:주말 액티비티,activities,주말 액티비티,액티비티,partner_content_items activity,/life/activities,있음,existing_same,published,운영 여부·5구분(T-33),Phase 1,premium
+LIFE.acts:both:Speaking Challenger,activities,Speaking Challenger,액티비티,partner_content_items activity,/life/activities,있음,existing_same,published,운영 여부·5구분(T-33),Phase 1,공통
+LIFE.pre.acts:바리스타 교육 · 추가 과정,activities,바리스타 교육 · 추가 과정,액티비티,partner_content_items activity,/life/activities,있음,existing_same,published,운영 여부·5구분(T-33),Phase 1,premium
+LIFE.cha.head·layers,life·activities,공부 리듬 사이의 쉼표,머리글 + 층 3,학생 생활 머리 안내(신규 칸) 또는 campuses.life,/life/activities,일부,missing,,,Phase 1,challenger
+LIFE.cha.acts:주간 · 월간 테스트,activities,주간 · 월간 테스트,액티비티,partner_content_items activity,/life/activities,있음,existing_same,published,운영 여부·5구분(T-33),Phase 1,challenger
+LIFE.cha.acts:Challenger Boost Program,activities,Challenger Boost Program,액티비티,partner_content_items activity,/life/activities,있음,existing_same,published,운영 여부·5구분(T-33),Phase 1,challenger
+LIFE.cha.acts:이벤트 · 바리스타,activities,이벤트 · 바리스타,액티비티,partner_content_items activity,/life/activities,있음,existing_same,published,운영 여부·5구분(T-33),Phase 1,challenger
+MEALS.pre,캠퍼스 상세 living,식사 시간 · premium,글,campuses.life,/campuses/premium,일부,missing,,운영 시간 최신성 · 가격 숫자,Phase 1,
+MEALS.cha,캠퍼스 상세 living,식사 시간 · challenger,글,campuses.life,/campuses/challenger,일부,missing,,운영 시간 최신성,Phase 1,
+FACILITIES.pre,캠퍼스 상세 living,시설 목록 · premium,목록 9,campuses.facilities,/campuses/premium,일부,missing,,운영 시간 최신성 · 가격 숫자,Phase 1,
+FACILITIES.cha,캠퍼스 상세 living,시설 목록 · challenger,목록 6,campuses.facilities,/campuses/challenger,일부,missing,,운영 시간 최신성,Phase 1,
+FAC_PH.pre,캠퍼스 상세 living,시설 사진 연결 · premium,목록 2,photo(campus_gallery) 위치,/campuses/premium,일부,existing_photo_only,,운영 시간 최신성,Phase 1,
+FAC_PH.cha,캠퍼스 상세 living,시설 사진 연결 · challenger,목록 2,photo(campus_gallery) 위치,/campuses/challenger,일부,existing_photo_only,,운영 시간 최신성,Phase 1,
+ROOMS.pre,캠퍼스 상세 dorm,방 타입 · premium,방 8,"캠퍼스 기숙사 탭(방 이름·설명), 가격 열 제외",/campuses/premium,일부,missing,,기숙사비(복사 금지) · 가격 숫자,Phase 1,방 사진은 운영에 있음(dorm)
+ROOMS.cha,캠퍼스 상세 dorm,방 타입 · challenger,방 6,"캠퍼스 기숙사 탭(방 이름·설명), 가격 열 제외",/campuses/challenger,일부,missing,,기숙사비(복사 금지) · 가격 숫자,Phase 1,방 사진은 운영에 있음(dorm)
+DORM_INFO,캠퍼스 상세 dorm,Premium 기숙사 1·2 방 구성,목록,캠퍼스 기숙사 탭,/campuses/premium,일부,missing,,객실 유형 운영 변경,Phase 1,
+MAP_SPOTS.pre,캠퍼스 지도,지도 지점 · premium,지점 7,캠퍼스 지도 지점(신규: 지도 사진 위 점·설명),/campuses/premium,없음,missing,,시설 명칭,Phase 1,"지도 사진(map)은 운영에 있음, 점 데이터 칸 없음. SPOT_MORE 연결 포함"
+MAP_SPOTS.cha,캠퍼스 지도,지도 지점 · challenger,지점 4,캠퍼스 지도 지점(신규: 지도 사진 위 점·설명),/campuses/challenger,없음,missing,,시설 명칭,Phase 1,"지도 사진(map)은 운영에 있음, 점 데이터 칸 없음. SPOT_MORE 연결 포함"
+TILE_DEF·STATUS_DEFAULT.pre,dash,Premium · 말하기에 집중하고 싶은 성인,캠퍼스 칸 대상·상태,campuses.tagline + campus_status,/,있음,missing,,운영 상태,Phase 1,
+TILE_DEF·STATUS_DEFAULT.cha,dash,Challenger · IELTS 점수가 필요한 학생,캠퍼스 칸 대상·상태,campuses.tagline + campus_status,/,있음,missing,,운영 상태,Phase 1,
+TILE_DEF·STATUS_DEFAULT.new,dash,New Campus · 이름 · 과정 · 가격 확정 전,캠퍼스 칸 대상·상태,"(넣지 않음, CL-096)",/,없음,excluded,,New Campus,Phase 1,CL-096 보관만
+TILE_DEF·STATUS_DEFAULT.mco,dash,주니어 캠프 · MCO · 겨울 주니어 캠프 · 가족 캠프,캠퍼스 칸 대상·상태,캠프 카드,/,있음,missing,,운영 상태,Phase 1,
+CAMPUSES.pre,campus·캠퍼스 상세 intro,Premium 소개·분위기·슬로건,캠퍼스 소개,campuses.direction·environment,/campuses/premium,있음,missing,,주소·정원·운영 방식,Phase 1,
+CAMPUSES.cha,campus·캠퍼스 상세 intro,Challenger 소개·분위기·슬로건,캠퍼스 소개,campuses.direction·environment,/campuses/challenger,있음,missing,,주소·정원·운영 방식,Phase 1,
+CAMPUSES.new,campus·캠퍼스 상세 intro,New Campus 소개·분위기·슬로건,캠퍼스 소개,"(넣지 않음, CL-096)",-,없음,excluded,,New Campus,Phase 1,
+CAMPUSES.mco,campus·캠퍼스 상세 intro,MCO 소개·분위기·슬로건,캠퍼스 소개,캠프(MCO) 카드,/campuses/mco,있음,missing,,주소·정원·운영 방식,Phase 1,
+STAT_SEED·STAT_META,compare·dash,10월 캠퍼스 통계 (2026년 10월),국적·코스·나이 통계,partner_content_items school_stat,"/about/school, /campuses/compare",있음,missing,,통계·기준일(2026-09-30),Phase 1,확인된 값만 게시(C8)
+UPDATES[0],dash(최근 업데이트),2026-10-15 학비 · 2026 신규 학비표 · 환불 규정 · 스파르타 서약서,업데이트 줄,partner_notices(공지·프로모션) 또는 대시보드 업데이트,"/notices, /",있음,missing,,과거 날짜 · 날짜,Phase 1,
+UPDATES[1],dash(최근 업데이트),2026-10-15 일정 · 2026 입학일 · BESA 픽업 · 월간 시험 달력,업데이트 줄,partner_notices(공지·프로모션) 또는 대시보드 업데이트,"/notices, /",있음,missing,,과거 날짜 · 날짜,Phase 1,
+UPDATES[2],dash(최근 업데이트),2026-10-15 영상 · JIC Play 44편 구성 · TV 모드 · 학생 맞춤 묶음,업데이트 줄,partner_notices(공지·프로모션) 또는 대시보드 업데이트,"/notices, /",있음,missing,,과거 날짜 · 날짜,Phase 1,
+UPDATES[3],dash(최근 업데이트),2026-10-15 캠프 · 26-27 주니어 겨울 캠프 · 가족 캠프 모집 요강,업데이트 줄,partner_notices(공지·프로모션) 또는 대시보드 업데이트,"/notices, /",있음,missing,,과거 날짜 · 날짜,Phase 1,
+UPDATES[4],dash(최근 업데이트),2026-10-15 등록 · 등록 절차 · 서류 · 성인 과정 FAQ,업데이트 줄,partner_notices(공지·프로모션) 또는 대시보드 업데이트,"/notices, /",있음,missing,,과거 날짜 · 날짜,Phase 1,
+UPDATES[5],dash(최근 업데이트),2026-10-13 리포트 · Speaking 코스 Growth Report 예시,업데이트 줄,partner_notices(공지·프로모션) 또는 대시보드 업데이트,"/notices, /",있음,missing,,과거 날짜 · 날짜,Phase 1,
+UPDATES[6],dash(최근 업데이트),2026-09-30 통계 · 10월 캠퍼스 통계 · 국적 · 과정 · 연령,업데이트 줄,partner_notices(공지·프로모션) 또는 대시보드 업데이트,"/notices, /",있음,missing,,과거 날짜 · 날짜,Phase 1,
+EV_KNOWN[0],life(활동 달력),2026-10-31 할로윈 파티,행사(season),partner_content_items event,/life/calendar,있음,existing_same,,과거 날짜는 정기 갱신(T-25) · 날짜,Phase 1,premium
+EV_KNOWN[1],life(활동 달력),2026-01-11 입학일 · BESA 픽업,행사(term),partner_content_items event,/life/calendar,있음,missing,,과거 날짜는 정기 갱신(T-25) · 날짜,Phase 1,premium 입학일·BESA 픽업: 규칙 packages/quote/src/besa.ts 와 같은 날짜(견적-5)
+EV_KNOWN[2],life(활동 달력),2026-01-25 입학일 · BESA 픽업,행사(term),partner_content_items event,/life/calendar,있음,missing,,과거 날짜는 정기 갱신(T-25) · 날짜,Phase 1,premium 입학일·BESA 픽업: 규칙 packages/quote/src/besa.ts 와 같은 날짜(견적-5)
+EV_KNOWN[3],life(활동 달력),2026-02-08 입학일 · BESA 픽업,행사(term),partner_content_items event,/life/calendar,있음,missing,,과거 날짜는 정기 갱신(T-25) · 날짜,Phase 1,premium 입학일·BESA 픽업: 규칙 packages/quote/src/besa.ts 와 같은 날짜(견적-5)
+EV_KNOWN[4],life(활동 달력),2026-02-22 입학일 · BESA 픽업,행사(term),partner_content_items event,/life/calendar,있음,missing,,과거 날짜는 정기 갱신(T-25) · 날짜,Phase 1,premium 입학일·BESA 픽업: 규칙 packages/quote/src/besa.ts 와 같은 날짜(견적-5)
+EV_KNOWN[5],life(활동 달력),2026-03-08 입학일 · BESA 픽업,행사(term),partner_content_items event,/life/calendar,있음,missing,,과거 날짜는 정기 갱신(T-25) · 날짜,Phase 1,premium 입학일·BESA 픽업: 규칙 packages/quote/src/besa.ts 와 같은 날짜(견적-5)
+EV_KNOWN[6],life(활동 달력),2026-03-22 입학일 · BESA 픽업,행사(term),partner_content_items event,/life/calendar,있음,missing,,과거 날짜는 정기 갱신(T-25) · 날짜,Phase 1,premium 입학일·BESA 픽업: 규칙 packages/quote/src/besa.ts 와 같은 날짜(견적-5)
+EV_KNOWN[7],life(활동 달력),2026-04-05 입학일 · BESA 픽업,행사(term),partner_content_items event,/life/calendar,있음,missing,,과거 날짜는 정기 갱신(T-25) · 날짜,Phase 1,premium 입학일·BESA 픽업: 규칙 packages/quote/src/besa.ts 와 같은 날짜(견적-5)
+EV_KNOWN[8],life(활동 달력),2026-04-19 입학일 · BESA 픽업,행사(term),partner_content_items event,/life/calendar,있음,missing,,과거 날짜는 정기 갱신(T-25) · 날짜,Phase 1,premium 입학일·BESA 픽업: 규칙 packages/quote/src/besa.ts 와 같은 날짜(견적-5)
+EV_KNOWN[9],life(활동 달력),2026-05-03 입학일 · BESA 픽업,행사(term),partner_content_items event,/life/calendar,있음,missing,,과거 날짜는 정기 갱신(T-25) · 날짜,Phase 1,premium 입학일·BESA 픽업: 규칙 packages/quote/src/besa.ts 와 같은 날짜(견적-5)
+EV_KNOWN[10],life(활동 달력),2026-05-17 입학일 · BESA 픽업,행사(term),partner_content_items event,/life/calendar,있음,missing,,과거 날짜는 정기 갱신(T-25) · 날짜,Phase 1,premium 입학일·BESA 픽업: 규칙 packages/quote/src/besa.ts 와 같은 날짜(견적-5)
+EV_KNOWN[11],life(활동 달력),2026-05-31 입학일 · BESA 픽업,행사(term),partner_content_items event,/life/calendar,있음,missing,,과거 날짜는 정기 갱신(T-25) · 날짜,Phase 1,premium 입학일·BESA 픽업: 규칙 packages/quote/src/besa.ts 와 같은 날짜(견적-5)
+EV_KNOWN[12],life(활동 달력),2026-06-14 입학일 · BESA 픽업,행사(term),partner_content_items event,/life/calendar,있음,missing,,과거 날짜는 정기 갱신(T-25) · 날짜,Phase 1,premium 입학일·BESA 픽업: 규칙 packages/quote/src/besa.ts 와 같은 날짜(견적-5)
+EV_KNOWN[13],life(활동 달력),2026-06-28 입학일 · BESA 픽업,행사(term),partner_content_items event,/life/calendar,있음,missing,,과거 날짜는 정기 갱신(T-25) · 날짜,Phase 1,premium 입학일·BESA 픽업: 규칙 packages/quote/src/besa.ts 와 같은 날짜(견적-5)
+EV_KNOWN[14],life(활동 달력),2026-07-12 입학일 · BESA 픽업,행사(term),partner_content_items event,/life/calendar,있음,missing,,과거 날짜는 정기 갱신(T-25) · 날짜,Phase 1,premium 입학일·BESA 픽업: 규칙 packages/quote/src/besa.ts 와 같은 날짜(견적-5)
+EV_KNOWN[15],life(활동 달력),2026-07-26 입학일 · BESA 픽업,행사(term),partner_content_items event,/life/calendar,있음,missing,,과거 날짜는 정기 갱신(T-25) · 날짜,Phase 1,premium 입학일·BESA 픽업: 규칙 packages/quote/src/besa.ts 와 같은 날짜(견적-5)
+EV_KNOWN[16],life(활동 달력),2026-08-09 입학일 · BESA 픽업,행사(term),partner_content_items event,/life/calendar,있음,missing,,과거 날짜는 정기 갱신(T-25) · 날짜,Phase 1,premium 입학일·BESA 픽업: 규칙 packages/quote/src/besa.ts 와 같은 날짜(견적-5)
+EV_KNOWN[17],life(활동 달력),2026-08-23 입학일 · BESA 픽업,행사(term),partner_content_items event,/life/calendar,있음,missing,,과거 날짜는 정기 갱신(T-25) · 날짜,Phase 1,premium 입학일·BESA 픽업: 규칙 packages/quote/src/besa.ts 와 같은 날짜(견적-5)
+EV_KNOWN[18],life(활동 달력),2026-09-06 입학일 · BESA 픽업,행사(term),partner_content_items event,/life/calendar,있음,missing,,과거 날짜는 정기 갱신(T-25) · 날짜,Phase 1,premium 입학일·BESA 픽업: 규칙 packages/quote/src/besa.ts 와 같은 날짜(견적-5)
+EV_KNOWN[19],life(활동 달력),2026-09-20 입학일 · BESA 픽업,행사(term),partner_content_items event,/life/calendar,있음,missing,,과거 날짜는 정기 갱신(T-25) · 날짜,Phase 1,premium 입학일·BESA 픽업: 규칙 packages/quote/src/besa.ts 와 같은 날짜(견적-5)
+EV_KNOWN[20],life(활동 달력),2026-10-04 입학일 · BESA 픽업,행사(term),partner_content_items event,/life/calendar,있음,missing,,과거 날짜는 정기 갱신(T-25) · 날짜,Phase 1,premium 입학일·BESA 픽업: 규칙 packages/quote/src/besa.ts 와 같은 날짜(견적-5)
+EV_KNOWN[21],life(활동 달력),2026-10-18 입학일 · BESA 픽업,행사(term),partner_content_items event,/life/calendar,있음,missing,,과거 날짜는 정기 갱신(T-25) · 날짜,Phase 1,premium 입학일·BESA 픽업: 규칙 packages/quote/src/besa.ts 와 같은 날짜(견적-5)
+EV_KNOWN[22],life(활동 달력),2026-11-01 입학일 · BESA 픽업,행사(term),partner_content_items event,/life/calendar,있음,missing,,과거 날짜는 정기 갱신(T-25) · 날짜,Phase 1,premium 입학일·BESA 픽업: 규칙 packages/quote/src/besa.ts 와 같은 날짜(견적-5)
+EV_KNOWN[23],life(활동 달력),2026-11-15 입학일 · BESA 픽업,행사(term),partner_content_items event,/life/calendar,있음,missing,,과거 날짜는 정기 갱신(T-25) · 날짜,Phase 1,premium 입학일·BESA 픽업: 규칙 packages/quote/src/besa.ts 와 같은 날짜(견적-5)
+EV_KNOWN[24],life(활동 달력),2026-11-29 입학일 · BESA 픽업,행사(term),partner_content_items event,/life/calendar,있음,missing,,과거 날짜는 정기 갱신(T-25) · 날짜,Phase 1,premium 입학일·BESA 픽업: 규칙 packages/quote/src/besa.ts 와 같은 날짜(견적-5)
+EV_KNOWN[25],life(활동 달력),2026-12-13 입학일 · BESA 픽업,행사(term),partner_content_items event,/life/calendar,있음,missing,,과거 날짜는 정기 갱신(T-25) · 날짜,Phase 1,premium 입학일·BESA 픽업: 규칙 packages/quote/src/besa.ts 와 같은 날짜(견적-5)
+EV_KNOWN[26],life(활동 달력),2026-12-27 입학일 · BESA 픽업,행사(term),partner_content_items event,/life/calendar,있음,missing,,과거 날짜는 정기 갱신(T-25) · 날짜,Phase 1,premium 입학일·BESA 픽업: 규칙 packages/quote/src/besa.ts 와 같은 날짜(견적-5)
+EV_KNOWN[27],life(활동 달력),2026-01-18 신입생 시티투어,행사(weekend),partner_content_items event,/life/calendar,있음,missing,,과거 날짜는 정기 갱신(T-25) · 날짜,Phase 1,premium
+EV_KNOWN[28],life(활동 달력),2026-02-01 신입생 시티투어,행사(weekend),partner_content_items event,/life/calendar,있음,missing,,과거 날짜는 정기 갱신(T-25) · 날짜,Phase 1,premium
+EV_KNOWN[29],life(활동 달력),2026-02-15 신입생 시티투어,행사(weekend),partner_content_items event,/life/calendar,있음,missing,,과거 날짜는 정기 갱신(T-25) · 날짜,Phase 1,premium
+EV_KNOWN[30],life(활동 달력),2026-03-01 신입생 시티투어,행사(weekend),partner_content_items event,/life/calendar,있음,missing,,과거 날짜는 정기 갱신(T-25) · 날짜,Phase 1,premium
+EV_KNOWN[31],life(활동 달력),2026-03-15 신입생 시티투어,행사(weekend),partner_content_items event,/life/calendar,있음,missing,,과거 날짜는 정기 갱신(T-25) · 날짜,Phase 1,premium
+EV_KNOWN[32],life(활동 달력),2026-03-29 신입생 시티투어,행사(weekend),partner_content_items event,/life/calendar,있음,missing,,과거 날짜는 정기 갱신(T-25) · 날짜,Phase 1,premium
+EV_KNOWN[33],life(활동 달력),2026-04-12 신입생 시티투어,행사(weekend),partner_content_items event,/life/calendar,있음,missing,,과거 날짜는 정기 갱신(T-25) · 날짜,Phase 1,premium
+EV_KNOWN[34],life(활동 달력),2026-04-26 신입생 시티투어,행사(weekend),partner_content_items event,/life/calendar,있음,missing,,과거 날짜는 정기 갱신(T-25) · 날짜,Phase 1,premium
+EV_KNOWN[35],life(활동 달력),2026-05-10 신입생 시티투어,행사(weekend),partner_content_items event,/life/calendar,있음,missing,,과거 날짜는 정기 갱신(T-25) · 날짜,Phase 1,premium
+EV_KNOWN[36],life(활동 달력),2026-05-24 신입생 시티투어,행사(weekend),partner_content_items event,/life/calendar,있음,missing,,과거 날짜는 정기 갱신(T-25) · 날짜,Phase 1,premium
+EV_KNOWN[37],life(활동 달력),2026-06-07 신입생 시티투어,행사(weekend),partner_content_items event,/life/calendar,있음,missing,,과거 날짜는 정기 갱신(T-25) · 날짜,Phase 1,premium
+EV_KNOWN[38],life(활동 달력),2026-06-21 신입생 시티투어,행사(weekend),partner_content_items event,/life/calendar,있음,missing,,과거 날짜는 정기 갱신(T-25) · 날짜,Phase 1,premium
+EV_KNOWN[39],life(활동 달력),2026-07-05 신입생 시티투어,행사(weekend),partner_content_items event,/life/calendar,있음,missing,,과거 날짜는 정기 갱신(T-25) · 날짜,Phase 1,premium
+EV_KNOWN[40],life(활동 달력),2026-07-19 신입생 시티투어,행사(weekend),partner_content_items event,/life/calendar,있음,missing,,과거 날짜는 정기 갱신(T-25) · 날짜,Phase 1,premium
+EV_KNOWN[41],life(활동 달력),2026-08-02 신입생 시티투어,행사(weekend),partner_content_items event,/life/calendar,있음,missing,,과거 날짜는 정기 갱신(T-25) · 날짜,Phase 1,premium
+EV_KNOWN[42],life(활동 달력),2026-08-16 신입생 시티투어,행사(weekend),partner_content_items event,/life/calendar,있음,missing,,과거 날짜는 정기 갱신(T-25) · 날짜,Phase 1,premium
+EV_KNOWN[43],life(활동 달력),2026-08-30 신입생 시티투어,행사(weekend),partner_content_items event,/life/calendar,있음,missing,,과거 날짜는 정기 갱신(T-25) · 날짜,Phase 1,premium
+EV_KNOWN[44],life(활동 달력),2026-09-13 신입생 시티투어,행사(weekend),partner_content_items event,/life/calendar,있음,missing,,과거 날짜는 정기 갱신(T-25) · 날짜,Phase 1,premium
+EV_KNOWN[45],life(활동 달력),2026-09-27 신입생 시티투어,행사(weekend),partner_content_items event,/life/calendar,있음,missing,,과거 날짜는 정기 갱신(T-25) · 날짜,Phase 1,premium
+EV_KNOWN[46],life(활동 달력),2026-10-11 신입생 시티투어,행사(weekend),partner_content_items event,/life/calendar,있음,missing,,과거 날짜는 정기 갱신(T-25) · 날짜,Phase 1,premium
+EV_KNOWN[47],life(활동 달력),2026-10-25 신입생 시티투어,행사(weekend),partner_content_items event,/life/calendar,있음,missing,,과거 날짜는 정기 갱신(T-25) · 날짜,Phase 1,premium
+EV_KNOWN[48],life(활동 달력),2026-11-08 신입생 시티투어,행사(weekend),partner_content_items event,/life/calendar,있음,missing,,과거 날짜는 정기 갱신(T-25) · 날짜,Phase 1,premium
+EV_KNOWN[49],life(활동 달력),2026-11-22 신입생 시티투어,행사(weekend),partner_content_items event,/life/calendar,있음,missing,,과거 날짜는 정기 갱신(T-25) · 날짜,Phase 1,premium
+EV_KNOWN[50],life(활동 달력),2026-12-06 신입생 시티투어,행사(weekend),partner_content_items event,/life/calendar,있음,missing,,과거 날짜는 정기 갱신(T-25) · 날짜,Phase 1,premium
+EV_KNOWN[51],life(활동 달력),2026-12-20 신입생 시티투어,행사(weekend),partner_content_items event,/life/calendar,있음,missing,,과거 날짜는 정기 갱신(T-25) · 날짜,Phase 1,premium
+EV_KNOWN[52],life(활동 달력),2027-01-03 신입생 시티투어,행사(weekend),partner_content_items event,/life/calendar,있음,missing,,과거 날짜는 정기 갱신(T-25),Phase 1,premium
+EV_KNOWN[53],life(활동 달력),2026-01-09 월간 시험,행사(test),partner_content_items event,/life/calendar,있음,missing,,과거 날짜는 정기 갱신(T-25) · 날짜,Phase 1,premium Premium 월간 테스트 없음: 운영엔 Challenger로만 13건(T-40)
+EV_KNOWN[54],life(활동 달력),2026-02-06 월간 시험,행사(test),partner_content_items event,/life/calendar,있음,missing,,과거 날짜는 정기 갱신(T-25) · 날짜,Phase 1,premium Premium 월간 테스트 없음: 운영엔 Challenger로만 13건(T-40)
+EV_KNOWN[55],life(활동 달력),2026-03-06 월간 시험,행사(test),partner_content_items event,/life/calendar,있음,missing,,과거 날짜는 정기 갱신(T-25) · 날짜,Phase 1,premium Premium 월간 테스트 없음: 운영엔 Challenger로만 13건(T-40)
+EV_KNOWN[56],life(활동 달력),2026-04-03 월간 시험,행사(test),partner_content_items event,/life/calendar,있음,missing,,과거 날짜는 정기 갱신(T-25) · 날짜,Phase 1,premium Premium 월간 테스트 없음: 운영엔 Challenger로만 13건(T-40)
+EV_KNOWN[57],life(활동 달력),2026-05-01 월간 시험,행사(test),partner_content_items event,/life/calendar,있음,missing,,과거 날짜는 정기 갱신(T-25) · 날짜,Phase 1,premium Premium 월간 테스트 없음: 운영엔 Challenger로만 13건(T-40)
+EV_KNOWN[58],life(활동 달력),2026-05-29 월간 시험,행사(test),partner_content_items event,/life/calendar,있음,missing,,과거 날짜는 정기 갱신(T-25) · 날짜,Phase 1,premium Premium 월간 테스트 없음: 운영엔 Challenger로만 13건(T-40)
+EV_KNOWN[59],life(활동 달력),2026-06-26 월간 시험,행사(test),partner_content_items event,/life/calendar,있음,missing,,과거 날짜는 정기 갱신(T-25) · 날짜,Phase 1,premium Premium 월간 테스트 없음: 운영엔 Challenger로만 13건(T-40)
+EV_KNOWN[60],life(활동 달력),2026-07-24 월간 시험,행사(test),partner_content_items event,/life/calendar,있음,missing,,과거 날짜는 정기 갱신(T-25) · 날짜,Phase 1,premium Premium 월간 테스트 없음: 운영엔 Challenger로만 13건(T-40)
+EV_KNOWN[61],life(활동 달력),2026-08-21 월간 시험,행사(test),partner_content_items event,/life/calendar,있음,missing,,과거 날짜는 정기 갱신(T-25) · 날짜,Phase 1,premium Premium 월간 테스트 없음: 운영엔 Challenger로만 13건(T-40)
+EV_KNOWN[62],life(활동 달력),2026-09-18 월간 시험,행사(test),partner_content_items event,/life/calendar,있음,missing,,과거 날짜는 정기 갱신(T-25) · 날짜,Phase 1,premium Premium 월간 테스트 없음: 운영엔 Challenger로만 13건(T-40)
+EV_KNOWN[63],life(활동 달력),2026-10-16 월간 시험,행사(test),partner_content_items event,/life/calendar,있음,missing,,과거 날짜는 정기 갱신(T-25) · 날짜,Phase 1,premium Premium 월간 테스트 없음: 운영엔 Challenger로만 13건(T-40)
+EV_KNOWN[64],life(활동 달력),2026-11-13 월간 시험,행사(test),partner_content_items event,/life/calendar,있음,missing,,과거 날짜는 정기 갱신(T-25) · 날짜,Phase 1,premium Premium 월간 테스트 없음: 운영엔 Challenger로만 13건(T-40)
+EV_KNOWN[65],life(활동 달력),2026-12-11 월간 시험,행사(test),partner_content_items event,/life/calendar,있음,missing,,과거 날짜는 정기 갱신(T-25) · 날짜,Phase 1,premium Premium 월간 테스트 없음: 운영엔 Challenger로만 13건(T-40)
+EV_KNOWN[66],life(활동 달력),2026-01-01 공휴일,행사(holiday),partner_content_items event,/life/calendar,있음,existing_same,,과거 날짜는 정기 갱신(T-25) · 날짜,Phase 1,premium 공휴일은 캠퍼스 공통 1건으로 들어가 있음
+EV_KNOWN[67],life(활동 달력),2026-02-17 공휴일,행사(holiday),partner_content_items event,/life/calendar,있음,existing_same,,과거 날짜는 정기 갱신(T-25) · 날짜,Phase 1,premium 공휴일은 캠퍼스 공통 1건으로 들어가 있음
+EV_KNOWN[68],life(활동 달력),2026-02-25 공휴일,행사(holiday),partner_content_items event,/life/calendar,있음,existing_same,,과거 날짜는 정기 갱신(T-25) · 날짜,Phase 1,premium 공휴일은 캠퍼스 공통 1건으로 들어가 있음
+EV_KNOWN[69],life(활동 달력),2026-03-20 공휴일,행사(holiday),partner_content_items event,/life/calendar,있음,existing_same,,과거 날짜는 정기 갱신(T-25) · 날짜,Phase 1,premium 공휴일은 캠퍼스 공통 1건으로 들어가 있음
+EV_KNOWN[70],life(활동 달력),2026-04-02 공휴일,행사(holiday),partner_content_items event,/life/calendar,있음,existing_same,,과거 날짜는 정기 갱신(T-25) · 날짜,Phase 1,premium 공휴일은 캠퍼스 공통 1건으로 들어가 있음
+EV_KNOWN[71],life(활동 달력),2026-04-03 공휴일,행사(holiday),partner_content_items event,/life/calendar,있음,existing_same,,과거 날짜는 정기 갱신(T-25) · 날짜,Phase 1,premium 공휴일은 캠퍼스 공통 1건으로 들어가 있음
+EV_KNOWN[72],life(활동 달력),2026-04-04 공휴일,행사(holiday),partner_content_items event,/life/calendar,있음,existing_same,,과거 날짜는 정기 갱신(T-25) · 날짜,Phase 1,premium 공휴일은 캠퍼스 공통 1건으로 들어가 있음
+EV_KNOWN[73],life(활동 달력),2026-04-09 공휴일,행사(holiday),partner_content_items event,/life/calendar,있음,existing_same,,과거 날짜는 정기 갱신(T-25) · 날짜,Phase 1,premium 공휴일은 캠퍼스 공통 1건으로 들어가 있음
+EV_KNOWN[74],life(활동 달력),2026-05-01 공휴일,행사(holiday),partner_content_items event,/life/calendar,있음,existing_same,,과거 날짜는 정기 갱신(T-25) · 날짜,Phase 1,premium 공휴일은 캠퍼스 공통 1건으로 들어가 있음
+EV_KNOWN[75],life(활동 달력),2026-06-12 공휴일,행사(holiday),partner_content_items event,/life/calendar,있음,existing_same,,과거 날짜는 정기 갱신(T-25) · 날짜,Phase 1,premium 공휴일은 캠퍼스 공통 1건으로 들어가 있음
+EV_KNOWN[76],life(활동 달력),2026-08-21 공휴일,행사(holiday),partner_content_items event,/life/calendar,있음,existing_same,,과거 날짜는 정기 갱신(T-25) · 날짜,Phase 1,premium 공휴일은 캠퍼스 공통 1건으로 들어가 있음
+EV_KNOWN[77],life(활동 달력),2026-08-31 공휴일,행사(holiday),partner_content_items event,/life/calendar,있음,existing_same,,과거 날짜는 정기 갱신(T-25) · 날짜,Phase 1,premium 공휴일은 캠퍼스 공통 1건으로 들어가 있음
+EV_KNOWN[78],life(활동 달력),2026-11-01 공휴일,행사(holiday),partner_content_items event,/life/calendar,있음,existing_same,,과거 날짜는 정기 갱신(T-25) · 날짜,Phase 1,premium 공휴일은 캠퍼스 공통 1건으로 들어가 있음
+EV_KNOWN[79],life(활동 달력),2026-11-30 공휴일,행사(holiday),partner_content_items event,/life/calendar,있음,existing_same,,과거 날짜는 정기 갱신(T-25) · 날짜,Phase 1,premium 공휴일은 캠퍼스 공통 1건으로 들어가 있음
+EV_KNOWN[80],life(활동 달력),2026-12-08 공휴일,행사(holiday),partner_content_items event,/life/calendar,있음,existing_same,,과거 날짜는 정기 갱신(T-25) · 날짜,Phase 1,premium 공휴일은 캠퍼스 공통 1건으로 들어가 있음
+EV_KNOWN[81],life(활동 달력),2026-12-24 공휴일,행사(holiday),partner_content_items event,/life/calendar,있음,existing_same,,과거 날짜는 정기 갱신(T-25) · 날짜,Phase 1,premium 공휴일은 캠퍼스 공통 1건으로 들어가 있음
+EV_KNOWN[82],life(활동 달력),2026-12-25 공휴일,행사(holiday),partner_content_items event,/life/calendar,있음,existing_same,,과거 날짜는 정기 갱신(T-25) · 날짜,Phase 1,premium 공휴일은 캠퍼스 공통 1건으로 들어가 있음
+EV_KNOWN[83],life(활동 달력),2026-12-30 공휴일,행사(holiday),partner_content_items event,/life/calendar,있음,existing_same,,과거 날짜는 정기 갱신(T-25) · 날짜,Phase 1,premium 공휴일은 캠퍼스 공통 1건으로 들어가 있음
+EV_KNOWN[84],life(활동 달력),2026-12-31 공휴일,행사(holiday),partner_content_items event,/life/calendar,있음,existing_same,,과거 날짜는 정기 갱신(T-25) · 날짜,Phase 1,premium 공휴일은 캠퍼스 공통 1건으로 들어가 있음
+EV_KNOWN[85],life(활동 달력),2026-01-11 입학일 · BESA 픽업,행사(term),partner_content_items event,/life/calendar,있음,missing,,과거 날짜는 정기 갱신(T-25) · 날짜,Phase 1,challenger 입학일·BESA 픽업: 규칙 packages/quote/src/besa.ts 와 같은 날짜(견적-5)
+EV_KNOWN[86],life(활동 달력),2026-01-25 입학일 · BESA 픽업,행사(term),partner_content_items event,/life/calendar,있음,missing,,과거 날짜는 정기 갱신(T-25) · 날짜,Phase 1,challenger 입학일·BESA 픽업: 규칙 packages/quote/src/besa.ts 와 같은 날짜(견적-5)
+EV_KNOWN[87],life(활동 달력),2026-02-08 입학일 · BESA 픽업,행사(term),partner_content_items event,/life/calendar,있음,missing,,과거 날짜는 정기 갱신(T-25) · 날짜,Phase 1,challenger 입학일·BESA 픽업: 규칙 packages/quote/src/besa.ts 와 같은 날짜(견적-5)
+EV_KNOWN[88],life(활동 달력),2026-02-22 입학일 · BESA 픽업,행사(term),partner_content_items event,/life/calendar,있음,missing,,과거 날짜는 정기 갱신(T-25) · 날짜,Phase 1,challenger 입학일·BESA 픽업: 규칙 packages/quote/src/besa.ts 와 같은 날짜(견적-5)
+EV_KNOWN[89],life(활동 달력),2026-03-08 입학일 · BESA 픽업,행사(term),partner_content_items event,/life/calendar,있음,missing,,과거 날짜는 정기 갱신(T-25) · 날짜,Phase 1,challenger 입학일·BESA 픽업: 규칙 packages/quote/src/besa.ts 와 같은 날짜(견적-5)
+EV_KNOWN[90],life(활동 달력),2026-03-22 입학일 · BESA 픽업,행사(term),partner_content_items event,/life/calendar,있음,missing,,과거 날짜는 정기 갱신(T-25) · 날짜,Phase 1,challenger 입학일·BESA 픽업: 규칙 packages/quote/src/besa.ts 와 같은 날짜(견적-5)
+EV_KNOWN[91],life(활동 달력),2026-04-05 입학일 · BESA 픽업,행사(term),partner_content_items event,/life/calendar,있음,missing,,과거 날짜는 정기 갱신(T-25) · 날짜,Phase 1,challenger 입학일·BESA 픽업: 규칙 packages/quote/src/besa.ts 와 같은 날짜(견적-5)
+EV_KNOWN[92],life(활동 달력),2026-04-19 입학일 · BESA 픽업,행사(term),partner_content_items event,/life/calendar,있음,missing,,과거 날짜는 정기 갱신(T-25) · 날짜,Phase 1,challenger 입학일·BESA 픽업: 규칙 packages/quote/src/besa.ts 와 같은 날짜(견적-5)
+EV_KNOWN[93],life(활동 달력),2026-05-03 입학일 · BESA 픽업,행사(term),partner_content_items event,/life/calendar,있음,missing,,과거 날짜는 정기 갱신(T-25) · 날짜,Phase 1,challenger 입학일·BESA 픽업: 규칙 packages/quote/src/besa.ts 와 같은 날짜(견적-5)
+EV_KNOWN[94],life(활동 달력),2026-05-17 입학일 · BESA 픽업,행사(term),partner_content_items event,/life/calendar,있음,missing,,과거 날짜는 정기 갱신(T-25) · 날짜,Phase 1,challenger 입학일·BESA 픽업: 규칙 packages/quote/src/besa.ts 와 같은 날짜(견적-5)
+EV_KNOWN[95],life(활동 달력),2026-05-31 입학일 · BESA 픽업,행사(term),partner_content_items event,/life/calendar,있음,missing,,과거 날짜는 정기 갱신(T-25) · 날짜,Phase 1,challenger 입학일·BESA 픽업: 규칙 packages/quote/src/besa.ts 와 같은 날짜(견적-5)
+EV_KNOWN[96],life(활동 달력),2026-06-14 입학일 · BESA 픽업,행사(term),partner_content_items event,/life/calendar,있음,missing,,과거 날짜는 정기 갱신(T-25) · 날짜,Phase 1,challenger 입학일·BESA 픽업: 규칙 packages/quote/src/besa.ts 와 같은 날짜(견적-5)
+EV_KNOWN[97],life(활동 달력),2026-06-28 입학일 · BESA 픽업,행사(term),partner_content_items event,/life/calendar,있음,missing,,과거 날짜는 정기 갱신(T-25) · 날짜,Phase 1,challenger 입학일·BESA 픽업: 규칙 packages/quote/src/besa.ts 와 같은 날짜(견적-5)
+EV_KNOWN[98],life(활동 달력),2026-07-12 입학일 · BESA 픽업,행사(term),partner_content_items event,/life/calendar,있음,missing,,과거 날짜는 정기 갱신(T-25) · 날짜,Phase 1,challenger 입학일·BESA 픽업: 규칙 packages/quote/src/besa.ts 와 같은 날짜(견적-5)
+EV_KNOWN[99],life(활동 달력),2026-07-26 입학일 · BESA 픽업,행사(term),partner_content_items event,/life/calendar,있음,missing,,과거 날짜는 정기 갱신(T-25) · 날짜,Phase 1,challenger 입학일·BESA 픽업: 규칙 packages/quote/src/besa.ts 와 같은 날짜(견적-5)
+EV_KNOWN[100],life(활동 달력),2026-08-09 입학일 · BESA 픽업,행사(term),partner_content_items event,/life/calendar,있음,missing,,과거 날짜는 정기 갱신(T-25) · 날짜,Phase 1,challenger 입학일·BESA 픽업: 규칙 packages/quote/src/besa.ts 와 같은 날짜(견적-5)
+EV_KNOWN[101],life(활동 달력),2026-08-23 입학일 · BESA 픽업,행사(term),partner_content_items event,/life/calendar,있음,missing,,과거 날짜는 정기 갱신(T-25) · 날짜,Phase 1,challenger 입학일·BESA 픽업: 규칙 packages/quote/src/besa.ts 와 같은 날짜(견적-5)
+EV_KNOWN[102],life(활동 달력),2026-09-06 입학일 · BESA 픽업,행사(term),partner_content_items event,/life/calendar,있음,missing,,과거 날짜는 정기 갱신(T-25) · 날짜,Phase 1,challenger 입학일·BESA 픽업: 규칙 packages/quote/src/besa.ts 와 같은 날짜(견적-5)
+EV_KNOWN[103],life(활동 달력),2026-09-20 입학일 · BESA 픽업,행사(term),partner_content_items event,/life/calendar,있음,missing,,과거 날짜는 정기 갱신(T-25) · 날짜,Phase 1,challenger 입학일·BESA 픽업: 규칙 packages/quote/src/besa.ts 와 같은 날짜(견적-5)
+EV_KNOWN[104],life(활동 달력),2026-10-04 입학일 · BESA 픽업,행사(term),partner_content_items event,/life/calendar,있음,missing,,과거 날짜는 정기 갱신(T-25) · 날짜,Phase 1,challenger 입학일·BESA 픽업: 규칙 packages/quote/src/besa.ts 와 같은 날짜(견적-5)
+EV_KNOWN[105],life(활동 달력),2026-10-18 입학일 · BESA 픽업,행사(term),partner_content_items event,/life/calendar,있음,missing,,과거 날짜는 정기 갱신(T-25) · 날짜,Phase 1,challenger 입학일·BESA 픽업: 규칙 packages/quote/src/besa.ts 와 같은 날짜(견적-5)
+EV_KNOWN[106],life(활동 달력),2026-11-01 입학일 · BESA 픽업,행사(term),partner_content_items event,/life/calendar,있음,missing,,과거 날짜는 정기 갱신(T-25) · 날짜,Phase 1,challenger 입학일·BESA 픽업: 규칙 packages/quote/src/besa.ts 와 같은 날짜(견적-5)
+EV_KNOWN[107],life(활동 달력),2026-11-15 입학일 · BESA 픽업,행사(term),partner_content_items event,/life/calendar,있음,missing,,과거 날짜는 정기 갱신(T-25) · 날짜,Phase 1,challenger 입학일·BESA 픽업: 규칙 packages/quote/src/besa.ts 와 같은 날짜(견적-5)
+EV_KNOWN[108],life(활동 달력),2026-11-29 입학일 · BESA 픽업,행사(term),partner_content_items event,/life/calendar,있음,missing,,과거 날짜는 정기 갱신(T-25) · 날짜,Phase 1,challenger 입학일·BESA 픽업: 규칙 packages/quote/src/besa.ts 와 같은 날짜(견적-5)
+EV_KNOWN[109],life(활동 달력),2026-12-13 입학일 · BESA 픽업,행사(term),partner_content_items event,/life/calendar,있음,missing,,과거 날짜는 정기 갱신(T-25) · 날짜,Phase 1,challenger 입학일·BESA 픽업: 규칙 packages/quote/src/besa.ts 와 같은 날짜(견적-5)
+EV_KNOWN[110],life(활동 달력),2026-12-27 입학일 · BESA 픽업,행사(term),partner_content_items event,/life/calendar,있음,missing,,과거 날짜는 정기 갱신(T-25) · 날짜,Phase 1,challenger 입학일·BESA 픽업: 규칙 packages/quote/src/besa.ts 와 같은 날짜(견적-5)
+EV_KNOWN[111],life(활동 달력),2026-01-09 월간 시험,행사(test),partner_content_items event,/life/calendar,있음,existing_same,,과거 날짜는 정기 갱신(T-25) · 날짜,Phase 1,challenger
+EV_KNOWN[112],life(활동 달력),2026-02-06 월간 시험,행사(test),partner_content_items event,/life/calendar,있음,existing_same,,과거 날짜는 정기 갱신(T-25) · 날짜,Phase 1,challenger
+EV_KNOWN[113],life(활동 달력),2026-03-06 월간 시험,행사(test),partner_content_items event,/life/calendar,있음,existing_same,,과거 날짜는 정기 갱신(T-25) · 날짜,Phase 1,challenger
+EV_KNOWN[114],life(활동 달력),2026-04-03 월간 시험,행사(test),partner_content_items event,/life/calendar,있음,existing_same,,과거 날짜는 정기 갱신(T-25) · 날짜,Phase 1,challenger
+EV_KNOWN[115],life(활동 달력),2026-05-01 월간 시험,행사(test),partner_content_items event,/life/calendar,있음,existing_same,,과거 날짜는 정기 갱신(T-25) · 날짜,Phase 1,challenger
+EV_KNOWN[116],life(활동 달력),2026-05-29 월간 시험,행사(test),partner_content_items event,/life/calendar,있음,existing_same,,과거 날짜는 정기 갱신(T-25) · 날짜,Phase 1,challenger
+EV_KNOWN[117],life(활동 달력),2026-06-26 월간 시험,행사(test),partner_content_items event,/life/calendar,있음,existing_same,,과거 날짜는 정기 갱신(T-25) · 날짜,Phase 1,challenger
+EV_KNOWN[118],life(활동 달력),2026-07-24 월간 시험,행사(test),partner_content_items event,/life/calendar,있음,existing_same,,과거 날짜는 정기 갱신(T-25) · 날짜,Phase 1,challenger
+EV_KNOWN[119],life(활동 달력),2026-08-21 월간 시험,행사(test),partner_content_items event,/life/calendar,있음,existing_same,,과거 날짜는 정기 갱신(T-25) · 날짜,Phase 1,challenger
+EV_KNOWN[120],life(활동 달력),2026-09-18 월간 시험,행사(test),partner_content_items event,/life/calendar,있음,existing_same,,과거 날짜는 정기 갱신(T-25) · 날짜,Phase 1,challenger
+EV_KNOWN[121],life(활동 달력),2026-10-16 월간 시험,행사(test),partner_content_items event,/life/calendar,있음,existing_same,,과거 날짜는 정기 갱신(T-25) · 날짜,Phase 1,challenger
+EV_KNOWN[122],life(활동 달력),2026-11-13 월간 시험,행사(test),partner_content_items event,/life/calendar,있음,existing_same,,과거 날짜는 정기 갱신(T-25) · 날짜,Phase 1,challenger
+EV_KNOWN[123],life(활동 달력),2026-12-11 월간 시험,행사(test),partner_content_items event,/life/calendar,있음,existing_same,,과거 날짜는 정기 갱신(T-25) · 날짜,Phase 1,challenger
+EV_KNOWN[124],life(활동 달력),2026-01-01 공휴일,행사(holiday),partner_content_items event,/life/calendar,있음,existing_same,,과거 날짜는 정기 갱신(T-25) · 날짜,Phase 1,challenger 공휴일은 캠퍼스 공통 1건으로 들어가 있음
+EV_KNOWN[125],life(활동 달력),2026-02-17 공휴일,행사(holiday),partner_content_items event,/life/calendar,있음,existing_same,,과거 날짜는 정기 갱신(T-25) · 날짜,Phase 1,challenger 공휴일은 캠퍼스 공통 1건으로 들어가 있음
+EV_KNOWN[126],life(활동 달력),2026-02-25 공휴일,행사(holiday),partner_content_items event,/life/calendar,있음,existing_same,,과거 날짜는 정기 갱신(T-25) · 날짜,Phase 1,challenger 공휴일은 캠퍼스 공통 1건으로 들어가 있음
+EV_KNOWN[127],life(활동 달력),2026-03-20 공휴일,행사(holiday),partner_content_items event,/life/calendar,있음,existing_same,,과거 날짜는 정기 갱신(T-25) · 날짜,Phase 1,challenger 공휴일은 캠퍼스 공통 1건으로 들어가 있음
+EV_KNOWN[128],life(활동 달력),2026-04-02 공휴일,행사(holiday),partner_content_items event,/life/calendar,있음,existing_same,,과거 날짜는 정기 갱신(T-25) · 날짜,Phase 1,challenger 공휴일은 캠퍼스 공통 1건으로 들어가 있음
+EV_KNOWN[129],life(활동 달력),2026-04-03 공휴일,행사(holiday),partner_content_items event,/life/calendar,있음,existing_same,,과거 날짜는 정기 갱신(T-25) · 날짜,Phase 1,challenger 공휴일은 캠퍼스 공통 1건으로 들어가 있음
+EV_KNOWN[130],life(활동 달력),2026-04-04 공휴일,행사(holiday),partner_content_items event,/life/calendar,있음,existing_same,,과거 날짜는 정기 갱신(T-25) · 날짜,Phase 1,challenger 공휴일은 캠퍼스 공통 1건으로 들어가 있음
+EV_KNOWN[131],life(활동 달력),2026-04-09 공휴일,행사(holiday),partner_content_items event,/life/calendar,있음,existing_same,,과거 날짜는 정기 갱신(T-25) · 날짜,Phase 1,challenger 공휴일은 캠퍼스 공통 1건으로 들어가 있음
+EV_KNOWN[132],life(활동 달력),2026-05-01 공휴일,행사(holiday),partner_content_items event,/life/calendar,있음,existing_same,,과거 날짜는 정기 갱신(T-25) · 날짜,Phase 1,challenger 공휴일은 캠퍼스 공통 1건으로 들어가 있음
+EV_KNOWN[133],life(활동 달력),2026-06-12 공휴일,행사(holiday),partner_content_items event,/life/calendar,있음,existing_same,,과거 날짜는 정기 갱신(T-25) · 날짜,Phase 1,challenger 공휴일은 캠퍼스 공통 1건으로 들어가 있음
+EV_KNOWN[134],life(활동 달력),2026-08-21 공휴일,행사(holiday),partner_content_items event,/life/calendar,있음,existing_same,,과거 날짜는 정기 갱신(T-25) · 날짜,Phase 1,challenger 공휴일은 캠퍼스 공통 1건으로 들어가 있음
+EV_KNOWN[135],life(활동 달력),2026-08-31 공휴일,행사(holiday),partner_content_items event,/life/calendar,있음,existing_same,,과거 날짜는 정기 갱신(T-25) · 날짜,Phase 1,challenger 공휴일은 캠퍼스 공통 1건으로 들어가 있음
+EV_KNOWN[136],life(활동 달력),2026-11-01 공휴일,행사(holiday),partner_content_items event,/life/calendar,있음,existing_same,,과거 날짜는 정기 갱신(T-25) · 날짜,Phase 1,challenger 공휴일은 캠퍼스 공통 1건으로 들어가 있음
+EV_KNOWN[137],life(활동 달력),2026-11-30 공휴일,행사(holiday),partner_content_items event,/life/calendar,있음,existing_same,,과거 날짜는 정기 갱신(T-25) · 날짜,Phase 1,challenger 공휴일은 캠퍼스 공통 1건으로 들어가 있음
+EV_KNOWN[138],life(활동 달력),2026-12-08 공휴일,행사(holiday),partner_content_items event,/life/calendar,있음,existing_same,,과거 날짜는 정기 갱신(T-25) · 날짜,Phase 1,challenger 공휴일은 캠퍼스 공통 1건으로 들어가 있음
+EV_KNOWN[139],life(활동 달력),2026-12-24 공휴일,행사(holiday),partner_content_items event,/life/calendar,있음,existing_same,,과거 날짜는 정기 갱신(T-25) · 날짜,Phase 1,challenger 공휴일은 캠퍼스 공통 1건으로 들어가 있음
+EV_KNOWN[140],life(활동 달력),2026-12-25 공휴일,행사(holiday),partner_content_items event,/life/calendar,있음,existing_same,,과거 날짜는 정기 갱신(T-25) · 날짜,Phase 1,challenger 공휴일은 캠퍼스 공통 1건으로 들어가 있음
+EV_KNOWN[141],life(활동 달력),2026-12-30 공휴일,행사(holiday),partner_content_items event,/life/calendar,있음,existing_same,,과거 날짜는 정기 갱신(T-25) · 날짜,Phase 1,challenger 공휴일은 캠퍼스 공통 1건으로 들어가 있음
+EV_KNOWN[142],life(활동 달력),2026-12-31 공휴일,행사(holiday),partner_content_items event,/life/calendar,있음,existing_same,,과거 날짜는 정기 갱신(T-25) · 날짜,Phase 1,challenger 공휴일은 캠퍼스 공통 1건으로 들어가 있음
+TERM_2026·MTEST_2026·HOLI_2026,life,입학일 26 · 월간 테스트 13 · 공휴일 19,원본 표,event(위 EV_KNOWN 행과 같은 날짜),/life/calendar,있음,see_EV_KNOWN,,,Phase 1,EV_KNOWN이 캠퍼스별로 반복해 담고 있음
+SCHEDULE_NOTICE,life·전체 하단,현지 사정과 학교 일정에 따라 일정이나 행사는 변경 및 취소될 수 있습니다.,고정 문구,활동 달력 안내 문구(코드 i18n),/life/calendar,일부,missing,,,Phase 1,
+EV_DEMO.pre,life,데모 행사 · premium,목록 3,(넣지 않음: 시제품 데모),-,없음,excluded,,데모 데이터,Phase 1,
+EV_DEMO.cha,life,데모 행사 · challenger,목록 3,(넣지 않음: 시제품 데모),-,없음,excluded,,데모 데이터,Phase 1,
+JR.camp,junior,겨울 주니어 캠프,캠프 소개·사실,partner_content_items camp,/campuses/camp,있음,missing,,"날짜·인원·브로슈어 · 캠프 가격(브로슈어 안에만, CL-053) · 가격 숫자",Phase 1,
+JR.fam,junior,가족 캠프,캠프 소개·사실,partner_content_items camp,/campuses/camp,있음,missing,,"날짜·인원·브로슈어 · 캠프 가격(브로슈어 안에만, CL-053) · 가격 숫자 · 날짜",Phase 1,
+JR.upc,junior,UPC · 주니어 장기 연수,캠프 소개·사실,(자리 없음: UPC 결정 필요),/campuses/camp,없음,missing,,"날짜·인원·브로슈어 · 캠프 가격(브로슈어 안에만, CL-053) · 가격 숫자",Phase 1,
+PLAY.campus:c1,play,캠퍼스 · Premium 캠퍼스 밤 산책,영상 카드,partner_content_items video(유튜브 주소 필요),/play,있음,missing,,실제 URL·학생 공유 가능 여부,Phase 1,premium · 드라이브 링크 있음
+PLAY.campus:c2,play,캠퍼스 · Challenger 캠퍼스 한눈에,영상 카드,partner_content_items video(유튜브 주소 필요),/play,있음,missing,,실제 URL·학생 공유 가능 여부,Phase 1,challenger · 영상 주소 없음
+PLAY.campus:c3,play,캠퍼스 · MCO 주니어 캠퍼스,영상 카드,partner_content_items video(유튜브 주소 필요),/play,있음,missing,,실제 URL·학생 공유 가능 여부,Phase 1,mco · 영상 주소 없음
+PLAY.campus:c4,play,캠퍼스 · 도착 첫날: 픽업부터 체크인까지,영상 카드,partner_content_items video(유튜브 주소 필요),/play,있음,missing,,실제 URL·학생 공유 가능 여부,Phase 1,all · 영상 주소 없음
+PLAY.class:s1,play,수업 · 1:1 수업 현장,영상 카드,partner_content_items video(유튜브 주소 필요),/play,있음,missing,,실제 URL·학생 공유 가능 여부,Phase 1,all · 영상 주소 없음
+PLAY.class:s2,play,수업 · Speaking 코스 · Starter → Pro → Master,영상 카드,partner_content_items video(유튜브 주소 필요),/play,있음,missing,,실제 URL·학생 공유 가능 여부,Phase 1,premium · 영상 주소 없음
+PLAY.class:s3,play,수업 · IELTS 수업 · 모의고사,영상 카드,partner_content_items video(유튜브 주소 필요),/play,있음,missing,,실제 URL·학생 공유 가능 여부,Phase 1,challenger · 영상 주소 없음
+PLAY.class:s4,play,수업 · 그룹 · 스페셜 수업,영상 카드,partner_content_items video(유튜브 주소 필요),/play,있음,missing,,실제 URL·학생 공유 가능 여부,Phase 1,all · 영상 주소 없음
+PLAY.class:s5,play,수업 · 선생님 소개,영상 카드,partner_content_items video(유튜브 주소 필요),/play,있음,missing,,실제 URL·학생 공유 가능 여부,Phase 1,all · 영상 주소 없음
+PLAY.dorm:d0,play,기숙사 · 방 타입 모아 보기,영상 카드,partner_content_items video(유튜브 주소 필요),/play,있음,missing,,실제 URL·학생 공유 가능 여부,Phase 1,all · 영상 주소 없음
+PLAY.dorm:d1,play,기숙사 · Premium 1인실 · 룸 투어,영상 카드,partner_content_items video(유튜브 주소 필요),/play,있음,missing,,실제 URL·학생 공유 가능 여부,Phase 1,premium · 드라이브 링크 있음
+PLAY.dorm:d1b,play,기숙사 · Premium 2인실 · 룸 투어,영상 카드,partner_content_items video(유튜브 주소 필요),/play,있음,missing,,실제 URL·학생 공유 가능 여부,Phase 1,premium · 드라이브 링크 있음
+PLAY.dorm:d1c,play,기숙사 · Premium 4인실 · 룸 투어,영상 카드,partner_content_items video(유튜브 주소 필요),/play,있음,missing,,실제 URL·학생 공유 가능 여부,Phase 1,premium · 드라이브 링크 있음
+PLAY.dorm:d2,play,기숙사 · Premium 기숙사 2 · 세미 1인실 · 커플룸,영상 카드,partner_content_items video(유튜브 주소 필요),/play,있음,missing,,실제 URL·학생 공유 가능 여부,Phase 1,premium · 영상 주소 없음
+PLAY.dorm:d3,play,기숙사 · Challenger East Field,영상 카드,partner_content_items video(유튜브 주소 필요),/play,있음,missing,,실제 URL·학생 공유 가능 여부,Phase 1,challenger · 영상 주소 없음
+PLAY.dorm:d4,play,기숙사 · Challenger West Garden,영상 카드,partner_content_items video(유튜브 주소 필요),/play,있음,missing,,실제 URL·학생 공유 가능 여부,Phase 1,challenger · 영상 주소 없음
+PLAY.dorm:d5,play,기숙사 · MCO 주니어 4인실,영상 카드,partner_content_items video(유튜브 주소 필요),/play,있음,missing,,실제 URL·학생 공유 가능 여부,Phase 1,mco · 영상 주소 없음
+PLAY.fac:f1,play,시설 · 생활 · Premium 카페테리아 · 식사,영상 카드,partner_content_items video(유튜브 주소 필요),/play,있음,missing,,실제 URL·학생 공유 가능 여부,Phase 1,premium · 드라이브 링크 있음
+PLAY.fac:f2,play,시설 · 생활 · Premium 학생 라운지,영상 카드,partner_content_items video(유튜브 주소 필요),/play,있음,missing,,실제 URL·학생 공유 가능 여부,Phase 1,premium · 드라이브 링크 있음
+PLAY.fac:f3,play,시설 · 생활 · 체육관 · 웰니스 스튜디오 · 골프,영상 카드,partner_content_items video(유튜브 주소 필요),/play,있음,missing,,실제 URL·학생 공유 가능 여부,Phase 1,premium · 영상 주소 없음
+PLAY.fac:f4,play,시설 · 생활 · 야간 자습실 · 도서관,영상 카드,partner_content_items video(유튜브 주소 필요),/play,있음,missing,,실제 URL·학생 공유 가능 여부,Phase 1,challenger · 영상 주소 없음
+PLAY.fac:f5,play,시설 · 생활 · 빨래방 · 공용 부엌 · ATM,영상 카드,partner_content_items video(유튜브 주소 필요),/play,있음,missing,,실제 URL·학생 공유 가능 여부,Phase 1,all · 영상 주소 없음
+PLAY.act:a1,play,액티비티 · 이브닝 클래스,영상 카드,partner_content_items video(유튜브 주소 필요),/play,있음,missing,,실제 URL·학생 공유 가능 여부,Phase 1,premium · 영상 주소 없음
+PLAY.act:a2,play,액티비티 · 클럽 · Global Social Club,영상 카드,partner_content_items video(유튜브 주소 필요),/play,있음,missing,,실제 URL·학생 공유 가능 여부,Phase 1,premium · 영상 주소 없음
+PLAY.act:a3,play,액티비티 · 무비 나이트 · 오픈 마이크,영상 카드,partner_content_items video(유튜브 주소 필요),/play,있음,missing,,실제 URL·학생 공유 가능 여부,Phase 1,premium · 영상 주소 없음
+PLAY.act:a7,play,액티비티 · 도넛 데이,영상 카드,partner_content_items video(유튜브 주소 필요),/play,있음,missing,,실제 URL·학생 공유 가능 여부,Phase 1,premium · 드라이브 링크 있음
+PLAY.act:a8,play,액티비티 · 할로윈 파티 · 포토존,영상 카드,partner_content_items video(유튜브 주소 필요),/play,있음,missing,,실제 URL·학생 공유 가능 여부,Phase 1,premium · 드라이브 링크 있음
+PLAY.act:a9,play,액티비티 · 할로윈 · 분장 준비,영상 카드,partner_content_items video(유튜브 주소 필요),/play,있음,missing,,실제 URL·학생 공유 가능 여부,Phase 1,premium · 포털 안 재생 파일(운영에 없음)
+PLAY.act:a4,play,액티비티 · 주말 액티비티 · 바기오 여행,영상 카드,partner_content_items video(유튜브 주소 필요),/play,있음,missing,,실제 URL·학생 공유 가능 여부,Phase 1,all · 영상 주소 없음
+PLAY.act:a5,play,액티비티 · Speaking Challenger,영상 카드,partner_content_items video(유튜브 주소 필요),/play,있음,missing,,실제 URL·학생 공유 가능 여부,Phase 1,all · 영상 주소 없음
+PLAY.act:a6,play,액티비티 · 바리스타 · 골프,영상 카드,partner_content_items video(유튜브 주소 필요),/play,있음,missing,,실제 URL·학생 공유 가능 여부,Phase 1,all · 영상 주소 없음
+PLAY.change:g1,play,변화 · Before & After · 첫 주와 졸업 주,영상 카드,partner_content_items video(유튜브 주소 필요),/play,있음,missing,,실제 URL·학생 공유 가능 여부,Phase 1,all · 영상 주소 없음
+PLAY.change:g2,play,변화 · Read to Speak 녹음 비교,영상 카드,partner_content_items video(유튜브 주소 필요),/play,있음,missing,,실제 URL·학생 공유 가능 여부,Phase 1,premium · 영상 주소 없음
+PLAY.change:g3,play,변화 · Speaking Challenger 후기,영상 카드,partner_content_items video(유튜브 주소 필요),/play,있음,missing,,실제 URL·학생 공유 가능 여부,Phase 1,all · 영상 주소 없음
+PLAY.change:g4,play,변화 · 졸업식 · 수료증,영상 카드,partner_content_items video(유튜브 주소 필요),/play,있음,missing,,실제 URL·학생 공유 가능 여부,Phase 1,all · 영상 주소 없음
+PLAY.around:r1,play,주변 · Around JIC 60초,영상 카드,partner_content_items video(유튜브 주소 필요),/play,있음,missing,,실제 URL·학생 공유 가능 여부,Phase 1,all · 영상 주소 없음
+PLAY.around:r2,play,주변 · 첫 주 필수 · SM몰 셔틀,영상 카드,partner_content_items video(유튜브 주소 필요),/play,있음,missing,,실제 URL·학생 공유 가능 여부,Phase 1,premium · 영상 주소 없음
+PLAY.around:r3,play,주변 · 바기오 주말 여행,영상 카드,partner_content_items video(유튜브 주소 필요),/play,있음,missing,,실제 URL·학생 공유 가능 여부,Phase 1,all · 영상 주소 없음
+PLAY.review:v1,play,후기 · 학생 인터뷰 · Premium (한국),영상 카드,partner_content_items video(유튜브 주소 필요),/play,있음,missing,,실제 URL·학생 공유 가능 여부,Phase 1,premium · 영상 주소 없음
+PLAY.review:v2,play,후기 · 학생 인터뷰 · Challenger (일본),영상 카드,partner_content_items video(유튜브 주소 필요),/play,있음,missing,,실제 URL·학생 공유 가능 여부,Phase 1,challenger · 영상 주소 없음
+PLAY.review:v3,play,후기 · 학생 인터뷰 · Premium (대만),영상 카드,partner_content_items video(유튜브 주소 필요),/play,있음,missing,,실제 URL·학생 공유 가능 여부,Phase 1,premium · 영상 주소 없음
+PLAY.junior:j1,play,주니어 · 가족 캠프 · 주니어 캠프의 하루,영상 카드,partner_content_items video(유튜브 주소 필요),/play,있음,missing,,실제 URL·학생 공유 가능 여부,Phase 1,mco · 영상 주소 없음
+PLAY.junior:j2,play,주니어 · 가족 캠프 · 토요 액티비티,영상 카드,partner_content_items video(유튜브 주소 필요),/play,있음,missing,,실제 URL·학생 공유 가능 여부,Phase 1,mco · 영상 주소 없음
+PLAY.junior:j3,play,주니어 · 가족 캠프 · 학부모 안심 케어,영상 카드,partner_content_items video(유튜브 주소 필요),/play,있음,missing,,실제 URL·학생 공유 가능 여부,Phase 1,all · 영상 주소 없음
+PLAY.junior:j4,play,주니어 · 가족 캠프 · 가족 캠프 · Premium,영상 카드,partner_content_items video(유튜브 주소 필요),/play,있음,missing,,실제 URL·학생 공유 가능 여부,Phase 1,premium · 영상 주소 없음
+AUTO_RULES,play,목표별 자동 영상 묶음 8개,규칙,(신규) JIC Play 추천 묶음 — Phase 4,/play,없음,missing,,검수 후 영상 ID 매핑,Phase 1,패키지 C15
+KIT[0],downloads,JIC Quick Facts,학교 소개 · 1-page PDF,partner_resources(파일·링크),/resources,있음,missing,,파일 실재·최신 버전(제작 예정),Phase 1,
+KIT[1],downloads,Campus Comparison Sheet,학교 소개 · PDF,partner_resources(파일·링크),/resources,있음,missing,,파일 실재·최신 버전(제작 예정),Phase 1,
+KIT[2],downloads,Program Comparison Guide,교육과정 · PDF,partner_resources(파일·링크),/resources,있음,missing,,파일 실재·최신 버전(제작 예정),Phase 1,
+KIT[3],downloads,Program Recommendation Cards,교육과정 · PDF,partner_resources(파일·링크),/resources,있음,missing,,파일 실재·최신 버전(사이트 제공),Phase 1,
+KIT[4],downloads,Personalized Support Guide,학습 지원 · PDF,partner_resources(파일·링크),/resources,있음,missing,,파일 실재·최신 버전(사이트 제공),Phase 1,
+KIT[5],downloads,Pre / At / After JIC Journey Map,학습 지원 · PDF,partner_resources(파일·링크),/resources,있음,missing,,파일 실재·최신 버전(준비 중),Phase 1,
+KIT[6],downloads,Learning Evidence Pack,학습 지원 · PDF,partner_resources(파일·링크),/resources,있음,missing,,파일 실재·최신 버전(사이트 제공),Phase 1,
+KIT[7],downloads,JIC Life Kit,시설·생활 · ZIP · PDF,partner_resources(파일·링크),/resources,있음,missing,,파일 실재·최신 버전(사진 대기),Phase 1,
+KIT[8],downloads,Fees & Registration Guide,시설·생활 · PDF (날짜 표기),partner_resources(파일·링크),/resources,있음,missing,,파일 실재·최신 버전(사이트 제공),Phase 1,
+KIT[9],downloads,스파르타 규정 준수 서약서,세일즈 가이드 · PDF,partner_resources(파일·링크),/resources,있음,missing,,파일 실재·최신 버전(사이트 제공),Phase 1,
+KIT[10],downloads,FAQ & Sales Talking Points,세일즈 가이드 · PDF,partner_resources(파일·링크),/resources,있음,missing,,파일 실재·최신 버전(사이트 제공),Phase 1,
+DOC_SLOTS·DOC_TYPES,downloads,서류 자리 13개,자리 목록,partner_resources 분류,/resources,일부,missing,,파일 실재,Phase 1,
+PLAYBOOK[0],playbook,“어느 코스가 저에게 맞나요?”,질문·답변 요점·보여 줄 화면,partner_content_items playbook,/playbook,있음,missing,,학생 화면 제외(에이전트 전용),Phase 1,T-12 기획 확정 전
+PLAYBOOK[1],playbook,“다른 대형 어학원과 무엇이 다른가요?”,질문·답변 요점·보여 줄 화면,partner_content_items playbook,/playbook,있음,missing,,학생 화면 제외(에이전트 전용),Phase 1,T-12 기획 확정 전
+PLAYBOOK[2],playbook,“영어가 너무 부족해도 괜찮을까요?”,질문·답변 요점·보여 줄 화면,partner_content_items playbook,/playbook,있음,missing,,학생 화면 제외(에이전트 전용),Phase 1,T-12 기획 확정 전
+PLAYBOOK[3],playbook,“실력이 늘었는지 어떻게 알 수 있나요?”,질문·답변 요점·보여 줄 화면,partner_content_items playbook,/playbook,있음,missing,,학생 화면 제외(에이전트 전용),Phase 1,T-12 기획 확정 전
+PLAYBOOK[4],playbook,“필리핀에 가기 전에 무엇을 해야 하나요?”,질문·답변 요점·보여 줄 화면,partner_content_items playbook,/playbook,있음,missing,,학생 화면 제외(에이전트 전용),Phase 1,T-12 기획 확정 전
+PLAYBOOK[5],playbook,“등록 후 JIC와 직접 소통할 수 있나요?”,질문·답변 요점·보여 줄 화면,partner_content_items playbook,/playbook,있음,missing,,학생 화면 제외(에이전트 전용),Phase 1,T-12 기획 확정 전
+ADULT_FAQ[0],playbook(FAQ),비자는 어떻게 하나요?,FAQ,partner_content_items faq,/faq,있음,existing_draft,draft,가격 숫자,Phase 1,운영 초안은 가격 문구를 뺀 수정본(CL-055). CL-084 게시 결정 미반영
+ADULT_FAQ[1],playbook(FAQ),SSP가 뭔가요?,FAQ,partner_content_items faq,/faq,있음,existing_draft,draft,가격 숫자,Phase 1,운영 초안은 가격 문구를 뺀 수정본(CL-055). CL-084 게시 결정 미반영
+ADULT_FAQ[2],playbook(FAQ),현지에서 내는 비용은 얼마인가요?,FAQ,partner_content_items faq,/faq,있음,existing_draft,draft,가격 숫자,Phase 1,운영 초안은 가격 문구를 뺀 수정본(CL-055). CL-084 게시 결정 미반영
+ADULT_FAQ[3],playbook(FAQ),환전과 용돈은요?,FAQ,partner_content_items faq,/faq,있음,existing_draft,draft,,Phase 1,CL-084 게시 결정 미반영
+ADULT_FAQ[4],playbook(FAQ),휴대폰은 어떻게 쓰나요?,FAQ,partner_content_items faq,/faq,있음,existing_draft,draft,,Phase 1,CL-084 게시 결정 미반영
+ADULT_FAQ[5],playbook(FAQ),아프면 어떻게 하나요?,FAQ,partner_content_items faq,/faq,있음,existing_draft,draft,,Phase 1,CL-084 게시 결정 미반영
+ADULT_FAQ[6],playbook(FAQ),세탁과 청소는요?,FAQ,partner_content_items faq,/faq,있음,existing_draft,draft,,Phase 1,CL-084 게시 결정 미반영
+ADULT_FAQ[7],playbook(FAQ),외출과 외박은 되나요?,FAQ,partner_content_items faq,/faq,있음,existing_draft,draft,,Phase 1,CL-084 게시 결정 미반영
+FEES·FEE_IMG·FEE_PDF,tuition,학비표 금액·이미지·PDF,가격,"(넣지 않음: 가격은 price_books만, CL-099)",/tuition,있음,excluded,,가격,Phase 1,학비표 이미지 5·PDF 3은 사진 보관함에도 없음(R-016)
+PLEDGE_PDF,tuition·downloads,스파르타 서약서 PDF,PDF,partner_resources(자료실 파일) 후보,/resources,있음,missing,,최신 양식 확인,Phase 1,운영에 없음(R-016)
+REG_STEPS,register,등록 절차 9개,단계·서류 목록,등록 안내 글(partner_settings.register_guide) — 보관만,/register,일부,excluded,,등록 절차 최신성,Phase 1,CL-094 등록 기능 제외. 원문은 보관 대상
+REG_DOCS,register,등록 서류 5개,단계·서류 목록,등록 안내 글(partner_settings.register_guide) — 보관만,/register,일부,excluded,,등록 절차 최신성,Phase 1,CL-094 등록 기능 제외. 원문은 보관 대상
+CONTACTS·DESKS,contacts,담당자 연락처 예시 5,연락처,partner_content_items contact,/contacts,있음,excluded,,실명·계정·주소(개인정보),Phase 1,시제품 예시라 옮기지 않음. 기획이 실제 값 입력
+FQ,diag,과정 진단 FQ,규칙,"(이식 금지: 참고 자료 보관, CL-098·패키지 C09)",-,없음,excluded,,규칙 초안(V2.2 승인 필요),보관,
+PLAN_RULE,diag,과정 진단 PLAN_RULE,규칙,"(이식 금지: 참고 자료 보관, CL-098·패키지 C09)",-,없음,excluded,,규칙 초안(V2.2 승인 필요),보관,
+PERIOD_RULE,diag,과정 진단 PERIOD_RULE,규칙,"(이식 금지: 참고 자료 보관, CL-098·패키지 C09)",-,없음,excluded,,규칙 초안(V2.2 승인 필요),보관,
+STG,diag,과정 진단 STG,규칙,"(이식 금지: 참고 자료 보관, CL-098·패키지 C09)",-,없음,excluded,,규칙 초안(V2.2 승인 필요),보관,
+OPTIMAL,diag,과정 진단 OPTIMAL,규칙,"(이식 금지: 참고 자료 보관, CL-098·패키지 C09)",-,없음,excluded,,규칙 초안(V2.2 승인 필요),보관,
+data/과정진단_전체결과_112.json,diag,진단 결과 112가지,결과,(이식 금지: 참고 자료 보관),-,없음,excluded,,규칙 초안,보관,
+DESK,(상담 데스크 원본),이전 JIC Agent Desk 상담 흐름·칩·도시·캠퍼스·과정,상담 소개 글,"상담모드 바기오 소개(신규, Phase 3)",/consult,없음,missing,,"수치 최신성(2002년, 최대 4명 등) · New Campus",Phase 1,
+ISSUES,adm-issues,시제품 논의 사항 17,내부 결정 목록,(콘텐츠 아님) OPEN_DECISIONS 참고,-,없음,excluded,,,보관,
+PURPOSES·VSTATUS·STATUSES·DEMO_INQ,visit·inquiry,방문 목적·상태·문의 데모,UI 값,방문 신청 양식(이미 CL-046로 구현),/visit,있음,excluded,,,Phase 1,지금 양식 유지
+원문md:A:공통 · 사이드바/상단/푸터,공통 · 사이드바/상단/푸터,**JIC 파트너 포털** 유학원 전용 · 1차 시제품,화면 상태(글 124자),화면 머리·안내 글(코드 문구 또는 화면 콘텐츠),,없음,missing,,날짜,Phase 1,
+원문md:B:대시보드 [dash] · 전체,대시보드 [dash] · 전체,"### 안녕하세요, 파트너님",화면 상태(글 649자),화면 머리·안내 글(코드 문구 또는 화면 콘텐츠),/,있음,missing,,날짜 · New Campus,Phase 1,
+원문md:B:캠퍼스 [campus] · 전체,캠퍼스 [campus] · 전체,### 캠퍼스 안내,화면 상태(글 53자),화면 머리·안내 글(코드 문구 또는 화면 콘텐츠),/campuses,있음,missing,,,Phase 1,
+원문md:B:JIC 소개 › 왜 바기오 · 주변 [baguio] · 전체,JIC 소개 › 왜 바기오 · 주변 [baguio] · 전체,### 바기오 · Around JIC,화면 상태(글 2277자),화면 머리·안내 글(코드 문구 또는 화면 콘텐츠),/about/baguio,있음,missing,,,Phase 1,
+원문md:B:JIC 소개 › 왜 JIC [strengths] · 전체,JIC 소개 › 왜 JIC [strengths] · 전체,WHY PARTNERS RECOMMEND JIC,화면 상태(글 743자),화면 머리·안내 글(코드 문구 또는 화면 콘텐츠),/about/why-jic,있음,missing,,,Phase 1,
+원문md:B:JIC 소개 › 캠퍼스 비교 [compare] · 전체,JIC 소개 › 캠퍼스 비교 [compare] · 전체,### 캠퍼스 비교,화면 상태(글 1639자),화면 머리·안내 글(코드 문구 또는 화면 콘텐츠),/campuses/compare,있음,missing,,가격 숫자 · 날짜 · New Campus,Phase 1,
+원문md:B:코스 › 코스 안내 [lessons] · 전체,코스 › 코스 안내 [lessons] · 전체,### 코스 안내,화면 상태(글 137자),화면 머리·안내 글(코드 문구 또는 화면 콘텐츠),/courses,있음,missing,,,Phase 1,
+원문md:B:코스 › 과정 진단 [diag] · 전체,코스 › 과정 진단 [diag] · 전체,### 과정 진단,화면 상태(글 127자),"(과정 진단: 이식 금지, 참고 보관)",-,없음,excluded,,,보관,
+원문md:B:코스 › 추천 카드 [cards] · 전체,코스 › 추천 카드 [cards] · 전체,### 추천 카드,화면 상태(글 1896자),화면 머리·안내 글(코드 문구 또는 화면 콘텐츠),(없음),없음,missing,,,Phase 1,
+원문md:B:코스 › 주니어 · 가족 캠프 [junior] · 전체,코스 › 주니어 · 가족 캠프 [junior] · 전체,### 주니어 · 가족 캠프,화면 상태(글 1673자),화면 머리·안내 글(코드 문구 또는 화면 콘텐츠),/campuses/camp,있음,missing,,가격 숫자,Phase 1,
+원문md:B:코스 › 학생의 하루 [story] · 전체,코스 › 학생의 하루 [story] · 전체,### 학생의 하루,화면 상태(글 750자),화면 머리·안내 글(코드 문구 또는 화면 콘텐츠),/day,있음,missing,,,Phase 1,
+원문md:B:학생 생활 › 활동 달력 [life] · 전체,학생 생활 › 활동 달력 [life] · 전체,### 활동 달력,화면 상태(글 830자),화면 머리·안내 글(코드 문구 또는 화면 콘텐츠),/life/calendar,있음,missing,,날짜,Phase 1,
+원문md:B:학생 생활 › 액티비티 [activities] · 전체,학생 생활 › 액티비티 [activities] · 전체,### 액티비티,화면 상태(글 1994자),화면 머리·안내 글(코드 문구 또는 화면 콘텐츠),/life/activities,있음,missing,,,Phase 1,
+원문md:B:견적 계산 [quote] · 전체,견적 계산 [quote] · 전체,### 자동 견적 계산,화면 상태(글 1121자),"(견적: UI 참고만, packages/quote 유지)",/quote,있음,excluded,,New Campus,-,
+원문md:B:기숙사 공실 [vacancy] · 전체,기숙사 공실 [vacancy] · 전체,### 기숙사 공실 현황,화면 상태(글 402자),화면 머리·안내 글(코드 문구 또는 화면 콘텐츠),/vacancy,있음,missing,,,Phase 1,
+원문md:B:비용 · 등록 › 학비표 · 환불 [tuition] · 전체,비용 · 등록 › 학비표 · 환불 [tuition] · 전체,### 학비표 · 비용 안내,화면 상태(글 957자),(학비: 가격은 price_books만),/tuition,있음,excluded,,가격 숫자 · 날짜,-,
+원문md:B:비용 · 등록 › 등록 절차 · 서류 [register] · 전체,비용 · 등록 › 등록 절차 · 서류 [register] · 전체,### 등록 절차 · 서류,화면 상태(글 1350자),"(등록: CL-094 제외, 원문 보관)",/register,있음,excluded,,가격 숫자,보관,
+원문md:B:JIC Play [play] · 전체,JIC Play [play] · 전체,### JIC Play,화면 상태(글 2872자),화면 머리·안내 글(코드 문구 또는 화면 콘텐츠),/play,있음,missing,,가격 숫자,Phase 1,
+원문md:B:상담 자료 › 다운로드 센터 [downloads] · 전체,상담 자료 › 다운로드 센터 [downloads] · 전체,### 다운로드 센터,화면 상태(글 2018자),화면 머리·안내 글(코드 문구 또는 화면 콘텐츠),/resources,있음,missing,,New Campus,Phase 1,
+원문md:B:상담 자료 › 근거 자료 [evidence] · 전체,상담 자료 › 근거 자료 [evidence] · 전체,### 근거 자료,화면 상태(글 527자),화면 머리·안내 글(코드 문구 또는 화면 콘텐츠),/evidence,있음,missing,,,Phase 1,
+원문md:B:상담 자료 › 상담 플레이북 · FAQ [playbook] · 전체,상담 자료 › 상담 플레이북 · FAQ [playbook] · 전체,### 상담 플레이북,화면 상태(글 720자),화면 머리·안내 글(코드 문구 또는 화면 콘텐츠),/playbook·/faq,있음,missing,,,Phase 1,
+원문md:B:학교와 소통 › 공지 · 프로모션 [notice] · 전체,학교와 소통 › 공지 · 프로모션 [notice] · 전체,### 공지사항·프로모션,화면 상태(글 144자),화면 머리·안내 글(코드 문구 또는 화면 콘텐츠),/notices,있음,missing,,,Phase 1,
+원문md:B:학교와 소통 › 방문 신청 [visit] · 전체,학교와 소통 › 방문 신청 [visit] · 전체,### 방문 일정 신청,화면 상태(글 296자),화면 머리·안내 글(코드 문구 또는 화면 콘텐츠),/visit,있음,missing,,,Phase 1,
+원문md:B:학교와 소통 › 담당자 연락처 [contacts] · 전체,학교와 소통 › 담당자 연락처 [contacts] · 전체,### 담당자 연락처,화면 상태(글 766자),화면 머리·안내 글(코드 문구 또는 화면 콘텐츠),/contacts,있음,missing,,,Phase 1,
+원문md:B:계정 › 내 프로필 [profile] · 전체,계정 › 내 프로필 [profile] · 전체,### 내 프로필,화면 상태(글 98자),(계정 화면: 지금 화면 유지),/account,있음,excluded,,,-,
+원문md:B:계정 › 직원 관리 [staff] · 전체,계정 › 직원 관리 [staff] · 전체,### 직원 관리,화면 상태(글 303자),(계정 화면: 지금 화면 유지),/account(직원 관리),있음,excluded,,,-,
+원문md:C:[life] · 캠퍼스 필터=pre,[life] · 캠퍼스 필터=pre,**Premium** 만 보는 중,화면 상태(글 845자),화면 머리·안내 글(코드 문구 또는 화면 콘텐츠),/life/calendar,있음,see_filter_all,,날짜,Phase 1,캠퍼스 거르기 상태(같은 원천의 다른 보기)
+원문md:C:[life] · 캠퍼스 필터=cha,[life] · 캠퍼스 필터=cha,**Challenger** 만 보는 중,화면 상태(글 776자),화면 머리·안내 글(코드 문구 또는 화면 콘텐츠),/life/calendar,있음,see_filter_all,,날짜,Phase 1,캠퍼스 거르기 상태(같은 원천의 다른 보기)
+원문md:C:[activities] · 캠퍼스 필터=pre,[activities] · 캠퍼스 필터=pre,**Premium** 만 보는 중,화면 상태(글 2009자),화면 머리·안내 글(코드 문구 또는 화면 콘텐츠),/life/activities,있음,see_filter_all,,,Phase 1,캠퍼스 거르기 상태(같은 원천의 다른 보기)
+원문md:C:[activities] · 캠퍼스 필터=cha,[activities] · 캠퍼스 필터=cha,**Challenger** 만 보는 중,화면 상태(글 1307자),화면 머리·안내 글(코드 문구 또는 화면 콘텐츠),/life/activities,있음,see_filter_all,,,Phase 1,캠퍼스 거르기 상태(같은 원천의 다른 보기)
+원문md:C:[downloads] · 캠퍼스 필터=pre,[downloads] · 캠퍼스 필터=pre,**Premium** 만 보는 중,화면 상태(글 1534자),화면 머리·안내 글(코드 문구 또는 화면 콘텐츠),/resources,있음,see_filter_all,,,Phase 1,캠퍼스 거르기 상태(같은 원천의 다른 보기)
+원문md:C:[downloads] · 캠퍼스 필터=cha,[downloads] · 캠퍼스 필터=cha,**Challenger** 만 보는 중,화면 상태(글 1296자),화면 머리·안내 글(코드 문구 또는 화면 콘텐츠),/resources,있음,see_filter_all,,,Phase 1,캠퍼스 거르기 상태(같은 원천의 다른 보기)
+원문md:C:[compare] · 캠퍼스 필터=pre,[compare] · 캠퍼스 필터=pre,**Premium** 만 보는 중,화면 상태(글 1339자),화면 머리·안내 글(코드 문구 또는 화면 콘텐츠),/campuses/compare,있음,see_filter_all,,가격 숫자 · 날짜 · New Campus,Phase 1,캠퍼스 거르기 상태(같은 원천의 다른 보기)
+원문md:C:[compare] · 캠퍼스 필터=cha,[compare] · 캠퍼스 필터=cha,**Challenger** 만 보는 중,화면 상태(글 1324자),화면 머리·안내 글(코드 문구 또는 화면 콘텐츠),/campuses/compare,있음,see_filter_all,,가격 숫자 · 날짜 · New Campus,Phase 1,캠퍼스 거르기 상태(같은 원천의 다른 보기)
+원문md:C:[play] · 캠퍼스 필터=pre,[play] · 캠퍼스 필터=pre,**Premium** 만 보는 중,화면 상태(글 2332자),화면 머리·안내 글(코드 문구 또는 화면 콘텐츠),/play,있음,see_filter_all,,가격 숫자,Phase 1,캠퍼스 거르기 상태(같은 원천의 다른 보기)
+원문md:C:[play] · 캠퍼스 필터=cha,[play] · 캠퍼스 필터=cha,**Challenger** 만 보는 중,화면 상태(글 1620자),화면 머리·안내 글(코드 문구 또는 화면 콘텐츠),/play,있음,see_filter_all,,,Phase 1,캠퍼스 거르기 상태(같은 원천의 다른 보기)
+원문md:C:[lessons] · 캠퍼스 필터=pre,[lessons] · 캠퍼스 필터=pre,**Premium** 만 보는 중,화면 상태(글 128자),화면 머리·안내 글(코드 문구 또는 화면 콘텐츠),/courses,있음,see_filter_all,,,Phase 1,캠퍼스 거르기 상태(같은 원천의 다른 보기)
+원문md:C:[lessons] · 캠퍼스 필터=cha,[lessons] · 캠퍼스 필터=cha,**Challenger** 만 보는 중,화면 상태(글 134자),화면 머리·안내 글(코드 문구 또는 화면 콘텐츠),/courses,있음,see_filter_all,,,Phase 1,캠퍼스 거르기 상태(같은 원천의 다른 보기)
+원문md:C:[cards] · 캠퍼스 필터=pre,[cards] · 캠퍼스 필터=pre,**Premium** 만 보는 중,화면 상태(글 1403자),화면 머리·안내 글(코드 문구 또는 화면 콘텐츠),(없음),없음,see_filter_all,,,Phase 1,캠퍼스 거르기 상태(같은 원천의 다른 보기)
+원문md:C:[cards] · 캠퍼스 필터=cha,[cards] · 캠퍼스 필터=cha,**Challenger** 만 보는 중,화면 상태(글 1180자),화면 머리·안내 글(코드 문구 또는 화면 콘텐츠),(없음),없음,see_filter_all,,,Phase 1,캠퍼스 거르기 상태(같은 원천의 다른 보기)
+원문md:C:[quote] · 캠퍼스 필터=pre,[quote] · 캠퍼스 필터=pre,### 자동 견적 계산,화면 상태(글 1122자),"(견적: UI 참고만, packages/quote 유지)",/quote,있음,excluded,,New Campus,-,
+원문md:C:[quote] · 캠퍼스 필터=cha,[quote] · 캠퍼스 필터=cha,### 자동 견적 계산,화면 상태(글 1161자),"(견적: UI 참고만, packages/quote 유지)",/quote,있음,excluded,,New Campus,-,
+원문md:C:[tuition] · 캠퍼스 필터=pre,[tuition] · 캠퍼스 필터=pre,**Premium** 만 보는 중,화면 상태(글 926자),(학비: 가격은 price_books만),/tuition,있음,excluded,,가격 숫자 · 날짜,-,
+원문md:C:[tuition] · 캠퍼스 필터=cha,[tuition] · 캠퍼스 필터=cha,**Challenger** 만 보는 중,화면 상태(글 981자),(학비: 가격은 price_books만),/tuition,있음,excluded,,가격 숫자 · 날짜,-,
+원문md:C:[notice] · 캠퍼스 필터=pre,[notice] · 캠퍼스 필터=pre,**Premium** 만 보는 중,화면 상태(글 159자),화면 머리·안내 글(코드 문구 또는 화면 콘텐츠),/notices,있음,see_filter_all,,,Phase 1,캠퍼스 거르기 상태(같은 원천의 다른 보기)
+원문md:C:[notice] · 캠퍼스 필터=cha,[notice] · 캠퍼스 필터=cha,**Challenger** 만 보는 중,화면 상태(글 165자),화면 머리·안내 글(코드 문구 또는 화면 콘텐츠),/notices,있음,see_filter_all,,,Phase 1,캠퍼스 거르기 상태(같은 원천의 다른 보기)
+원문md:D:캠퍼스 상세 pre · 탭 intro,캠퍼스 상세 pre · 탭 intro,**Premium** 만 보는 중,화면 상태(글 362자),캠퍼스 상세 탭 intro (campuses 칸·사진),/campuses/premium,일부,missing,,,Phase 1,지금 캠퍼스 화면은 한 페이지(탭 없음). 탭 구성은 Phase 2
+원문md:D:캠퍼스 상세 pre · 탭 map,캠퍼스 상세 pre · 탭 map,**Premium** 만 보는 중,화면 상태(글 247자),캠퍼스 상세 탭 map (campuses 칸·사진),/campuses/premium,없음,missing,,,Phase 1,지금 캠퍼스 화면은 한 페이지(탭 없음). 탭 구성은 Phase 2
+원문md:D:캠퍼스 상세 pre · 탭 dorm,캠퍼스 상세 pre · 탭 dorm,**Premium** 만 보는 중,화면 상태(글 892자),캠퍼스 상세 탭 dorm (campuses 칸·사진),/campuses/premium,일부,missing,,가격 숫자,Phase 1,지금 캠퍼스 화면은 한 페이지(탭 없음). 탭 구성은 Phase 2
+원문md:D:캠퍼스 상세 pre · 탭 living,캠퍼스 상세 pre · 탭 living,**Premium** 만 보는 중,화면 상태(글 1667자),캠퍼스 상세 탭 living (campuses 칸·사진),/campuses/premium,일부,missing,,가격 숫자,Phase 1,지금 캠퍼스 화면은 한 페이지(탭 없음). 탭 구성은 Phase 2
+원문md:D:캠퍼스 상세 pre · 탭 course,캠퍼스 상세 pre · 탭 course,**Premium** 만 보는 중,화면 상태(글 247자),캠퍼스 상세 탭 course (campuses 칸·사진),/campuses/premium,없음,missing,,,Phase 1,지금 캠퍼스 화면은 한 페이지(탭 없음). 탭 구성은 Phase 2
+원문md:D:캠퍼스 상세 cha · 탭 intro,캠퍼스 상세 cha · 탭 intro,**Challenger** 만 보는 중,화면 상태(글 485자),캠퍼스 상세 탭 intro (campuses 칸·사진),/campuses/challenger,일부,missing,,,Phase 1,지금 캠퍼스 화면은 한 페이지(탭 없음). 탭 구성은 Phase 2
+원문md:D:캠퍼스 상세 cha · 탭 map,캠퍼스 상세 cha · 탭 map,**Challenger** 만 보는 중,화면 상태(글 370자),캠퍼스 상세 탭 map (campuses 칸·사진),/campuses/challenger,없음,missing,,,Phase 1,지금 캠퍼스 화면은 한 페이지(탭 없음). 탭 구성은 Phase 2
+원문md:D:캠퍼스 상세 cha · 탭 dorm,캠퍼스 상세 cha · 탭 dorm,**Challenger** 만 보는 중,화면 상태(글 1271자),캠퍼스 상세 탭 dorm (campuses 칸·사진),/campuses/challenger,일부,missing,,가격 숫자,Phase 1,지금 캠퍼스 화면은 한 페이지(탭 없음). 탭 구성은 Phase 2
+원문md:D:캠퍼스 상세 cha · 탭 living,캠퍼스 상세 cha · 탭 living,**Challenger** 만 보는 중,화면 상태(글 1251자),캠퍼스 상세 탭 living (campuses 칸·사진),/campuses/challenger,일부,missing,,가격 숫자,Phase 1,지금 캠퍼스 화면은 한 페이지(탭 없음). 탭 구성은 Phase 2
+원문md:D:캠퍼스 상세 cha · 탭 course,캠퍼스 상세 cha · 탭 course,**Challenger** 만 보는 중,화면 상태(글 286자),캠퍼스 상세 탭 course (campuses 칸·사진),/campuses/challenger,없음,missing,,,Phase 1,지금 캠퍼스 화면은 한 페이지(탭 없음). 탭 구성은 Phase 2
+원문md:D:캠퍼스 상세 mco · 탭 intro,캠퍼스 상세 mco · 탭 intro,**MCO** 만 보는 중,화면 상태(글 391자),캠퍼스 상세 탭 intro (campuses 칸·사진),/campuses/camp,일부,missing,,,Phase 1,지금 캠퍼스 화면은 한 페이지(탭 없음). 탭 구성은 Phase 2
+원문md:D:캠퍼스 상세 mco · 탭 map,캠퍼스 상세 mco · 탭 map,**MCO** 만 보는 중,화면 상태(글 391자),캠퍼스 상세 탭 map (campuses 칸·사진),/campuses/camp,없음,missing,,,Phase 1,지금 캠퍼스 화면은 한 페이지(탭 없음). 탭 구성은 Phase 2
+원문md:D:캠퍼스 상세 mco · 탭 dorm,캠퍼스 상세 mco · 탭 dorm,**MCO** 만 보는 중,화면 상태(글 217자),캠퍼스 상세 탭 dorm (campuses 칸·사진),/campuses/camp,일부,missing,,,Phase 1,지금 캠퍼스 화면은 한 페이지(탭 없음). 탭 구성은 Phase 2
+원문md:D:캠퍼스 상세 mco · 탭 living,캠퍼스 상세 mco · 탭 living,**MCO** 만 보는 중,화면 상태(글 201자),캠퍼스 상세 탭 living (campuses 칸·사진),/campuses/camp,일부,missing,,,Phase 1,지금 캠퍼스 화면은 한 페이지(탭 없음). 탭 구성은 Phase 2
+원문md:D:캠퍼스 상세 mco · 탭 course,캠퍼스 상세 mco · 탭 course,**MCO** 만 보는 중,화면 상태(글 204자),캠퍼스 상세 탭 course (campuses 칸·사진),/campuses/camp,없음,missing,,,Phase 1,지금 캠퍼스 화면은 한 페이지(탭 없음). 탭 구성은 Phase 2
+원문md:D:캠퍼스 상세 new · 탭 intro,캠퍼스 상세 new · 탭 intro,**New Campus** 만 보는 중,화면 상태(글 254자),"(New Campus: 넣지 않음, CL-096)",,없음,excluded,,New Campus,보관,
+원문md:D:캠퍼스 상세 new · 탭 map,캠퍼스 상세 new · 탭 map,**New Campus** 만 보는 중,화면 상태(글 254자),"(New Campus: 넣지 않음, CL-096)",,없음,excluded,,New Campus,보관,
+원문md:D:캠퍼스 상세 new · 탭 dorm,캠퍼스 상세 new · 탭 dorm,**New Campus** 만 보는 중,화면 상태(글 174자),"(New Campus: 넣지 않음, CL-096)",,없음,excluded,,New Campus,보관,
+원문md:D:캠퍼스 상세 new · 탭 living,캠퍼스 상세 new · 탭 living,**New Campus** 만 보는 중,화면 상태(글 175자),"(New Campus: 넣지 않음, CL-096)",,없음,excluded,,New Campus,보관,
+원문md:D:캠퍼스 상세 new · 탭 course,캠퍼스 상세 new · 탭 course,**New Campus** 만 보는 중,화면 상태(글 184자),"(New Campus: 넣지 않음, CL-096)",,없음,excluded,,New Campus,보관,
+원문md:E:캠퍼스 지도 지점 창 pre/dorm1,캠퍼스 지도 지점 창 pre/dorm1,Premium,화면 상태(글 238자),캠퍼스 지도 지점 창(신규),/campuses/:id,없음,missing,,가격 숫자,Phase 1,MAP_SPOTS 행과 같은 내용
+원문md:E:캠퍼스 지도 지점 창 pre/dorm2,캠퍼스 지도 지점 창 pre/dorm2,Premium,화면 상태(글 236자),캠퍼스 지도 지점 창(신규),/campuses/:id,없음,missing,,가격 숫자,Phase 1,MAP_SPOTS 행과 같은 내용
+원문md:E:캠퍼스 지도 지점 창 pre/office,캠퍼스 지도 지점 창 pre/office,Premium,화면 상태(글 161자),캠퍼스 지도 지점 창(신규),/campuses/:id,없음,missing,,,Phase 1,MAP_SPOTS 행과 같은 내용
+원문md:E:캠퍼스 지도 지점 창 pre/gym,캠퍼스 지도 지점 창 pre/gym,Premium,화면 상태(글 155자),캠퍼스 지도 지점 창(신규),/campuses/:id,없음,missing,,,Phase 1,MAP_SPOTS 행과 같은 내용
+원문md:E:캠퍼스 지도 지점 창 pre/academic,캠퍼스 지도 지점 창 pre/academic,Premium,화면 상태(글 166자),캠퍼스 지도 지점 창(신규),/campuses/:id,없음,missing,,,Phase 1,MAP_SPOTS 행과 같은 내용
+원문md:E:캠퍼스 지도 지점 창 pre/parking,캠퍼스 지도 지점 창 pre/parking,Premium,화면 상태(글 157자),캠퍼스 지도 지점 창(신규),/campuses/:id,없음,missing,,,Phase 1,MAP_SPOTS 행과 같은 내용
+원문md:E:캠퍼스 지도 지점 창 pre/gate,캠퍼스 지도 지점 창 pre/gate,Premium,화면 상태(글 155자),캠퍼스 지도 지점 창(신규),/campuses/:id,없음,missing,,,Phase 1,MAP_SPOTS 행과 같은 내용
+원문md:E:캠퍼스 지도 지점 창 cha/class,캠퍼스 지도 지점 창 cha/class,Challenger,화면 상태(글 129자),캠퍼스 지도 지점 창(신규),/campuses/:id,없음,missing,,,Phase 1,MAP_SPOTS 행과 같은 내용
+원문md:E:캠퍼스 지도 지점 창 cha/dorm,캠퍼스 지도 지점 창 cha/dorm,Challenger,화면 상태(글 129자),캠퍼스 지도 지점 창(신규),/campuses/:id,없음,missing,,,Phase 1,MAP_SPOTS 행과 같은 내용
+원문md:E:캠퍼스 지도 지점 창 cha/dining,캠퍼스 지도 지점 창 cha/dining,Challenger,화면 상태(글 124자),캠퍼스 지도 지점 창(신규),/campuses/:id,없음,missing,,,Phase 1,MAP_SPOTS 행과 같은 내용
+원문md:E:캠퍼스 지도 지점 창 cha/study,캠퍼스 지도 지점 창 cha/study,Challenger,화면 상태(글 132자),캠퍼스 지도 지점 창(신규),/campuses/:id,없음,missing,,,Phase 1,MAP_SPOTS 행과 같은 내용
+원문md:F:코스 상세 esl,코스 상세 esl,Challenger · ESL,화면 상태(글 557자),코스 상세(course_contents),/courses/:id,있음,missing,,가격 숫자 · 날짜,Phase 1,COURSES 행과 같은 원천. 가격 열 제외
+원문md:F:코스 상세 esl-flex,코스 상세 esl-flex,Challenger · ESL,화면 상태(글 371자),코스 상세(course_contents),/courses/:id,있음,missing,,가격 숫자 · 날짜,Phase 1,COURSES 행과 같은 원천. 가격 열 제외
+원문md:F:코스 상세 ielts,코스 상세 ielts,Challenger · IELTS,화면 상태(글 576자),코스 상세(course_contents),/courses/:id,있음,missing,,가격 숫자 · 날짜,Phase 1,COURSES 행과 같은 원천. 가격 열 제외
+원문md:F:코스 상세 ielts-g,코스 상세 ielts-g,Challenger · IELTS,화면 상태(글 491자),코스 상세(course_contents),/courses/:id,있음,missing,,가격 숫자 · 날짜,Phase 1,COURSES 행과 같은 원천. 가격 열 제외
+원문md:F:코스 상세 speaking,코스 상세 speaking,Premium · Pathway 1 · Speaking,화면 상태(글 736자),코스 상세(course_contents),/courses/:id,있음,missing,,가격 숫자 · 날짜,Phase 1,COURSES 행과 같은 원천. 가격 열 제외
+원문md:F:코스 상세 toeic,코스 상세 toeic,Premium · Pathway 2 · Career,화면 상태(글 396자),코스 상세(course_contents),/courses/:id,있음,missing,,가격 숫자 · 날짜,Phase 1,COURSES 행과 같은 원천. 가격 열 제외
+원문md:F:코스 상세 wh,코스 상세 wh,Premium · Pathway 2 · Career,화면 상태(글 398자),코스 상세(course_contents),/courses/:id,있음,missing,,가격 숫자 · 날짜,Phase 1,COURSES 행과 같은 원천. 가격 열 제외
+원문md:F:코스 상세 biz,코스 상세 biz,Premium · Pathway 2 · Career,화면 상태(글 401자),코스 상세(course_contents),/courses/:id,있음,missing,,가격 숫자 · 날짜,Phase 1,COURSES 행과 같은 원천. 가격 열 제외
+원문md:F:코스 상세 tep,코스 상세 tep,Premium · Pathway 3 · Global,화면 상태(글 480자),코스 상세(course_contents),/courses/:id,있음,missing,,가격 숫자 · 날짜,Phase 1,COURSES 행과 같은 원천. 가격 열 제외
+원문md:F:코스 상세 senior,코스 상세 senior,Premium · Pathway 3 · Global,화면 상태(글 444자),코스 상세(course_contents),/courses/:id,있음,missing,,가격 숫자 · 날짜,Phase 1,COURSES 행과 같은 원천. 가격 열 제외
+원문md:F:코스 상세 upc,코스 상세 upc,Junior · 주니어 장기 연수,화면 상태(글 511자),코스 상세(course_contents),/courses/:id,있음,missing,,가격 숫자 · 날짜,Phase 1,COURSES 행과 같은 원천. 가격 열 제외
+원문md:F:코스 상세 family,코스 상세 family,Premium · Pathway 3 · Global,화면 상태(글 226자),코스 상세(course_contents),/courses/:id,있음,missing,,,Phase 1,COURSES 행과 같은 원천. 가격 열 제외
+원문md:F:코스 상세 speaking · 수업 리포트 write,코스 상세 speaking · 수업 리포트 write,Premium · Pathway 1 · Speaking,화면 상태(글 757자),코스 상세(course_contents),/courses/:id,있음,missing,,가격 숫자 · 날짜,Phase 1,COURSES 행과 같은 원천. 가격 열 제외
+원문md:F:코스 상세 speaking · 수업 리포트 listen,코스 상세 speaking · 수업 리포트 listen,Premium · Pathway 1 · Speaking,화면 상태(글 660자),코스 상세(course_contents),/courses/:id,있음,missing,,가격 숫자 · 날짜,Phase 1,COURSES 행과 같은 원천. 가격 열 제외
+원문md:G:과정 진단 step 0 (이전 답 첫 선택지),과정 진단 step 0 (이전 답 첫 선택지),### 과정 진단,화면 상태(글 127자),"(과정 진단: 이식 금지, 참고 보관)",,없음,excluded,,,보관,
+원문md:G:과정 진단 step 1 (이전 답 첫 선택지),과정 진단 step 1 (이전 답 첫 선택지),### 과정 진단,화면 상태(글 138자),"(과정 진단: 이식 금지, 참고 보관)",,없음,excluded,,,보관,
+원문md:G:과정 진단 step 2 (이전 답 첫 선택지),과정 진단 step 2 (이전 답 첫 선택지),### 과정 진단,화면 상태(글 129자),"(과정 진단: 이식 금지, 참고 보관)",,없음,excluded,,,보관,
+원문md:G:과정 진단 step 3 (이전 답 첫 선택지),과정 진단 step 3 (이전 답 첫 선택지),### 과정 진단,화면 상태(글 136자),"(과정 진단: 이식 금지, 참고 보관)",,없음,excluded,,,보관,
+원문md:G:과정 진단 step 4 (이전 답 첫 선택지),과정 진단 step 4 (이전 답 첫 선택지),### 과정 진단,화면 상태(글 132자),"(과정 진단: 이식 금지, 참고 보관)",,없음,excluded,,,보관,
+원문md:G:과정 진단 결과 · 시나리오 0,과정 진단 결과 · 시나리오 0,### 과정 진단,화면 상태(글 1688자),"(과정 진단: 이식 금지, 참고 보관)",,없음,excluded,,가격 숫자,보관,
+원문md:G:과정 진단 결과 · 시나리오 1,과정 진단 결과 · 시나리오 1,### 과정 진단,화면 상태(글 1832자),"(과정 진단: 이식 금지, 참고 보관)",,없음,excluded,,가격 숫자,보관,
+원문md:G:과정 진단 결과 · 시나리오 2,과정 진단 결과 · 시나리오 2,### 과정 진단,화면 상태(글 1643자),"(과정 진단: 이식 금지, 참고 보관)",,없음,excluded,,가격 숫자,보관,
+원문md:G:과정 진단 결과 · 시나리오 3,과정 진단 결과 · 시나리오 3,### 과정 진단,화면 상태(글 1589자),"(과정 진단: 이식 금지, 참고 보관)",,없음,excluded,,가격 숫자,보관,
+원문md:G:과정 진단 결과 · 시나리오 4,과정 진단 결과 · 시나리오 4,### 과정 진단,화면 상태(글 1638자),"(과정 진단: 이식 금지, 참고 보관)",,없음,excluded,,가격 숫자,보관,
+원문md:G:과정 진단 결과 · 시나리오 5,과정 진단 결과 · 시나리오 5,### 과정 진단,화면 상태(글 1668자),"(과정 진단: 이식 금지, 참고 보관)",,없음,excluded,,가격 숫자,보관,
+원문md:G:과정 진단 결과 · 시나리오 6,과정 진단 결과 · 시나리오 6,### 과정 진단,화면 상태(글 1633자),"(과정 진단: 이식 금지, 참고 보관)",,없음,excluded,,가격 숫자,보관,
+원문md:H:왜 JIC · 강점 support,왜 JIC · 강점 support,WHY PARTNERS RECOMMEND JIC,화면 상태(글 743자),왜 JIC 강점 상세,/about/why-jic,일부,missing,,,Phase 1,STRENGTHS 행과 같은 원천
+원문md:H:왜 JIC · 강점 journey,왜 JIC · 강점 journey,WHY PARTNERS RECOMMEND JIC,화면 상태(글 829자),왜 JIC 강점 상세,/about/why-jic,일부,missing,,,Phase 1,STRENGTHS 행과 같은 원천
+원문md:H:왜 JIC · 강점 program,왜 JIC · 강점 program,WHY PARTNERS RECOMMEND JIC,화면 상태(글 573자),왜 JIC 강점 상세,/about/why-jic,일부,missing,,,Phase 1,STRENGTHS 행과 같은 원천
+원문md:H:왜 JIC · 강점 campus,왜 JIC · 강점 campus,WHY PARTNERS RECOMMEND JIC,화면 상태(글 548자),왜 JIC 강점 상세,/about/why-jic,일부,missing,,,Phase 1,STRENGTHS 행과 같은 원천
+원문md:H:왜 JIC · 강점 progress,왜 JIC · 강점 progress,WHY PARTNERS RECOMMEND JIC,화면 상태(글 527자),왜 JIC 강점 상세,/about/why-jic,일부,missing,,,Phase 1,STRENGTHS 행과 같은 원천
+원문md:H:왜 JIC · 강점 beyond,왜 JIC · 강점 beyond,WHY PARTNERS RECOMMEND JIC,화면 상태(글 723자),왜 JIC 강점 상세,/about/why-jic,일부,missing,,,Phase 1,STRENGTHS 행과 같은 원천
+원문md:I:학생의 하루 · lin,학생의 하루 · lin,### 학생의 하루,화면 상태(글 750자),학생의 하루(day),/day,있음,missing,,,Phase 1,PERSONAS 행과 같은 원천
+원문md:I:학생의 하루 · jihoon,학생의 하루 · jihoon,### 학생의 하루,화면 상태(글 666자),학생의 하루(day),/day,있음,missing,,,Phase 1,PERSONAS 행과 같은 원천
+원문md:I:학생의 하루 · haruto,학생의 하루 · haruto,### 학생의 하루,화면 상태(글 860자),학생의 하루(day),/day,있음,missing,,,Phase 1,PERSONAS 행과 같은 원천
+원문md:I:학생의 하루 · seoyeon,학생의 하루 · seoyeon,### 학생의 하루,화면 상태(글 781자),학생의 하루(day),/day,있음,missing,,,Phase 1,PERSONAS 행과 같은 원천
+원문md:I:학생의 하루 · 비교 모드,학생의 하루 · 비교 모드,### 학생의 하루,화면 상태(글 1336자),학생의 하루(day),/day,없음,missing,,,Phase 1,PERSONAS 행과 같은 원천
+원문md:J:주니어·가족 캠프 탭 camp,주니어·가족 캠프 탭 camp,### 주니어 · 가족 캠프,화면 상태(글 1673자),캠프(camp),/campuses/camp,있음,missing,,가격 숫자,Phase 1,JR 행과 같은 원천
+원문md:J:주니어·가족 캠프 탭 fam,주니어·가족 캠프 탭 fam,### 주니어 · 가족 캠프,화면 상태(글 1079자),캠프(camp),/campuses/camp,있음,missing,,가격 숫자 · 날짜,Phase 1,JR 행과 같은 원천
+원문md:J:주니어·가족 캠프 탭 upc,주니어·가족 캠프 탭 upc,### 주니어 · 가족 캠프,화면 상태(글 245자),캠프(camp),/campuses/camp,없음,missing,,,Phase 1,JR 행과 같은 원천
+원문md:K:JIC 관리자 [adm-issues],JIC 관리자 [adm-issues],**JIC 관리자** 학교 내부 운영 화면 · 유학원에게는 보이지 않습니다,화면 상태(글 1784자),(관리 화면: 포털 콘텐츠 아님),,-,excluded,,날짜,보관,
+원문md:K:JIC 관리자 [analytics],JIC 관리자 [analytics],**JIC 관리자** 학교 내부 운영 화면 · 유학원에게는 보이지 않습니다,화면 상태(글 423자),(관리 화면: 포털 콘텐츠 아님),,-,excluded,,,보관,
+원문md:K:JIC 관리자 [adm-visits],JIC 관리자 [adm-visits],**JIC 관리자** 학교 내부 운영 화면 · 유학원에게는 보이지 않습니다,화면 상태(글 135자),(관리 화면: 포털 콘텐츠 아님),,-,excluded,,,보관,
+원문md:K:JIC 관리자 [adm-stats],JIC 관리자 [adm-stats],**JIC 관리자** 학교 내부 운영 화면 · 유학원에게는 보이지 않습니다,화면 상태(글 339자),(관리 화면: 포털 콘텐츠 아님),,-,excluded,,,보관,
+원문md:K:JIC 관리자 [adm-events],JIC 관리자 [adm-events],**JIC 관리자** 학교 내부 운영 화면 · 유학원에게는 보이지 않습니다,화면 상태(글 7080자),(관리 화면: 포털 콘텐츠 아님),,-,excluded,,날짜,보관,
+원문md:K:JIC 관리자 [adm-status],JIC 관리자 [adm-status],**JIC 관리자** 학교 내부 운영 화면 · 유학원에게는 보이지 않습니다,화면 상태(글 205자),(관리 화면: 포털 콘텐츠 아님),,-,excluded,,New Campus,보관,
+원문md:K:JIC 관리자 [adm-mediamgr],JIC 관리자 [adm-mediamgr],**JIC 관리자** 학교 내부 운영 화면 · 유학원에게는 보이지 않습니다,화면 상태(글 7640자),(관리 화면: 포털 콘텐츠 아님),,-,excluded,,New Campus,보관,
+원문md:K:JIC 관리자 [adm-media],JIC 관리자 [adm-media],**JIC 관리자** 학교 내부 운영 화면 · 유학원에게는 보이지 않습니다,화면 상태(글 651자),(관리 화면: 포털 콘텐츠 아님),,-,excluded,,,보관,
+원문md:K:JIC 관리자 [adm-notice],JIC 관리자 [adm-notice],**JIC 관리자** 학교 내부 운영 화면 · 유학원에게는 보이지 않습니다,화면 상태(글 98자),(관리 화면: 포털 콘텐츠 아님),,-,excluded,,,보관,
+원문md:L:메뉴 숨김 화면 [inquiry] (P.inquiry 직접 렌더),메뉴 숨김 화면 [inquiry] (P.inquiry 직접 렌더),### 문의·상담 관리,화면 상태(글 286자),(메뉴에서 숨긴 화면: 원문 보관만),,없음,excluded,,,보관,
+원문md:L:메뉴 숨김 화면 [seminar] (P.seminar 직접 렌더),메뉴 숨김 화면 [seminar] (P.seminar 직접 렌더),### 세미나·상담 접수,화면 상태(글 209자),(메뉴에서 숨긴 화면: 원문 보관만),,없음,excluded,,,보관,
+원문md:L:메뉴 숨김 화면 [library] (P.library 직접 렌더),메뉴 숨김 화면 [library] (P.library 직접 렌더),### 사진 · 문서,화면 상태(글 983자),(메뉴에서 숨긴 화면: 원문 보관만),,없음,excluded,,New Campus,보관,
+원문md:L:메뉴 숨김 화면 [sales] (P.sales 직접 렌더),메뉴 숨김 화면 [sales] (P.sales 직접 렌더),### 자료 라이브러리,화면 상태(글 1099자),(메뉴에서 숨긴 화면: 원문 보관만),,없음,excluded,,,보관,
+원문md:L:메뉴 숨김 화면 [teachers] (P.teachers 직접 렌더),메뉴 숨김 화면 [teachers] (P.teachers 직접 렌더),### 선생님,화면 상태(글 313자),(메뉴에서 숨긴 화면: 원문 보관만),,없음,excluded,,,보관,
+원문md:L:메뉴 숨김 화면 [stats] (P.stats 직접 렌더),메뉴 숨김 화면 [stats] (P.stats 직접 렌더),### 학교 현황,화면 상태(글 934자),(메뉴에서 숨긴 화면: 원문 보관만),,없음,excluded,,날짜,보관,
+원문md:L:메뉴 숨김 화면 [course] (P.course 직접 렌더),메뉴 숨김 화면 [course] (P.course 직접 렌더),### 코스·프로그램 안내,화면 상태(글 327자),(메뉴에서 숨긴 화면: 원문 보관만),,없음,excluded,,New Campus,보관,
+원문md:L:메뉴 숨김 화면 [facility] (P.facility 직접 렌더),메뉴 숨김 화면 [facility] (P.facility 직접 렌더),### 기숙사·시설 안내,화면 상태(글 306자),(메뉴에서 숨긴 화면: 원문 보관만),,없음,excluded,,New Campus,보관,
+원문md:L:메뉴 숨김 화면 [_compare] (P._compare 직접 렌더),메뉴 숨김 화면 [_compare] (P._compare 직접 렌더),### 캠퍼스 비교,화면 상태(글 924자),(메뉴에서 숨긴 화면: 원문 보관만),,없음,excluded,,가격 숫자 · 날짜 · New Campus,보관,
+원문md:M:바기오 · 주변 필터들(전체),바기오 · 주변 필터들(전체),,화면 상태(글 0자),왜 바기오·주변(about),/about/baguio,있음,missing,,,Phase 1,AROUND 행과 같은 원천
+원문md:M:바기오 · Around JIC,바기오 · Around JIC,"도시 바기오에서 캠퍼스 주변까지, 학생이 지낼 곳을 보여줍니다. 상담의 첫 단계로 활용하세",화면 상태(글 12365자),왜 바기오·주변(about),/about/baguio,있음,missing,,날짜,Phase 1,AROUND 행과 같은 원천
