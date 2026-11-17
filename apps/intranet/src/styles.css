@@ -142,6 +142,7 @@ fieldset.plain { border: 0; margin: 0; padding: 0; min-width: 0; display: flex; 
 .pagination button.on { background: var(--primary); border-color: var(--primary); color: #fff; font-weight: 700; }
 
 .photo { flex: 0 0 112px; height: 144px; background: #eef0f3; border: 1px solid var(--line); display: flex; align-items: center; justify-content: center; color: var(--ink-3); font-size: 12px; }
+.photo img { width: 100%; height: 100%; object-fit: cover; }
 .memo-text { white-space: pre-wrap; word-break: break-word; }
 
 /* 로그인 */

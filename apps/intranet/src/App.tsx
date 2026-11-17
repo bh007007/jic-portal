@@ -30,6 +30,7 @@ import Trips from './pages/Trips';
 import StudentAccounts from './pages/StudentAccounts';
 import GuardAccounts from './pages/GuardAccounts';
 import StudentFiles from './pages/StudentFiles';
+import Photos from './pages/Photos';
 
 /**
  * 배포: 로그인한 계정 종류로 나눈다. 직원은 메뉴 화면, 강사 포털 매니저는 일부 메뉴만, 출입구 가드 공용 계정은 가드 태블릿만,
@@ -115,6 +116,7 @@ export default function App() {
               <Route path="/guard-accounts" element={<GuardAccounts />} />
               <Route path="/student-file" element={<StudentFiles />} />
               <Route path="/student-file/:stId" element={<StudentFileDetail />} />
+              <Route path="/photos" element={<Photos />} />
               <Route path="*" element={<NotReady />} />
             </Routes>
           </Shell>

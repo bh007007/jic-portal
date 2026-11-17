@@ -909,5 +909,45 @@ expect('Student File 출석: 못 읽으면 출석만 비우고 나머지는 그�
 delete stores.attendance;
 expect('Student File 출석: 출석 자료가 없으면 null', ((await call('GET', `/students/${SA}`)).body as any).attendance === null);
 
+// ── 학생 사진(11/10 결정 I9, photos.ts): 직원만, 오피스는 맡은 캠퍼스만. 올릴 때마다 기록, 지금 사진 = 가장 최근
+{
+  let pl = (await call('GET', '/photos')).body as any;
+  expect('사진: 저장소 없으면 ready false, 목록은 나옴(재학생 학생 수)', pl.ready === false && pl.counts.all === new Set(cur.map((x) => x.stId)).size && pl.counts.withPhoto === 0, pl.counts);
+  expect('사진: 저장소 없으면 올리기 503', (await call('POST', `/photos/${SA}`, { image: 'x' })).status === 503);
+  const files = new Map<string, { bytes: Uint8Array; contentType: string }>();
+  const photoRepo = memRepo<any>();
+  stores.photos = { all: () => photoRepo.all(), add: async (v) => { const rec = { ...v, source: 'staff' as const }; await photoRepo.put(rec); return rec; } };
+  const pctx = { ...ctx, studentPhotos: { put: async (p: string, f: { bytes: Uint8Array; contentType: string }) => void files.set(p, f), get: async (p: string) => files.get(p) ?? null } };
+  const pcall = (m: string, p: string, body: any = null, q = '', c: any = pctx) => handleIntranetApi(c, m, p, new URLSearchParams(q), body) as Promise<{ status: number; body: any }>;
+  const jpeg = (n: number) => 'data:image/jpeg;base64,' + btoa(String.fromCharCode(0xff, 0xd8, 0xff, 0xe0, n));
+  expect('사진: 사진이 아니면 400', (await pcall('POST', `/photos/${SA}`, { image: 'data:image/jpeg;base64,' + btoa('not a jpeg') })).body.error === 'invalid_image');
+  expect('사진: 없는 학생 404', (await pcall('POST', '/photos/nobody', { image: jpeg(1) })).status === 404);
+  at('2026-11-25T11:00:00');
+  const pr = await pcall('POST', `/photos/${SA}`, { image: jpeg(1) });
+  expect('사진: 올리기 201, 올린 사람 = 직원', pr.status === 201 && pr.body.uploadedBy === ctx.actor, pr);
+  expect('사진: 저장 경로 <학생번호>/<번호>.jpg', files.size === 1 && [...files.keys()].every((k) => new RegExp(`^${SA}/[\\w-]+\\.jpg$`).test(k)), [...files.keys()]);
+  pl = (await pcall('GET', '/photos')).body;
+  const prow = pl.rows.find((x: any) => x.stId === SA);
+  expect('사진: 목록에 있음 표시, 사진 없는 학생 먼저, 사진은 싣지 않음', pl.ready && prow.hasPhoto && pl.counts.withPhoto === 1 && !pl.rows[0].hasPhoto && !('image' in prow), pl.counts);
+  expect('사진: 사진 없는 학생만', (await pcall('GET', '/photos', null, 'missing=1')).body.rows.every((x: any) => !x.hasPhoto));
+  at('2026-11-25T12:00:00');
+  await pcall('POST', `/photos/${SA}`, { image: jpeg(2) });
+  const pg = (await pcall('GET', `/photos/${SA}`)).body;
+  expect('사진: 보기는 가장 최근 사진, 기록 2건', pg.image === jpeg(2) && pg.history.length === 2, pg.history);
+  expect('사진: 사진 없는 학생 보기 404', (await pcall('GET', `/photos/${cur.find((x) => x.stId !== SA)!.stId}`)).body.error === 'no_photo');
+  // Student File: 직원은 지금 사진 날짜를 받고, 매니저는 받지 않는다
+  expect('사진: Student File 에 지금 사진 날짜', (await pcall('GET', `/students/${SA}`)).body.photo?.uploadedAt === pg.uploadedAt);
+  const pm = { ...pctx, actor: '매니저 M', session: { role: 'manager' as const, campuses: [campus] } };
+  expect('사진: 매니저는 목록·보기·올리기 403', (await pcall('GET', '/photos', null, '', pm)).status === 403 && (await pcall('GET', `/photos/${SA}`, null, '', pm)).status === 403 && (await pcall('POST', `/photos/${SA}`, { image: jpeg(3) }, '', pm)).status === 403);
+  expect('사진: 매니저의 Student File 에는 사진 정보 없음', (await pcall('GET', `/students/${SA}`, null, '', pm)).body.photo === undefined);
+  const other = cur.find((x) => x.campus !== campus);
+  if (other) {
+    const po = { ...pctx, session: { role: 'staff' as const, staffRole: 'office' as const, campuses: [other.campus] } };
+    expect('사진: 오피스는 맡지 않은 캠퍼스 학생 보기·올리기 403', (await pcall('GET', `/photos/${SA}`, null, '', po)).body.error === 'campus_forbidden' && (await pcall('POST', `/photos/${SA}`, { image: jpeg(4) }, '', po)).status === 403);
+    expect('사진: 오피스 목록은 맡은 캠퍼스만', (await pcall('GET', '/photos', null, '', po)).body.rows.every((x: any) => x.campus === other.campus));
+  }
+  delete stores.photos;
+}
+
 console.log(fails ? `\n${fails}건 실패` : '\n모두 통과');
 if (fails) process.exit(1);

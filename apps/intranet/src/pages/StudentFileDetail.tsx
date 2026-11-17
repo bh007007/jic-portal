@@ -1,6 +1,7 @@
 import { ADMIN_URL } from '../base';
+import { useEffect, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
-import { errorText, useAccess, useApi, type StudentFile } from '../api';
+import { api, errorText, useAccess, useApi, type StudentFile } from '../api';
 import { Loading, PageTitle } from '../components/ui';
 import { duration, md, mdhm } from '../format';
 import { LIFE_CATEGORY, LIFE_STATUS, LIFE_STATUS_CLASS } from '../lifeLabels';
@@ -14,6 +15,31 @@ const ENROLL: Record<string, string> = { current: '재학', upcoming: '입학 �
 const KIND: Record<string, string> = { sick: '병결', official: '공결', personal: '개인 사유' };
 const AIRPORT: Record<string, string> = { MANILA: '마닐라', CLARK: '클락', OTHER: '기타' };
 const Status = ({ s }: { s: string }) => <span className={STATUS_CLASS[s]}>{STATUS[s] ?? s}</span>;
+
+/** 학생 사진(11/10 결정 I9): 직원에게만 있는지가 오고(data.photo), 있으면 한 장 받아 보인다. 올리기는 '사진 관리' 화면 */
+function StudentPhoto({ stId, name, photo }: { stId: string; name: string; photo: StudentFile['photo'] }) {
+  const [image, setImage] = useState<string | null>(null);
+  useEffect(() => {
+    setImage(null);
+    if (!photo) return;
+    let alive = true;
+    api<{ image: string }>(`/api/photos/${encodeURIComponent(stId)}`)
+      .then((r) => alive && setImage(r.image))
+      .catch(() => undefined);
+    return () => {
+      alive = false;
+    };
+  }, [stId, photo?.uploadedAt]);
+  if (photo === undefined) return null; // 매니저: 사진을 보지 않는다
+  return (
+    <div style={{ textAlign: 'center' }}>
+      <div className="photo">{photo ? image ? <img src={image} alt={`${name} 사진`} /> : '불러오는 중…' : '사진 없음'}</div>
+      <Link to={`/photos?q=${encodeURIComponent(stId)}`} className="small">
+        사진 관리
+      </Link>
+    </div>
+  );
+}
 
 export default function StudentFileDetail() {
   const { stId = '' } = useParams();
@@ -46,8 +72,9 @@ export default function StudentFileDetail() {
         }
       />
       <section className="panel">
-        <div className="panel-body">
-          <table className="kv">
+        <div className="panel-body" style={{ display: 'flex', gap: 16, alignItems: 'flex-start' }}>
+          <StudentPhoto stId={s.stId} name={s.name} photo={data.photo} />
+          <table className="kv" style={{ flex: 1, minWidth: 0 }}>
             <tbody>
               <tr>
                 <th>국적 / 성별</th>

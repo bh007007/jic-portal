@@ -20,6 +20,8 @@ import type { LifeRequest } from '../../student/server/lifeRequests';
 import type { Absence, Overnight } from '../../student/server/requests';
 import { ACTOR_MAX } from './counseling';
 import { handleIntranetApi, type AbsenceMark, type AttendanceRow, type AttendanceSource, type DocRepo, type Repo, type Stores } from './core';
+import { IMAGE_BODY_LIMIT } from '../../student/server/files';
+import type { PhotoLog, StudentPhoto } from './photos';
 
 function writeAtomic(file: string, text: string) {
   fs.mkdirSync(path.dirname(file), { recursive: true });
@@ -99,16 +101,30 @@ export function fileAttendance(file: string): AttendanceSource {
 
 const BODY_LIMIT = 32 * 1024;
 
-function readJson(req: IncomingMessage): Promise<unknown> {
+/** 학생 사진 올린 기록(11/10 결정 I9): 파일 한 줄에 한 건, 추가만 */
+function filePhotoLog(file: string): PhotoLog {
+  const repo = fileRepo<StudentPhoto>(file);
+  return {
+    all: () => repo.all(),
+    async add(v) {
+      const rec: StudentPhoto = { ...v, source: 'staff' };
+      await repo.put(rec);
+      return rec;
+    },
+  };
+}
+
+/** limit: 학생 사진 올리기(POST /photos/<학생번호>)는 사진 크기만큼, 나머지는 BODY_LIMIT */
+function readJson(req: IncomingMessage, limit = BODY_LIMIT): Promise<unknown> {
   return new Promise((resolve, reject) => {
     let size = 0;
     const chunks: Buffer[] = [];
     req.on('data', (c: Buffer) => {
       size += c.length;
-      if (size <= BODY_LIMIT) chunks.push(c);
+      if (size <= limit) chunks.push(c);
     });
     req.on('end', () => {
-      if (size > BODY_LIMIT) return reject(new Error('body_too_large'));
+      if (size > limit) return reject(new Error('body_too_large'));
       const text = Buffer.concat(chunks).toString('utf8');
       try {
         resolve(text ? JSON.parse(text) : null);
@@ -128,6 +144,7 @@ export function intranetLocalPlugin(dataDir: string, storeDir: string, studentSt
       const source = db.meta().source;
       const req = requestFiles(studentStoreDir, source); // 학생 앱과 같은 파일
       const absenceDocs = localFiles(req.absenceDocs); // 학생 앱이 올린 진단서 사진(같은 폴더)
+      const studentPhotos = localFiles(path.join(storeDir, `student-photos-${source}`)); // 학생 사진(11/10 결정 I9)
       const stores: Stores = {
         absences: fileStore<Absence>(req.absences),
         overnights: fileStore<Overnight>(req.overnights),
@@ -145,6 +162,7 @@ export function intranetLocalPlugin(dataDir: string, storeDir: string, studentSt
         noticeReads: fileRepo(path.join(storeDir, 'notice-reads.ndjson')),
         reports: fileRepo(path.join(storeDir, `reports-${source}.ndjson`)),
         attendance: fileAttendance(path.join(storeDir, `attendance-${source}.ndjson`)),
+        photos: filePhotoLog(path.join(storeDir, `student-photos-${source}.ndjson`)),
       };
       const keycardSecret = localKeycardSecret(req.keycardSecret); // 학생 앱과 같은 파일(출입 QR 확인)
       server.config.logger.info(`[intranet-local] ${db.summary()} · 기준일 ${db.refDate} · 저장 폴더 ${storeDir}`);
@@ -160,7 +178,7 @@ export function intranetLocalPlugin(dataDir: string, storeDir: string, studentSt
         let body: unknown = null;
         if (method === 'POST' || method === 'PUT') {
           try {
-            body = await readJson(req);
+            body = await readJson(req, /^\/photos\/[\w-]+\/?$/.test(new URL(req.url ?? '/', 'http://local').pathname) ? IMAGE_BODY_LIMIT : BODY_LIMIT);
           } catch (e) {
             const code = (e as Error).message;
             send(code === 'body_too_large' ? 413 : 400, { error: code });
@@ -179,7 +197,7 @@ export function intranetLocalPlugin(dataDir: string, storeDir: string, studentSt
           }
         }
         const { status, body: out } = await handleIntranetApi(
-          { db, stores, actor, keycardSecret, absenceDocs, now: () => new Date(), newId: () => crypto.randomUUID() },
+          { db, stores, actor, keycardSecret, absenceDocs, studentPhotos, now: () => new Date(), newId: () => crypto.randomUUID() },
           method,
           url.pathname,
           url.searchParams,

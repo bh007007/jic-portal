@@ -628,6 +628,42 @@ const svcFn = await fetch(`${sb.url}/rest/v1/rpc/intranet_absence_marks_service`
   body: JSON.stringify({ p_from: plus(manila, -30), p_to: manila }),
 });
 ok('서비스 키 전용 출석 함수: 직원 토큰은 403', svcFn.status === 403, svcFn.status);
+
+// 학생 사진(11/10 결정 I9, 20261110160000_student_photos.sql): 직원 토큰으로 Storage 'student-photos' 에 올리고 기록. 가짜 사진만
+const jp = (n) => 'data:image/jpeg;base64,' + Buffer.from([0xff, 0xd8, 0xff, 0xe0, n]).toString('base64');
+x = await api('POST', `/api/photos/${sC}`, tC, { image: jp(7) });
+ok('직원: 학생 사진 올리기(Storage + 기록)', x.status === 201 && x.body.uploadedBy === '직원C', x);
+const photoRow = (await sb.sql(`select student_no, path, uploaded_by::text as by, source from public.student_photos where student_no = $1`, [sC]))[0];
+ok('사진 기록: 올린 직원, 경로 <학생번호>/<uuid>.jpg, 출처 staff', photoRow?.by === U.staffC && photoRow.source === 'staff' && new RegExp(`^${sC}/[0-9a-f-]{36}\\.jpg$`).test(photoRow.path), photoRow);
+x = await api('GET', `/api/photos/${sC}`, tC);
+ok('직원: 사진 보기(직원 토큰으로 Storage)', x.status === 200 && x.body.image === jp(7) && x.body.uploadedBy === '직원C', x.status);
+x = await api('GET', '/api/photos', tC);
+ok('직원: 사진 관리 목록(저장소 준비, 있음 표시)', x.status === 200 && x.body.ready && x.body.rows.some((r) => r.stId === sC && r.hasPhoto), x.status);
+x = await api('GET', `/api/students/${sC}`, tC);
+ok('직원: Student File 에 지금 사진 날짜', x.status === 200 && !!x.body.photo?.uploadedAt, x.body?.photo);
+x = await api('GET', `/api/photos/${sC}`, tP);
+ok('오피스(Premium): Challenger 학생 사진 403', x.status === 403 && x.body.error === 'campus_forbidden', x);
+x = await api('GET', `/api/photos/${sC}`, tG);
+ok('가드: 학생 사진 403', x.status === 403, x);
+x = await api('GET', `/api/photos/${sC}`, tM);
+ok('매니저: 학생 사진 403', x.status === 403, x);
+const stuPhoto = await fetch(`${sb.url}/storage/v1/object/authenticated/student-photos/${photoRow.path}`, { headers: { apikey: 'anon-key', Authorization: `Bearer ${tStu}` } });
+ok('학생: 학생 사진 파일 못 읽음(Storage RLS)', stuPhoto.status === 400, stuPhoto.status);
+ok('학생: 사진 기록 0행', (await sb.sql(`select * from public.student_photos`, [], as(U.student))).length === 0);
+let photoErr = '';
+try {
+  await sb.sql(`select public.student_photo_record($1, $2, 'image/jpeg', 10)`, [sC, `${sC}/00000000-0000-4000-8000-000000000000.jpg`], as(U.staffC));
+} catch (e) {
+  photoErr = String(e.message);
+}
+ok('직원이라도 Storage 에 없는 파일은 기록 못 함', /photo_missing/.test(photoErr), photoErr);
+photoErr = '';
+try {
+  await sb.sql(`select public.student_photo_record($1, $2, 'image/jpeg', 10)`, [sC, photoRow.path.replace(/[0-9a-f]{12}\.jpg$/, '000000000001.jpg')], as(U.student));
+} catch (e) {
+  photoErr = String(e.message);
+}
+ok('학생은 사진 기록 함수를 못 씀', /staff_only/.test(photoErr), photoErr);
 const cronPage = await cronWorker.fetch(new Request('https://jic-intranet.example/api/meta'));
 ok('jic-intranet Worker 주소는 화면·API 없이 안내만(404)', cronPage.status === 404 && (await cronPage.text()).includes('/intranet'));
 
