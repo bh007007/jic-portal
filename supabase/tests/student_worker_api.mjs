@@ -178,21 +178,28 @@ x = await api('POST', `/api/overnights/${ov}/cancel`, tO, {});
 ok('외박 취소', x.status === 200 && x.body.status === 'cancelled', x);
 
 // ── 귀국 항공편 → 직원 배차 → 학생이 시각을 바꾸면 재확인
+// 출발일은 오늘(필리핀) 이후·연수 종료 30일 안이어야 하므로 날짜를 고정하지 않고, 오늘 앞뒤 3일 재학하는 F 의 모레로 시험한다
 x = await api('GET', '/api/departure', tA);
 ok('항공편 화면: 연수, 배차 없음', x.status === 200 && x.body.enrollment && x.body.departure === null && x.body.ride.state === 'none', x);
 const trA = x.body.enrollment.trId;
-x = await api('PUT', '/api/departure', tA, { date: '2026-11-14', time: '10:30', flight: 'pr 468', airport: 'MANILA', needsRide: true, note: '' });
+x = await api('GET', '/api/departure', tF);
+ok('F 항공편 화면: 연수, 배차 없음', x.status === 200 && x.body.enrollment && x.body.departure === null && x.body.ride.state === 'none', x);
+const trF = x.body.enrollment.trId;
+const dep = od(2);
+x = await api('PUT', '/api/departure', tF, { date: od(-1), time: '10:30', flight: 'PR 468', airport: 'MANILA', needsRide: true, note: '' });
+ok('지난 날짜 항공편 400 date_out_of_range', x.status === 400 && x.body.error === 'date_out_of_range', x);
+x = await api('PUT', '/api/departure', tF, { date: dep, time: '10:30', flight: 'pr 468', airport: 'MANILA', needsRide: true, note: '' });
 ok('항공편 등록 201', x.status === 201 && x.body.flight === 'PR 468' && x.body.time === '10:30', x);
-x = await api('GET', '/api/departure', tA);
-ok('저장된 항공편 + 배차 요청', x.body.departure?.date === '2026-11-14' && x.body.ride.state === 'requested', x.body);
-await sql(`insert into public.airport_rides (enrollment_id, student_no, decision, pickup_date, pickup_time, note, for_date, for_time, decided_by) values ($1, $2, 'confirmed', '2026-11-14', '06:30', '정문, 밴 2호차', '2026-11-14', '10:30', $3)`, [trA, A, staff], { role: 'authenticated', sub: staff });
-x = await api('GET', '/api/departure', tA);
+x = await api('GET', '/api/departure', tF);
+ok('저장된 항공편 + 배차 요청', x.body.departure?.date === dep && x.body.ride.state === 'requested', x.body);
+await sql(`insert into public.airport_rides (enrollment_id, student_no, decision, pickup_date, pickup_time, note, for_date, for_time, decided_by) values ($1, $2, 'confirmed', $3, '06:30', '정문, 밴 2호차', $3, '10:30', $4)`, [trF, F, dep, staff], { role: 'authenticated', sub: staff });
+x = await api('GET', '/api/departure', tF);
 ok('학생에게 배차 확정·기숙사 출발 시각', x.body.ride.state === 'confirmed' && x.body.ride.pickupTime === '06:30' && x.body.ride.note === '정문, 밴 2호차', x.body.ride);
-x = await api('PUT', '/api/departure', tA, { date: '2026-11-14', time: '12:00', flight: 'PR 468', airport: 'MANILA', needsRide: true, note: '' });
+x = await api('PUT', '/api/departure', tF, { date: dep, time: '12:00', flight: 'PR 468', airport: 'MANILA', needsRide: true, note: '' });
 ok('항공편 수정(PATCH)', x.status === 200 && x.body.time === '12:00', x);
-x = await api('GET', '/api/departure', tA);
+x = await api('GET', '/api/departure', tF);
 ok('시각을 바꾸면 재확인', x.body.ride.state === 'changed', x.body.ride);
-x = await api('GET', '/api/me', tA);
+x = await api('GET', '/api/me', tF);
 ok('내 정보에 항공편', x.body.departure?.flight === 'PR 468', x.body.departure);
 
 // ── 생활 요청: 학생 등록·취소 → 직원 처리(함수) → 학생이 답변을 봄
